@@ -28,18 +28,36 @@ from .dxf_writer import (
     save_generic, save_round_pedestal_table,
     save_rectangular_table, save_cabinet, save_sofa
 )
+from .constraints import clean_geometry, align_dimension_to_ocr, extract_table_proportions
 
 # Dimension regex for parsing AI responses
 DIM_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(cm|mm|m|in|ft)?\s*(dia|diameter|h|height|w|width|d|depth|thk|thickness|l|length)?", re.I)
 
 AI_SYSTEM_PROMPT = """You are a professional CAD engineer analyzing a furniture drawing.
 
-You see the same image that OpenCV processes. Your job is to provide semantic understanding:
+You see the same image that OpenCV processes. Your job is to provide semantic understanding and precise parametric dimensions. Even if dimensions are not explicitly labeled, you must estimate them visually based on the drawing's proportions relative to any known dimensions (e.g. standard heights or labeled dimensions).
 
 1. FURNITURE TYPE: Identify the furniture (round_pedestal_table, rectangular_table, sofa, cabinet, bed_headboard, chair, or generic_2d_furniture)
 2. DIMENSIONS: Extract ALL dimension annotations from the image (width, height, depth, diameter, etc.)
 3. VIEWS: Identify which views are present (top, front, side)
-4. CORRECTIONS: Note any errors in the OpenCV detection (missing lines, wrong circles, etc.)
+4. DETAILED SPECIFICATIONS: Provide precise or estimated dimensions (in cm) for the furniture's components, ensuring realistic and consistent proportions:
+   - For `round_pedestal_table`:
+     * "table_top_diameter_cm": diameter of the circular tabletop
+     * "overall_height_cm": height from floor to top of table
+     * "pedestal_base_diameter_cm": diameter of the very bottom base of the pedestal
+     * "pedestal_neck_diameter_cm": diameter of the column/neck above the base
+     * "table_top_thickness_cm": thickness of the tabletop
+     * "pedestal_base_height_cm": height of the bottom base block/pedestal step
+   - For `rectangular_table`:
+     * "width_cm", "depth_cm", "height_cm", "leg_width_cm", "table_top_thickness_cm"
+   - For `sofa`:
+     * "width_cm", "depth_cm", "height_cm", "seat_height_cm", "armrest_width_cm", "cushion_thickness_cm"
+   - For `cabinet`:
+     * "width_cm", "depth_cm", "height_cm", "door_type" ("single", "double"), "num_shelves"
+   - For `bed_headboard`:
+     * "width_cm", "height_cm", "thickness_cm"
+   - For `chair`:
+     * "seat_width_cm", "seat_depth_cm", "seat_height_cm", "back_height_cm", "leg_width_cm"
 
 Return valid JSON:
 {
@@ -48,7 +66,17 @@ Return valid JSON:
   "dimensions": [{"name": "string", "value_cm": number, "unit": "cm", "raw": "string"}],
   "views_detected": ["top", "front"],
   "scale_notes": "string",
-  "opencv_corrections": "string"
+  "opencv_corrections": "string",
+  "furniture_specs": {
+    // Include the specs corresponding to the detected furniture type here.
+    // Example for round_pedestal_table:
+    // "table_top_diameter_cm": 80.0,
+    // "overall_height_cm": 70.0,
+    // "pedestal_base_diameter_cm": 36.0,
+    // "pedestal_neck_diameter_cm": 30.0,
+    // "table_top_thickness_cm": 4.0,
+    // "pedestal_base_height_cm": 12.0
+  }
 }"""
 
 
@@ -164,11 +192,11 @@ async def process_hybrid(
     4. Results are cross-validated and merged
     5. DXF generated with best available data
     """
-    # STEP 1: OpenCV detection
+    # STEP 1: OpenCV detection + Snap constraints cleanup
     img, gray = load_gray(image_path)
     binary = preprocess(gray)
     lines_raw = detect_lines(binary)
-    lines = normalize_lines(lines_raw)
+    lines = clean_geometry(lines_raw)
     circles = detect_circles(gray)
     rects = detect_rectangles(binary)
     ocr_lines, ocr_dims = ocr_dimensions(image_path)
@@ -182,6 +210,7 @@ async def process_hybrid(
     ai_dimensions = ai_result.get('dimensions', []) if not ai_error else []
     ai_views = ai_result.get('views_detected', []) if not ai_error else []
     ai_corrections = ai_result.get('opencv_corrections', '') if not ai_error else ''
+    ai_specs = ai_result.get('furniture_specs', {}) if not ai_error else {}
 
     # STEP 3: Furniture classification (AI preferred, OpenCV fallback)
     if furniture_override:
@@ -211,27 +240,79 @@ async def process_hybrid(
 
     ftype = furniture['type']
     if ftype == 'round_pedestal_table':
-        dia = real_width_cm or _pick_dimension(merged_dims, ['dia', 'diameter', 'width', 'w'], 80.0)
-        height = real_height_cm or _pick_dimension(merged_dims, ['h', 'height'], 70.0)
-        save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height)
-        warnings.append(f"Hybrid reconstruction: Ø{dia:.0f}cm x H{height:.0f}cm")
+        # OCR dimension snapping & visual ratio backup
+        dia = real_width_cm or ai_specs.get('table_top_diameter_cm') or _pick_dimension(merged_dims, ['dia', 'diameter', 'width', 'w'], 80.0)
+        height = real_height_cm or ai_specs.get('overall_height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 70.0)
+        
+        # Snap overall dimensions to OCR text values
+        dia = align_dimension_to_ocr(dia, merged_dims, ['dia', 'diameter', 'top', 'w', 'width'])
+        height = align_dimension_to_ocr(height, merged_dims, ['h', 'height'])
+
+        # Fallback to visual ratio extraction from geometry
+        ratios = extract_table_proportions(lines, circles, rects)
+        base_dia = ai_specs.get('pedestal_base_diameter_cm') or (dia * ratios['base_ratio'])
+        neck_dia = ai_specs.get('pedestal_neck_diameter_cm') or (dia * ratios['neck_ratio'])
+        top_thick = ai_specs.get('table_top_thickness_cm') or (height * ratios['thickness_ratio'])
+        base_height = ai_specs.get('pedestal_base_height_cm') or (height * ratios['base_height_ratio'])
+
+        # Align inner components to OCR if labels exist
+        base_dia = align_dimension_to_ocr(base_dia, merged_dims, ['base', 'pedestal', 'bottom'])
+        neck_dia = align_dimension_to_ocr(neck_dia, merged_dims, ['neck', 'column'])
+
+        save_round_pedestal_table(
+            str(dxf_path),
+            top_dia_cm=dia,
+            height_cm=height,
+            base_dia_cm=base_dia,
+            neck_dia_cm=neck_dia,
+            top_thick_cm=top_thick,
+            base_height_cm=base_height
+        )
+        warnings.append(f"Hybrid reconstruction: Ø{dia:.0f}cm x H{height:.0f}cm (Base: {base_dia:.0f}cm, Neck: {neck_dia:.0f}cm)")
+
     elif ftype == 'rectangular_table':
-        w = real_width_cm or _pick_dimension(merged_dims, ['w', 'width'], 120.0)
-        h = real_height_cm or _pick_dimension(merged_dims, ['h', 'height'], 70.0)
-        d = _pick_dimension(merged_dims, ['d', 'depth'], w * 0.67)
-        save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
-        warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm")
+        w = real_width_cm or ai_specs.get('width_cm') or _pick_dimension(merged_dims, ['w', 'width'], 120.0)
+        h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 70.0)
+        d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], w * 0.67)
+        leg_w = ai_specs.get('leg_width_cm') or 5.0
+        top_t = ai_specs.get('table_top_thickness_cm') or 4.0
+
+        w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
+        h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
+        d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
+
+        save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_width_cm=leg_w, top_thick_cm=top_t)
+        warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm rectangular table")
+
     elif ftype == 'cabinet':
-        w = real_width_cm or _pick_dimension(merged_dims, ['w', 'width'], 100.0)
-        h = real_height_cm or _pick_dimension(merged_dims, ['h', 'height'], 180.0)
-        d = _pick_dimension(merged_dims, ['d', 'depth'], 50.0)
-        save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        w = real_width_cm or ai_specs.get('width_cm') or _pick_dimension(merged_dims, ['w', 'width'], 100.0)
+        h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 180.0)
+        d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], 50.0)
+        num_s = int(ai_specs.get('num_shelves') or 3)
+        door_t = ai_specs.get('door_type') or "double"
+
+        w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
+        h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
+        d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
+
+        save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, num_shelves=num_s, door_type=door_t)
+        warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm cabinet")
+
     elif ftype == 'sofa':
-        w = real_width_cm or _pick_dimension(merged_dims, ['w', 'width'], 200.0)
-        h = real_height_cm or _pick_dimension(merged_dims, ['h', 'height'], 85.0)
-        sh = _pick_dimension(merged_dims, ['seat', 'seat_height'], 45.0)
-        d = _pick_dimension(merged_dims, ['d', 'depth'], 80.0)
-        save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, seat_height_cm=sh)
+        w = real_width_cm or ai_specs.get('width_cm') or _pick_dimension(merged_dims, ['w', 'width'], 200.0)
+        h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 85.0)
+        d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], 80.0)
+        sh = ai_specs.get('seat_height_cm') or _pick_dimension(merged_dims, ['seat', 'seat_height'], 45.0)
+        arm_w = ai_specs.get('armrest_width_cm') or 15.0
+        cush_t = ai_specs.get('cushion_thickness_cm') or 12.0
+
+        w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
+        h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
+        d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
+
+        save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, seat_height_cm=sh, armrest_width_cm=arm_w, cushion_thick_cm=cush_t)
+        warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm sofa")
+
     else:
         # Generic: use OpenCV lines + circles + rectangles with scale
         scale = 0.1

@@ -226,3 +226,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: OpenAI API key loaded from backend-python/.env file
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 4ce5a2fe6c1df894be86b200716cdd14dbbf64b2
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 4ce5a2fe6c1df894be86b200716cdd14dbbf64b2
+**Files:** backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: OpenAI API key loaded from backend-python/.env file
+Files: backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: OpenAI API key loaded from backend-python/.env file*
+
+#### Lesson Learned
+
+Commit: Fix: OpenAI API key loaded from backend-python/.env file
+Files: backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
