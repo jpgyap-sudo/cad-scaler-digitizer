@@ -136,13 +136,33 @@ export function getDownloadUrl(result: DigitizeResult): string {
  * Download DXF file directly in browser.
  */
 export function downloadDxf(result: DigitizeResult): void {
-  const url = getDownloadUrl(result);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = result.dxf_file || 'drawing.dxf';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  // Download via fetch + blob to avoid Vite proxy multipart issues with direct download
+  const dlPath = result.download.replace('/api/', '/py-api/');
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;
+  const url = base.startsWith('http') ? `${base}${result.download}` : `${window.location.origin}${dlPath}`;
+
+  // Use fetch to download and create blob (works through proxy)
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = result.dxf_file || 'drawing.dxf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(err => {
+      console.error('[DXF Download] Error:', err);
+      // Fallback: direct link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.dxf_file || 'drawing.dxf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
 }
 
 /**
