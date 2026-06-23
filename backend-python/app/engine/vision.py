@@ -1,25 +1,59 @@
 """
 Vision Agent: OpenCV preprocessing, line/circle/rectangle detection, OCR dimension extraction.
+Uses dual-OCR stack:
+  - Tesseract: fast simple text detection
+  - PaddleOCR: better at reading drawing labels/dimensions (technical drawings)
+  - OpenCV: geometry primitives (lines, circles, rectangles)
 """
 import cv2
 import numpy as np
 import re
 from PIL import Image
 import pytesseract
+import os
+
+# Configure Tesseract path
+TESSERACT_PATHS = [
+    r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+    r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
+]
+for tp in TESSERACT_PATHS:
+    if os.path.exists(tp):
+        pytesseract.pytesseract.tesseract_cmd = tp
+        break
 
 DIM_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(cm|mm|m|in|ft)?\s*(dia|diameter|h|height|w|width|d|depth|thk|thickness|l|length)?", re.I)
+
+# PaddleOCR (lazy-loaded for faster startup)
+_paddle_ocr = None
+
+def get_paddle_ocr():
+    """Lazy-load PaddleOCR singleton."""
+    global _paddle_ocr
+    if _paddle_ocr is None:
+        try:
+            from paddleocr import PaddleOCR
+            _paddle_ocr = PaddleOCR(
+                lang='en'
+            )
+            print("[Vision] PaddleOCR loaded successfully")
+        except Exception as e:
+            print(f"[Vision] PaddleOCR load failed: {e}")
+            _paddle_ocr = False  # Sentinel — don't retry
+    return _paddle_ocr if _paddle_ocr is not False else None
+
 
 def load_gray(path: str):
     """Load image as BGR + grayscale. Handles PDF paths too."""
     img = cv2.imread(path)
     if img is None:
-        # Try with PIL fallback
         try:
             pil_img = Image.open(path).convert("RGB")
             img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
         except Exception as e:
             raise ValueError(f"Cannot read image: {e}")
     return img, cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
 
 def preprocess(gray):
     """Adaptive threshold + morphological cleanup for line detection."""
@@ -28,6 +62,7 @@ def preprocess(gray):
                                 cv2.THRESH_BINARY_INV, 31, 9)
     th = cv2.morphologyEx(th, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8), iterations=1)
     return th
+
 
 def detect_lines(binary):
     """Hough Probabilistic line detection."""
@@ -40,6 +75,7 @@ def detect_lines(binary):
                 lines.append(((float(x1), float(y1)), (float(x2), float(y2))))
     return lines
 
+
 def detect_circles(gray):
     """Hough Circle detection."""
     blur = cv2.medianBlur(gray, 5)
@@ -51,6 +87,7 @@ def detect_circles(gray):
             if r > 0:
                 out.append((float(x), float(y), float(r)))
     return out
+
 
 def detect_rectangles(binary):
     """Contour-based rectangle detection."""
@@ -65,15 +102,14 @@ def detect_rectangles(binary):
                 rects.append((float(x), float(y), float(x + w), float(y + h)))
     return rects
 
-def ocr_dimensions(path: str):
-    """OCR all text, extract dimension values with tags and units."""
-    text = pytesseract.image_to_string(Image.open(path))
+
+def _extract_dimensions(text: str) -> list:
+    """Extract dimension values with tags/units from raw OCR text."""
     dims = []
     for m in DIM_RE.finditer(text):
         value = float(m.group(1))
         unit = (m.group(2) or "cm").lower()
         tag = (m.group(3) or "").lower()
-        # Convert to cm
         if unit == "mm":
             value /= 10
         elif unit == "m":
@@ -84,7 +120,58 @@ def ocr_dimensions(path: str):
             value *= 30.48
         if 1 <= value <= 10000:
             dims.append({"value_cm": round(value, 1), "tag": tag, "raw": m.group(0)})
-    return text.splitlines(), dims
+    return dims
+
+
+def ocr_dimensions(path: str):
+    """
+    Dual OCR: Tesseract (fast) + PaddleOCR (accurate for drawings).
+    Merges results for maximum dimension detection.
+    """
+    img = Image.open(path)
+    
+    # --- Tesseract OCR ---
+    tesseract_text = ""
+    try:
+        tesseract_text = pytesseract.image_to_string(img)
+    except Exception as e:
+        print(f"[Vision] Tesseract error: {e}")
+    
+    tesseract_lines = tesseract_text.splitlines()
+    tesseract_dims = _extract_dimensions(tesseract_text)
+    
+    # --- PaddleOCR ---
+    paddle_ocr = get_paddle_ocr()
+    paddle_text = ""
+    if paddle_ocr:
+        try:
+            result = paddle_ocr.ocr(str(path), cls=False)
+            if result and result[0]:
+                lines = [line[1][0] for line in result[0]]
+                paddle_text = "\n".join(lines)
+        except Exception as e:
+            print(f"[Vision] PaddleOCR error: {e}")
+    
+    paddle_lines = paddle_text.splitlines() if paddle_text else []
+    paddle_dims = _extract_dimensions(paddle_text) if paddle_text else []
+    
+    # Merge: PaddleOCR takes priority, Tesseract fills gaps
+    all_lines = list(dict.fromkeys(tesseract_lines + paddle_lines))  # dedup preserving order
+    all_dim_values = {}
+    for d in tesseract_dims + paddle_dims:
+        key = d['raw']
+        if key not in all_dim_values:
+            all_dim_values[key] = d
+    
+    merged_dims = list(all_dim_values.values())
+    
+    # Log which OCR found what
+    print(f"[Vision] Tesseract: {len(tesseract_dims)} dims, {len(tesseract_lines)} lines")
+    print(f"[Vision] PaddleOCR: {len(paddle_dims)} dims, {len(paddle_lines)} lines")
+    print(f"[Vision] Merged: {len(merged_dims)} dimensions")
+    
+    return all_lines, merged_dims
+
 
 def normalize_lines(lines):
     """Straighten near-horizontal/vertical lines, deduplicate."""
