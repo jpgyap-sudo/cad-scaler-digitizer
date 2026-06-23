@@ -280,6 +280,47 @@ def autocorrect_dimensions(
     return corrected
 
 
+def clean_geometry(raw_lines):
+    """Clean geometry: normalize + snap angles + snap endpoints + merge collinear."""
+    from .vision import normalize_lines
+    normalized = normalize_lines(raw_lines)
+    angle_snapped = [snap_line_angle(l) for l in normalized]
+    merged = merge_collinear(angle_snapped)
+    final = snap_endpoints(merged)
+    return final
+
+
+def align_dimension_to_ocr(value: float, dims: list, tags: list) -> float:
+    """Snap a raw value to matching OCR dimension if close."""
+    for d in dims:
+        tag = d.get('tag', '')
+        ocr_val = d.get('value_cm', d.get('value', 0))
+        if any(t in tag for t in tags) and ocr_val > 0:
+            diff = abs(value - ocr_val) / max(value, ocr_val)
+            if diff < 0.15:  # 15% tolerance
+                return ocr_val
+    return value
+
+
+def extract_table_proportions(lines, circles, rects):
+    """Extract visual ratios from detected geometry for table reconstruction."""
+    ratios = {'base_ratio': 0.55, 'neck_ratio': 0.28, 'thickness_ratio': 0.05}
+    
+    if circles:
+        # If circles found, use radius ratios
+        radii = [r for _, _, r in circles]
+        if radii:
+            max_r = max(radii)
+            for r in radii:
+                ratio = r / max_r
+                if 0.4 < ratio < 0.7:
+                    ratios['base_ratio'] = ratio
+                elif 0.2 < ratio < 0.35:
+                    ratios['neck_ratio'] = ratio
+    
+    return ratios
+
+
 def process_constraints(
     lines: List[Tuple[Tuple[float, float], Tuple[float, float]]],
     circles: List[Tuple[float, float, float]],
