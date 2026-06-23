@@ -188,3 +188,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: DXF download uses fetch+blob through Vite proxy
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 2862cadd5ffbaf0031d8c39a85f6bc2c2e909bea
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 2862cadd5ffbaf0031d8c39a85f6bc2c2e909bea
+**Files:** frontend/services/cadEngine.ts
+
+**Summary:**
+Commit: Fix: DXF download uses fetch+blob through Vite proxy
+Files: frontend/services/cadEngine.ts
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: DXF download uses fetch+blob through Vite proxy*
+
+#### Lesson Learned
+
+Commit: Fix: DXF download uses fetch+blob through Vite proxy
+Files: frontend/services/cadEngine.ts
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

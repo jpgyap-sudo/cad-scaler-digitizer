@@ -15,6 +15,18 @@ import uuid
 import shutil
 from pathlib import Path
 
+# Load .env file for OPENAI_API_KEY (manual parse, no dependency needed)
+_env_path = Path(__file__).parent.parent / '.env'
+if _env_path.exists():
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _k, _v = _line.split('=', 1)
+                if not os.environ.get(_k):  # Only set if not already set
+                    os.environ[_k] = _v.strip().strip('"').strip("'")
+    print(f"[Main] Loaded env vars from {_env_path}")
+
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
