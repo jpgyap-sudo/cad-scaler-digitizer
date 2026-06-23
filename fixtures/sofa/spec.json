@@ -1,0 +1,6 @@
+{
+  "type": "sofa",
+  "parameters": {"width_cm": 200, "depth_cm": 80, "height_cm": 85, "seat_height_cm": 45},
+  "expected_entities": {"LINE": 10, "HIDDEN": 1, "TEXT": 1},
+  "min_file_size_bytes": 800
+}

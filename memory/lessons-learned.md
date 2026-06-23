@@ -340,3 +340,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Bug audit: fix ezdxf hatch API, remove dependency on ezdxf.constants/EdgePath.add_circle, align function signatures
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1e8f1d98893541aed5ca2a7b9068d1fd87c3cecd
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 1e8f1d98893541aed5ca2a7b9068d1fd87c3cecd
+**Files:** backend-python/app/engine/dxf_writer.py,backend-python/app/engine/hybrid.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scratch/run_all_tests.py
+
+**Summary:**
+Commit: Bug audit: fix ezdxf hatch API, remove dependency on ezdxf.constants/EdgePath.add_circle, align function signatures
+Files: backend-python/app/engine/dxf_writer.py,backend-python/app/engine/hybrid.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scratch/run_all_tests.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Bug audit: fix ezdxf hatch API, remove dependency on ezdxf.constants/EdgePath.add_circle, align function signatures*
+
+#### Lesson Learned
+
+Commit: Bug audit: fix ezdxf hatch API, remove dependency on ezdxf.constants/EdgePath.add_circle, align function signatures
+Files: backend-python/app/engine/dxf_writer.py,backend-python/app/engine/hybrid.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scratch/run_all_tests.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -42,7 +42,7 @@ const App: React.FC = () => {
   const [verification, setVerification] = useState<VerificationResult | null>(null);
   const [braintStatus, setBrainStatus] = useState<string>('');
   const [isTechModalOpen, setIsTechModalOpen] = useState(false);
-  const [engineMode, setEngineMode] = useState<EngineMode>('opencv');
+  const [engineMode, setEngineMode] = useState<EngineMode>('hybrid');
   const [engineHealthy, setEngineHealthy] = useState<boolean | null>(null);
   const [processState, setProcessState] = useState<ProcessState>('idle');
   const [fileName, setFileName] = useState<string>('');

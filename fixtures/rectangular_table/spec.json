@@ -1,0 +1,6 @@
+{
+  "type": "rectangular_table",
+  "parameters": {"width_cm": 120, "depth_cm": 80, "height_cm": 70},
+  "expected_entities": {"LINE": 14, "HATCH": 1, "TEXT": 2},
+  "min_file_size_bytes": 1000
+}

@@ -1,0 +1,6 @@
+{
+  "type": "round_pedestal_table",
+  "parameters": {"top_diameter_cm": 80, "height_cm": 70},
+  "expected_entities": {"CIRCLE": 1, "LINE": 20, "HATCH": 2, "TEXT": 3, "DIMENSION": 2, "CENTER": 2},
+  "min_file_size_bytes": 1000
+}
