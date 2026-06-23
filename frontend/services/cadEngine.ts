@@ -94,6 +94,36 @@ export async function digitizeWithBackend(
 }
 
 /**
+ * Upload to HYBRID pipeline: OpenCV geometry + OpenAI Vision cross-validation.
+ * This gives maximum accuracy by using both engines together.
+ */
+export async function digitizeHybrid(
+  file: File,
+  opts?: {
+    realWidthCm?: number;
+    realHeightCm?: number;
+    furnitureType?: string;
+  }
+): Promise<DigitizeResult> {
+  const form = new FormData();
+  form.append('file', file);
+  if (opts?.realWidthCm) form.append('real_width_cm', String(opts.realWidthCm));
+  if (opts?.realHeightCm) form.append('real_height_cm', String(opts.realHeightCm));
+  if (opts?.furnitureType) form.append('furniture_type', String(opts.furnitureType));
+
+  const base = getEngineBase();
+  const url = `${base}/digitize/hybrid`;
+  const res = await fetch(url, { method: 'POST', body: form });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Hybrid engine failed (${res.status}): ${err}`);
+  }
+
+  return res.json();
+}
+
+/**
  * Get the DXF download URL for a result.
  */
 export function getDownloadUrl(result: DigitizeResult): string {

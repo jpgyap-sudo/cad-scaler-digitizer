@@ -150,3 +150,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: Vite proxy rewrite maps /py-api/* correctly to Python /api/* endpoints
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bd4b4cdc8a85a3ec650b160a715bfb550d19955e
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** bd4b4cdc8a85a3ec650b160a715bfb550d19955e
+**Files:** frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: Vite proxy rewrite maps /py-api/* correctly to Python /api/* endpoints
+Files: frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: Vite proxy rewrite maps /py-api/* correctly to Python /api/* endpoints*
+
+#### Lesson Learned
+
+Commit: Fix: Vite proxy rewrite maps /py-api/* correctly to Python /api/* endpoints
+Files: frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

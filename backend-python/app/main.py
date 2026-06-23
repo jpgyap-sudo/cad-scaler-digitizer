@@ -6,16 +6,19 @@ furniture classification, and ezdxf DXF generation.
 Endpoints:
 - GET  /health
 - POST /api/digitize  (upload image/PDF, get DXF download link)
+- POST /api/digitize/hybrid (OpenCV + OpenAI Vision cross-validation)
 - GET  /api/download/<filename>
 """
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
+import os
 import tempfile
 import uuid
 import shutil
-import os
+from pathlib import Path
+
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.engine.pipeline import process_image
 
 app = FastAPI(
@@ -38,12 +41,13 @@ OUT.mkdir(exist_ok=True)
 UPLOAD = Path(tempfile.gettempdir()) / "cad_digitizer_uploads"
 UPLOAD.mkdir(exist_ok=True)
 
-# Allowed image/PDF types
 ALLOWED_TYPES = {
     'image/png', 'image/jpeg', 'image/jpg',
     'image/webp', 'image/bmp', 'image/tiff',
     'application/pdf'
 }
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
 @app.get("/health")
@@ -51,8 +55,45 @@ def health():
     return {
         "ok": True,
         "engine": "opencv+ocr+ezdxf+furniture_templates",
-        "version": "2.0.0"
+        "version": "2.0.0",
+        "hybrid": bool(OPENAI_API_KEY)
     }
+
+
+async def _save_upload(file: UploadFile, job_id: str) -> Path:
+    """Save uploaded file, handling PDF conversion."""
+    ext = os.path.splitext(file.filename or 'image.png')[1] or '.png'
+    safe_name = f"{job_id}_{uuid.uuid4().hex[:8]}"
+    img_path = UPLOAD / f"{safe_name}{ext}"
+
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    # Convert PDF to image
+    if file.content_type == 'application/pdf' or ext == '.pdf':
+        try:
+            from pdf2image import convert_from_path
+            images = convert_from_path(str(img_path), dpi=200, first_page=1, last_page=1)
+            if not images:
+                raise ValueError("PDF is empty")
+            png_path = UPLOAD / f"{safe_name}.png"
+            images[0].save(str(png_path), 'PNG')
+            os.remove(str(img_path))
+            return png_path
+        except ImportError:
+            raise ValueError("PDF support requires pdf2image: pip install pdf2image")
+        except Exception as e:
+            raise ValueError(f"PDF conversion failed: {e}")
+
+    return img_path
+
+
+def _validate_file(file: UploadFile) -> None:
+    """Validate file type."""
+    ext = os.path.splitext(file.filename or '')[1].lower()
+    allowed_exts = {'.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tiff', '.pdf'}
+    if file.content_type not in ALLOWED_TYPES and ext not in allowed_exts:
+        raise ValueError(f"Unsupported file type: {file.content_type}. Use PNG, JPEG, or PDF.")
 
 
 @app.post("/api/digitize")
@@ -63,60 +104,14 @@ async def digitize(
     furniture_type: str = Form(None)
 ):
     """
-    Upload a furniture drawing (PNG, JPEG, PDF) and get a scaled DXF back.
-
-    Args:
-        file: The image or PDF file.
-        real_width_cm: Optional known width in cm for scale calibration.
-        real_height_cm: Optional known height in cm for scale calibration.
-        furniture_type: Optional override furniture type.
-
-    Returns:
-        JSON with job_id, download URL, furniture classification, and detected features.
+    Process a drawing using OpenCV + OCR + template reconstruction.
+    Fast and free — runs entirely on your machine.
     """
-    # Validate file type
-    if file.content_type not in ALLOWED_TYPES:
-        # Check extension as fallback
-        ext = os.path.splitext(file.filename or '')[1].lower()
-        if ext not in {'.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tiff', '.pdf'}:
-            return JSONResponse(
-                {"error": f"Unsupported file type: {file.content_type}. Use PNG, JPEG, or PDF."},
-                status_code=400
-            )
-
-    job_id = str(uuid.uuid4())
-    safe_name = f"{job_id}_{uuid.uuid4().hex[:8]}"
-    ext = os.path.splitext(file.filename or 'image.png')[1] or '.png'
-    img_path = UPLOAD / f"{safe_name}{ext}"
-
-    # Save uploaded file
-    with img_path.open("wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    # Handle PDF: convert first page to image
-    if file.content_type == 'application/pdf' or ext == '.pdf':
-        try:
-            from pdf2image import convert_from_path
-            images = convert_from_path(str(img_path), dpi=200, first_page=1, last_page=1)
-            if images:
-                png_path = UPLOAD / f"{safe_name}.png"
-                images[0].save(str(png_path), 'PNG')
-                img_path = png_path
-            else:
-                return JSONResponse({"error": "PDF is empty"}, status_code=400)
-        except ImportError:
-            return JSONResponse(
-                {"error": "PDF support requires pdf2image. Install: pip install pdf2image"},
-                status_code=500
-            )
-        except Exception as e:
-            return JSONResponse(
-                {"error": f"PDF conversion failed: {str(e)}"},
-                status_code=400
-            )
-
-    # Run the pipeline
     try:
+        _validate_file(file)
+        job_id = str(uuid.uuid4())
+        img_path = await _save_upload(file, job_id)
+
         result = process_image(
             str(img_path),
             out_dir=str(OUT),
@@ -125,21 +120,76 @@ async def digitize(
             real_height_cm=real_height_cm,
             furniture_override=furniture_type
         )
-        return JSONResponse(result)
-    except Exception as e:
-        return JSONResponse({"error": f"Processing failed: {str(e)}"}, status_code=500)
-    finally:
-        # Clean up upload
+
         try:
             os.remove(str(img_path))
         except Exception:
             pass
 
+        return JSONResponse(result)
+
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"error": f"Processing failed: {str(e)}"}, status_code=500)
+
+
+@app.post("/api/digitize/hybrid")
+async def digitize_hybrid(
+    file: UploadFile = File(...),
+    real_width_cm: float = Form(None),
+    real_height_cm: float = Form(None),
+    furniture_type: str = Form(None)
+):
+    """
+    PROCESS WITH MAXIMUM ACCURACY — Hybrid Mode.
+
+    Combines:
+    1. OpenCV — exact line/circle/rectangle geometry detection
+    2. Tesseract + PaddleOCR — dual OCR for text/dimensions
+    3. OpenAI GPT-4o Vision — semantic understanding of furniture type
+    4. Cross-validation — merges all sources for best result
+
+    Requires OPENAI_API_KEY environment variable.
+    """
+    if not OPENAI_API_KEY:
+        return JSONResponse(
+            {"error": "Hybrid mode requires OPENAI_API_KEY environment variable. Set it in backend-python/.env"},
+            status_code=400
+        )
+
+    try:
+        _validate_file(file)
+        job_id = str(uuid.uuid4())
+        img_path = await _save_upload(file, job_id)
+
+        from app.engine.hybrid import process_hybrid
+        result = await process_hybrid(
+            str(img_path),
+            out_dir=str(OUT),
+            job_id=job_id,
+            openai_api_key=OPENAI_API_KEY,
+            real_width_cm=real_width_cm,
+            real_height_cm=real_height_cm,
+            furniture_override=furniture_type
+        )
+
+        try:
+            os.remove(str(img_path))
+        except Exception:
+            pass
+
+        return JSONResponse(result)
+
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"error": f"Hybrid processing failed: {str(e)}"}, status_code=500)
+
 
 @app.get("/api/download/{filename}")
 def download(filename: str):
     """Download a generated DXF file by filename."""
-    # Security: prevent path traversal
     safe_name = os.path.basename(filename)
     path = OUT / safe_name
     if not path.exists():

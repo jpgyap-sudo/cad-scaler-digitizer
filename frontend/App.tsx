@@ -12,14 +12,14 @@ import { matchTemplate, generateFromTemplate } from './services/templateMatcher'
 import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import {
-  digitizeWithBackend, downloadDxf, checkEngineHealth,
+  digitizeWithBackend, digitizeHybrid, downloadDxf, checkEngineHealth,
   getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult
 } from './services/cadEngine';
 
 const MAX_CORRECTION_LOOPS = 3;
 const BRAIN_API = 'http://localhost:5001/api/brain';
 
-type EngineMode = 'ai' | 'opencv';
+type EngineMode = 'opencv' | 'ai' | 'hybrid';
 type ProcessState = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
 
 const FURNITURE_TYPES = [
@@ -152,19 +152,18 @@ const App: React.FC = () => {
       const h = realHeightCm ? parseFloat(realHeightCm) : undefined;
       const ft = furnitureType || undefined;
 
-      setStatus('Running OpenCV detection + OCR + DXF generation...');
-      const result = await digitizeWithBackend(file, {
-        realWidthCm: w,
-        realHeightCm: h,
-        furnitureType: ft,
-      });
+      const isHybrid = engineMode === 'hybrid';
+      setStatus(isHybrid ? 'Hybrid: OpenCV geometry + OpenAI Vision...' : 'Running OpenCV detection + OCR + DXF...');
+
+      const result = isHybrid
+        ? await digitizeHybrid(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft })
+        : await digitizeWithBackend(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft });
 
       setCadEngineResult(result);
       setProcessState('complete');
       setMode('complete');
-      setStatus('OpenCV engine complete. DXF ready for download.');
+      setStatus(isHybrid ? 'Hybrid engine complete. Cross-validated DXF ready.' : 'OpenCV engine complete. DXF ready for download.');
 
-      // Show preview image
       const reader = new FileReader();
       reader.onload = (e) => setImageSrc(e.target?.result as string);
       reader.readAsDataURL(file);
@@ -173,7 +172,7 @@ const App: React.FC = () => {
       setProcessState('error');
       setMode('idle');
     }
-  }, [realWidthCm, realHeightCm, furnitureType]);
+  }, [realWidthCm, realHeightCm, furnitureType, engineMode]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files?.[0];
@@ -190,7 +189,6 @@ const App: React.FC = () => {
     if (engineMode === 'ai') {
       setMode('agent-processing');
       setStatus('Connecting to AI...');
-
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = event.target?.result as string;
@@ -257,6 +255,17 @@ const App: React.FC = () => {
             >
               <Cpu className="w-3.5 h-3.5" />
               <span>OpenCV</span>
+            </button>
+            <button
+              onClick={() => setEngineMode('hybrid')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                engineMode === 'hybrid'
+                  ? 'bg-white text-purple-600 shadow-sm ring-2 ring-purple-300'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Bot className="w-3.5 h-3.5" />
+              <span>Hybrid</span>
             </button>
             <button
               onClick={() => setEngineMode('ai')}
