@@ -112,3 +112,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: direct Python engine proxy via Vite (/py-api/*) bypasses Windows proxy
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit e401975947a1c9d9200d04c03aee9a4ca8aaf5c0
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** e401975947a1c9d9200d04c03aee9a4ca8aaf5c0
+**Files:** backend/server.js,frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: direct Python engine proxy via Vite (/py-api/*) bypasses Windows proxy
+Files: backend/server.js,frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: direct Python engine proxy via Vite (/py-api/*) bypasses Windows proxy*
+
+#### Lesson Learned
+
+Commit: Fix: direct Python engine proxy via Vite (/py-api/*) bypasses Windows proxy
+Files: backend/server.js,frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
