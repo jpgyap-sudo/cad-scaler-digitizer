@@ -1,0 +1,14 @@
+{
+  "type": "sofa",
+  "name": "Sofa / Couch",
+  "views": ["front", "top", "side"],
+  "required_dimensions": ["width_cm", "depth_cm", "height_cm", "seat_height_cm"],
+  "optional_dimensions": ["arm_height_cm", "back_height_cm"],
+  "recognition_clues": [
+    "wide rectangle with seat line",
+    "armrests on sides",
+    "sofa or couch label in text",
+    "seat height annotation"
+  ],
+  "cad_entities": ["LINE", "RECTANGLE", "DIMENSION", "TEXT", "HIDDEN"]
+}

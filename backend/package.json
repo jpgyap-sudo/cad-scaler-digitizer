@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "version": "1.0.0",
-  "description": "PostgreSQL backend for session persistence",
+  "description": "PostgreSQL backend for session persistence + Python CAD engine proxy",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "express": "^5.2.1",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "multer": "^1.4.5-lts.1",
+    "form-data": "^4.0.1"
   }
 }

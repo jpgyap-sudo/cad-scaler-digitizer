@@ -11,6 +11,7 @@ export type CadPrimitiveType =
   | 'rectangle'
   | 'polyline'
   | 'line'
+  | 'centerline'
   | 'dimension'
   | 'text';
 

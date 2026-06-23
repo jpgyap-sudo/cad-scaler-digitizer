@@ -1,0 +1,14 @@
+{
+  "type": "rectangular_table",
+  "name": "Rectangular Table",
+  "views": ["top", "front"],
+  "required_dimensions": ["width_cm", "depth_cm", "height_cm"],
+  "optional_dimensions": ["leg_width_cm", "top_thickness_cm"],
+  "recognition_clues": [
+    "rectangle in top view",
+    "four legs in front view",
+    "rectangular or table label in text",
+    "width and depth dimensions"
+  ],
+  "cad_entities": ["LINE", "RECTANGLE", "CENTERLINE", "DIMENSION", "TEXT"]
+}
