@@ -302,3 +302,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: add missing base_height_ratio to extract_table_proportions
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 6c48537bb4bd74f2cb39cdccd066c07096284c7d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 6c48537bb4bd74f2cb39cdccd066c07096284c7d
+**Files:** backend-python/app/engine/constraints.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: add missing base_height_ratio to extract_table_proportions
+Files: backend-python/app/engine/constraints.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: add missing base_height_ratio to extract_table_proportions*
+
+#### Lesson Learned
+
+Commit: Fix: add missing base_height_ratio to extract_table_proportions
+Files: backend-python/app/engine/constraints.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

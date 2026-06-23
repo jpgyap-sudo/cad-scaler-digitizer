@@ -265,8 +265,7 @@ async def process_hybrid(
             height_cm=height,
             base_dia_cm=base_dia,
             neck_dia_cm=neck_dia,
-            top_thick_cm=top_thick,
-            base_height_cm=base_height
+            top_thick_cm=top_thick
         )
         warnings.append(f"Hybrid reconstruction: Ø{dia:.0f}cm x H{height:.0f}cm (Base: {base_dia:.0f}cm, Neck: {neck_dia:.0f}cm)")
 
@@ -274,28 +273,24 @@ async def process_hybrid(
         w = real_width_cm or ai_specs.get('width_cm') or _pick_dimension(merged_dims, ['w', 'width'], 120.0)
         h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 70.0)
         d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], w * 0.67)
-        leg_w = ai_specs.get('leg_width_cm') or 5.0
-        top_t = ai_specs.get('table_top_thickness_cm') or 4.0
 
         w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
         h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
         d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
 
-        save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_width_cm=leg_w, top_thick_cm=top_t)
+        save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
         warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm rectangular table")
 
     elif ftype == 'cabinet':
         w = real_width_cm or ai_specs.get('width_cm') or _pick_dimension(merged_dims, ['w', 'width'], 100.0)
         h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 180.0)
         d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], 50.0)
-        num_s = int(ai_specs.get('num_shelves') or 3)
-        door_t = ai_specs.get('door_type') or "double"
 
         w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
         h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
         d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
 
-        save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, num_shelves=num_s, door_type=door_t)
+        save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
         warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm cabinet")
 
     elif ftype == 'sofa':
@@ -303,14 +298,12 @@ async def process_hybrid(
         h = real_height_cm or ai_specs.get('height_cm') or _pick_dimension(merged_dims, ['h', 'height'], 85.0)
         d = ai_specs.get('depth_cm') or _pick_dimension(merged_dims, ['d', 'depth'], 80.0)
         sh = ai_specs.get('seat_height_cm') or _pick_dimension(merged_dims, ['seat', 'seat_height'], 45.0)
-        arm_w = ai_specs.get('armrest_width_cm') or 15.0
-        cush_t = ai_specs.get('cushion_thickness_cm') or 12.0
 
         w = align_dimension_to_ocr(w, merged_dims, ['w', 'width'])
         h = align_dimension_to_ocr(h, merged_dims, ['h', 'height'])
         d = align_dimension_to_ocr(d, merged_dims, ['d', 'depth'])
 
-        save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, seat_height_cm=sh, armrest_width_cm=arm_w, cushion_thick_cm=cush_t)
+        save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, seat_height_cm=sh)
         warnings.append(f"Hybrid reconstruction: {w:.0f}x{d:.0f}x{h:.0f}cm sofa")
 
     else:
