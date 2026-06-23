@@ -36,3 +36,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: wiring gaps - dual OCR stack (Tesseract+PaddleOCR), env config, curl proxy bypass
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a860f027d81a9396ad9f64831c2d61e419075619
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a860f027d81a9396ad9f64831c2d61e419075619
+**Files:** backend-python/app/engine/vision.py,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: wiring gaps - dual OCR stack (Tesseract+PaddleOCR), env config, curl proxy bypass
+Files: backend-python/app/engine/vision.py,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: wiring gaps - dual OCR stack (Tesseract+PaddleOCR), env config, curl proxy bypass*
+
+#### Lesson Learned
+
+Commit: Fix: wiring gaps - dual OCR stack (Tesseract+PaddleOCR), env config, curl proxy bypass
+Files: backend-python/app/engine/vision.py,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -72,8 +72,10 @@ export async function digitizeWithBackend(
   if (opts?.realHeightCm) form.append('real_height_cm', String(opts.realHeightCm));
   if (opts?.furnitureType) form.append('furniture_type', String(opts.furnitureType));
 
-  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001';
-  const res = await fetch(`${base}/api/upload`, { method: 'POST', body: form });
+  // Use relative path so Vite dev proxy handles forwarding (bypasses Windows proxy)
+  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
+  const url = base ? `${base}/api/upload` : '/api/upload';
+  const res = await fetch(url, { method: 'POST', body: form });
 
   if (!res.ok) {
     const err = await res.text();
@@ -87,8 +89,8 @@ export async function digitizeWithBackend(
  * Get the DXF download URL for a result.
  */
 export function getDownloadUrl(result: DigitizeResult): string {
-  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001';
-  return `${base}${result.download}`;
+  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
+  return base ? `${base}${result.download}` : result.download;
 }
 
 /**
@@ -109,8 +111,9 @@ export function downloadDxf(result: DigitizeResult): void {
  */
 export async function checkEngineHealth(): Promise<boolean> {
   try {
-    const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001';
-    const res = await fetch(`${base}/api/cad-engine/health`);
+    const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
+    const url = base ? `${base}/api/cad-engine/health` : '/api/cad-engine/health';
+    const res = await fetch(url);
     if (!res.ok) return false;
     const data = await res.json();
     return data.status === 'ok';
