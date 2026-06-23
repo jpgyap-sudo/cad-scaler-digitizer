@@ -74,3 +74,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: Vite dev proxy to bypass Windows proxy for API calls
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 659d690fa40ac66959f607a0b7691fe97917ba7c
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 659d690fa40ac66959f607a0b7691fe97917ba7c
+**Files:** frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: Vite dev proxy to bypass Windows proxy for API calls
+Files: frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: Vite dev proxy to bypass Windows proxy for API calls*
+
+#### Lesson Learned
+
+Commit: Fix: Vite dev proxy to bypass Windows proxy for API calls
+Files: frontend/services/cadEngine.ts,frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

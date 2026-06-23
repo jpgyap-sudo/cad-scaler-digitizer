@@ -1,6 +1,7 @@
 /**
  * CAD Engine API Client
  * Connects frontend to Python FastAPI backend (OpenCV + OCR + ezdxf).
+ * Uses Vite dev proxy (/py-api/) to bypass Windows system proxy on localhost.
  */
 
 export type DigitizeResult = {
@@ -55,8 +56,16 @@ export function getFurnitureConfidenceLabel(confidence: number): string {
 }
 
 /**
- * Upload a file to the Node.js proxy (which forwards to Python engine).
- * Returns detected features and DXF download link.
+ * Get the base URL for Python CAD engine.
+ * Uses Vite dev proxy (/py-api/) by default — this bypasses Windows proxy.
+ */
+function getEngineBase(): string {
+  return import.meta.env.VITE_CAD_ENGINE_URL || '/py-api';
+}
+
+/**
+ * Upload a file directly to the Python CAD engine.
+ * The browser sends FormData directly — no Node proxy involved.
  */
 export async function digitizeWithBackend(
   file: File,
@@ -72,9 +81,8 @@ export async function digitizeWithBackend(
   if (opts?.realHeightCm) form.append('real_height_cm', String(opts.realHeightCm));
   if (opts?.furnitureType) form.append('furniture_type', String(opts.furnitureType));
 
-  // Use relative path so Vite dev proxy handles forwarding (bypasses Windows proxy)
-  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
-  const url = base ? `${base}/api/upload` : '/api/upload';
+  const base = getEngineBase();
+  const url = `${base}/digitize`;
   const res = await fetch(url, { method: 'POST', body: form });
 
   if (!res.ok) {
@@ -89,8 +97,9 @@ export async function digitizeWithBackend(
  * Get the DXF download URL for a result.
  */
 export function getDownloadUrl(result: DigitizeResult): string {
-  const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
-  return base ? `${base}${result.download}` : result.download;
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  const dlPath = result.download.replace('/api/', '/py-api/');
+  return base ? `${base}${result.download}` : `${window.location.origin}${dlPath}`;
 }
 
 /**
@@ -111,12 +120,10 @@ export function downloadDxf(result: DigitizeResult): void {
  */
 export async function checkEngineHealth(): Promise<boolean> {
   try {
-    const base = import.meta.env.VITE_NODE_API_URL || import.meta.env.VITE_BRAIN_API_URL || '';
-    const url = base ? `${base}/api/cad-engine/health` : '/api/cad-engine/health';
-    const res = await fetch(url);
+    const res = await fetch('/py-api/health');
     if (!res.ok) return false;
     const data = await res.json();
-    return data.status === 'ok';
+    return data.ok === true;
   } catch {
     return false;
   }

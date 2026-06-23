@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 /**
  * POST /api/upload
  * Accepts image/PDF file + optional parameters, forwards to Python CAD engine.
- * Returns DXF download link + detected features.
+ * Uses form-data npm package to properly reconstruct multipart for Python.
  */
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
@@ -56,19 +56,24 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const realHeightCm = req.body.real_height_cm || req.body.realHeightCm || null;
     const furnitureType = req.body.furniture_type || req.body.furnitureType || null;
 
-    // Forward to Python engine
-    const FormData = (await import('form-data')).default;
+    // Forward to Python engine using fetch + FormData
+    const { default: FormData } = await import('form-data');
     const form = new FormData();
-    form.append('file', fs.createReadStream(req.file.path), req.file.originalname);
+    form.append('file', fs.createReadStream(req.file.path), req.file.originalname || 'file.png');
     if (realWidthCm) form.append('real_width_cm', String(realWidthCm));
     if (realHeightCm) form.append('real_height_cm', String(realHeightCm));
     if (furnitureType) form.append('furniture_type', String(furnitureType));
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+
     const pythonRes = await fetch(`${PYTHON_ENGINE_URL}/api/digitize`, {
       method: 'POST',
       body: form,
-      headers: form.getHeaders(),
-    });
+      headers: form.getHeaders ? form.getHeaders() : undefined,
+      signal: controller.signal,
+      // Use keepalive to avoid proxy issues
+    }).finally(() => clearTimeout(timeout));
 
     // Clean up uploaded file
     try { fs.unlinkSync(req.file.path); } catch {}
