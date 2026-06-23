@@ -8,13 +8,12 @@
     "dev": "concurrently \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
+    "dev:python": "cd backend-python && uvicorn app.main:app --reload --port 8000",
     "build": "npm run build --prefix frontend",
     "preview": "npm run preview --prefix frontend",
     "brain:init": "curl -X GET http://localhost:5001/api/brain/init"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "concurrently": "latest"
+    "concurrently": "^9.1.0"
   }
 }
