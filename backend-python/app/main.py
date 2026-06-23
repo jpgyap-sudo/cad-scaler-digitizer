@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # Load .env for OPENAI_API_KEY
-_env_path = Path(__file__).parent / '.env'
+_env_path = Path(__file__).parent.parent / '.env'
 if _env_path.exists():
     with open(_env_path) as _f:
         for _line in _f:
@@ -115,8 +115,9 @@ async def _process_hybrid(image_path, job_id, real_width_cm=None, real_height_cm
 
     img, gray = li(str(image_path))
     binary = pp(gray)
+    from app.backend.geometry_cleanup import snap_line_angle, snap_endpoints, merge_collinear
     lines_raw = dl(binary)
-    lines = clean_geometry(lines_raw)
+    lines = snap_endpoints(merge_collinear([snap_line_angle(l) for l in lines_raw]))
     circles = dc(gray)
     rects = dr(binary)
     ocr_lines, dims = od(str(image_path))
