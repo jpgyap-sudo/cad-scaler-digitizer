@@ -264,3 +264,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: Add missing clean_geometry, align_dimension_to_ocr, extract_table_proportions to constraints.py
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c68f16d3cf8e3857c60c305ae76512cda2cbf437
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** c68f16d3cf8e3857c60c305ae76512cda2cbf437
+**Files:** backend-python/app/engine/constraints.py,backend-python/test_circle_hatch.dxf,backend-python/test_hatch.dxf,memory/extension-bugs.jsonl
+
+**Summary:**
+Commit: Fix: Add missing clean_geometry, align_dimension_to_ocr, extract_table_proportions to constraints.py
+Files: backend-python/app/engine/constraints.py,backend-python/test_circle_hatch.dxf,backend-python/test_hatch.dxf,memory/extension-bugs.jsonl
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: Add missing clean_geometry, align_dimension_to_ocr, extract_table_proportions to constraints.py*
+
+#### Lesson Learned
+
+Commit: Fix: Add missing clean_geometry, align_dimension_to_ocr, extract_table_proportions to constraints.py
+Files: backend-python/app/engine/constraints.py,backend-python/test_circle_hatch.dxf,backend-python/test_hatch.dxf,memory/extension-bugs.jsonl
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

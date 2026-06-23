@@ -304,7 +304,12 @@ def align_dimension_to_ocr(value: float, dims: list, tags: list) -> float:
 
 def extract_table_proportions(lines, circles, rects):
     """Extract visual ratios from detected geometry for table reconstruction."""
-    ratios = {'base_ratio': 0.55, 'neck_ratio': 0.28, 'thickness_ratio': 0.05}
+    ratios = {
+        'base_ratio': 0.55,
+        'neck_ratio': 0.28,
+        'thickness_ratio': 0.05,
+        'base_height_ratio': 0.15,  # base height as fraction of total height
+    }
     
     if circles:
         # If circles found, use radius ratios
