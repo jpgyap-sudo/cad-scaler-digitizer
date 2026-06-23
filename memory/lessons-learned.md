@@ -454,3 +454,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: hybrid mode str/float type error in AI dimension parsing
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 668a4e60bad7bf9325392426ef1013fde235578f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 668a4e60bad7bf9325392426ef1013fde235578f
+**Files:** backend-python/app/main.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: hybrid mode str/float type error in AI dimension parsing
+Files: backend-python/app/main.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: hybrid mode str/float type error in AI dimension parsing*
+
+#### Lesson Learned
+
+Commit: Fix: hybrid mode str/float type error in AI dimension parsing
+Files: backend-python/app/main.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
