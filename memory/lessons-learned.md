@@ -492,3 +492,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: disable Vite HMR WebSocket to prevent Windows proxy white screen
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 9d0aa1f323045e9736f204a4a64bcc07f1efb58f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 9d0aa1f323045e9736f204a4a64bcc07f1efb58f
+**Files:** frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: disable Vite HMR WebSocket to prevent Windows proxy white screen
+Files: frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: disable Vite HMR WebSocket to prevent Windows proxy white screen*
+
+#### Lesson Learned
+
+Commit: Fix: disable Vite HMR WebSocket to prevent Windows proxy white screen
+Files: frontend/vite.config.ts,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

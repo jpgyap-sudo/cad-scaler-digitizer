@@ -146,8 +146,9 @@ async def _process_hybrid(image_path, job_id, real_width_cm=None, real_height_cm
         print(f"[Hybrid] OpenAI error: {e}")
 
     # Merge AI + OpenCV
-    ftype = furniture_override or ai_result.get('furniture_type', '')
-    ai_conf = ai_result.get('confidence', 0)
+    ftype = furniture_override or str(ai_result.get('furniture_type', '') or '')
+    try: ai_conf = float(ai_result.get('confidence', 0) or 0)
+    except: ai_conf = 0.0
     if not ftype or ai_conf < 0.5:
         cv = cf(ocr_lines, circles, lines, rects)
         ftype = cv['type']
