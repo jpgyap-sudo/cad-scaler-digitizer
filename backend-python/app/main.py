@@ -159,9 +159,29 @@ async def _process_hybrid(image_path, job_id, real_width_cm=None, real_height_cm
     warnings = [f"Hybrid mode: AI identified as {ftype}"]
 
     if ftype == 'round_pedestal_table':
-        dia = real_width_cm or next((d.get('value_cm',0) for d in ai_result.get('dimensions',[]) if 'dia' in str(d).lower()), 80.0)
-        height = real_height_cm or next((d.get('value_cm',0) for d in ai_result.get('dimensions',[]) if 'height' in str(d).lower()), 70.0)
-        save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height)
+        try: dia = float(real_width_cm) if real_width_cm else None
+        except: dia = None
+        try: height = float(real_height_cm) if real_height_cm else None
+        except: height = None
+
+        if not dia:
+            for d in ai_result.get('dimensions', []):
+                if isinstance(d, dict):
+                    tag = str(d.get('tag', '') or '').lower()
+                    val = d.get('value_cm', 0)
+                    if any(t in tag for t in ['dia','diameter','width','w']) and val:
+                        dia = float(val); break
+        if not height:
+            for d in ai_result.get('dimensions', []):
+                if isinstance(d, dict):
+                    tag = str(d.get('tag', '') or '').lower()
+                    val = d.get('value_cm', 0)
+                    if any(t in tag for t in ['h','height']) and val:
+                        height = float(val); break
+
+        dia = dia or 80.0
+        height = height or 70.0
+        save_round_pedestal_table(str(dxf_path), top_dia_cm=float(dia), height_cm=float(height))
     else:
         save_generic(str(dxf_path), lines, circles, rects)
 

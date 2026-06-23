@@ -416,3 +416,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: hybrid mode clean_geometry replaced with inline snap/merge/endpoint chain
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3f4da4081ab35bf6cc171ffdb1201b69949819a5
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 3f4da4081ab35bf6cc171ffdb1201b69949819a5
+**Files:** backend-python/app/main.py
+
+**Summary:**
+Commit: Fix: hybrid mode clean_geometry replaced with inline snap/merge/endpoint chain
+Files: backend-python/app/main.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: hybrid mode clean_geometry replaced with inline snap/merge/endpoint chain*
+
+#### Lesson Learned
+
+Commit: Fix: hybrid mode clean_geometry replaced with inline snap/merge/endpoint chain
+Files: backend-python/app/main.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
