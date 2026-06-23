@@ -378,3 +378,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Bug audit: main.py now uses modular backend/ imports, 8 routes verified, all imports patched
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 644310ea259436a7d6298c300248790fe852f0f7
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 644310ea259436a7d6298c300248790fe852f0f7
+**Files:** backend-python/app/main.py
+
+**Summary:**
+Commit: Bug audit: main.py now uses modular backend/ imports, 8 routes verified, all imports patched
+Files: backend-python/app/main.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Bug audit: main.py now uses modular backend/ imports, 8 routes verified, all imports patched*
+
+#### Lesson Learned
+
+Commit: Bug audit: main.py now uses modular backend/ imports, 8 routes verified, all imports patched
+Files: backend-python/app/main.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
