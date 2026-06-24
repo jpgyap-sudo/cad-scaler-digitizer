@@ -834,3 +834,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix nginx: use rewrite rules for /py-api/ → /api/ and /health proxying
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit e3c15f20232e43cfcec31e8dfb9eb34c64f37351
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** e3c15f20232e43cfcec31e8dfb9eb34c64f37351
+**Files:** memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+
+**Summary:**
+Commit: Fix nginx: use rewrite rules for /py-api/ → /api/ and /health proxying
+Files: memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix nginx: use rewrite rules for /py-api/ → /api/ and /health proxying*
+
+#### Lesson Learned
+
+Commit: Fix nginx: use rewrite rules for /py-api/ → /api/ and /health proxying
+Files: memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
