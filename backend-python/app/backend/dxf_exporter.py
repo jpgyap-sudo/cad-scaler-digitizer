@@ -355,7 +355,16 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                 (fx + br_px + 15, (neck_bot_y + base_top_y) / 2),
                 (fx + br_px, (neck_bot_y + base_top_y) / 2))
     _add_mtext(msp, 'FRONT VIEW', (fx - r_px, top_y + 10), 3)
-    generate_title_block(msp, f"Round Pedestal Table %%c{top_dia_cm:.0f} x H{height_cm:.0f}")
+    generate_title_block(msp, f"Round Pedestal Table %%c{top_dia_cm:.0f} x H{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         client="MARCO",
+                         scale=f"1:{2 if sc == 0.5 else int(1/sc)}",
+                         revision="A",
+                         material_notes=[
+                             "WOOD TOP — Solid hardwood, stained finish",
+                             "PEDESTAL BASE — Textured hammered metal, black powder coat",
+                             "NECK RING — Brushed stainless steel",
+                         ])
     return _save(doc, path)
 
 
