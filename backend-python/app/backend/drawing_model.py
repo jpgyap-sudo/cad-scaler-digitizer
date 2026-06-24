@@ -1,0 +1,430 @@
+"""
+Intermediate Drawing Model — JSON representation between AI pipeline and CAD output.
+
+Inspired by:
+- Microsoft maker.js: JSON-based 2D drawing model with paths, models, chains
+- build123d: Operator-driven component composition
+- CADAM: Parametric controls for post-generation adjustment
+
+Architecture:
+  Image → AI pipeline → DrawingModel (JSON) → SVG | DXF | PDF
+
+Benefits:
+- SVG preview in browser (no matplotlib/ezdxf needed)
+- Parametric adjustment without re-running AI
+- Multi-format export from single source
+- Validation before DXF generation
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple, Any, Literal
+import json
+import math
+
+
+# ===== Primitive Types =====
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+    def to_tuple(self) -> Tuple[float, float]:
+        return (self.x, self.y)
+
+    @classmethod
+    def from_tuple(cls, t: Tuple[float, float]) -> "Point":
+        return cls(x=t[0], y=t[1])
+
+
+@dataclass
+class CircleComponent:
+    """Circle primitive."""
+    type: Literal["circle"] = "circle"
+    center: Point = field(default_factory=lambda: Point(0, 0))
+    radius: float = 0.0
+    layer: str = "OBJECT"
+
+
+@dataclass
+class PolygonComponent:
+    """Closed polygon (LWPOLYLINE)."""
+    type: Literal["polygon"] = "polygon"
+    points: List[Point] = field(default_factory=list)
+    layer: str = "OBJECT"
+    name: str = ""  # e.g. "tabletop", "neck", "pedestal_body", "base_foot"
+    linetype: str = "CONTINUOUS"  # CONTINUOUS or HIDDEN
+
+
+@dataclass
+class LineComponent:
+    """Single line segment."""
+    type: Literal["line"] = "line"
+    start: Point = field(default_factory=lambda: Point(0, 0))
+    end: Point = field(default_factory=lambda: Point(0, 0))
+    layer: str = "OBJECT"
+
+
+@dataclass
+class TextComponent:
+    """Single-line text annotation."""
+    type: Literal["text"] = "text"
+    content: str = ""
+    position: Point = field(default_factory=lambda: Point(0, 0))
+    height: float = 3.0
+    layer: str = "MTEXT"
+
+
+@dataclass
+class DimensionComponent:
+    """Dimension with label."""
+    type: Literal["dimension"] = "dimension"
+    p1: Point = field(default_factory=lambda: Point(0, 0))
+    p2: Point = field(default_factory=lambda: Point(0, 0))
+    label: str = ""
+    layer: str = "DIMENSION"
+
+
+@dataclass
+class LeaderComponent:
+    """Leader line with arrowhead and text."""
+    type: Literal["leader"] = "leader"
+    start: Point = field(default_factory=lambda: Point(0, 0))
+    end: Point = field(default_factory=lambda: Point(0, 0))
+    text: str = ""
+    layer: str = "LEADER"
+
+
+@dataclass
+class HatchComponent:
+    """Hatch fill for a polygon."""
+    type: Literal["hatch"] = "hatch"
+    points: List[Point] = field(default_factory=list)
+    pattern: str = "ANSI31"  # ANSI31, ANSI37, etc.
+    scale: float = 0.3
+    angle_deg: float = 45.0
+    layer: str = "HATCH"
+
+
+# ===== View =====
+
+@dataclass
+class View:
+    """A single view (top, front, side) within the drawing."""
+    name: str  # e.g. "TOP VIEW", "FRONT VIEW"
+    circles: List[CircleComponent] = field(default_factory=list)
+    polygons: List[PolygonComponent] = field(default_factory=list)
+    lines: List[LineComponent] = field(default_factory=list)
+    texts: List[TextComponent] = field(default_factory=list)
+    dimensions: List[DimensionComponent] = field(default_factory=list)
+    leaders: List[LeaderComponent] = field(default_factory=list)
+    hatches: List[HatchComponent] = field(default_factory=list)
+
+
+# ===== Title Block =====
+
+@dataclass
+class TitleBlockData:
+    """Title block metadata."""
+    drawing_title: str = "Furniture Drawing"
+    project: str = ""
+    client: str = ""
+    scale: str = "1:1"
+    revision: str = "A"
+    designer: str = "AI CAD Drafter"
+    date: str = ""
+    material_notes: List[str] = field(default_factory=list)
+    general_notes: List[str] = field(default_factory=list)
+
+
+# ===== Full Drawing Model =====
+
+@dataclass
+class DrawingModel:
+    """Complete furniture shop drawing."""
+    furniture_type: str = ""
+    page_width: float = 420.0  # A3 landscape
+    page_height: float = 297.0
+    scale: float = 0.5  # 1:2
+    views: List[View] = field(default_factory=list)
+    title_block: TitleBlockData = field(default_factory=TitleBlockData)
+    known_dimensions: Dict[str, float] = field(default_factory=dict)
+    estimated_components: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Serialize to JSON-compatible dict."""
+        def point_list(pts):
+            return [{"x": p.x, "y": p.y} for p in pts]
+
+        return {
+            "furniture_type": self.furniture_type,
+            "page_width": self.page_width,
+            "page_height": self.page_height,
+            "scale": self.scale,
+            "views": [
+                {
+                    "name": v.name,
+                    "circles": [{"center": {"x": c.center.x, "y": c.center.y},
+                                 "radius": c.radius, "layer": c.layer} for c in v.circles],
+                    "polygons": [{"points": point_list(p.points), "layer": p.layer,
+                                  "name": p.name, "linetype": p.linetype} for p in v.polygons],
+                    "lines": [{"start": {"x": l.start.x, "y": l.start.y},
+                               "end": {"x": l.end.x, "y": l.end.y},
+                               "layer": l.layer} for l in v.lines],
+                    "texts": [{"content": t.content, "position": {"x": t.position.x, "y": t.position.y},
+                               "height": t.height, "layer": t.layer} for t in v.texts],
+                    "dimensions": [{"p1": {"x": d.p1.x, "y": d.p1.y},
+                                    "p2": {"x": d.p2.x, "y": d.p2.y},
+                                    "label": d.label, "layer": d.layer} for d in v.dimensions],
+                    "leaders": [{"start": {"x": l.start.x, "y": l.start.y},
+                                 "end": {"x": l.end.x, "y": l.end.y},
+                                 "text": l.text, "layer": l.layer} for l in v.leaders],
+                    "hatches": [{"points": point_list(h.points), "pattern": h.pattern,
+                                 "scale": h.scale, "angle_deg": h.angle_deg,
+                                 "layer": h.layer} for h in v.hatches],
+                } for v in self.views
+            ],
+            "title_block": {
+                "drawing_title": self.title_block.drawing_title,
+                "project": self.title_block.project,
+                "client": self.title_block.client,
+                "scale": self.title_block.scale,
+                "revision": self.title_block.revision,
+                "designer": self.title_block.designer,
+                "date": self.title_block.date,
+                "material_notes": self.title_block.material_notes,
+                "general_notes": self.title_block.general_notes,
+            },
+            "known_dimensions": self.known_dimensions,
+            "estimated_components": self.estimated_components,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DrawingModel":
+        """Deserialize from JSON dict."""
+        def to_point(d):
+            return Point(x=d["x"], y=d["y"])
+
+        views = []
+        for vd in data.get("views", []):
+            views.append(View(
+                name=vd["name"],
+                circles=[CircleComponent(center=to_point(c["center"]),
+                         radius=c["radius"], layer=c.get("layer", "OBJECT"))
+                         for c in vd.get("circles", [])],
+                polygons=[PolygonComponent(
+                    points=[to_point(p) for p in p["points"]],
+                    layer=p.get("layer", "OBJECT"),
+                    name=p.get("name", ""),
+                    linetype=p.get("linetype", "CONTINUOUS"))
+                    for p in vd.get("polygons", [])],
+                lines=[LineComponent(start=to_point(l["start"]),
+                       end=to_point(l["end"]), layer=l.get("layer", "OBJECT"))
+                       for l in vd.get("lines", [])],
+                texts=[TextComponent(content=t["content"],
+                       position=to_point(t["position"]),
+                       height=t.get("height", 3), layer=t.get("layer", "MTEXT"))
+                       for t in vd.get("texts", [])],
+                dimensions=[DimensionComponent(p1=to_point(d["p1"]),
+                            p2=to_point(d["p2"]), label=d["label"],
+                            layer=d.get("layer", "DIMENSION"))
+                            for d in vd.get("dimensions", [])],
+                leaders=[LeaderComponent(start=to_point(l["start"]),
+                         end=to_point(l["end"]), text=l["text"],
+                         layer=l.get("layer", "LEADER"))
+                         for l in vd.get("leaders", [])],
+                hatches=[HatchComponent(points=[to_point(p) for p in h["points"]],
+                         pattern=h.get("pattern", "ANSI31"),
+                         scale=h.get("scale", 0.3),
+                         angle_deg=h.get("angle_deg", 45),
+                         layer=h.get("layer", "HATCH"))
+                         for h in vd.get("hatches", [])],
+            ))
+
+        tb = data.get("title_block", {})
+        return cls(
+            furniture_type=data.get("furniture_type", ""),
+            page_width=data.get("page_width", 420),
+            page_height=data.get("page_height", 297),
+            scale=data.get("scale", 0.5),
+            views=views,
+            title_block=TitleBlockData(
+                drawing_title=tb.get("drawing_title", ""),
+                project=tb.get("project", ""),
+                client=tb.get("client", ""),
+                scale=tb.get("scale", "1:1"),
+                revision=tb.get("revision", "A"),
+                designer=tb.get("designer", ""),
+                date=tb.get("date", ""),
+                material_notes=tb.get("material_notes", []),
+                general_notes=tb.get("general_notes", []),
+            ),
+            known_dimensions=data.get("known_dimensions", {}),
+            estimated_components=data.get("estimated_components", {}),
+        )
+
+
+# ===== Helper: Build drawing model for round pedestal table =====
+
+def build_round_pedestal_model(
+    top_dia_cm: float = 80.0,
+    height_cm: float = 70.0,
+    base_dia_cm: float = 44.0,
+    neck_dia_cm: float = 22.4,
+    top_thick_cm: float = 4.0,
+    client: str = "",
+    project: str = "Furniture Shop Drawing",
+    material_notes: Optional[List[str]] = None,
+) -> DrawingModel:
+    """
+    Build a complete DrawingModel for a round pedestal table.
+    This replaces the direct DXF generation in save_round_pedestal_table.
+    """
+    sc = 0.5
+    r_px = top_dia_cm / 2 * sc
+    h_px = height_cm * sc
+    thick_px = top_thick_cm * sc
+    nr_px = neck_dia_cm * 0.5 * sc
+    br_px = base_dia_cm * 0.5 * sc
+    y_mid = 180.0
+    cx, cy = 100.0, y_mid
+    fx = 280.0
+
+    # Heights
+    remaining_h = max(1.0, height_cm - top_thick_cm)
+    neck_h_cm = remaining_h * 0.15
+    ped_h_cm = remaining_h * 0.70
+    base_h_cm = remaining_h * 0.15
+    neck_h_px = neck_h_cm * sc
+    ped_h_px = ped_h_cm * sc
+    base_h_px = base_h_cm * sc
+
+    top_y = y_mid + h_px / 2
+    bot_y = y_mid - h_px / 2
+    neck_top_y = top_y - thick_px
+    neck_bot_y = neck_top_y - neck_h_px
+    ped_bot_y = neck_bot_y - ped_h_px
+
+    from datetime import datetime
+    now = datetime.now().strftime('%Y-%m-%d')
+
+    # ===== TOP VIEW =====
+    top_view = View(name="TOP VIEW")
+    top_view.circles.append(CircleComponent(center=Point(cx, cy), radius=r_px, layer="OBJECT"))
+
+    # Radial sunburst lines
+    for i in range(8):
+        angle = 2 * math.pi * i / 8
+        x1, y1 = cx + r_px * 0.15 * math.cos(angle), cy + r_px * 0.15 * math.sin(angle)
+        x2, y2 = cx + r_px * math.cos(angle), cy + r_px * math.sin(angle)
+        top_view.lines.append(LineComponent(start=Point(x1, y1), end=Point(x2, y2), layer="HATCH"))
+
+    # Centerlines
+    ext = max(4.0, r_px * 0.1)
+    top_view.lines.append(LineComponent(start=Point(cx - r_px - ext, cy), end=Point(cx + r_px + ext, cy), layer="CENTER"))
+    top_view.lines.append(LineComponent(start=Point(cx, cy - r_px - ext), end=Point(cx, cy + r_px + ext), layer="CENTER"))
+
+    # Top dim
+    top_view.dimensions.append(DimensionComponent(
+        p1=Point(cx - r_px, cy), p2=Point(cx + r_px, cy),
+        label=f"%%c{top_dia_cm:g} cm", layer="DIMENSION"))
+
+    top_view.texts.append(TextComponent(content="TOP VIEW", position=Point(cx - 15, cy + r_px + ext + 5), height=3, layer="MTEXT"))
+
+    # Top wood grain hatch (approximate as polygon)
+    hatch_pts = [Point(cx + r_px * math.cos(2 * math.pi * i / 64),
+                       cy + r_px * math.sin(2 * math.pi * i / 64)) for i in range(64)]
+    top_view.hatches.append(HatchComponent(points=hatch_pts, pattern="ANSI31", scale=0.3, angle_deg=45, layer="HATCH"))
+
+    # ===== FRONT VIEW =====
+    front_view = View(name="FRONT VIEW")
+
+    # Tabletop
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_px, top_y), Point(fx + r_px, top_y),
+                Point(fx + r_px, neck_top_y), Point(fx - r_px, neck_top_y)],
+        layer="OBJECT", name="tabletop"))
+
+    # Neck
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - nr_px, neck_top_y), Point(fx + nr_px, neck_top_y),
+                Point(fx + nr_px, neck_bot_y), Point(fx - nr_px, neck_bot_y)],
+        layer="OBJECT", name="neck_ring"))
+
+    # Pedestal body
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - nr_px, neck_bot_y), Point(fx + nr_px, neck_bot_y),
+                Point(fx + br_px, ped_bot_y), Point(fx - br_px, ped_bot_y)],
+        layer="OBJECT", name="pedestal_body"))
+
+    # Base foot (estimated, dashed)
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - br_px, ped_bot_y), Point(fx + br_px, ped_bot_y),
+                Point(fx + br_px, bot_y), Point(fx - br_px, bot_y)],
+        layer="OBJECT", name="base_foot", linetype="HIDDEN"))
+
+    # Base dim
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - br_px, bot_y - 5), p2=Point(fx + br_px, bot_y - 5),
+        label=f"%%c{base_dia_cm:g} cm", layer="DIMENSION"))
+
+    # Centerline
+    front_view.lines.append(LineComponent(start=Point(fx, bot_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+
+    # Height dim
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx + r_px + 10, bot_y), p2=Point(fx + r_px + 10, top_y),
+        label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+
+    # Leaders
+    front_view.leaders.append(LeaderComponent(
+        start=Point(fx + br_px + 15, (neck_top_y + top_y) / 2),
+        end=Point(fx + r_px, top_y), text="SOLID WOOD TOP", layer="LEADER"))
+    front_view.leaders.append(LeaderComponent(
+        start=Point(fx + br_px + 15, (neck_bot_y + ped_bot_y) / 2),
+        end=Point(fx + br_px, (neck_bot_y + ped_bot_y) / 2),
+        text="TEXTURED PEDESTAL BASE", layer="LEADER"))
+
+    # Front view label
+    front_view.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - 20, top_y + 10), height=3, layer="MTEXT"))
+
+    # Base estimated label
+    front_view.texts.append(TextComponent(content="(EST.)", position=Point(fx - br_px - 15, (ped_bot_y + bot_y) / 2), height=2, layer="MTEXT"))
+
+    # Column hatch
+    front_view.hatches.append(HatchComponent(
+        points=[Point(fx - nr_px, neck_bot_y), Point(fx + nr_px, neck_bot_y),
+                Point(fx + br_px, ped_bot_y), Point(fx - br_px, ped_bot_y)],
+        pattern="ANSI37", scale=0.3, layer="HATCH"))
+
+    # ===== TITLE BLOCK =====
+    title = TitleBlockData(
+        drawing_title=f"Round Pedestal Table %%c{top_dia_cm:.0f} x H{height_cm:.0f}",
+        project=project,
+        client=client,
+        scale=f"1:{int(2)}",
+        revision="A",
+        designer="AI CAD Drafter",
+        date=now,
+        material_notes=material_notes or [
+            "WOOD TOP — Solid hardwood, stained finish",
+            "PEDESTAL BASE — Textured hammered metal, black powder coat",
+            "NECK RING — Brushed stainless steel",
+        ],
+        general_notes=[
+            "ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED",
+            "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED",
+        ],
+    )
+
+    return DrawingModel(
+        furniture_type="round_pedestal_table",
+        views=[top_view, front_view],
+        title_block=title,
+        known_dimensions={"top_diameter_cm": top_dia_cm, "overall_height_cm": height_cm},
+        estimated_components={
+            "pedestal_diameter_cm": base_dia_cm,
+            "neck_diameter_cm": neck_dia_cm,
+            "top_thickness_cm": top_thick_cm,
+        },
+    )

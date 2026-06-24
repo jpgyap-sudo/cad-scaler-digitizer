@@ -393,6 +393,45 @@ def download(filename: str):
     return FileResponse(path, filename=safe, media_type="application/dxf")
 
 
+@router.get("/preview/svg/{filename}")
+def preview_svg(filename: str):
+    """Generate instant SVG preview from DrawingModel (no matplotlib needed)."""
+    safe = os.path.basename(filename)
+    dxf_path = OUT / safe
+    if not dxf_path.exists():
+        return JSONResponse({"error": "DXF not found"}, status_code=404)
+
+    svg_name = safe.replace('.dxf', '.svg')
+    svg_path = OUT / svg_name
+
+    if not svg_path.exists():
+        try:
+            import ezdxf, re
+            doc = ezdxf.readfile(str(dxf_path))
+            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.svg_exporter import drawing_to_svg
+
+            top_dia, height = 80.0, 70.0
+            for e in doc.modelspace():
+                if e.dxftype() == "DIMENSION":
+                    txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                    nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                    val = float(nums[0]) if nums else None
+                    if val and ("%%c" in txt or "dia" in txt.lower()):
+                        top_dia = val
+                    if val and ("H" in txt or "height" in txt.lower()):
+                        height = val
+
+            model = build_round_pedestal_model(top_dia, height)
+            svg = drawing_to_svg(model)
+            with open(str(svg_path), 'w') as f:
+                f.write(svg)
+        except Exception as e:
+            return JSONResponse({"error": f"SVG failed: {e}"}, status_code=500)
+
+    return FileResponse(svg_path, media_type="image/svg+xml")
+
+
 @router.get("/preview/{filename}")
 def preview_dxf(filename: str):
     """Render DXF as PNG preview image."""
