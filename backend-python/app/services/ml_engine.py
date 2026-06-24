@@ -9,6 +9,11 @@ import os, json, uuid, logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
+import numpy as np
+from PIL import Image
+
+from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
+from app.backend.dimension_validator import align_dimension_to_ocr, validate_scale
 
 logger = logging.getLogger("ml_engine")
 
@@ -110,11 +115,11 @@ class FurnitureClassifier:
                 logger.warning(f"ML predict failed: {e}")
 
         # Rule-based fallback
-        from app.backend.furniture_classifier import classify_furniture
         circles = geometry.get("circles", [])
         lines = geometry.get("lines", [])
         rects = geometry.get("rects", [])
-        result = classify_furniture(ocr_text.split("\n") if ocr_text else [], circles, lines, rects)
+        text_lines = ocr_text.split("\n") if isinstance(ocr_text, str) else (ocr_text or [])
+        result = classify_furniture(text_lines, circles, lines, rects)
         result["ml"] = False
         return result
 
@@ -123,15 +128,53 @@ class DimensionPredictor:
     """Dimension predictor with fallback."""
 
     def predict(self, geometry: dict, ocr_dims: list, furniture_type: str) -> dict:
-        from app.backend.dimension_validator import align_dimension_to_ocr, validate_scale
+        """Predict dimensions from geometry + OCR, respecting furniture type."""
         lines = geometry.get("lines", [])
-        circles = geometry.get("circles", [])
         scale, conf, warns = validate_scale(ocr_dims, lines)
+
+        # Extract real dimensions from OCR
+        dims = {}
+        for d in (ocr_dims or []):
+            tag = (d.get("tag") or "").lower()
+            try:
+                val = float(d.get("value_cm", 0))
+            except (ValueError, TypeError):
+                continue
+            if val <= 0:
+                continue
+            if any(k in tag for k in ["dia", "diameter"]):
+                dims["diameter"] = val
+            elif any(k in tag for k in ["h", "height"]):
+                dims["height"] = val
+            elif any(k in tag for k in ["w", "width"]):
+                dims["width"] = val
+            elif any(k in tag for k in ["d", "depth"]):
+                dims["depth"] = val
+
+        # Fallback defaults per furniture type
+        defaults = {
+            "round_pedestal_table": {"diameter": 80, "height": 70},
+            "rectangular_table": {"width": 120, "depth": 80, "height": 70},
+            "sofa": {"width": 200, "depth": 80, "height": 85},
+            "cabinet": {"width": 100, "depth": 50, "height": 180},
+            "dining_chair": {"width": 45, "depth": 45, "height": 90},
+            "wardrobe": {"width": 120, "depth": 60, "height": 200},
+            "coffee_table": {"width": 100, "depth": 60, "height": 45},
+            "reception_counter": {"width": 180, "depth": 80, "height": 110},
+        }
+        fallback = defaults.get(furniture_type, {"width": 120, "height": 80})
+
+        # Merge OCR dims with fallback (OCR takes priority)
+        for k, v in fallback.items():
+            if k not in dims:
+                dims[k] = v
+
         return {
-            "dimensions": {"diameter": 80, "height": 70, "width": 120, "depth": 80},
+            "dimensions": dims,
             "scale": scale,
             "confidence": conf,
-            "warnings": warns
+            "warnings": warns,
+            "furniture_type": furniture_type,
         }
 
 

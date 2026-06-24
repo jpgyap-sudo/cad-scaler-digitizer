@@ -172,15 +172,20 @@ def _update_preferences_from_correction(user_id: str, correction: Correction):
 
     field = correction.field
 
-    # === Dimension corrections: learn multiplier ===
-    if field.endswith("_cm") and isinstance(correction.old_value, (int, float)) and isinstance(correction.new_value, (int, float)):
-        if correction.old_value and correction.old_value > 0:
-            multiplier = correction.new_value / correction.old_value
-            # Exponential moving average
-            prev = model.dimension_multipliers.get(field, 1.0)
-            alpha = 0.3  # learning rate
-            new_mult = prev * (1 - alpha) + multiplier * alpha
-            model.dimension_multipliers[field] = round(new_mult, 3)
+    # === Dimension corrections: learn multiplier or record measurement ===
+    if field.endswith("_cm") and isinstance(correction.new_value, (int, float)):
+        if correction.new_value and correction.new_value > 0:
+            if isinstance(correction.old_value, (int, float)) and correction.old_value > 0:
+                # Correction: learn multiplier from old→new ratio
+                multiplier = correction.new_value / correction.old_value
+                prev = model.dimension_multipliers.get(field, 1.0)
+                alpha = 0.3  # learning rate
+                new_mult = prev * (1 - alpha) + multiplier * alpha
+                model.dimension_multipliers[field] = round(new_mult, 3)
+            else:
+                # New measurement (no old_value): record as-is with multiplier 1.0
+                if field not in model.dimension_multipliers:
+                    model.dimension_multipliers[field] = 1.0
 
     # === Material corrections: record preferred material ===
     if field.startswith("material_"):
