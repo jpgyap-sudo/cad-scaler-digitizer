@@ -758,3 +758,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix 405: add /py-api/ proxy to nginx.conf (frontend sends /py-api/digitize/hybrid)
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 98f8e2bf79c8500f2a5ef22a46c92a28f17d1009
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 98f8e2bf79c8500f2a5ef22a46c92a28f17d1009
+**Files:** cad.abcx124.xyz.conf,memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+
+**Summary:**
+Commit: Fix 405: add /py-api/ proxy to nginx.conf (frontend sends /py-api/digitize/hybrid)
+Files: cad.abcx124.xyz.conf,memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 405: add /py-api/ proxy to nginx.conf (frontend sends /py-api/digitize/hybrid)*
+
+#### Lesson Learned
+
+Commit: Fix 405: add /py-api/ proxy to nginx.conf (frontend sends /py-api/digitize/hybrid)
+Files: cad.abcx124.xyz.conf,memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
