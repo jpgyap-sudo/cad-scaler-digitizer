@@ -196,14 +196,16 @@ export async function checkEngineHealth(): Promise<boolean> {
  * Get preview PNG URL for a DXF file.
  */
 export function getPreviewUrl(dxfFile: string): string {
-  const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;
-  return `${base}/api/preview/${dxfFile}`;
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  if (base.startsWith('http')) return `${base}/api/preview/${dxfFile}`;
+  return `${window.location.origin}/py-api/preview/${dxfFile}`;
 }
 
 /**
  * Get PDF download URL for a DXF file.
  */
 export function getPdfUrl(dxfFile: string): string {
-  const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;
-  return `${base}/api/preview/pdf/${dxfFile}`;
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  if (base.startsWith('http')) return `${base}/api/preview/pdf/${dxfFile}`;
+  return `${window.location.origin}/py-api/preview/pdf/${dxfFile}`;
 }

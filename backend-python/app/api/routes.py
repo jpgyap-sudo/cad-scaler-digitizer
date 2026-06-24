@@ -165,6 +165,10 @@ async def digitize(
         f_type = normalize_furniture_type(furniture_type or classifier_result['type'])
         confidence = classifier_result.get('confidence', 0.5)
 
+        # Parse user-provided dimensions early (used by Echo Drafter + dispatch)
+        real_w = _parse_float(real_width_cm)
+        real_h = _parse_float(real_height_cm)
+
         # Echo Drafter: record user correction if furniture_type was explicitly overridden
         if furniture_type and furniture_type.strip():
             from app.backend.feedback_learner import record_correction
@@ -187,8 +191,6 @@ async def digitize(
         dxf_path = OUT / dxf_name
         scale, _, warns = validate_scale(corrected_dims, constrained['lines'])
 
-        real_w = _parse_float(real_width_cm)
-        real_h = _parse_float(real_height_cm)
         _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
 
         try:
@@ -317,6 +319,13 @@ async def digitize_hybrid(
         # Use max confidence from both engines
         conf = max(conf, opencv_conf)
 
+        # Merge AI dimensions with OCR dims (must happen BEFORE annotation/segmentation)
+        ai_dims = ai_result.get('dimensions', []) or []
+        merged_dims = corrected_dims + [
+            {'tag': d.get('tag', ''), 'value_cm': float(d.get('value_cm', 0)), 'raw': str(d)}
+            for d in ai_dims if isinstance(d, dict)
+        ]
+
         # --- Annotation classification: separate dimensions from leaders ---
         annotation_result = classify_drawing_annotations(ocr_lines, merged_dims)
         print(f"[HYBRID] Annotations: {len(annotation_result.dimensions)} dims, "
@@ -339,13 +348,6 @@ async def digitize_hybrid(
         segmentation = segment_furniture(ftype, ocr_lines, ai_result, known_dims)
         print(f"[HYBRID] Components: {len(segmentation.present_components())} present, "
               f"{len(segmentation.estimated_components())} estimated")
-
-        # Merge AI dimensions with OCR dims
-        ai_dims = ai_result.get('dimensions', []) or []
-        merged_dims = corrected_dims + [
-            {'tag': d.get('tag', ''), 'value_cm': float(d.get('value_cm', 0)), 'raw': str(d)}
-            for d in ai_dims if isinstance(d, dict)
-        ]
 
         dxf_name = f'{job_id}_hybrid.dxf'
         dxf_path = OUT / dxf_name
