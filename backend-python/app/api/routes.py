@@ -199,3 +199,78 @@ async def export_freecad(file: UploadFile = File(...)):
     if not ok:
         return JSONResponse({"error": "FreeCAD export failed. Install: apt-get install freecad"}, status_code=500)
     return FileResponse(fcstd_path, filename=f"{job_id}_model.FCStd", media_type="application/octet-stream")
+
+
+# ========= ML ENDPOINTS (Phases 1-3) =========
+
+@router.post("/ml/feedback")
+async def ml_feedback(session_id: str = Form(...), predicted_type: str = Form(None),
+                      corrected_type: str = Form(None), confidence: float = Form(0),
+                      verified: bool = Form(False)):
+    """Phase 1: Store user corrections for ML retraining."""
+    from app.services.ml_engine import store_feedback
+    predicted = {"type": predicted_type, "confidence": confidence}
+    corrected = {"type": corrected_type or predicted_type}
+    ok = store_feedback(session_id, predicted, corrected, verified)
+    return JSONResponse({"stored": ok, "total_feedback": count_feedback()})
+
+
+@router.get("/ml/status")
+async def ml_status():
+    """Get ML system status."""
+    from app.services.ml_engine import get_ml_status, get_feedback_count
+    from app.services.ml_engine import should_retrain
+    return JSONResponse({
+        "feedback_samples": get_feedback_count(),
+        "should_retrain": should_retrain(),
+        "status": get_ml_status()
+    })
+
+
+@router.post("/ml/predict")
+async def ml_predict(file: UploadFile = File(...)):
+    """Phase 2: ML prediction with ONNX model (falls back to rule-based)."""
+    import uuid
+    from app.services.ml_engine import furniture_classifier, dimension_predictor, quality_scorer
+    from app.backend.vision import load_image, preprocess, detect_lines, detect_circles, detect_rectangles
+    from app.backend.ocr import ocr_dimensions
+
+    job_id = str(uuid.uuid4())
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    img_path = UPLOAD / f"{job_id}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    # Extract features
+    ocr_lines, ocr_dims = ocr_dimensions(str(img_path))
+    img, gray = load_image(str(img_path))
+    binary = preprocess(gray)
+    geometry = {"lines": detect_lines(binary), "circles": detect_circles(gray), "rects": detect_rectangles(binary)}
+
+    # Predict
+    furn_pred = furniture_classifier.predict(str(img_path), "\n".join(ocr_lines), geometry)
+    dim_pred = dimension_predictor.predict(geometry, ocr_dims, furn_pred["type"])
+
+    try: os.unlink(str(img_path))
+    except: pass
+
+    return JSONResponse({
+        "job_id": job_id,
+        "furniture": furn_pred,
+        "dimensions": dim_pred,
+        "ml_available": furn_pred.get("ml", False)
+    })
+
+
+@router.post("/ml/retrain")
+async def ml_retrain():
+    """Phase 3: Trigger retraining (admin)."""
+    from app.services.ml_engine import retrain_models
+    result = retrain_models()
+    return JSONResponse(result)
+
+
+def count_feedback() -> int:
+    """Count feedback JSONL entries."""
+    from app.services.ml_engine import get_feedback_count
+    return get_feedback_count()
