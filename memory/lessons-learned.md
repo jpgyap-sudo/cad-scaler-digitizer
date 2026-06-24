@@ -910,3 +910,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] DXF QC audit fix: proper pedestal proportions (wide base, narrow neck), radial sunburst veneer (24 lines), %%c diameter 
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 4dfdd581c97a586c7404655518d5888804f81a4e
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 4dfdd581c97a586c7404655518d5888804f81a4e
+**Files:** backend-python/app/backend/dxf_exporter.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: DXF QC audit fix: proper pedestal proportions (wide base, narrow neck), radial sunburst veneer (24 lines), %%c diameter symbol, material callout leaders (WOOD TOP, TEXTURED PEDESTAL BASE)
+Files: backend-python/app/backend/dxf_exporter.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: DXF QC audit fix: proper pedestal proportions (wide base, narrow neck), radial sunburst veneer (24 lines), %%c diameter symbol, material callout leaders (WOOD TOP, TEXTURED PEDESTAL BASE)*
+
+#### Lesson Learned
+
+Commit: DXF QC audit fix: proper pedestal proportions (wide base, narrow neck), radial sunburst veneer (24 lines), %%c diameter symbol, material callout leaders (WOOD TOP, TEXTURED PEDESTAL BASE)
+Files: backend-python/app/backend/dxf_exporter.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
