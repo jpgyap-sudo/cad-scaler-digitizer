@@ -568,3 +568,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix Docker: replace npm ci with npm install, remove obsolete version from compose
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 302ec152b88077d806b4c152115d752f2f2f2457
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 302ec152b88077d806b4c152115d752f2f2f2457
+**Files:** Dockerfile.frontend,docker-compose.yml
+
+**Summary:**
+Commit: Fix Docker: replace npm ci with npm install, remove obsolete version from compose
+Files: Dockerfile.frontend,docker-compose.yml
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix Docker: replace npm ci with npm install, remove obsolete version from compose*
+
+#### Lesson Learned
+
+Commit: Fix Docker: replace npm ci with npm install, remove obsolete version from compose
+Files: Dockerfile.frontend,docker-compose.yml
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
