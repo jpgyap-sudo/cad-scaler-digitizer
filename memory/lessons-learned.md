@@ -796,3 +796,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix 404: nginx.conf /py-api/ proxy to Python /api/ endpoints
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 412e1e39a7168bf6d151e46c0c4ca07db1358393
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 412e1e39a7168bf6d151e46c0c4ca07db1358393
+**Files:** memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+
+**Summary:**
+Commit: Fix 404: nginx.conf /py-api/ proxy to Python /api/ endpoints
+Files: memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 404: nginx.conf /py-api/ proxy to Python /api/ endpoints*
+
+#### Lesson Learned
+
+Commit: Fix 404: nginx.conf /py-api/ proxy to Python /api/ endpoints
+Files: memory/lesson-index.jsonl,memory/lessons-learned.md,nginx.conf
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
