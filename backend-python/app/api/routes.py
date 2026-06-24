@@ -1,6 +1,7 @@
 """API routes for CAD digitizer."""
 from fastapi import APIRouter, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, HTMLResponse
+from typing import List
 from pathlib import Path
 import shutil, uuid, os, tempfile
 
@@ -14,7 +15,7 @@ from app.backend.furniture_component_segmenter import segment_furniture
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
     save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
-    save_wardrobe, save_reception_counter
+    save_wardrobe, save_reception_counter, save_bed_headboard
 )
 
 router = APIRouter()
@@ -154,11 +155,14 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
             save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'bed_headboard':
-        print("EXPORTER USED: save_generic (bed_headboard fallback)")
+        print("EXPORTER USED: save_bed_headboard")
         w = real_w or _dim(['w', 'width'], 160.0)
         h = real_h or _dim(['h', 'height'], 120.0)
-        # Fall through to generic until bed template is added
-        save_generic(str(dxf_path), [], [], [])
+        try:
+            save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_bed_headboard FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     else:
         print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
@@ -857,6 +861,93 @@ async def brain_materials(component: str = "tabletop", furniture_type: str = Non
     from app.backend.brain_sync import get_material_suggestions
     suggestions = get_material_suggestions(component, furniture_type)
     return JSONResponse({"component": component, "suggestions": suggestions})
+
+
+# ========= BATCH CONVERT =========
+
+@router.post("/batch")
+async def batch_convert(files: List[UploadFile] = File(...)):
+    """Upload multiple images, generate DXF+SVG for each, return ZIP."""
+    import zipfile, io, uuid
+    buf = io.BytesIO()
+    results = []
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for file in files:
+            try:
+                job_id = str(uuid.uuid4())
+                img_path = UPLOAD / f"{job_id}_{file.filename}"
+                with img_path.open("wb") as f:
+                    f.write(await file.read())
+                # Quick digitize (OpenCV only for batch — fast)
+                from app.backend.vision import detect_primitives
+                from app.backend.ocr import extract_ocr_dimensions
+                from app.backend.geometry_cleanup import process_constraints
+                from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
+                from app.backend.dimension_validator import validate_scale, correct_dimensions
+
+                geom = detect_primitives(str(img_path))
+                ocr_dims, ocr_lines = extract_ocr_dimensions(str(img_path))
+                constrained = process_constraints(geom["lines"], geom["circles"], geom.get("rects", []))
+                classifier = classify_furniture(ocr_lines, constrained["circles"], constrained["lines"], constrained.get("rects"))
+                ftype = normalize_furniture_type(classifier["type"])
+                corrected_dims, _ = correct_dimensions(ocr_dims, constrained["lines"])
+
+                dxf_name = f"{job_id}_batch.dxf"
+                dxf_path = OUT / dxf_name
+                _dispatch_furniture(ftype, dxf_path, corrected_dims, 0.0, 0.0)
+                # Add DXF to ZIP
+                if dxf_path.exists():
+                    zf.write(str(dxf_path), dxf_name)
+                # Cleanup
+                try: os.unlink(str(img_path))
+                except: pass
+                results.append({"file": file.filename, "furniture_type": ftype, "dxf": dxf_name, "status": "ok"})
+            except Exception as e:
+                results.append({"file": file.filename, "status": "error", "error": str(e)[:100]})
+
+    buf.seek(0)
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename=batch_convert_{len(files)}_files.zip"})
+
+
+# ========= SHARE LINK =========
+
+@router.get("/view/{filename}")
+def view_drawing(filename: str):
+    """View a drawing as SVG — shareable URL."""
+    safe = os.path.basename(filename)
+    svg_path = OUT / safe.replace('.dxf', '.svg').replace('.json', '.svg')
+
+    if not svg_path.exists():
+        # Try generate from DXF
+        dxf_path = OUT / safe.replace('.svg', '.dxf')
+        if dxf_path.exists():
+            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.svg_exporter import drawing_to_svg
+            import ezdxf, re
+            doc = ezdxf.readfile(str(dxf_path))
+            top_dia, height = 80.0, 70.0
+            for e in doc.modelspace():
+                if e.dxftype() == "DIMENSION":
+                    txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                    nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                    val = float(nums[0]) if nums else None
+                    if val and ("%%c" in txt or "dia" in txt.lower()): top_dia = val
+                    if val and ("H" in txt or "height" in txt.lower()): height = val
+            model = build_round_pedestal_model(top_dia, height)
+            svg = drawing_to_svg(model)
+            with open(str(svg_path), 'w') as f:
+                f.write(svg)
+
+    if not svg_path.exists():
+        return JSONResponse({"error": "Drawing not found"}, status_code=404)
+
+    svg = svg_path.read_text()
+    # Embed SVG directly as HTML for instant viewing
+    return HTMLResponse(f"""<!DOCTYPE html><html><head><title>CAD Drawing — {safe}</title>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<style>body{{margin:0;display:flex;justify-content:center;background:#f0f0f0}}</style></head>
+<body>{svg}</body></html>""")
 
 
 # ========= STYLE PRESETS (Scan2CAD-inspired) =========

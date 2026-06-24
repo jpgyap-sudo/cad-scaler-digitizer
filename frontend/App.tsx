@@ -7,6 +7,7 @@ import {
 import TechStackModal from './components/TechStackModal';
 import ChatBox from './components/ChatBox';
 import SliderPanel from './components/SliderPanel';
+import BrainStats from './components/BrainStats';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -638,6 +639,13 @@ const App: React.FC = () => {
                 </div>
               )}
 
+              {/* BRAIN STATS */}
+              {cadEngineResult && !isProcessing && (
+                <div className="p-4 border-t border-slate-200">
+                  <BrainStats />
+                </div>
+              )}
+
               {/* SLIDERS */}
               {cadEngineResult && !isProcessing && cadEngineResult.dxf_file && (
                 <div className="p-4 border-t border-slate-200">
@@ -734,6 +742,13 @@ const App: React.FC = () => {
                             Full Preview
                           </a>
                         </div>
+                        <a
+                          href={`/py-api/view/${cadEngineResult.dxf_file}`}
+                          target="_blank"
+                          className="block text-center bg-purple-600 text-white text-xs py-2 rounded-lg hover:bg-purple-700 font-medium mt-2"
+                        >
+                          Share View (SVG)
+                        </a>
                         {cadEngineResult.preview_svg && (
                           <div className="mt-2">
                             <a

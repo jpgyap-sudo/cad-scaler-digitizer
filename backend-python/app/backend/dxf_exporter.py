@@ -708,6 +708,39 @@ def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, count
     return _save(doc, path)
 
 
+def save_bed_headboard(path, width_cm=160, height_cm=120, _validation_result=None):
+    """Bed headboard with headboard panel, legs, and dimensions."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.4
+    w = width_cm * sc
+    h = height_cm * sc
+    fx = (420 - w) / 2
+    floor_y = 30.0
+    top_y = floor_y + h
+    leg_w = 6.0 * sc
+    panel_h = h * 0.75
+    panel_top_y = top_y
+    panel_bot_y = top_y - panel_h
+
+    # Headboard panel
+    _add_polyline(msp, [(fx, panel_bot_y), (fx + w, panel_bot_y),
+                        (fx + w, panel_top_y), (fx, panel_top_y)], True)
+    _add_hatch_polygon(msp, [(fx, panel_bot_y), (fx + w, panel_bot_y),
+                              (fx + w, panel_top_y), (fx, panel_top_y)], 'ANSI31', 0.5)
+    # Legs
+    for lx in [fx + 5, fx + w - leg_w - 5]:
+        _add_polyline(msp, [(lx, floor_y), (lx + leg_w, floor_y),
+                            (lx + leg_w, panel_bot_y), (lx, panel_bot_y)], True)
+    _add_dimension(msp, (fx + w + 8, floor_y), (fx + w + 8, top_y),
+                   (fx + w + 16, (floor_y + top_y) / 2), f'H = {height_cm:g} cm')
+    _add_dimension(msp, (fx, floor_y - 8), (fx + w, floor_y - 8),
+                   (fx, floor_y - 14), f'W = {width_cm:g} cm')
+    _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 10), 3)
+    generate_title_block(msp, f"Bed Headboard {width_cm:.0f}x{height_cm:.0f}")
+    return _save(doc, path)
+
+
 def save_generic(path, lines, circles, rects=None):
     """Generic fallback — draws raw detected geometry on standard layers."""
     doc = setup_doc()
