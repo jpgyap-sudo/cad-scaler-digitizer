@@ -1328,3 +1328,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix hybrid dispatch: use OpenCV classify_furniture() as fallback when AI returns empty. Add debug logging.
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5898cbf1f898951c4773f8d7230b3e0f598c5a35
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 5898cbf1f898951c4773f8d7230b3e0f598c5a35
+**Files:** backend-python/app/api/routes.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix hybrid dispatch: use OpenCV classify_furniture() as fallback when AI returns empty. Add debug logging.
+Files: backend-python/app/api/routes.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix hybrid dispatch: use OpenCV classify_furniture() as fallback when AI returns empty. Add debug logging.*
+
+#### Lesson Learned
+
+Commit: Fix hybrid dispatch: use OpenCV classify_furniture() as fallback when AI returns empty. Add debug logging.
+Files: backend-python/app/api/routes.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
