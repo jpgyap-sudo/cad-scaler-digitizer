@@ -1366,3 +1366,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix extents: robust $EXTMIN/$EXTMAX setter with tuple/Vec3 fallback. Fix hybrid fallback chain.
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 28860a52075aea315c9b425fa62c7d50dfc70776
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 28860a52075aea315c9b425fa62c7d50dfc70776
+**Files:** backend-python/app/backend/extents_updater.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix extents: robust $EXTMIN/$EXTMAX setter with tuple/Vec3 fallback. Fix hybrid fallback chain.
+Files: backend-python/app/backend/extents_updater.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix extents: robust $EXTMIN/$EXTMAX setter with tuple/Vec3 fallback. Fix hybrid fallback chain.*
+
+#### Lesson Learned
+
+Commit: Fix extents: robust $EXTMIN/$EXTMAX setter with tuple/Vec3 fallback. Fix hybrid fallback chain.
+Files: backend-python/app/backend/extents_updater.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
