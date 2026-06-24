@@ -376,8 +376,26 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     return _save(doc, path)
 
 
-def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_thickness_cm=6):
+def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_thickness_cm=6,
+                            _validation_result=None):
     """Rectangular table with tabletop, 4 legs, stretchers, and dimensions."""
+    # --- Anti-hallucination helpers ---
+    vr = _validation_result
+    if vr is None:
+        try:
+            from app.backend.anti_hallucination_validator import validate_furniture_drawing
+            vr = validate_furniture_drawing("rectangular_table")
+        except ImportError:
+            vr = None
+    def _visible(name):
+        if vr and name in vr.components:
+            return vr.components[name].visibility != "UNKNOWN"
+        return True
+    def _is_estimated(name):
+        if vr and name in vr.components:
+            return vr.components[name].visibility == "ESTIMATED"
+        return False
+
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.4
@@ -411,18 +429,25 @@ def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_th
 
     # Tabletop rectangle
     _add_polyline(msp, [(fx - w2, top_y - top_thick), (fx + w2, top_y - top_thick),
-                        (fx + w2, top_y), (fx - w2, top_y)], True)
+                         (fx + w2, top_y), (fx - w2, top_y)], True)
     _add_hatch_polygon(msp, [(fx - w2, top_y - top_thick), (fx + w2, top_y - top_thick),
-                             (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5)
-    # Front two legs (visible)
-    leg_y_top = top_y - top_thick
-    for lx in [fx - w2, fx + w2 - lt]:
-        _add_polyline(msp, [(lx, floor_y), (lx + lt, floor_y),
-                            (lx + lt, leg_y_top), (lx, leg_y_top)], True)
-    # Back two legs (hidden lines)
-    for lx in [fx - w2 + lt * 1.5, fx + w2 - lt * 2.5]:
-        _add_line(msp, (lx, floor_y), (lx, leg_y_top), 'HIDDEN')
-        _add_line(msp, (lx + lt, floor_y), (lx + lt, leg_y_top), 'HIDDEN')
+                              (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5)
+    # Front two legs (visible) — skip if estimated
+    if _visible("legs"):
+        leg_layer = 'HIDDEN' if _is_estimated("legs") else 'OBJECT'
+        leg_y_top = top_y - top_thick
+        for lx in [fx - w2, fx + w2 - lt]:
+            _add_polyline(msp, [(lx, floor_y), (lx + lt, floor_y),
+                                 (lx + lt, leg_y_top), (lx, leg_y_top)], True, leg_layer)
+        if _is_estimated("legs"):
+            _add_text(msp, "(EST.)", (fx - w2 - 12, (floor_y + leg_y_top) / 2), 2, 'MTEXT')
+    # Back two legs (hidden lines) — skip if unknown
+    if _visible("legs") and not _is_estimated("legs"):
+        for lx in [fx - w2 + lt * 1.5, fx + w2 - lt * 2.5]:
+            _add_line(msp, (lx, floor_y), (lx, leg_y_top), 'HIDDEN')
+            _add_line(msp, (lx + lt, floor_y), (lx + lt, leg_y_top), 'HIDDEN')
+    else:
+        leg_y_top = top_y - top_thick  # ensure defined
 
     # Dimensions
     _add_dimension(msp, (fx + w2 + 8, floor_y), (fx + w2 + 8, top_y),

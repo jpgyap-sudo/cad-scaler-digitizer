@@ -428,3 +428,91 @@ def build_round_pedestal_model(
             "top_thickness_cm": top_thick_cm,
         },
     )
+
+
+def build_rectangular_table_model(
+    width_cm: float = 120.0,
+    depth_cm: float = 80.0,
+    height_cm: float = 70.0,
+    leg_thickness_cm: float = 6.0,
+    client: str = "",
+    project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build a complete DrawingModel for a rectangular table."""
+    sc = 0.4
+    w = width_cm * sc
+    d = depth_cm * sc
+    h = height_cm * sc
+    w2, d2 = w / 2, d / 2
+    ox, y_mid = 100.0, 180.0
+    lt = leg_thickness_cm * sc
+    fx = 280.0
+    floor_y = 30.0
+    top_y = floor_y + h
+    top_thick = max(lt * 0.8, 2.0)
+    from datetime import datetime
+    now = datetime.now().strftime('%Y-%m-%d')
+
+    # ===== TOP VIEW =====
+    top_view = View(name="TOP VIEW")
+    top_view.polygons.append(PolygonComponent(
+        points=[Point(ox - w2, y_mid - d2), Point(ox + w2, y_mid - d2),
+                Point(ox + w2, y_mid + d2), Point(ox - w2, y_mid + d2)],
+        layer="OBJECT", name="tabletop"))
+    for lx, ly in [(ox - w2, y_mid - d2), (ox + w2 - lt, y_mid - d2),
+                   (ox - w2, y_mid + d2 - lt), (ox + w2 - lt, y_mid + d2 - lt)]:
+        top_view.polygons.append(PolygonComponent(
+            points=[Point(lx, ly), Point(lx + lt, ly),
+                    Point(lx + lt, ly + lt), Point(lx, ly + lt)],
+            layer="HIDDEN", linetype="HIDDEN", name="leg_footprint"))
+    top_view.lines.append(LineComponent(start=Point(ox - w2 - 5, y_mid), end=Point(ox + w2 + 5, y_mid), layer="CENTER"))
+    top_view.lines.append(LineComponent(start=Point(ox, y_mid - d2 - 5), end=Point(ox, y_mid + d2 + 5), layer="CENTER"))
+    top_view.dimensions.append(DimensionComponent(
+        p1=Point(ox - w2, y_mid + d2 + 6), p2=Point(ox + w2, y_mid + d2 + 6),
+        label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    top_view.dimensions.append(DimensionComponent(
+        p1=Point(ox + w2 + 6, y_mid - d2), p2=Point(ox + w2 + 6, y_mid + d2),
+        label=f"D = {depth_cm:g} cm", layer="DIMENSION"))
+    top_view.texts.append(TextComponent(content="TOP VIEW", position=Point(ox - 15, y_mid + d2 + 22), height=3, layer="MTEXT"))
+
+    # ===== FRONT VIEW =====
+    front_view = View(name="FRONT VIEW")
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - w2, top_y - top_thick), Point(fx + w2, top_y - top_thick),
+                Point(fx + w2, top_y), Point(fx - w2, top_y)],
+        layer="OBJECT", name="tabletop"))
+    front_view.hatches.append(HatchComponent(
+        points=[Point(fx - w2, top_y - top_thick), Point(fx + w2, top_y - top_thick),
+                Point(fx + w2, top_y), Point(fx - w2, top_y)],
+        pattern="ANSI31", scale=0.5, layer="HATCH"))
+    leg_y_top = top_y - top_thick
+    for lx in [fx - w2, fx + w2 - lt]:
+        front_view.polygons.append(PolygonComponent(
+            points=[Point(lx, floor_y), Point(lx + lt, floor_y),
+                    Point(lx + lt, leg_y_top), Point(lx, leg_y_top)],
+            layer="OBJECT", name="leg"))
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y),
+        label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8),
+        label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    front_view.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    front_view.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+
+    title = TitleBlockData(
+        drawing_title=f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+        project=project, client=client,
+        scale=f"1:{int(2.5)}", revision="A",
+        designer="AI CAD Drafter", date=now,
+        material_notes=["WOOD TOP — Solid hardwood, stained finish"],
+        general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM)", "TOLERANCES: +/- 2mm"],
+    )
+
+    return DrawingModel(
+        furniture_type="rectangular_table",
+        views=[top_view, front_view],
+        title_block=title,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={"leg_thickness_cm": leg_thickness_cm},
+    )
