@@ -629,6 +629,7 @@ const App: React.FC = () => {
                   <SliderPanel
                     dxfFile={cadEngineResult.dxf_file}
                     initialDims={currentDims}
+                    furnitureType={cadEngineResult?.furniture?.type}
                     onAdjusted={(dims, svgUrl) => {
                       setCurrentDims(dims);
                       setSvgPreviewUrl(svgUrl);

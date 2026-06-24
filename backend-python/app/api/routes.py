@@ -512,10 +512,13 @@ async def adjust_dimensions(
     base_diameter_cm: float = Form(None),
     neck_diameter_cm: float = Form(None),
     top_thickness_cm: float = Form(None),
+    width_cm: float = Form(None),
+    depth_cm: float = Form(None),
+    leg_thickness_cm: float = Form(None),
 ):
     """
-    Adjust dimensions of an existing DXF and regenerate SVG preview.
-    No AI re-run needed — uses DrawingModel for instant re-render.
+    Adjust dimensions of an existing DXF and regenerate SVG+DXF preview.
+    Supports round_pedestal_table and rectangular_table.
     """
     safe = os.path.basename(dxf_file)
     dxf_path = OUT / safe
@@ -525,25 +528,72 @@ async def adjust_dimensions(
     try:
         import ezdxf, re
         doc = ezdxf.readfile(str(dxf_path))
-        from app.backend.drawing_model import build_round_pedestal_model
         from app.backend.svg_exporter import drawing_to_svg
 
-        # Read current dimensions from DXF
-        top_dia, height = 80.0, 70.0
-        base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
+        # Detect furniture type from DXF content
+        ftype = "round_pedestal_table"  # default
+        has_circle = any(e.dxftype() == "CIRCLE" for e in doc.modelspace())
+        dim_texts = []
         for e in doc.modelspace():
             if e.dxftype() == "DIMENSION":
                 txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                dim_texts.append(txt)
+        all_txt = " ".join(dim_texts).lower()
+        if not has_circle and any(k in all_txt for k in ["w =", "width"]):
+            ftype = "rectangular_table"
+
+        if ftype == "rectangular_table":
+            # Rectangular table adjustment
+            w, h, d, lt = 120.0, 70.0, 80.0, 6.0
+            for txt in dim_texts:
                 nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
                 val = float(nums[0]) if nums else None
                 if val:
-                    if "%%c" in txt or "dia" in txt.lower():
-                        if "80" in txt or (val > 50 and val < 100):
-                            top_dia = val
-                        else:
-                            base_dia = val
-                    if "H" in txt or "height" in txt.lower():
-                        height = val
+                    if "w =" in txt.lower() or "width" in txt.lower():
+                        w = val
+                    elif "h =" in txt.lower() or "height" in txt.lower():
+                        h = val
+                    elif "d =" in txt.lower() or "depth" in txt.lower():
+                        d = val
+            if width_cm is not None: w = width_cm
+            if overall_height_cm is not None: h = overall_height_cm
+            if depth_cm is not None: d = depth_cm
+            if leg_thickness_cm is not None: lt = leg_thickness_cm
+
+            from app.backend.dxf_exporter import save_rectangular_table
+            try:
+                save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_thickness_cm=lt)
+            except Exception as e:
+                print(f"[Adjust] Rect DXF regen failed: {e}")
+
+            from app.backend.drawing_model import build_rectangular_table_model
+            model = build_rectangular_table_model(w, d, h, lt)
+            svg = drawing_to_svg(model)
+            svg_path = OUT / safe.replace('.dxf', '.svg')
+            with open(str(svg_path), 'w') as f:
+                f.write(svg)
+
+            return JSONResponse({
+                "furniture_type": "rectangular_table",
+                "dxf_file": safe,
+                "preview_svg": f"/api/preview/svg/{safe}",
+                "dimensions": {"width_cm": w, "depth_cm": d, "overall_height_cm": h, "leg_thickness_cm": lt},
+            })
+
+        # Round pedestal table (original flow)
+        top_dia, height = 80.0, 70.0
+        base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
+        for txt in dim_texts:
+            nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+            val = float(nums[0]) if nums else None
+            if val:
+                if "%%c" in txt or "dia" in txt.lower():
+                    if val > 50:
+                        top_dia = val
+                    else:
+                        base_dia = val
+                if "h =" in txt.lower() or "height" in txt.lower():
+                    height = val
 
         # Apply adjustments
         if top_diameter_cm is not None:

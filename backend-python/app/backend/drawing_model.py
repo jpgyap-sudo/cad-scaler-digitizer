@@ -516,3 +516,126 @@ def build_rectangular_table_model(
         known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
         estimated_components={"leg_thickness_cm": leg_thickness_cm},
     )
+
+
+def build_cabinet_model(
+    width_cm: float = 100.0,
+    depth_cm: float = 50.0,
+    height_cm: float = 180.0,
+    client: str = "",
+    project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build DrawingModel for a cabinet/wardrobe."""
+    sc = 0.3
+    w = width_cm * sc
+    h = height_cm * sc
+    fx = (420 - w) / 2
+    floor_y = 50.0
+    top_y = floor_y + h
+    w2 = w / 2
+    margin = w * 0.05
+    from datetime import datetime
+    now = datetime.now().strftime('%Y-%m-%d')
+
+    front_view = View(name="FRONT VIEW")
+    # Outer body
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx, floor_y), Point(fx + w, floor_y),
+                Point(fx + w, top_y), Point(fx, top_y)],
+        layer="OBJECT", name="cabinet_body"))
+    # Double doors
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx + margin, floor_y + margin), Point(fx + w2 - 2, floor_y + margin),
+                Point(fx + w2 - 2, top_y - margin), Point(fx + margin, top_y - margin)],
+        layer="OBJECT", name="door_left"))
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx + w2 + 2, floor_y + margin), Point(fx + w - margin, floor_y + margin),
+                Point(fx + w - margin, top_y - margin), Point(fx + w2 + 2, top_y - margin)],
+        layer="OBJECT", name="door_right"))
+    # Handles
+    mid_y = (top_y + floor_y) / 2
+    front_view.lines.append(LineComponent(start=Point(fx + w2 - 6, mid_y - 5), end=Point(fx + w2 - 6, mid_y + 5), layer="OBJECT"))
+    front_view.lines.append(LineComponent(start=Point(fx + w2 + 6, mid_y - 5), end=Point(fx + w2 + 6, mid_y + 5), layer="OBJECT"))
+    # Dimensions
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y),
+        label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8),
+        label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    front_view.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
+
+    title = TitleBlockData(
+        drawing_title=f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+        project=project, client=client, scale=f"1:{int(3.3)}", revision="A",
+        designer="AI CAD Drafter", date=now,
+        general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM)"],
+    )
+
+    return DrawingModel(
+        furniture_type="cabinet",
+        views=[front_view], title_block=title,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+    )
+
+
+def build_sofa_model(
+    width_cm: float = 200.0,
+    depth_cm: float = 80.0,
+    height_cm: float = 85.0,
+    client: str = "",
+    project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build DrawingModel for a sofa."""
+    sc = 0.3
+    w = width_cm * sc
+    h = height_cm * sc
+    fx = (420 - w) / 2
+    floor_y = 50.0
+    top_y = floor_y + h
+    seat_y = floor_y + h * 0.55
+    arm_h = h * 0.4
+    from datetime import datetime
+    now = datetime.now().strftime('%Y-%m-%d')
+
+    front_view = View(name="FRONT VIEW")
+    # Seat base
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx, floor_y), Point(fx + w, floor_y),
+                Point(fx + w, seat_y), Point(fx, seat_y)],
+        layer="OBJECT", name="seat_base"))
+    # Backrest
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx, seat_y), Point(fx + w, seat_y),
+                Point(fx + w, top_y - arm_h), Point(fx, top_y - arm_h)],
+        layer="OBJECT", name="backrest"))
+    # Armrests
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - 5, seat_y - 5), Point(fx + 10, seat_y - 5),
+                Point(fx + 10, top_y), Point(fx - 5, top_y)],
+        layer="OBJECT", name="arm_left"))
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx + w - 10, seat_y - 5), Point(fx + w + 5, seat_y - 5),
+                Point(fx + w + 5, top_y), Point(fx + w - 10, top_y)],
+        layer="OBJECT", name="arm_right"))
+    # Dimensions
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y),
+        label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8),
+        label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    front_view.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
+
+    title = TitleBlockData(
+        drawing_title=f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+        project=project, client=client, scale=f"1:{int(3.3)}", revision="A",
+        designer="AI CAD Drafter", date=now,
+        general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM)"],
+    )
+
+    return DrawingModel(
+        furniture_type="sofa",
+        views=[front_view], title_block=title,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+    )

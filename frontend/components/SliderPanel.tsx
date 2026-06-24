@@ -13,11 +13,12 @@ interface DimSlider {
 interface SliderPanelProps {
   dxfFile: string;
   initialDims: Record<string, number>;
+  furnitureType?: string;
   onAdjusted: (dims: Record<string, number>, svgUrl: string) => void;
   className?: string;
 }
 
-const SLIDERS: DimSlider[] = [
+const ROUND_SLIDERS: DimSlider[] = [
   { key: 'top_diameter_cm', label: 'Top Diameter', min: 40, max: 160, step: 1, unit: 'cm' },
   { key: 'overall_height_cm', label: 'Overall Height', min: 30, max: 150, step: 1, unit: 'cm' },
   { key: 'base_diameter_cm', label: 'Base Diameter', min: 20, max: 100, step: 1, unit: 'cm' },
@@ -25,7 +26,15 @@ const SLIDERS: DimSlider[] = [
   { key: 'top_thickness_cm', label: 'Top Thickness', min: 2, max: 12, step: 0.5, unit: 'cm' },
 ];
 
-const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, onAdjusted, className = '' }) => {
+const RECT_SLIDERS: DimSlider[] = [
+  { key: 'width_cm', label: 'Width', min: 60, max: 300, step: 1, unit: 'cm' },
+  { key: 'depth_cm', label: 'Depth', min: 40, max: 150, step: 1, unit: 'cm' },
+  { key: 'overall_height_cm', label: 'Height', min: 30, max: 150, step: 1, unit: 'cm' },
+  { key: 'leg_thickness_cm', label: 'Leg Thickness', min: 3, max: 15, step: 0.5, unit: 'cm' },
+];
+
+const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitureType, onAdjusted, className = '' }) => {
+  const sliders = furnitureType?.includes('rectangular') ? RECT_SLIDERS : ROUND_SLIDERS;
   const [dims, setDims] = useState<Record<string, number>>(initialDims);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +51,7 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, onAdjus
     try {
       const formData = new FormData();
       formData.append('dxf_file', dxfFile);
-      for (const s of SLIDERS) {
+      for (const s of sliders) {
         if (dims[s.key] !== undefined) {
           formData.append(s.key, String(dims[s.key]));
         }
@@ -73,7 +82,7 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, onAdjus
       </div>
 
       <div className="space-y-3">
-        {SLIDERS.map(s => (
+        {sliders.map(s => (
           <div key={s.key} className="space-y-1">
             <div className="flex justify-between text-[10px] text-slate-500">
               <span>{s.label}</span>
