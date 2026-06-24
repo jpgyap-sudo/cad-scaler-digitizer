@@ -450,6 +450,18 @@ const App: React.FC = () => {
                 <span>Start Digitizing</span>
               </button>
             )}
+
+            {/* ChatBox + BrainStats on upload screen too */}
+            <div className="mt-8 w-full max-w-md">
+              <div className="p-4 border border-slate-200 rounded-xl bg-white">
+                <BrainStats />
+              </div>
+              <div className="mt-3 p-4 border border-slate-200 rounded-xl bg-white">
+                <ChatBox
+                  onRenderRequest={handleChatRender}
+                />
+              </div>
+            </div>
           </div>
         ) : (
           // === RESULT SCREEN ===
