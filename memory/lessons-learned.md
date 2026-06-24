@@ -682,3 +682,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix Docker: change frontend port to 8080 (80 in use by nginx)
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 2be7d3988a5b67d011f160066417fa28289d613d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 2be7d3988a5b67d011f160066417fa28289d613d
+**Files:** docker-compose.yml,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix Docker: change frontend port to 8080 (80 in use by nginx)
+Files: docker-compose.yml,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix Docker: change frontend port to 8080 (80 in use by nginx)*
+
+#### Lesson Learned
+
+Commit: Fix Docker: change frontend port to 8080 (80 in use by nginx)
+Files: docker-compose.yml,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

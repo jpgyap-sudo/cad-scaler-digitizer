@@ -80,8 +80,8 @@ const App: React.FC = () => {
       }
 
       setStatus('Running shape reconstruction...');
-      for (const view of doc.views) {
-        view.primitives = cleanupCadPrimitives(view.primitives);
+      for (const view of (doc.views || [])) {
+        view.primitives = cleanupCadPrimitives(view.primitives || []);
       }
 
       setMode('verifying');
@@ -89,10 +89,11 @@ const App: React.FC = () => {
       const verResult = await runCadVerifier(base64Data, mimeType, doc);
       setVerification(verResult);
 
-      if (doc.templateMatch && doc.templateMatch.confidence >= 0.6) {
+      if (doc.templateMatch && (doc.templateMatch.confidence || 0) >= 0.6) {
         const templateViews = generateFromTemplate(doc.templateMatch);
         if (templateViews.length > 0) {
           for (const tv of templateViews) {
+            if (!doc.views) doc.views = [];
             doc.views.push({
               name: `${tv.view.toUpperCase()} VIEW (parametric)`,
               scale: 1,
@@ -106,9 +107,10 @@ const App: React.FC = () => {
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
+          const views = doc.views || [];
           canvasRef.current.width = 1200;
-          canvasRef.current.height = Math.max(doc.views.length * 400, 400);
-          renderCadToCanvas(ctx, doc.views, doc.calibration.pixelsPerUnit || 1, 1200, canvasRef.current.height);
+          canvasRef.current.height = Math.max(views.length * 400, 400);
+          renderCadToCanvas(ctx, views, doc.calibration?.pixelsPerUnit || 1, 1200, canvasRef.current.height);
         }
       }
 
@@ -220,7 +222,7 @@ const App: React.FC = () => {
   };
 
   const isProcessing = processState === 'processing';
-  const allPrimitives = cadDoc?.views.flatMap(v => v.primitives) || [];
+  const allPrimitives = cadDoc?.views?.flatMap(v => v.primitives || []) || [];
 
   // Summary stats
   const dims = cadEngineResult?.detected?.dimensions || [];
@@ -464,15 +466,15 @@ const App: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-slate-50 p-2 rounded-lg text-center">
-                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected.lines}</div>
+                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected?.lines ?? 0}</div>
                         <div className="text-xs text-slate-500">Lines</div>
                       </div>
                       <div className="bg-slate-50 p-2 rounded-lg text-center">
-                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected.circles}</div>
+                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected?.circles ?? 0}</div>
                         <div className="text-xs text-slate-500">Circles</div>
                       </div>
                       <div className="bg-slate-50 p-2 rounded-lg text-center">
-                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected.rectangles}</div>
+                        <div className="text-lg font-bold text-indigo-600">{cadEngineResult.detected?.rectangles ?? 0}</div>
                         <div className="text-xs text-slate-500">Rectangles</div>
                       </div>
                       <div className="bg-slate-50 p-2 rounded-lg text-center">
@@ -500,11 +502,11 @@ const App: React.FC = () => {
                   )}
 
                   {/* Warnings */}
-                  {cadEngineResult.warnings.length > 0 && (
+                  {(cadEngineResult.warnings || []).length > 0 && (
                     <div>
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Notes</h3>
                       <ul className="text-xs space-y-1">
-                        {cadEngineResult.warnings.map((w, i) => (
+                        {(cadEngineResult.warnings || []).map((w, i) => (
                           <li key={i} className="text-amber-700 bg-amber-50 p-2 rounded-lg">• {w}</li>
                         ))}
                       </ul>
@@ -512,11 +514,11 @@ const App: React.FC = () => {
                   )}
 
                   {/* OCR text snippet */}
-                  {cadEngineResult.detected.ocr_lines.length > 0 && (
+                  {(cadEngineResult.detected?.ocr_lines || []).length > 0 && (
                     <div>
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">OCR Text</h3>
                       <div className="text-xs bg-slate-50 p-2 rounded-lg max-h-24 overflow-y-auto font-mono">
-                        {cadEngineResult.detected.ocr_lines.slice(0, 10).map((line, i) => (
+                        {(cadEngineResult.detected?.ocr_lines || []).slice(0, 10).map((line, i) => (
                           <div key={i}>{line}</div>
                         ))}
                       </div>
@@ -621,8 +623,8 @@ const App: React.FC = () => {
                       Result Summary
                     </h3>
                     <div className="text-sm text-slate-600 space-y-1">
-                      <p>🏷️ Furniture: <strong>{detectedFurniture ? getFurnitureLabel(detectedFurniture.type) : 'N/A'}</strong></p>
-                      <p>📐 Lines: <strong>{cadEngineResult.detected.lines}</strong> | Circles: <strong>{cadEngineResult.detected.circles}</strong> | Rects: <strong>{cadEngineResult.detected.rectangles}</strong></p>
+                      <p>🏷️ Furniture: <strong>{detectedFurniture ? getFurnitureLabel(detectedFurniture.type || '') : 'N/A'}</strong></p>
+                      <p>📐 Lines: <strong>{cadEngineResult.detected?.lines ?? 0}</strong> | Circles: <strong>{cadEngineResult.detected?.circles ?? 0}</strong> | Rects: <strong>{cadEngineResult.detected?.rectangles ?? 0}</strong></p>
                       <p>🔤 OCR Dimensions: <strong>{dims.length}</strong></p>
                       <p>💾 DXF: <strong>{cadEngineResult.dxf_file}</strong></p>
                     </div>

@@ -127,6 +127,7 @@ export async function digitizeHybrid(
  * Get the DXF download URL for a result.
  */
 export function getDownloadUrl(result: DigitizeResult): string {
+  if (!result || !result.download) return '';
   const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
   const dlPath = result.download.replace('/api/', '/py-api/');
   return base ? `${base}${result.download}` : `${window.location.origin}${dlPath}`;
@@ -136,6 +137,10 @@ export function getDownloadUrl(result: DigitizeResult): string {
  * Download DXF file directly in browser.
  */
 export function downloadDxf(result: DigitizeResult): void {
+  if (!result || !result.download) {
+    console.error('[DXF Download] No download URL available in result:', result);
+    return;
+  }
   // Download via fetch + blob to avoid Vite proxy multipart issues with direct download
   const dlPath = result.download.replace('/api/', '/py-api/');
   const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;

@@ -206,7 +206,12 @@ async def process_hybrid(
     ai_error = ai_result.get('error')
 
     ai_furniture_type = ai_result.get('furniture_type', '') if not ai_error else ''
-    ai_confidence = ai_result.get('confidence', 0) if not ai_error else 0
+    ai_confidence = 0.0
+    if not ai_error and 'confidence' in ai_result:
+        try:
+            ai_confidence = float(ai_result['confidence'])
+        except (ValueError, TypeError):
+            ai_confidence = 0.0
     ai_dimensions = ai_result.get('dimensions', []) if not ai_error else []
     ai_views = ai_result.get('views_detected', []) if not ai_error else []
     ai_corrections = ai_result.get('opencv_corrections', '') if not ai_error else ''
