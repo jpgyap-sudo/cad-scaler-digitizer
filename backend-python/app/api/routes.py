@@ -42,6 +42,7 @@ def count_feedback() -> int:
 
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
     """Route furniture type to the correct DXF template, applying user-overridden dimensions."""
+    print(f"[DISPATCH] Exporter: {f_type}")
 
     def _dim(tags, default):
         """Pull first matching dimension from corrected_dims."""
@@ -51,55 +52,69 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
         return default
 
     if f_type == 'round_pedestal_table':
+        print("EXPORTER USED: save_round_pedestal_table")
         dia = real_w or _dim(['dia', 'diameter', 'w', 'width'], 80.0)
         height = real_h or _dim(['h', 'height'], 70.0)
-        save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height)
+        try:
+            save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height)
+        except Exception as e:
+            print(f"[DISPATCH] save_round_pedestal_table FAILED: {e} -- falling back to generic")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'rectangular_table':
+        print("EXPORTER USED: save_rectangular_table")
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 70.0)
         d = _dim(['d', 'depth'], 80.0)
         save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
 
     elif f_type == 'cabinet':
+        print("EXPORTER USED: save_cabinet")
         w = real_w or _dim(['w', 'width'], 100.0)
         h = real_h or _dim(['h', 'height'], 180.0)
         d = _dim(['d', 'depth'], 50.0)
         save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
 
     elif f_type == 'sofa':
+        print("EXPORTER USED: save_sofa")
         w = real_w or _dim(['w', 'width'], 200.0)
         h = real_h or _dim(['h', 'height'], 85.0)
         d = _dim(['d', 'depth'], 80.0)
         save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
 
     elif f_type == 'coffee_table':
+        print("EXPORTER USED: save_coffee_table")
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
         save_coffee_table(str(dxf_path), width_cm=w, height_cm=h)
 
     elif f_type in ('dining_chair', 'chair'):
+        print("EXPORTER USED: save_dining_chair")
         w = real_w or _dim(['w', 'width', 'seat'], 45.0)
         h = real_h or _dim(['h', 'height'], 90.0)
         save_dining_chair(str(dxf_path), width_cm=w, height_cm=h)
 
     elif f_type == 'wardrobe':
+        print("EXPORTER USED: save_wardrobe")
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 200.0)
         save_wardrobe(str(dxf_path), width_cm=w, height_cm=h)
 
     elif f_type == 'reception_counter':
+        print("EXPORTER USED: save_reception_counter")
         w = real_w or _dim(['w', 'width'], 180.0)
         h = real_h or _dim(['h', 'height'], 110.0)
         save_reception_counter(str(dxf_path), width_cm=w, height_cm=h)
 
     elif f_type == 'bed_headboard':
+        print("EXPORTER USED: save_generic (bed_headboard fallback)")
         w = real_w or _dim(['w', 'width'], 160.0)
         h = real_h or _dim(['h', 'height'], 120.0)
         # Fall through to generic until bed template is added
         save_generic(str(dxf_path), [], [], [])
 
     else:
+        print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
         # True generic fallback
         save_generic(str(dxf_path), [], [], [])
 
@@ -148,6 +163,11 @@ async def digitize(
         )
         f_type = normalize_furniture_type(furniture_type or classifier_result['type'])
         confidence = classifier_result.get('confidence', 0.5)
+
+        print(f"[DIGITIZE] RAW furniture_type form param: '{furniture_type}'")
+        print(f"[DIGITIZE] Classifier type: '{classifier_result['type']}'")
+        print(f"[DIGITIZE] NORMALIZED: '{f_type}'")
+        print(f"[DIGITIZE] EXPORTER USED: {'save_round_pedestal_table' if f_type == 'round_pedestal_table' else 'OTHER'}")
 
         dxf_name = f'{job_id}_digitized.dxf'
         dxf_path = OUT / dxf_name
@@ -220,7 +240,17 @@ async def digitize_hybrid(
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
                 if r.status_code == 200:
-                    ai_result = json.loads(r.json()['choices'][0]['message']['content'])
+                    raw_content = r.json()['choices'][0]['message']['content']
+                    try:
+                        ai_result = json.loads(raw_content)
+                    except (json.JSONDecodeError, ValueError):
+                        # Strip markdown code fences (GPT-4o sometimes wraps JSON)
+                        cleaned = raw_content.strip()
+                        if cleaned.startswith('```'):
+                            cleaned = cleaned.split('\n', 1)[-1] if '\n' in cleaned else cleaned[3:]
+                        if cleaned.rstrip().endswith('```'):
+                            cleaned = cleaned.rstrip()[:-3]
+                        ai_result = json.loads(cleaned.strip())
         except Exception as e:
             print(f"[Hybrid] OpenAI error: {e}")
 
@@ -276,6 +306,10 @@ async def digitize_hybrid(
 
         real_w = _parse_float(real_width_cm)
         real_h = _parse_float(real_height_cm)
+        print("RAW furniture_type:", furniture_type)
+        print("AI furniture_type:", ai_result.get("furniture_type"))
+        print("NORMALIZED:", ftype)
+        print("EXPORTER USED:", "save_round_pedestal_table" if ftype == "round_pedestal_table" else "OTHER")
         print(f"[HYBRID] Dispatch: ftype='{ftype}' w={real_w} h={real_h}")
         _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
 

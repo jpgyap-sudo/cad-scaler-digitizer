@@ -20,10 +20,10 @@ def check(name, condition):
     TOTAL_TESTS += 1
     if condition:
         PASS += 1
-        print(f"  ✅ {name}")
+        print(f"  PASS {name}")
     else:
         FAIL += 1
-        print(f"  ❌ {name}")
+        print(f"  FAIL {name}")
 
 
 def analyze_dxf(path):
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     print(f"\n{'=' * 60}")
     print(f"Results: {PASS}/{TOTAL_TESTS} passed, {FAIL} failed")
     if FAIL == 0:
-        print("✅ ALL REGRESSION TESTS PASSED")
+        print("ALL REGRESSION TESTS PASSED")
     else:
-        print(f"❌ {FAIL} regression(s) detected — quality regression!")
+        print(f"{FAIL} regression(s) detected -- quality regression!")
     sys.exit(0 if FAIL == 0 else 1)

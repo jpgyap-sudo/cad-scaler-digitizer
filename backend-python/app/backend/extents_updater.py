@@ -56,6 +56,29 @@ def update_extents(doc):
                     if ins.x > max_x: max_x = ins.x
                     if ins.y > max_y: max_y = ins.y
                     found_any = True
+                elif entity.dxftype() == 'HATCH':
+                    for path in entity.paths:
+                        for v in path.vertices:
+                            vx, vy = float(v[0]), float(v[1])
+                            if vx < min_x: min_x = vx
+                            if vy < min_y: min_y = vy
+                            if vx > max_x: max_x = vx
+                            if vy > max_y: max_y = vy
+                            found_any = True
+                elif entity.dxftype() == 'TEXT':
+                    ins = entity.dxf.insert
+                    if ins.x < min_x: min_x = ins.x
+                    if ins.y < min_y: min_y = ins.y
+                    if ins.x > max_x: max_x = ins.x
+                    if ins.y > max_y: max_y = ins.y
+                    found_any = True
+                elif entity.dxftype() == 'INSERT':
+                    ins = entity.dxf.insert
+                    if ins.x < min_x: min_x = ins.x
+                    if ins.y < min_y: min_y = ins.y
+                    if ins.x > max_x: max_x = ins.x
+                    if ins.y > max_y: max_y = ins.y
+                    found_any = True
             except Exception:
                 continue
 
@@ -65,11 +88,11 @@ def update_extents(doc):
             _set_ext(doc, '$EXTMIN', min_x - margin_x, min_y - margin_y)
             _set_ext(doc, '$EXTMAX', max_x + margin_x, max_y + margin_y)
         else:
-            # Fallback to A3
+            print("[ExtentsUpdater] No entities found — using A3 default extents")
             _set_ext(doc, '$EXTMIN', -10, -10)
             _set_ext(doc, '$EXTMAX', 430, 307)
-    except Exception:
-        # Ultimate fallback — try direct header var
+    except Exception as e:
+        print(f"[ExtentsUpdater] Calculation failed ({e}) — falling back to A3 default extents")
         try:
             _set_ext(doc, '$EXTMIN', -10, -10)
             _set_ext(doc, '$EXTMAX', 430, 307)

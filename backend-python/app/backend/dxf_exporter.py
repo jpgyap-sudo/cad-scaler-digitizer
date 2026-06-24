@@ -167,7 +167,17 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     cx, cy = 100, y_mid
 
     # ===== TOP VIEW =====
-    msp.add_circle((cx, cy), r_px, dxfattribs={'layer': 'OBJECT'})
+    try:
+        msp.add_circle((cx, cy), r_px, dxfattribs={'layer': 'OBJECT'})
+    except Exception:
+        num_segments = 64
+        points = []
+        for i in range(num_segments):
+            angle = 2 * math.pi * i / num_segments
+            px = cx + r_px * math.cos(angle)
+            py = cy + r_px * math.sin(angle)
+            points.append((px, py))
+        _add_polyline(msp, points, closed=True, layer='OBJECT')
     # Radial sunburst veneer lines
     for i in range(24):
         angle = 2 * math.pi * i / 24
@@ -389,7 +399,14 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45):
     sc = 0.6
     r = min(width_cm, depth_cm) / 2 * sc
     cx, y_mid = 100, 190
-    msp.add_circle((cx, y_mid), r, dxfattribs={'layer': 'OBJECT'})
+    try:
+        msp.add_circle((cx, y_mid), r, dxfattribs={'layer': 'OBJECT'})
+    except Exception:
+        num_segments = 64
+        points = [(cx + r * math.cos(2 * math.pi * i / num_segments),
+                   y_mid + r * math.sin(2 * math.pi * i / num_segments))
+                  for i in range(num_segments)]
+        _add_polyline(msp, points, closed=True, layer='OBJECT')
     _add_centerline(msp, (cx - r - 5, y_mid), (cx + r + 5, y_mid))
     _add_centerline(msp, (cx, y_mid - r - 5), (cx, y_mid + r + 5))
     _add_diameter_dim(msp, (cx, y_mid), r)

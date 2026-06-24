@@ -63,4 +63,4 @@ if __name__ == '__main__':
     test_cabinet_dxf()
     test_sofa_dxf()
     test_generic_dxf()
-    print("✅ All 5 tests passed!")
+    print("All 5 tests passed!")
