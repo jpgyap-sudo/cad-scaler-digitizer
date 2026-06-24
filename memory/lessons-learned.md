@@ -1214,3 +1214,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix OCR: OpenAI GPT-4o Vision as primary reader (Tesseract fallback). Raw OCR was '60em DIA' instead of 'Ø80 cm'
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3ddb1a21e3adc27d907adfc335b59775071cfb1c
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 3ddb1a21e3adc27d907adfc335b59775071cfb1c
+**Files:** backend-python/app/backend/ocr.py
+
+**Summary:**
+Commit: Fix OCR: OpenAI GPT-4o Vision as primary reader (Tesseract fallback). Raw OCR was '60em DIA' instead of 'Ø80 cm'
+Files: backend-python/app/backend/ocr.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix OCR: OpenAI GPT-4o Vision as primary reader (Tesseract fallback). Raw OCR was '60em DIA' instead of 'Ø80 cm'*
+
+#### Lesson Learned
+
+Commit: Fix OCR: OpenAI GPT-4o Vision as primary reader (Tesseract fallback). Raw OCR was '60em DIA' instead of 'Ø80 cm'
+Files: backend-python/app/backend/ocr.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
