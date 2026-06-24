@@ -159,3 +159,24 @@ def download(filename: str):
     if not path.exists():
         return JSONResponse({"error": "Not found"}, status_code=404)
     return FileResponse(path, filename=safe, media_type="application/dxf")
+
+
+@router.get("/download/pdf/{filename}")
+def download_pdf(filename: str):
+    """Download DXF as PDF shop drawing."""
+    safe = os.path.basename(filename)
+    dxf_path = OUT / safe
+    if not dxf_path.exists():
+        return JSONResponse({"error": "DXF not found"}, status_code=404)
+
+    pdf_name = safe.replace('.dxf', '.pdf')
+    pdf_path = OUT / pdf_name
+
+    if not pdf_path.exists():
+        try:
+            from app.services.pdf_exporter import export_pdf_shop_drawing
+            export_pdf_shop_drawing(dxf_path, pdf_path, furniture_type=safe.replace('_digitized.dxf', '').replace('_hybrid.dxf', '').replace('_', ' ').title())
+        except Exception as e:
+            return JSONResponse({"error": f"PDF export failed: {e}"}, status_code=500)
+
+    return FileResponse(pdf_path, filename=pdf_name, media_type="application/pdf")
