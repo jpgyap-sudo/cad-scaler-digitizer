@@ -423,13 +423,13 @@ def download(filename: str):
 def preview_svg(filename: str):
     """Serve pre-generated SVG preview (generated alongside DXF)."""
     safe = os.path.basename(filename)
-    dxf_path = OUT / safe
     svg_path = OUT / safe.replace('.dxf', '.svg')
 
     if svg_path.exists():
         return FileResponse(svg_path, media_type="image/svg+xml")
 
-    # Fallback: try to generate from DXF
+    # Try generate from DXF
+    dxf_path = OUT / safe
     if dxf_path.exists():
         import ezdxf, re
         try:
@@ -455,6 +455,87 @@ def preview_svg(filename: str):
             return JSONResponse({"error": f"SVG failed: {e}"}, status_code=500)
 
     return JSONResponse({"error": "DXF not found — re-upload image to generate a new drawing"}, status_code=404)
+
+
+# ========= PARAMETRIC ADJUSTMENT =========
+
+@router.post("/adjust")
+async def adjust_dimensions(
+    dxf_file: str = Form(...),
+    top_diameter_cm: float = Form(None),
+    overall_height_cm: float = Form(None),
+    base_diameter_cm: float = Form(None),
+    neck_diameter_cm: float = Form(None),
+    top_thickness_cm: float = Form(None),
+):
+    """
+    Adjust dimensions of an existing DXF and regenerate SVG preview.
+    No AI re-run needed — uses DrawingModel for instant re-render.
+    """
+    safe = os.path.basename(dxf_file)
+    dxf_path = OUT / safe
+    if not dxf_path.exists():
+        return JSONResponse({"error": "DXF not found"}, status_code=404)
+
+    try:
+        import ezdxf, re
+        doc = ezdxf.readfile(str(dxf_path))
+        from app.backend.drawing_model import build_round_pedestal_model
+        from app.backend.svg_exporter import drawing_to_svg
+
+        # Read current dimensions from DXF
+        top_dia, height = 80.0, 70.0
+        base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
+        for e in doc.modelspace():
+            if e.dxftype() == "DIMENSION":
+                txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                val = float(nums[0]) if nums else None
+                if val:
+                    if "%%c" in txt or "dia" in txt.lower():
+                        if "80" in txt or (val > 50 and val < 100):
+                            top_dia = val
+                        else:
+                            base_dia = val
+                    if "H" in txt or "height" in txt.lower():
+                        height = val
+
+        # Apply adjustments
+        if top_diameter_cm is not None:
+            top_dia = top_diameter_cm
+        if overall_height_cm is not None:
+            height = overall_height_cm
+        if base_diameter_cm is not None:
+            base_dia = base_diameter_cm
+        if neck_diameter_cm is not None:
+            neck_dia = neck_diameter_cm
+        if top_thickness_cm is not None:
+            top_thick = top_thickness_cm
+
+        # Regenerate SVG with new dimensions
+        model = build_round_pedestal_model(
+            top_dia_cm=top_dia, height_cm=height,
+            base_dia_cm=base_dia, neck_dia_cm=neck_dia,
+            top_thick_cm=top_thick,
+        )
+        svg = drawing_to_svg(model)
+        svg_path = OUT / safe.replace('.dxf', '.svg')
+        with open(str(svg_path), 'w') as f:
+            f.write(svg)
+
+        return JSONResponse({
+            "dxf_file": safe,
+            "preview_svg": f"/api/preview/svg/{safe}",
+            "dimensions": {
+                "top_diameter_cm": round(top_dia, 1),
+                "overall_height_cm": round(height, 1),
+                "base_diameter_cm": round(base_dia, 1),
+                "neck_diameter_cm": round(neck_dia, 1),
+                "top_thickness_cm": round(top_thick, 1),
+            },
+        })
+    except Exception as e:
+        return JSONResponse({"error": f"Adjust failed: {e}"}, status_code=500)
 
 
 @router.get("/preview/{filename}")

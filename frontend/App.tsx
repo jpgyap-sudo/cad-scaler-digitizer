@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import TechStackModal from './components/TechStackModal';
 import ChatBox from './components/ChatBox';
+import SliderPanel from './components/SliderPanel';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -49,6 +50,13 @@ const App: React.FC = () => {
   const [processState, setProcessState] = useState<ProcessState>('idle');
   const [fileName, setFileName] = useState<string>('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);  // File selected, awaiting Start
+  const [chatState, setChatState] = useState<any>({});  // Chat-driven drawing state
+  const [previewSvgVersion, setPreviewSvgVersion] = useState(0);  // Bump to refresh SVG
+  const [svgPreviewUrl, setSvgPreviewUrl] = useState<string>('');  // Current SVG preview URL
+  const [currentDims, setCurrentDims] = useState<Record<string, number>>({
+    top_diameter_cm: 80, overall_height_cm: 70, base_diameter_cm: 44,
+    neck_diameter_cm: 22.4, top_thickness_cm: 4,
+  });
 
   // Manual dimension inputs
   const [realWidthCm, setRealWidthCm] = useState<string>('');
@@ -210,6 +218,12 @@ const App: React.FC = () => {
     } else {
       await processWithOpenCV(file);
     }
+  };
+
+  const handleChatRender = (newState: any) => {
+    setChatState(newState);
+    setPreviewSvgVersion(v => v + 1);  // Force SVG preview refresh
+    console.log('[Chat] Render requested, state:', newState);
   };
 
   const handleExportDXF = () => {
@@ -603,15 +617,28 @@ const App: React.FC = () => {
                 </div>
               )}
 
+              {/* SLIDERS */}
+              {cadEngineResult && !isProcessing && cadEngineResult.dxf_file && (
+                <div className="p-4 border-t border-slate-200">
+                  <SliderPanel
+                    dxfFile={cadEngineResult.dxf_file}
+                    initialDims={currentDims}
+                    onAdjusted={(dims, svgUrl) => {
+                      setCurrentDims(dims);
+                      setSvgPreviewUrl(svgUrl);
+                      setPreviewSvgVersion(v => v + 1);
+                    }}
+                  />
+                </div>
+              )}
+
               {/* CHATBOX */}
               {cadEngineResult && !isProcessing && (
                 <div className="p-4 border-t border-slate-200">
                   <ChatBox
                     sessionId={cadEngineResult?.job_id}
                     imageId={cadEngineResult?.job_id}
-                    onRenderRequest={(state) => {
-                      console.log('Chat render request:', state);
-                    }}
+                    onRenderRequest={handleChatRender}
                   />
                 </div>
               )}
@@ -693,6 +720,17 @@ const App: React.FC = () => {
                             >
                               SVG Preview (Instant)
                             </a>
+                          </div>
+                        )}
+                        {/* Live SVG preview from sliders/chat */}
+                        {svgPreviewUrl && (
+                          <div className="mt-2">
+                            <p className="text-[10px] text-slate-400 mb-1">Updated Preview</p>
+                            <img
+                              src={`${svgPreviewUrl}?v=${previewSvgVersion}`}
+                              alt="Updated preview"
+                              className="w-full rounded-lg border border-indigo-200 shadow-sm"
+                            />
                           </div>
                         )}
                       </div>

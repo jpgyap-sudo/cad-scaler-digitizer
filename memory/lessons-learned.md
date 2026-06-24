@@ -1404,3 +1404,535 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix round table detection: remove circles[] prerequisite when OCR text indicates round table. Add has_table fallback.
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c916f8e8d0a6b28eaf4d9196b361e02eb74f56e6
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** c916f8e8d0a6b28eaf4d9196b361e02eb74f56e6
+**Files:** backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix round table detection: remove circles[] prerequisite when OCR text indicates round table. Add has_table fallback.
+Files: backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix round table detection: remove circles[] prerequisite when OCR text indicates round table. Add has_table fallback.*
+
+#### Lesson Learned
+
+Commit: Fix round table detection: remove circles[] prerequisite when OCR text indicates round table. Add has_table fallback.
+Files: backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix DXF quality regression: robust AI JSON parsing, extents updater, dispatch logging
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit da1ea742273b4a78b9b326348176e82de0c32a35
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** da1ea742273b4a78b9b326348176e82de0c32a35
+**Files:** 
+
+**Summary:**
+Commit: Fix DXF quality regression: robust AI JSON parsing, extents updater, dispatch logging
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix DXF quality regression: robust AI JSON parsing, extents updater, dispatch logging*
+
+#### Lesson Learned
+
+Commit: Fix DXF quality regression: robust AI JSON parsing, extents updater, dispatch logging
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix AI pipeline: add 'table' alias + OpenCV tiebreaker for vague AI types
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1abc5919716d01a275c146b1bae0bbeeb001c486
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 1abc5919716d01a275c146b1bae0bbeeb001c486
+**Files:** 
+
+**Summary:**
+Commit: Fix AI pipeline: add 'table' alias + OpenCV tiebreaker for vague AI types
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix AI pipeline: add 'table' alias + OpenCV tiebreaker for vague AI types*
+
+#### Lesson Learned
+
+Commit: Fix AI pipeline: add 'table' alias + OpenCV tiebreaker for vague AI types
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix extents header + reduce LINE count: 4-attempt _set_ext, file-patching fallback, sunburst 24→12 lines + wood hatch
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7b4698bfeb7425b2d10169b19b80010d18792d91
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 7b4698bfeb7425b2d10169b19b80010d18792d91
+**Files:** 
+
+**Summary:**
+Commit: Fix extents header + reduce LINE count: 4-attempt _set_ext, file-patching fallback, sunburst 24→12 lines + wood hatch
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix extents header + reduce LINE count: 4-attempt _set_ext, file-patching fallback, sunburst 24→12 lines + wood hatch*
+
+#### Lesson Learned
+
+Commit: Fix extents header + reduce LINE count: 4-attempt _set_ext, file-patching fallback, sunburst 24→12 lines + wood hatch
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix dimension labels: scaled-pixel bug caused O40 instead of O80
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c4c5292179f76a0dc6ef12f2368ccc9a293bdf4b
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** c4c5292179f76a0dc6ef12f2368ccc9a293bdf4b
+**Files:** 
+
+**Summary:**
+Commit: Fix dimension labels: scaled-pixel bug caused O40 instead of O80
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix dimension labels: scaled-pixel bug caused O40 instead of O80*
+
+#### Lesson Learned
+
+Commit: Fix dimension labels: scaled-pixel bug caused O40 instead of O80
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix layers + add visual ratio scaler for proportion estimation
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 02f39a795e4008437634c4631aa55f95fd155fbd
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 02f39a795e4008437634c4631aa55f95fd155fbd
+**Files:** 
+
+**Summary:**
+Commit: Fix layers + add visual ratio scaler for proportion estimation
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix layers + add visual ratio scaler for proportion estimation*
+
+#### Lesson Learned
+
+Commit: Fix layers + add visual ratio scaler for proportion estimation
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix wiring gaps: wire leader classifier + component segmenter, remove dead imports
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 849f5e11d4355772757f2c861711b57291641b65
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 849f5e11d4355772757f2c861711b57291641b65
+**Files:** 
+
+**Summary:**
+Commit: Fix wiring gaps: wire leader classifier + component segmenter, remove dead imports
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix wiring gaps: wire leader classifier + component segmenter, remove dead imports*
+
+#### Lesson Learned
+
+Commit: Fix wiring gaps: wire leader classifier + component segmenter, remove dead imports
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix 3 critical bugs from audit: UnboundLocalError, NameError, broken preview URLs
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 9c374566bcb3db97b4eeacb94b4deb6ecd928a70
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 9c374566bcb3db97b4eeacb94b4deb6ecd928a70
+**Files:** 
+
+**Summary:**
+Commit: Fix 3 critical bugs from audit: UnboundLocalError, NameError, broken preview URLs
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 3 critical bugs from audit: UnboundLocalError, NameError, broken preview URLs*
+
+#### Lesson Learned
+
+Commit: Fix 3 critical bugs from audit: UnboundLocalError, NameError, broken preview URLs
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix all remaining audit issues: real dims, None learning, top imports, docstring
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5849607261cb18b9c54fb6557de304491aa86303
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 5849607261cb18b9c54fb6557de304491aa86303
+**Files:** 
+
+**Summary:**
+Commit: Fix all remaining audit issues: real dims, None learning, top imports, docstring
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix all remaining audit issues: real dims, None learning, top imports, docstring*
+
+#### Lesson Learned
+
+Commit: Fix all remaining audit issues: real dims, None learning, top imports, docstring
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix __init__.py: conditional import to survive VPS host (no ezdxf)
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 923ef5f433c87c25174e66a6eb0a1d2c6ef24637
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 923ef5f433c87c25174e66a6eb0a1d2c6ef24637
+**Files:** backend-python/app/backend/__init__.py
+
+**Summary:**
+Commit: Fix __init__.py: conditional import to survive VPS host (no ezdxf)
+Files: backend-python/app/backend/__init__.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix __init__.py: conditional import to survive VPS host (no ezdxf)*
+
+#### Lesson Learned
+
+Commit: Fix __init__.py: conditional import to survive VPS host (no ezdxf)
+Files: backend-python/app/backend/__init__.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix preview 500: add matplotlib to requirements.txt (was missing)
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c0bfd54bc2dcbd11f6177645ccd0266a8ae5f6a5
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** c0bfd54bc2dcbd11f6177645ccd0266a8ae5f6a5
+**Files:** backend-python/requirements.txt
+
+**Summary:**
+Commit: Fix preview 500: add matplotlib to requirements.txt (was missing)
+Files: backend-python/requirements.txt
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix preview 500: add matplotlib to requirements.txt (was missing)*
+
+#### Lesson Learned
+
+Commit: Fix preview 500: add matplotlib to requirements.txt (was missing)
+Files: backend-python/requirements.txt
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix collapsed front view: _dim substring bug + zero-height column
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit fa3b06fb37a3fd3de42a6e17f59351a8745b79ab
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** fa3b06fb37a3fd3de42a6e17f59351a8745b79ab
+**Files:** 
+
+**Summary:**
+Commit: Fix collapsed front view: _dim substring bug + zero-height column
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix collapsed front view: _dim substring bug + zero-height column*
+
+#### Lesson Learned
+
+Commit: Fix collapsed front view: _dim substring bug + zero-height column
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix SVG preview: generate SVG alongside DXF during digitization
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 4a2e740720ddda2e94ab3b8737f6a8f9de15915c
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 4a2e740720ddda2e94ab3b8737f6a8f9de15915c
+**Files:** 
+
+**Summary:**
+Commit: Fix SVG preview: generate SVG alongside DXF during digitization
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix SVG preview: generate SVG alongside DXF during digitization*
+
+#### Lesson Learned
+
+Commit: Fix SVG preview: generate SVG alongside DXF during digitization
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] ChatBox: switch primary to OpenAI GPT-4o, fix API proxy URL, improve UI
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 69d5c6d9d047a4b8199845648a108c941922e1f2
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 69d5c6d9d047a4b8199845648a108c941922e1f2
+**Files:** 
+
+**Summary:**
+Commit: ChatBox: switch primary to OpenAI GPT-4o, fix API proxy URL, improve UI
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: ChatBox: switch primary to OpenAI GPT-4o, fix API proxy URL, improve UI*
+
+#### Lesson Learned
+
+Commit: ChatBox: switch primary to OpenAI GPT-4o, fix API proxy URL, improve UI
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

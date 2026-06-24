@@ -1,0 +1,13 @@
+{
+  "user_id": "test_user",
+  "dimension_multipliers": {
+    "top_diameter_cm": 1.0
+  },
+  "material_overrides": {},
+  "component_visibility": {},
+  "furniture_type_weights": {},
+  "output_preferences": {},
+  "correction_count": 1,
+  "last_updated": 1782313707.7090173,
+  "confidence": 0.24000000000000002
+}
