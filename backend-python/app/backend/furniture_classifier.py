@@ -9,6 +9,7 @@ def normalize_furniture_type(ftype: str) -> str:
 
     aliases = {
         "round_pedestal_table": "round_pedestal_table",
+        "table": "round_pedestal_table",
         "round_table": "round_pedestal_table",
         "round_table_or_circular_part": "round_pedestal_table",
         "circular_table": "round_pedestal_table",

@@ -235,7 +235,7 @@ async def digitize_hybrid(
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Return JSON with furniture_type (string), confidence (0-1 float), dimensions array [{tag, value_cm}]."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. Return JSON with furniture_type (one of those exact strings), confidence (0-1 float), dimensions array [{tag, value_cm}]."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
@@ -277,12 +277,21 @@ async def digitize_hybrid(
 
         # Priority: user override > AI result > OpenCV classifier > generic fallback
         raw_ai_type = (ai_result.get('furniture_type', '') or '').strip()
+        KNOWN_TYPES = {'round_pedestal_table', 'rectangular_table', 'cabinet', 'sofa',
+                       'coffee_table', 'dining_chair', 'chair', 'wardrobe',
+                       'reception_counter', 'bed_headboard'}
         if furniture_type:
             ftype = normalize_furniture_type(furniture_type)
             print(f"[HYBRID] Using user override: {furniture_type} → {ftype}")
         elif raw_ai_type:
             ftype = normalize_furniture_type(raw_ai_type)
             print(f"[HYBRID] Using AI: '{raw_ai_type}' → '{ftype}'")
+            # If AI returned a vague type not matching any template, try OpenCV
+            if ftype not in KNOWN_TYPES:
+                opencv_ftype = normalize_furniture_type(opencv_type)
+                if opencv_ftype in KNOWN_TYPES:
+                    print(f"[HYBRID] AI '{raw_ai_type}' too vague, using OpenCV: '{opencv_type}' → '{opencv_ftype}'")
+                    ftype = opencv_ftype
         else:
             ftype = normalize_furniture_type(opencv_type)
             print(f"[HYBRID] AI empty, using OpenCV classifier: '{opencv_type}' → '{ftype}'")
