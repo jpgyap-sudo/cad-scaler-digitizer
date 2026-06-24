@@ -720,3 +720,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: delete legacy engine/ folder, add env_file to docker-compose for hybrid:true
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3646c14b8d9af5e89932f50487606d25d99585ce
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 3646c14b8d9af5e89932f50487606d25d99585ce
+**Files:** backend-python/app/engine/__init__.py,backend-python/app/engine/constraints.py,backend-python/app/engine/dxf_writer.py,backend-python/app/engine/furniture_classifier.py,backend-python/app/engine/hybrid.py,backend-python/app/engine/pipeline.py,backend-python/app/engine/vision.py,docker-compose.yml
+
+**Summary:**
+Commit: Fix: delete legacy engine/ folder, add env_file to docker-compose for hybrid:true
+Files: backend-python/app/engine/__init__.py,backend-python/app/engine/constraints.py,backend-python/app/engine/dxf_writer.py,backend-python/app/engine/furniture_classifier.py,backend-python/app/engine/hybrid.py,backend-python/app/engine/pipeline.py,backend-python/app/engine/vision.py,docker-compose.yml
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: delete legacy engine/ folder, add env_file to docker-compose for hybrid:true*
+
+#### Lesson Learned
+
+Commit: Fix: delete legacy engine/ folder, add env_file to docker-compose for hybrid:true
+Files: backend-python/app/engine/__init__.py,backend-python/app/engine/constraints.py,backend-python/app/engine/dxf_writer.py,backend-python/app/engine/furniture_classifier.py,backend-python/app/engine/hybrid.py,backend-python/app/engine/pipeline.py,backend-python/app/engine/vision.py,docker-compose.yml
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
