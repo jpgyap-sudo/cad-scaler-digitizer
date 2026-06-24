@@ -222,7 +222,15 @@ const App: React.FC = () => {
     if (engineMode === 'ai') {
       setMode('agent-processing');
       setStatus('Connecting to AI...');
-      await processWithAI(file);
+      // Convert File to base64 before passing to processWithAI
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        setImageSrc(base64);
+        const base64Data = base64.split(',')[1];
+        await processWithAI(base64Data, file.type);
+      };
+      reader.readAsDataURL(file);
     } else {
       await processWithOpenCV(file);
     }
@@ -639,12 +647,10 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* BRAIN STATS */}
-              {cadEngineResult && !isProcessing && (
-                <div className="p-4 border-t border-slate-200">
-                  <BrainStats />
-                </div>
-              )}
+              {/* BRAIN STATS — always visible */}
+              <div className="p-4 border-t border-slate-200">
+                <BrainStats />
+              </div>
 
               {/* SLIDERS */}
               {cadEngineResult && !isProcessing && cadEngineResult.dxf_file && (
@@ -662,8 +668,8 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* CHATBOX */}
-              {cadEngineResult && !isProcessing && (
+              {/* CHATBOX — visible during upload and after result */}
+              {!isProcessing && (
                 <div className="p-4 border-t border-slate-200">
                   <ChatBox
                     sessionId={cadEngineResult?.job_id}
