@@ -191,3 +191,19 @@ export async function checkEngineHealth(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Get preview PNG URL for a DXF file.
+ */
+export function getPreviewUrl(dxfFile: string): string {
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;
+  return `${base}/api/preview/${dxfFile}`;
+}
+
+/**
+ * Get PDF download URL for a DXF file.
+ */
+export function getPdfUrl(dxfFile: string): string {
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || window.location.origin;
+  return `${base}/api/preview/pdf/${dxfFile}`;
+}

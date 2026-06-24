@@ -375,23 +375,85 @@ def download(filename: str):
     return FileResponse(path, filename=safe, media_type="application/dxf")
 
 
-@router.get("/download/pdf/{filename}")
-def download_pdf(filename: str):
-    """Download DXF as PDF shop drawing."""
+@router.get("/preview/{filename}")
+def preview_dxf(filename: str):
+    """Render DXF as PNG preview image."""
+    safe = os.path.basename(filename)
+    path = OUT / safe
+    if not path.exists():
+        return JSONResponse({"error": "DXF not found"}, status_code=404)
+
+    png_name = safe.replace('.dxf', '.png')
+    png_path = OUT / png_name
+
+    if not png_path.exists():
+        try:
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            from ezdxf.addons.drawing import RenderContext, Frontend
+            from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+            import ezdxf
+
+            doc = ezdxf.readfile(str(path))
+            fig = plt.figure(figsize=(11.7, 8.3), dpi=100)
+            ax = fig.add_axes([0, 0, 1, 1])
+            ctx = RenderContext(doc)
+            backend = MatplotlibBackend(ax)
+            Frontend(ctx, backend).draw_layout(doc.modelspace(), finalize=True)
+            ax.set_xlim(-10, 440)
+            ax.set_ylim(-10, 310)
+            ax.axis('off')
+            fig.savefig(str(png_path), dpi=100, facecolor='white', bbox_inches='tight', pad_inches=0.1)
+            plt.close(fig)
+        except Exception as e:
+            return JSONResponse({"error": f"Preview failed: {e}"}, status_code=500)
+
+    return FileResponse(png_path, media_type="image/png")
+
+
+@router.get("/preview/pdf/{filename}")
+def preview_pdf(filename: str):
+    """
+    Generate and return a print-ready PDF shop drawing.
+    Uses matplotlib + ezdxf to render the DXF as a styled PDF.
+    """
     safe = os.path.basename(filename)
     dxf_path = OUT / safe
     if not dxf_path.exists():
         return JSONResponse({"error": "DXF not found"}, status_code=404)
+
     pdf_name = safe.replace('.dxf', '.pdf')
     pdf_path = OUT / pdf_name
+
     if not pdf_path.exists():
         try:
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            from ezdxf.addons.drawing import RenderContext, Frontend
+            from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+            import ezdxf
+
+            doc = ezdxf.readfile(str(dxf_path))
+            fig = plt.figure(figsize=(16.54, 11.69), dpi=150)  # A3
+            ax = fig.add_axes([0.02, 0.02, 0.96, 0.96])
+            ctx = RenderContext(doc)
+            backend = MatplotlibBackend(ax)
+            Frontend(ctx, backend).draw_layout(doc.modelspace(), finalize=True)
+            ax.set_xlim(-10, 440)
+            ax.set_ylim(-10, 310)
+            ax.set_aspect('equal')
+            ax.axis('off')
+            fig.savefig(str(pdf_path), dpi=150, facecolor='white')
+            plt.close(fig)
+        except Exception as e:
+            # Fallback to simple PDF
             from app.services.pdf_exporter import export_pdf_shop_drawing
             export_pdf_shop_drawing(dxf_path, pdf_path,
-                furniture_type=safe.replace('_digitized.dxf', '').replace('_hybrid.dxf', '')
-                               .replace('_', ' ').title())
-        except Exception as e:
-            return JSONResponse({"error": f"PDF failed: {e}"}, status_code=500)
+                furniture_type=safe.replace('_digitized.dxf','').replace('_hybrid.dxf','')
+                              .replace('_',' ').title())
+
     return FileResponse(pdf_path, filename=pdf_name, media_type="application/pdf")
 
 

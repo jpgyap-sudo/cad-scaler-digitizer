@@ -13,7 +13,8 @@ import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import {
   digitizeWithBackend, digitizeHybrid, downloadDxf, checkEngineHealth,
-  getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult
+  getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult,
+  getPreviewUrl, getPdfUrl
 } from './services/cadEngine';
 
 const MAX_CORRECTION_LOOPS = 3;
@@ -628,6 +629,32 @@ const App: React.FC = () => {
                       <p>🔤 OCR Dimensions: <strong>{dims.length}</strong></p>
                       <p>💾 DXF: <strong>{cadEngineResult.dxf_file}</strong></p>
                     </div>
+                    {cadEngineResult.dxf_file && (
+                      <div className="mt-3 space-y-2">
+                        <img
+                          src={getPreviewUrl(cadEngineResult.dxf_file)}
+                          alt="DXF Preview"
+                          className="w-full rounded-lg border border-slate-200"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <div className="flex gap-2">
+                          <a
+                            href={getPdfUrl(cadEngineResult.dxf_file)}
+                            target="_blank"
+                            className="flex-1 text-center bg-red-600 text-white text-xs py-2 rounded-lg hover:bg-red-700 font-medium"
+                          >
+                            View PDF
+                          </a>
+                          <a
+                            href={getPreviewUrl(cadEngineResult.dxf_file)}
+                            target="_blank"
+                            className="flex-1 text-center bg-blue-600 text-white text-xs py-2 rounded-lg hover:bg-blue-700 font-medium"
+                          >
+                            Full Preview
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
