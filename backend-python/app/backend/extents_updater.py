@@ -2,16 +2,37 @@
 import ezdxf
 
 
-def _set_ext(doc, key, x, y, z=0):
-    """Safely set a header extent — handles different ezdxf versions."""
+def _set_ext(doc, key, x, y, z=0.0):
+    """Set a header extent — tries multiple ezdxf API variants."""
+    from ezdxf.math import Vec3
+    v = Vec3(float(x), float(y), float(z))
+    # Attempt 1: direct tuple assignment
     try:
-        doc.header[key] = (x, y, z)
+        doc.header[key] = (float(x), float(y), float(z))
+        return
     except Exception:
-        try:
-            from ezdxf.math import Vec3
-            doc.header[key] = Vec3(x, y, z)
-        except Exception:
-            pass
+        pass
+    # Attempt 2: Vec3 object
+    try:
+        doc.header[key] = v
+        return
+    except Exception:
+        pass
+    # Attempt 3: set_var method
+    try:
+        doc.header.set_var(key, v)
+        return
+    except Exception:
+        pass
+    # Attempt 4: raw variable set
+    try:
+        h = doc.header
+        if hasattr(h, '_vars'):
+            h._vars[key] = v
+        return
+    except Exception:
+        pass
+    print(f"[ExtentsUpdater] All 4 attempts failed to set {key}")
 
 
 def update_extents(doc):

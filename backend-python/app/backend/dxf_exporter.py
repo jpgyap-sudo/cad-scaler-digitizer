@@ -34,7 +34,7 @@ def setup_doc():
 
 
 def _save(doc, path):
-    """Finalize: update extents, audit, save."""
+    """Finalize: update extents, audit, save, then force-patch extents in file."""
     try:
         update_extents(doc)
     except Exception:
@@ -44,7 +44,48 @@ def _save(doc, path):
     except Exception:
         pass
     doc.saveas(path)
+    # Post-save: force-patch $EXTMIN/$EXTMAX directly in DXF text
+    _force_extents_in_file(path)
     return path
+
+
+def _force_extents_in_file(path):
+    """Last-resort: directly patch $EXTMIN/$EXTMAX in the saved DXF file."""
+    import re
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+    except Exception:
+        return
+    # Calculate bounding box from all coordinate groups in the file
+    all_x, all_y = [], []
+    for m in re.finditer(r'\b(?:10|20)\s+([-\d.e+]+)', content):
+        try:
+            val = float(m.group(1))
+            if m.group(0).startswith('10'):
+                all_x.append(val)
+            else:
+                all_y.append(val)
+        except ValueError:
+            continue
+    if not all_x or not all_y:
+        return
+    mnx, mxx = min(all_x), max(all_x)
+    mny, mxy = min(all_y), max(all_y)
+    margin_x = max(10, (mxx - mnx) * 0.05)
+    margin_y = max(10, (mxy - mny) * 0.05)
+    new_min = f'$EXTMIN\n 10\n{mnx - margin_x}\n 20\n{mny - margin_y}\n 30\n0.0'
+    new_max = f'$EXTMAX\n 10\n{mxx + margin_x}\n 20\n{mxy + margin_y}\n 30\n0.0'
+    # Replace existing or add after header section start
+    if '$EXTMIN' in content:
+        content = re.sub(r'\$EXTMIN\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+', new_min, content)
+    if '$EXTMAX' in content:
+        content = re.sub(r'\$EXTMAX\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+', new_max, content)
+    try:
+        with open(path, 'w', encoding='utf-8', errors='replace') as f:
+            f.write(content)
+    except Exception:
+        pass
 
 
 def _add_polyline(msp, points, closed=False, layer='OBJECT'):
@@ -178,14 +219,18 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
             py = cy + r_px * math.sin(angle)
             points.append((px, py))
         _add_polyline(msp, points, closed=True, layer='OBJECT')
-    # Radial sunburst veneer lines
-    for i in range(24):
-        angle = 2 * math.pi * i / 24
+    # Radial sunburst veneer lines (12 spokes instead of 24 = fewer LINE entities)
+    for i in range(12):
+        angle = 2 * math.pi * i / 12
         x1 = cx + (r_px * 0.1) * math.cos(angle)
         y1 = cy + (r_px * 0.1) * math.sin(angle)
         x2 = cx + r_px * math.cos(angle)
         y2 = cy + r_px * math.sin(angle)
         _add_line(msp, (x1, y1), (x2, y2), 'HATCH')
+    # Top surface wood grain hatch
+    _add_hatch_polygon(msp, [(cx + r_px * math.cos(2 * math.pi * i / 64),
+                              cy + r_px * math.sin(2 * math.pi * i / 64))
+                             for i in range(64)], 'ANSI31', 0.3, 45.0)
     # Centerlines
     ext = max(4, r_px * 0.1)
     _add_centerline(msp, (cx - r_px - ext, cy), (cx + r_px + ext, cy))
