@@ -11,10 +11,11 @@ import math
 from datetime import datetime
 import ezdxf
 from app.backend.layer_manager import setup_layers
-from app.backend.text_normalizer import normalize_dimension_text, clean_text_for_dxf
-from app.backend.extents_updater import setup_a3_sheet
+from app.backend.text_tokenizer import clean_dimension_string, format_dimension_for_dxf
+from app.backend.extents_updater import setup_a3_sheet, update_extents
 from app.backend.titleblock_generator import generate_title_block
 from app.backend.dxf_auditor import audit_dxf
+from app.backend.semantic_proportion_validator import validate_furniture_proportions, get_semantic_hierarchy
 
 
 def setup_doc():
@@ -37,7 +38,7 @@ def _add_polyline(msp, points, closed=False, layer='OBJECT'):
 
 def _add_mtext(msp, text, pos, height=3, layer='MTEXT'):
     if not text: return
-    text = clean_text_for_dxf(text)
+    text = str(text).replace('\u00d8', '%%c').strip()
     try:
         m = msp.add_mtext(text, dxfattribs={'layer': layer, 'char_height': height})
         m.dxf.insert = pos
@@ -67,17 +68,17 @@ def _add_dimension(msp, p1, p2, loc, text=None):
         override = {'dimtxt': 2.5, 'dimasz': 2.0, 'dimdec': 0}
         d = msp.add_linear_dim(base=loc, p1=p1, p2=p2, override=override)
         if text:
-            d.dimension.dxf.text = normalize_dimension_text(text)
+            d.dimension.dxf.text = clean_dimension_string(str(text))
         d.render()
     except Exception:
         _add_line(msp, p1, p2, 'DIMENSION')
         if text:
-            _add_text(msp, normalize_dimension_text(text), loc, 2.5, 'TEXT')
+            _add_text(msp, clean_dimension_string(str(text)), loc, 2.5, 'TEXT')
 
 
 def _add_diameter_dim(msp, center, radius, text=None):
     """Use %%c for proper diameter symbol."""
-    label = text or f'%%c{radius * 2:g} cm'
+    label = text or format_dimension_for_dxf(radius * 2, 'cm', is_diameter=True)
     _add_dimension(msp, (center[0] - radius, center[1]), (center[0] + radius, center[1]),
                    (center[0], center[1] - radius - 8), label)
 
