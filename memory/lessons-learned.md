@@ -606,3 +606,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix Docker: trim requirements, simplify apt-get install
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1ef9db30a2b7b2ef60015282e6c4bb481cb7ea84
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 1ef9db30a2b7b2ef60015282e6c4bb481cb7ea84
+**Files:** Dockerfile.api,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix Docker: trim requirements, simplify apt-get install
+Files: Dockerfile.api,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix Docker: trim requirements, simplify apt-get install*
+
+#### Lesson Learned
+
+Commit: Fix Docker: trim requirements, simplify apt-get install
+Files: Dockerfile.api,backend-python/requirements.txt,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
