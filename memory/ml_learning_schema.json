@@ -1,0 +1,193 @@
+{
+  "schema_version": "1.0",
+  "project": "CAD Scaler Digitizer ML Learning Ecosystem",
+  "description": "Neural network training pipeline for improving CAD digitization accuracy over time",
+  "components": {
+    "dataset": {
+      "path": "resources/training/",
+      "formats": [".json", ".dxf"],
+      "expected_size_min": 1000,
+      "features": [
+        "image_embedding_512", "ocr_text_tokens", "geometry_primitives",
+        "furniture_type_label", "dimension_values", "confidence_score",
+        "user_corrections", "dxf_entity_count", "hatch_pattern"
+      ]
+    },
+    "neural_networks": {
+      "furniture_classifier": {
+        "type": "Vision Transformer (ViT) + MLP",
+        "input": "image_embedding_512 + ocr_text_tokens_128",
+        "output": "furniture_type (one-hot: 10 classes)",
+        "architecture": {
+          "image_encoder": "ViT-B/16 (pretrained)",
+          "text_encoder": "DistilBERT (pretrained)",
+          "fusion": "cross-attention",
+          "classifier": "MLP 256->128->10"
+        },
+        "loss": "categorical_crossentropy",
+        "metrics": ["accuracy", "f1_score", "confusion_matrix"]
+      },
+      "dimension_predictor": {
+        "type": "Regressor with confidence",
+        "input": "geometry_primitives_64 + ocr_text_tokens_128",
+        "output": "dimension_values_6 + confidence",
+        "architecture": {
+          "encoder": "MLP 192->256->128",
+          "regressor": "MLP 128->64->6",
+          "confidence_head": "MLP 128->32->1 (sigmoid)"
+        },
+        "loss": "huber_loss + confidence_regularization",
+        "metrics": ["mae", "rmse", "within_5pct"]
+      },
+      "dxf_quality_scorer": {
+        "type": "Binary classifier",
+        "input": "dxf_entity_features_32",
+        "output": "quality_score (0.0-1.0)",
+        "architecture": "MLP 32->64->32->1 (sigmoid)",
+        "loss": "binary_crossentropy",
+        "metrics": ["accuracy", "precision", "recall"]
+      }
+    },
+    "training_pipeline": {
+      "data_collection": {
+        "source": "PostgreSQL digitizer_sessions + digitizer_results",
+        "features_extracted": [
+          "user_upload_hash", "opencv_geometry", "ocr_text", 
+          "ai_analysis_result", "final_dimensions", "user_verified",
+          "user_corrections", "download_count"
+        ],
+        "labels": ["furniture_type", "dimensions", "quality_verified"]
+      },
+      "preprocessing": {
+        "image_resize": "384x384",
+        "ocr_cleanup": "regex normalization",
+        "geometry_normalization": "0-1 scaling",
+        "train_test_split": "0.8/0.2",
+        "stratification": "by furniture_type"
+      },
+      "training": {
+        "batch_size": 32,
+        "epochs": 100,
+        "early_stopping_patience": 10,
+        "learning_rate": 0.001,
+        "optimizer": "AdamW",
+        "weight_decay": 0.01,
+        "scheduler": "cosine_annealing",
+        "augmentation": ["random_rotate_15", "random_brightness", "random_contrast", "gaussian_noise"]
+      },
+      "evaluation": {
+        "metrics": ["accuracy", "f1", "precision", "recall", "mae", "rmse"],
+        "cross_validation_folds": 5,
+        "threshold_tuning": "Youden's J statistic",
+        "error_analysis": ["confusion_matrix", "residual_plot", "calibration_curve"]
+      },
+      "deployment": {
+        "format": "ONNX",
+        "runtime": "ONNX Runtime + FastAPI",
+        "endpoint": "POST /api/ml/predict",
+        "fallback": "rule-based classifier when confidence < 0.6",
+        "logging": "all predictions stored for continuous improvement"
+      }
+    },
+    "continuous_learning": {
+      "feedback_loop": {
+        "user_corrections": "store in PostgreSQL digitizer_results.verification_feedback",
+        "confidence_threshold": 0.7,
+        "retrain_trigger": "every 1000 new samples or weekly",
+        "active_learning": "query uncertain samples (confidence 0.4-0.6)"
+      },
+      "model_versioning": {
+        "storage": "backend-python/models/",
+        "naming": "model_{type}_v{version}_{date}.onnx",
+        "registry": "models/registry.json",
+        "rollback": "keep last 3 versions"
+      },
+      "metrics_tracking": {
+        "storage": "memory/ml_metrics.jsonl",
+        "fields": [
+          "timestamp", "model_version", "accuracy", "f1", 
+          "avg_confidence", "total_predictions", "correction_rate"
+        ]
+      }
+    }
+  },
+  "resources": {
+    "skills": [
+      "skills/lwpolyline_cad_accuracy.md",
+      "skills/furniture-identification.md",
+      "skills/cad-geometry-cleanup.md"
+    ],
+    "training_data": [
+      "resources/training/lwpolyline_samples.json",
+      "resources/training/round_pedestal_table/",
+      "resources/training/rectangular_table/"
+    ],
+    "fixtures": [
+      "fixtures/round_table/spec.json",
+      "fixtures/rectangular_table/spec.json",
+      "fixtures/cabinet/spec.json",
+      "fixtures/sofa/spec.json"
+    ]
+  },
+  "api_endpoints": {
+    "ml_predict": {
+      "method": "POST",
+      "path": "/api/ml/predict",
+      "input": "image file + optional OCR text",
+      "output": "furniture_type + dimensions + confidence"
+    },
+    "ml_feedback": {
+      "method": "POST",
+      "path": "/api/ml/feedback",
+      "input": "prediction_id + user_corrections",
+      "output": "acknowledgement"
+    },
+    "ml_retrain": {
+      "method": "POST",
+      "path": "/api/ml/retrain",
+      "auth_required": true,
+      "description": "Trigger retraining on new data"
+    },
+    "ml_status": {
+      "method": "GET",
+      "path": "/api/ml/status",
+      "output": "model_version + accuracy + last_trained"
+    }
+  },
+  "database_schema": {
+    "ml_predictions": {
+      "columns": [
+        {"name": "id", "type": "SERIAL PRIMARY KEY"},
+        {"name": "session_id", "type": "TEXT REFERENCES digitizer_sessions(session_id)"},
+        {"name": "model_version", "type": "TEXT"},
+        {"name": "furniture_type_predicted", "type": "TEXT"},
+        {"name": "furniture_type_corrected", "type": "TEXT"},
+        {"name": "confidence", "type": "FLOAT"},
+        {"name": "dimensions_predicted", "type": "JSONB"},
+        {"name": "dimensions_corrected", "type": "JSONB"},
+        {"name": "user_verified", "type": "BOOLEAN DEFAULT FALSE"},
+        {"name": "latency_ms", "type": "INTEGER"},
+        {"name": "created_at", "type": "TIMESTAMPTZ DEFAULT NOW()"}
+      ]
+    },
+    "ml_models": {
+      "columns": [
+        {"name": "id", "type": "SERIAL PRIMARY KEY"},
+        {"name": "model_type", "type": "TEXT"},
+        {"name": "version", "type": "INTEGER"},
+        {"name": "path", "type": "TEXT"},
+        {"name": "accuracy", "type": "FLOAT"},
+        {"name": "f1_score", "type": "FLOAT"},
+        {"name": "training_samples", "type": "INTEGER"},
+        {"name": "is_active", "type": "BOOLEAN DEFAULT FALSE"},
+        {"name": "created_at", "type": "TIMESTAMPTZ DEFAULT NOW()"}
+      ]
+    }
+  },
+  "implementation_priority": [
+    {"phase": 1, "tasks": ["Create training dataset structure", "Build data collection via PostgreSQL", "Add ML feedback endpoint"]},
+    {"phase": 2, "tasks": ["Train initial furniture classifier", "Deploy ONNX model", "Add /api/ml/predict endpoint"]},
+    {"phase": 3, "tasks": ["Implement active learning loop", "Auto-retrain weekly", "Dashboard for model metrics"]},
+    {"phase": 4, "tasks": ["A/B test model vs rule-based", "Optimize for speed", "Edge deployment"]}
+  ]
+}
