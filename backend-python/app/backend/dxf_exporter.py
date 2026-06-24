@@ -194,9 +194,9 @@ def _add_hatch_polygon(msp, vertices, pattern='ANSI31', scale=1.0, angle=0.0):
 
 
 def _add_leader(msp, text, start_point, end_point, height=3):
-    """Add leader line with arrowhead and text."""
+    """Add leader line with arrowhead and text on LEADER/MTEXT layers."""
     try:
-        msp.add_line(start_point, end_point, dxfattribs={'layer': 'DIMENSION'})
+        msp.add_line(start_point, end_point, dxfattribs={'layer': 'LEADER'})
         angle = math.atan2(end_point[1] - start_point[1], end_point[0] - start_point[0])
         arrow_size = 3
         p1 = (end_point[0] - arrow_size * math.cos(angle - 0.5),
@@ -204,7 +204,7 @@ def _add_leader(msp, text, start_point, end_point, height=3):
         p2 = (end_point[0] - arrow_size * math.cos(angle + 0.5),
               end_point[1] - arrow_size * math.sin(angle + 0.5))
         # Single LWPOLYLINE triangle instead of 2 separate LINEs
-        _add_polyline(msp, [end_point, p1, p2], closed=True, layer='DIMENSION')
+        _add_polyline(msp, [end_point, p1, p2], closed=True, layer='LEADER')
         _add_mtext(msp, text, start_point, height, 'MTEXT')
     except Exception:
         pass
@@ -213,10 +213,39 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 # ========= TEMPLATES =========
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
-                               base_dia_cm=None, neck_dia_cm=None, top_thick_cm=4):
-    """Round pedestal table with radial veneer, %%c dimensions, material leaders."""
+                               base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
+                               _scale_result=None):
+    """Round pedestal table with radial veneer, %%c dimensions, material leaders.
+    
+    Uses visual_ratio_scaler for proportion estimation when available.
+    Falls back to standard furniture ratios if scaler unavailable.
+    """
+    # --- Proportion estimation ---
+    if _scale_result is not None:
+        # Use pre-computed ratio scaler result
+        sr = _scale_result
+    else:
+        # Compute from visual ratio scaler if available, else use defaults
+        try:
+            from app.backend.visual_ratio_scaler import estimate_proportions
+            sr = estimate_proportions("round_pedestal_table",
+                                       {"top_diameter_cm": top_dia_cm,
+                                        "overall_height_cm": height_cm})
+        except ImportError:
+            sr = None
+
+    # Apply estimated dimensions, falling back to template defaults
+    if sr and base_dia_cm is None:
+        base_dia_cm = sr.get("pedestal_diameter_cm", top_dia_cm * 0.55)
+    if sr and neck_dia_cm is None:
+        neck_dia_cm = sr.get("neck_diameter_cm", top_dia_cm * 0.28)
+    if sr and top_thick_cm is None:
+        top_thick_cm = sr.get("top_thickness_cm", 4.0)
+
+    # Final fallback defaults for any unset values
     base_dia_cm = base_dia_cm or top_dia_cm * 0.55
     neck_dia_cm = neck_dia_cm or top_dia_cm * 0.28
+    top_thick_cm = top_thick_cm or 4.0
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.5

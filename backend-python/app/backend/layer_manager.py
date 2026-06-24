@@ -4,12 +4,13 @@ import ezdxf
 
 STANDARD_LAYERS = {
     'OBJECT': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Main geometry'},
-    'DIMENSION': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimensions'},
+    'DIMENSION': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimension lines and text'},
+    'LEADER': {'color': 4, 'linetype': 'CONTINUOUS', 'description': 'Leader lines and callouts'},
     'CENTER': {'color': 5, 'linetype': 'CENTER2', 'description': 'Centerlines'},
     'TEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Text labels'},
-    'MTEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Multi-line text'},
-    'HATCH': {'color': 8, 'linetype': 'CONTINUOUS', 'description': 'Hatching'},
-    'HIDDEN': {'color': 251, 'linetype': 'HIDDEN', 'description': 'Hidden lines'},
+    'MTEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Multi-line text and annotations'},
+    'HATCH': {'color': 8, 'linetype': 'CONTINUOUS', 'description': 'Hatching and fills'},
+    'HIDDEN': {'color': 251, 'linetype': 'HIDDEN', 'description': 'Hidden lines and inferred geometry'},
     'TITLE': {'color': 6, 'linetype': 'CONTINUOUS', 'description': 'Title block'},
     'BORDER': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Sheet border'},
 }
