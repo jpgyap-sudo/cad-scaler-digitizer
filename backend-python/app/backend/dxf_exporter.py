@@ -214,18 +214,42 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                                base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
-                               _scale_result=None):
-    """Round pedestal table with radial veneer, %%c dimensions, material leaders.
+                               _scale_result=None, _validation_result=None):
+    """Round pedestal table shop drawing with anti-hallucination rules.
     
-    Uses visual_ratio_scaler for proportion estimation when available.
-    Falls back to standard furniture ratios if scaler unavailable.
+    VISIBLE components (conf >= 0.70) → solid OBJECT layer
+    ESTIMATED components (0.30 <= conf < 0.70) → dashed HIDDEN linetype, labeled EST.
+    UNKNOWN components (conf < 0.30) → SKIPPED entirely
+    
+    Uses visual_ratio_scaler for proportion estimation.
     """
+    # --- Anti-hallucination validation ---
+    vr = _validation_result
+    if vr is None:
+        try:
+            from app.backend.anti_hallucination_validator import validate_furniture_drawing
+            from app.backend.visual_ratio_scaler import estimate_proportions
+            sr = estimate_proportions("round_pedestal_table",
+                                       {"top_diameter_cm": top_dia_cm,
+                                        "overall_height_cm": height_cm})
+            vr = validate_furniture_drawing("round_pedestal_table", sr.confidence)
+        except ImportError:
+            vr = None
+    
+    # Helper: determine if a component should be drawn and with what linetype
+    def _visible(name): 
+        if vr and name in vr.components:
+            return vr.components[name].visibility != "UNKNOWN"
+        return True
+    def _is_estimated(name):
+        if vr and name in vr.components:
+            return vr.components[name].visibility == "ESTIMATED"
+        return False
+    
     # --- Proportion estimation ---
     if _scale_result is not None:
-        # Use pre-computed ratio scaler result
         sr = _scale_result
     else:
-        # Compute from visual ratio scaler if available, else use defaults
         try:
             from app.backend.visual_ratio_scaler import estimate_proportions
             sr = estimate_proportions("round_pedestal_table",
@@ -300,15 +324,21 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     # Tabletop
     _add_polyline(msp, [(fx - r_px, top_y), (fx + r_px, top_y),
                         (fx + r_px, neck_top_y), (fx - r_px, neck_top_y)], True)
-    # Narrow neck
-    _add_polyline(msp, [(fx - nr_px, neck_top_y), (fx + nr_px, neck_top_y),
-                        (fx + nr_px, neck_bot_y), (fx - nr_px, neck_bot_y)], True)
+    # Narrow neck — metal ring, skip if unknown
+    if _visible("neck_ring"):
+        neck_layer = 'HIDDEN' if _is_estimated("neck_ring") else 'OBJECT'
+        _add_polyline(msp, [(fx - nr_px, neck_top_y), (fx + nr_px, neck_top_y),
+                            (fx + nr_px, neck_bot_y), (fx - nr_px, neck_bot_y)], True, neck_layer)
     # Textured column
     _add_polyline(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
                         (fx + br_px, base_top_y), (fx - br_px, base_top_y)], True)
-    # Wide base
-    _add_polyline(msp, [(fx - br_px, base_top_y), (fx + br_px, base_top_y),
-                        (fx + br_px, base_bot_y), (fx - br_px, base_bot_y)], True)
+    # Wide base — draw dashed if estimated, skip if unknown
+    if _visible("base_foot"):
+        base_layer = 'HIDDEN' if _is_estimated("base_foot") else 'OBJECT'
+        _add_polyline(msp, [(fx - br_px, base_top_y), (fx + br_px, base_top_y),
+                            (fx + br_px, base_bot_y), (fx - br_px, base_bot_y)], True, base_layer)
+        if _is_estimated("base_foot"):
+            _add_text(msp, "(EST.)", (fx - br_px - 15, (base_top_y + base_bot_y) / 2), 2, 'MTEXT')
     # Hatch column
     _add_hatch_polygon(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
                              (fx + br_px, base_top_y), (fx - br_px, base_top_y)], 'ANSI37', 0.3)
