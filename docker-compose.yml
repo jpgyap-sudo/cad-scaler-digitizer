@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: cad-digitizer-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      - cad_temp:/tmp/cad_digitizer_outputs
+      - cad_uploads:/tmp/cad_digitizer_uploads
+    restart: unless-stopped
+    networks:
+      - cad-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: cad-digitizer-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - cad-network
+
+volumes:
+  cad_temp:
+  cad_uploads:
+
+networks:
+  cad-network:
+    driver: bridge

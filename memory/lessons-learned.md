@@ -530,3 +530,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix: OpenAI returns confidence as string, wrap with float() to prevent str vs float comparison crash
+
+Date: 2026-06-23
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit dc0731110d0a95f515cb27912e92b20b37065914
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** dc0731110d0a95f515cb27912e92b20b37065914
+**Files:** backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix: OpenAI returns confidence as string, wrap with float() to prevent str vs float comparison crash
+Files: backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix: OpenAI returns confidence as string, wrap with float() to prevent str vs float comparison crash*
+
+#### Lesson Learned
+
+Commit: Fix: OpenAI returns confidence as string, wrap with float() to prevent str vs float comparison crash
+Files: backend-python/app/main.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
