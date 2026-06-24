@@ -8,7 +8,7 @@ from app.backend.vision import load_image, preprocess, detect_lines, detect_circ
 from app.backend.ocr import ocr_dimensions
 from app.backend.geometry_cleanup import process_constraints, snap_line_angle, snap_endpoints, merge_collinear
 from app.backend.dimension_validator import autocorrect_dimensions, validate_scale
-from app.backend.furniture_classifier import classify_furniture
+from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
 from app.backend.semantic_proportion_validator import validate_furniture_proportions
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
@@ -146,7 +146,7 @@ async def digitize(
         classifier_result = classify_furniture(
             ocr_lines, constrained['circles'], constrained['lines'], constrained.get('rects')
         )
-        f_type = furniture_type or classifier_result['type']
+        f_type = normalize_furniture_type(furniture_type or classifier_result['type'])
         confidence = classifier_result.get('confidence', 0.5)
 
         dxf_name = f'{job_id}_digitized.dxf'
@@ -240,7 +240,7 @@ async def digitize_hybrid(
         except Exception:
             pass
 
-        ftype = furniture_type or ai_result.get('furniture_type', '') or 'generic_2d_furniture'
+        ftype = normalize_furniture_type(furniture_type or ai_result.get('furniture_type', '') or 'generic_2d_furniture')
         try:
             conf = float(ai_result.get('confidence', 0) or 0)
         except Exception:

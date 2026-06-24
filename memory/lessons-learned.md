@@ -1252,3 +1252,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix 3 regressions: normalize_furniture_type aliases, extents_updater float handling, restore dxf_exporter
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a7d0f5172adb67c10fc66eb755194531b6b6e48a
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a7d0f5172adb67c10fc66eb755194531b6b6e48a
+**Files:** backend-python/app/backend/extents_updater.py,backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix 3 regressions: normalize_furniture_type aliases, extents_updater float handling, restore dxf_exporter
+Files: backend-python/app/backend/extents_updater.py,backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 3 regressions: normalize_furniture_type aliases, extents_updater float handling, restore dxf_exporter*
+
+#### Lesson Learned
+
+Commit: Fix 3 regressions: normalize_furniture_type aliases, extents_updater float handling, restore dxf_exporter
+Files: backend-python/app/backend/extents_updater.py,backend-python/app/backend/furniture_classifier.py,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -16,8 +16,8 @@ def test_round_table_dxf_valid():
     assert 'CIRCLE' in types, f"No CIRCLE in {types}"
     assert 'LINE' in types or 'LWPOLYLINE' in types, f"No geometry in {types}"
     assert 'HATCH' in types, f"No HATCH in {types}"
-    texts = [e.dxf.text for e in doc.modelspace() if e.dxftype() == 'TEXT']
-    assert any('DRAWING' in str(t) for t in texts), f"No title text in {texts}"
+    mtexts = [e.dxf.text for e in doc.modelspace() if e.dxftype() == 'MTEXT']
+    assert any('Pedestal' in str(t) or 'DRAWING' in str(t).upper() for t in mtexts), f"No title text in MTEXT: {mtexts}"
     os.unlink(out)
 
 
