@@ -46,10 +46,13 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
     print(f"[DISPATCH] Exporter: {f_type}")
 
     def _dim(tags, default):
-        """Pull first matching dimension from corrected_dims."""
+        """Pull first matching dimension from corrected_dims using word boundaries."""
         for d in corrected_dims:
-            if any(t in d.get('tag', '') for t in tags):
-                return d['value_cm']
+            tag = d.get('tag', '').lower().strip()
+            for t in tags:
+                # Word-boundary match: 'h' matches 'h' or 'height_cm' but NOT 'thickness'
+                if tag == t or tag.startswith(t + '_') or tag.startswith(t + ' ') or f'_{t}' in tag:
+                    return d['value_cm']
         return default
 
     if f_type == 'round_pedestal_table':

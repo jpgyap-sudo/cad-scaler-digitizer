@@ -314,11 +314,19 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     thick_px = top_thick_cm * sc
     nr_px = neck_dia_cm * 0.5 * sc
     br_px = base_dia_cm * 0.5 * sc
+    # Proportionally distribute height: top(4cm) + neck(15%) + pedestal(75%) + base(10%)
+    remaining_h = max(1, height_cm - top_thick_cm)  # height below tabletop
+    neck_h_cm = remaining_h * 0.15
+    ped_h_cm = remaining_h * 0.70
+    base_h_cm = remaining_h * 0.15
+    neck_h_px = neck_h_cm * sc
+    ped_h_px = ped_h_cm * sc
+    base_h_px = base_h_cm * sc
     top_y = y_mid + h_px / 2
     bot_y = y_mid - h_px / 2
     neck_top_y = top_y - thick_px
-    neck_bot_y = bot_y + br_px * 0.3
-    base_top_y = bot_y + br_px * 0.3
+    neck_bot_y = neck_top_y - neck_h_px
+    ped_bot_y = neck_bot_y - ped_h_px
     base_bot_y = bot_y
 
     # Tabletop
@@ -329,31 +337,31 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
         neck_layer = 'HIDDEN' if _is_estimated("neck_ring") else 'OBJECT'
         _add_polyline(msp, [(fx - nr_px, neck_top_y), (fx + nr_px, neck_top_y),
                             (fx + nr_px, neck_bot_y), (fx - nr_px, neck_bot_y)], True, neck_layer)
-    # Textured column
+    # Textured column (pedestal body)
     _add_polyline(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
-                        (fx + br_px, base_top_y), (fx - br_px, base_top_y)], True)
+                        (fx + br_px, ped_bot_y), (fx - br_px, ped_bot_y)], True)
     # Wide base — draw dashed if estimated, skip if unknown
     if _visible("base_foot"):
         base_layer = 'HIDDEN' if _is_estimated("base_foot") else 'OBJECT'
-        _add_polyline(msp, [(fx - br_px, base_top_y), (fx + br_px, base_top_y),
+        _add_polyline(msp, [(fx - br_px, ped_bot_y), (fx + br_px, ped_bot_y),
                             (fx + br_px, base_bot_y), (fx - br_px, base_bot_y)], True, base_layer)
         if _is_estimated("base_foot"):
-            _add_text(msp, "(EST.)", (fx - br_px - 15, (base_top_y + base_bot_y) / 2), 2, 'MTEXT')
-    # Hatch column
+            _add_text(msp, "(EST.)", (fx - br_px - 15, (ped_bot_y + base_bot_y) / 2), 2, 'MTEXT')
+    # Hatch column — textured pedestal body
     _add_hatch_polygon(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
-                             (fx + br_px, base_top_y), (fx - br_px, base_top_y)], 'ANSI37', 0.3)
+                              (fx + br_px, ped_bot_y), (fx - br_px, ped_bot_y)], 'ANSI37', 0.3)
     # Dimensions
-    _add_dimension(msp, (fx - br_px, bot_y - 5), (fx + br_px, bot_y - 5),
-                   (fx, bot_y - 12), f'%%c{base_dia_cm:g} cm')
-    _add_centerline(msp, (fx, bot_y - 5), (fx, top_y + 5))
-    _add_dimension(msp, (fx + r_px + 10, bot_y), (fx + r_px + 10, top_y),
-                   (fx + r_px + 20, (bot_y + top_y) / 2), f'H = {height_cm:g} cm')
+    _add_dimension(msp, (fx - br_px, base_bot_y - 5), (fx + br_px, base_bot_y - 5),
+                   (fx, base_bot_y - 12), f'%%c{base_dia_cm:g} cm')
+    _add_centerline(msp, (fx, base_bot_y - 5), (fx, top_y + 5))
+    _add_dimension(msp, (fx + r_px + 10, base_bot_y), (fx + r_px + 10, top_y),
+                   (fx + r_px + 20, (base_bot_y + top_y) / 2), f'H = {height_cm:g} cm')
     # Material leaders
     _add_leader(msp, 'WOOD TOP', (fx + r_px + 15, top_y - thick_px / 2),
                 (fx + r_px, top_y - thick_px / 2))
     _add_leader(msp, 'TEXTURED PEDESTAL BASE',
-                (fx + br_px + 15, (neck_bot_y + base_top_y) / 2),
-                (fx + br_px, (neck_bot_y + base_top_y) / 2))
+                 (fx + br_px + 15, (neck_bot_y + ped_bot_y) / 2),
+                 (fx + br_px, (neck_bot_y + ped_bot_y) / 2))
     _add_mtext(msp, 'FRONT VIEW', (fx - r_px, top_y + 10), 3)
     generate_title_block(msp, f"Round Pedestal Table %%c{top_dia_cm:.0f} x H{height_cm:.0f}",
                          project="Furniture Shop Drawing",
