@@ -872,3 +872,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Add: polyline_builder, layer_manager, text_normalizer, dxf_auditor, extents_updater, titleblock_generator. Fix: ezdxf im
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a26026d0bb586002809bf3adc504a8372d2e80d6
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a26026d0bb586002809bf3adc504a8372d2e80d6
+**Files:** backend-python/app/backend/dxf_auditor.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/extents_updater.py,backend-python/app/backend/layer_manager.py,backend-python/app/backend/polyline_builder.py,backend-python/app/backend/text_normalizer.py,backend-python/app/backend/titleblock_generator.py
+
+**Summary:**
+Commit: Add: polyline_builder, layer_manager, text_normalizer, dxf_auditor, extents_updater, titleblock_generator. Fix: ezdxf import, Vec2→tuple extents
+Files: backend-python/app/backend/dxf_auditor.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/extents_updater.py,backend-python/app/backend/layer_manager.py,backend-python/app/backend/polyline_builder.py,backend-python/app/backend/text_normalizer.py,backend-python/app/backend/titleblock_generator.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Add: polyline_builder, layer_manager, text_normalizer, dxf_auditor, extents_updater, titleblock_generator. Fix: ezdxf import, Vec2→tuple extents*
+
+#### Lesson Learned
+
+Commit: Add: polyline_builder, layer_manager, text_normalizer, dxf_auditor, extents_updater, titleblock_generator. Fix: ezdxf import, Vec2→tuple extents
+Files: backend-python/app/backend/dxf_auditor.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/extents_updater.py,backend-python/app/backend/layer_manager.py,backend-python/app/backend/polyline_builder.py,backend-python/app/backend/text_normalizer.py,backend-python/app/backend/titleblock_generator.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
