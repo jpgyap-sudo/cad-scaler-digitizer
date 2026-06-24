@@ -203,8 +203,8 @@ def _add_leader(msp, text, start_point, end_point, height=3):
               end_point[1] - arrow_size * math.sin(angle - 0.5))
         p2 = (end_point[0] - arrow_size * math.cos(angle + 0.5),
               end_point[1] - arrow_size * math.sin(angle + 0.5))
-        _add_line(msp, end_point, p1, 'DIMENSION')
-        _add_line(msp, end_point, p2, 'DIMENSION')
+        # Single LWPOLYLINE triangle instead of 2 separate LINEs
+        _add_polyline(msp, [end_point, p1, p2], closed=True, layer='DIMENSION')
         _add_mtext(msp, text, start_point, height, 'MTEXT')
     except Exception:
         pass
@@ -236,11 +236,11 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
             py = cy + r_px * math.sin(angle)
             points.append((px, py))
         _add_polyline(msp, points, closed=True, layer='OBJECT')
-    # Radial sunburst veneer lines (12 spokes instead of 24 = fewer LINE entities)
-    for i in range(12):
-        angle = 2 * math.pi * i / 12
-        x1 = cx + (r_px * 0.1) * math.cos(angle)
-        y1 = cy + (r_px * 0.1) * math.sin(angle)
+    # Radial sunburst veneer lines (8 spokes — enough for visual cue)
+    for i in range(8):
+        angle = 2 * math.pi * i / 8
+        x1 = cx + (r_px * 0.15) * math.cos(angle)
+        y1 = cy + (r_px * 0.15) * math.sin(angle)
         x2 = cx + r_px * math.cos(angle)
         y2 = cy + r_px * math.sin(angle)
         _add_line(msp, (x1, y1), (x2, y2), 'HATCH')
