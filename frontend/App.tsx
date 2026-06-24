@@ -177,6 +177,12 @@ const App: React.FC = () => {
       setMode('complete');
       setStatus(isHybrid ? 'Hybrid engine complete. Cross-validated DXF ready.' : 'OpenCV engine complete. DXF ready for download.');
 
+      // Auto-show co-generated SVG preview
+      if (result.preview_svg) {
+        setSvgPreviewUrl(result.preview_svg);
+        setPreviewSvgVersion(v => v + 1);
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => setImageSrc(e.target?.result as string);
       reader.readAsDataURL(file);

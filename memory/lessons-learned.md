@@ -1936,3 +1936,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] All fixes: clean dead modules, chat render_hint, parametric sliders
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 4697e7a53578fad3fffb0a7768d98bd9e36ca4ed
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 4697e7a53578fad3fffb0a7768d98bd9e36ca4ed
+**Files:** 
+
+**Summary:**
+Commit: All fixes: clean dead modules, chat render_hint, parametric sliders
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: All fixes: clean dead modules, chat render_hint, parametric sliders*
+
+#### Lesson Learned
+
+Commit: All fixes: clean dead modules, chat render_hint, parametric sliders
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

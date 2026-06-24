@@ -26,6 +26,21 @@ UPLOAD.mkdir(exist_ok=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
+def _save_drawing_model(f_type, dxf_path, width_cm, height_cm):
+    """Save DrawingModel JSON alongside DXF for parametric adjustment."""
+    if f_type != 'round_pedestal_table':
+        return
+    try:
+        from app.backend.drawing_model import build_round_pedestal_model
+        model = build_round_pedestal_model(float(width_cm), float(height_cm))
+        json_path = Path(str(dxf_path).replace('.dxf', '.json'))
+        import json as j
+        with open(json_path, 'w') as f:
+            j.dump(model.to_dict(), f, indent=2)
+    except Exception as e:
+        print(f"[DrawingModel] JSON save failed: {e}")
+
+
 def _parse_float(val, default=None):
     if val is None:
         return default
@@ -70,45 +85,73 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 70.0)
         d = _dim(['d', 'depth'], 80.0)
-        save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        try:
+            save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_rectangular_table FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'cabinet':
         print("EXPORTER USED: save_cabinet")
         w = real_w or _dim(['w', 'width'], 100.0)
         h = real_h or _dim(['h', 'height'], 180.0)
         d = _dim(['d', 'depth'], 50.0)
-        save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        try:
+            save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_cabinet FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'sofa':
         print("EXPORTER USED: save_sofa")
         w = real_w or _dim(['w', 'width'], 200.0)
         h = real_h or _dim(['h', 'height'], 85.0)
         d = _dim(['d', 'depth'], 80.0)
-        save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        try:
+            save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_sofa FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'coffee_table':
         print("EXPORTER USED: save_coffee_table")
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
-        save_coffee_table(str(dxf_path), width_cm=w, height_cm=h)
+        try:
+            save_coffee_table(str(dxf_path), width_cm=w, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_coffee_table FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type in ('dining_chair', 'chair'):
         print("EXPORTER USED: save_dining_chair")
         w = real_w or _dim(['w', 'width', 'seat'], 45.0)
         h = real_h or _dim(['h', 'height'], 90.0)
-        save_dining_chair(str(dxf_path), width_cm=w, height_cm=h)
+        try:
+            save_dining_chair(str(dxf_path), width_cm=w, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_dining_chair FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'wardrobe':
         print("EXPORTER USED: save_wardrobe")
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 200.0)
-        save_wardrobe(str(dxf_path), width_cm=w, height_cm=h)
+        try:
+            save_wardrobe(str(dxf_path), width_cm=w, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_wardrobe FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'reception_counter':
         print("EXPORTER USED: save_reception_counter")
         w = real_w or _dim(['w', 'width'], 180.0)
         h = real_h or _dim(['h', 'height'], 110.0)
-        save_reception_counter(str(dxf_path), width_cm=w, height_cm=h)
+        try:
+            save_reception_counter(str(dxf_path), width_cm=w, height_cm=h)
+        except Exception as e:
+            print(f"[DISPATCH] save_reception_counter FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
 
     elif f_type == 'bed_headboard':
         print("EXPORTER USED: save_generic (bed_headboard fallback)")
@@ -119,8 +162,10 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
 
     else:
         print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
-        # True generic fallback
         save_generic(str(dxf_path), [], [], [])
+
+    # Generate DrawingModel JSON alongside DXF for parametric adjustment + validation
+    _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0)
 
 
 @router.post("/digitize")
@@ -512,7 +557,17 @@ async def adjust_dimensions(
         if top_thickness_cm is not None:
             top_thick = top_thickness_cm
 
-        # Regenerate SVG with new dimensions
+        # Regenerate DXF + SVG with new dimensions
+        from app.backend.dxf_exporter import save_round_pedestal_table
+        try:
+            save_round_pedestal_table(
+                str(dxf_path), top_dia_cm=top_dia, height_cm=height,
+                base_dia_cm=base_dia, neck_dia_cm=neck_dia,
+                top_thick_cm=top_thick,
+            )
+        except Exception as e:
+            print(f"[Adjust] DXF regen failed: {e}")
+
         model = build_round_pedestal_model(
             top_dia_cm=top_dia, height_cm=height,
             base_dia_cm=base_dia, neck_dia_cm=neck_dia,
