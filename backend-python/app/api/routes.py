@@ -9,7 +9,11 @@ from app.backend.ocr import ocr_dimensions
 from app.backend.geometry_cleanup import process_constraints, snap_line_angle, snap_endpoints, merge_collinear
 from app.backend.dimension_validator import autocorrect_dimensions, validate_scale
 from app.backend.furniture_classifier import classify_furniture
-from app.backend.dxf_exporter import save_generic, save_round_pedestal_table, save_rectangular_table, save_cabinet, save_sofa
+from app.backend.dxf_exporter import (
+    save_generic, save_round_pedestal_table, save_rectangular_table,
+    save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
+    save_wardrobe, save_reception_counter
+)
 
 router = APIRouter()
 
@@ -168,15 +172,30 @@ def download_pdf(filename: str):
     dxf_path = OUT / safe
     if not dxf_path.exists():
         return JSONResponse({"error": "DXF not found"}, status_code=404)
-
     pdf_name = safe.replace('.dxf', '.pdf')
     pdf_path = OUT / pdf_name
-
     if not pdf_path.exists():
         try:
             from app.services.pdf_exporter import export_pdf_shop_drawing
             export_pdf_shop_drawing(dxf_path, pdf_path, furniture_type=safe.replace('_digitized.dxf', '').replace('_hybrid.dxf', '').replace('_', ' ').title())
         except Exception as e:
-            return JSONResponse({"error": f"PDF export failed: {e}"}, status_code=500)
-
+            return JSONResponse({"error": f"PDF failed: {e}"}, status_code=500)
     return FileResponse(pdf_path, filename=pdf_name, media_type="application/pdf")
+
+
+@router.post("/export/freecad")
+async def export_freecad(file: UploadFile = File(...)):
+    """Convert DXF to FreeCAD FCStd parametric model."""
+    import uuid
+    job_id = str(uuid.uuid4())
+    dxf_path = OUT / f"{job_id}_input.dxf"
+    fcstd_path = OUT / f"{job_id}_model.FCStd"
+    with dxf_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    from app.services.freecad_exporter import export_freecad_fcstd
+    ok = export_freecad_fcstd(dxf_path, fcstd_path, furniture_type="furniture")
+    try: os.unlink(str(dxf_path))
+    except: pass
+    if not ok:
+        return JSONResponse({"error": "FreeCAD export failed. Install: apt-get install freecad"}, status_code=500)
+    return FileResponse(fcstd_path, filename=f"{job_id}_model.FCStd", media_type="application/octet-stream")
