@@ -1176,3 +1176,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix port conflict: frontend binds to 127.0.0.1:8080 only (avoids nginx conflict on VPS port 80)
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bafbf18d4774ff8f505e4c289ca4cad0aa63f96f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** bafbf18d4774ff8f505e4c289ca4cad0aa63f96f
+**Files:** docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix port conflict: frontend binds to 127.0.0.1:8080 only (avoids nginx conflict on VPS port 80)
+Files: docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix port conflict: frontend binds to 127.0.0.1:8080 only (avoids nginx conflict on VPS port 80)*
+
+#### Lesson Learned
+
+Commit: Fix port conflict: frontend binds to 127.0.0.1:8080 only (avoids nginx conflict on VPS port 80)
+Files: docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
