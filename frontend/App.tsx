@@ -62,6 +62,7 @@ const App: React.FC = () => {
   const [realWidthCm, setRealWidthCm] = useState<string>('');
   const [realHeightCm, setRealHeightCm] = useState<string>('');
   const [furnitureType, setFurnitureType] = useState<string>('');
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const correctionLoopRef = useRef(0);
@@ -377,6 +378,20 @@ const App: React.FC = () => {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
+              </div>
+
+              {/* Style Preset selector */}
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Style Preset</label>
+                <select
+                  value={selectedPreset}
+                  onChange={e => setSelectedPreset(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">None — use defaults</option>
+                  <option value="Modern_Round_Table">Modern Round Table (oak + brass)</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">Save your style via chat — "save as preset Modern Round Table"</p>
               </div>
 
               {/* Furniture type override */}

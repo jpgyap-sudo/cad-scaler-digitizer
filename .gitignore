@@ -11,3 +11,8 @@ __pycache__/
 *.pyo
 uploads/
 backend-python/.env
+memory/
+*.svg
+*.png
+*.pdf
+test_output.*

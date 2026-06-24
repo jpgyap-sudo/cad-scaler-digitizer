@@ -817,6 +817,51 @@ async def ml_retrain():
     return JSONResponse(result)
 
 
+# ========= STYLE PRESETS (Scan2CAD-inspired) =========
+
+@router.get("/presets")
+async def list_presets_endpoint():
+    """List all saved style presets."""
+    from app.backend.style_presets import list_presets as lp
+    presets = lp()
+    return JSONResponse({"presets": [p.to_dict() for p in presets], "count": len(presets)})
+
+
+@router.post("/presets/save")
+async def save_preset_endpoint(
+    name: str = Form(...),
+    session_id: str = Form(None),
+    furniture_type: str = Form(None),
+):
+    """Save current chat state as a named style preset."""
+    from app.backend.style_presets import StylePreset, preset_from_chat_state, save_preset as sp
+    state = CHAT_SESSIONS.get(session_id or "default", {})
+    preset = preset_from_chat_state(state, name)
+    if furniture_type:
+        preset.furniture_type = furniture_type
+    filename = sp(preset)
+    return JSONResponse({"saved": filename, "preset": preset.to_dict()})
+
+
+@router.post("/presets/apply")
+async def apply_preset_endpoint(name: str = Form(...)):
+    """Apply a style preset to pre-fill materials and dimensions."""
+    from app.backend.style_presets import load_preset, apply_preset_to_template
+    preset = load_preset(name)
+    if not preset:
+        return JSONResponse({"error": "Preset not found"}, status_code=404)
+    params = apply_preset_to_template(preset)
+    return JSONResponse({"preset": preset.to_dict(), "params": params})
+
+
+@router.delete("/presets/{name}")
+async def delete_preset_endpoint(name: str):
+    """Delete a style preset."""
+    from app.backend.style_presets import delete_preset as dp
+    ok = dp(name)
+    return JSONResponse({"deleted": ok})
+
+
 # ========= CHAT ENDPOINT =========
 
 CHAT_SESSIONS: dict = {}  # session_id -> DrawingState dict
