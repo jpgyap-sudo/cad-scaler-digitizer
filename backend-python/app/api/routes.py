@@ -6,10 +6,11 @@ import shutil, uuid, os, tempfile
 
 from app.backend.vision import load_image, preprocess, detect_lines, detect_circles, detect_rectangles, normalize_lines
 from app.backend.ocr import ocr_dimensions
-from app.backend.geometry_cleanup import process_constraints, snap_line_angle, snap_endpoints, merge_collinear
+from app.backend.geometry_cleanup import process_constraints
 from app.backend.dimension_validator import autocorrect_dimensions, validate_scale
 from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
-from app.backend.semantic_proportion_validator import validate_furniture_proportions
+from app.backend.leader_dimension_classifier import classify_drawing_annotations
+from app.backend.furniture_component_segmenter import segment_furniture
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
     save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
@@ -302,6 +303,29 @@ async def digitize_hybrid(
             conf = 0.5
         # Use max confidence from both engines
         conf = max(conf, opencv_conf)
+
+        # --- Annotation classification: separate dimensions from leaders ---
+        annotation_result = classify_drawing_annotations(ocr_lines, merged_dims)
+        print(f"[HYBRID] Annotations: {len(annotation_result.dimensions)} dims, "
+              f"{len(annotation_result.leaders)} leaders, "
+              f"{len(annotation_result.centerlines)} centerlines, "
+              f"{len(annotation_result.notes)} notes")
+
+        # --- Component segmentation: identify visible vs estimated sub-components ---
+        known_dims = {}
+        for d in merged_dims:
+            tag = d.get('tag', '').lower()
+            val = float(d.get('value_cm', 0))
+            if val > 0:
+                if any(k in tag for k in ['dia', 'diameter']):
+                    known_dims['top_diameter_cm'] = val
+                elif any(k in tag for k in ['h', 'height']):
+                    known_dims['overall_height_cm'] = val
+                elif any(k in tag for k in ['w', 'width']):
+                    known_dims['top_width_cm'] = val
+        segmentation = segment_furniture(ftype, ocr_lines, ai_result, known_dims)
+        print(f"[HYBRID] Components: {len(segmentation.present_components())} present, "
+              f"{len(segmentation.estimated_components())} estimated")
 
         # Merge AI dimensions with OCR dims
         ai_dims = ai_result.get('dimensions', []) or []
