@@ -8,3 +8,4 @@ pillow==12.2.0
 pydantic==2.13.4
 pytesseract==0.3.13
 httpx==0.28.1
+matplotlib==3.9.4
