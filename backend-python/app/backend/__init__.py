@@ -34,10 +34,13 @@ Services:
 - freecad_exporter.py: FreeCAD FCStd conversion
 """
 
-# Re-export key symbols for convenience
-from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
-from app.backend.dxf_exporter import (
-    save_generic, save_round_pedestal_table, save_rectangular_table,
-    save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
-    save_wardrobe, save_reception_counter,
-)
+# Re-export key symbols for convenience (safe import — may fail without ezdxf)
+try:
+    from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
+    from app.backend.dxf_exporter import (
+        save_generic, save_round_pedestal_table, save_rectangular_table,
+        save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
+        save_wardrobe, save_reception_counter,
+    )
+except ImportError:
+    pass  # ezdxf not installed (e.g. outside Docker)
