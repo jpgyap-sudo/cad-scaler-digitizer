@@ -8,6 +8,7 @@ export type DigitizeResult = {
   job_id: string;
   download: string;
   dxf_file: string;
+  preview_svg?: string;
   furniture: {
     type: string;
     confidence: number;

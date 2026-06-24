@@ -2,9 +2,10 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   UploadCloud, Download, Loader2, Bot, Cpu, CheckCircle2, AlertCircle,
   Info, Shapes, Ruler, Image, FileText, ChevronDown, RefreshCw,
-  Layers, Crosshair, Eye, Settings
+  Layers, Crosshair, Eye, Settings, Play
 } from 'lucide-react';
 import TechStackModal from './components/TechStackModal';
+import ChatBox from './components/ChatBox';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -47,6 +48,7 @@ const App: React.FC = () => {
   const [engineHealthy, setEngineHealthy] = useState<boolean | null>(null);
   const [processState, setProcessState] = useState<ProcessState>('idle');
   const [fileName, setFileName] = useState<string>('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);  // File selected, awaiting Start
 
   // Manual dimension inputs
   const [realWidthCm, setRealWidthCm] = useState<string>('');
@@ -182,24 +184,29 @@ const App: React.FC = () => {
     if (!file) return;
 
     setFileName(file.name);
-    correctionLoopRef.current = 0;
     setCadDoc(null);
     setCadEngineResult(null);
     setVerification(null);
     setError(null);
+    setPendingFile(file);
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (ev) => setImageSrc(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleStart = async () => {
+    if (!pendingFile) return;
+    const file = pendingFile;
+    setPendingFile(null);
+    correctionLoopRef.current = 0;
     setProcessState('processing');
 
     if (engineMode === 'ai') {
       setMode('agent-processing');
       setStatus('Connecting to AI...');
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target?.result as string;
-        setImageSrc(base64);
-        const base64Data = base64.split(',')[1];
-        await processWithAI(base64Data, file.type);
-      };
-      reader.readAsDataURL(file);
+      await processWithAI(file);
     } else {
       await processWithOpenCV(file);
     }
@@ -388,6 +395,17 @@ const App: React.FC = () => {
                 <p className="text-amber-500 text-xs mt-2">⚠️ Python engine not detected — start the backend first</p>
               )}
             </div>
+
+            {/* Start button */}
+            {pendingFile && (
+              <button
+                onClick={handleStart}
+                className="mt-6 flex items-center space-x-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-lg font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+              >
+                <Play className="w-6 h-6" />
+                <span>Start Digitizing</span>
+              </button>
+            )}
           </div>
         ) : (
           // === RESULT SCREEN ===
@@ -585,6 +603,19 @@ const App: React.FC = () => {
                 </div>
               )}
 
+              {/* CHATBOX */}
+              {cadEngineResult && !isProcessing && (
+                <div className="p-4 border-t border-slate-200">
+                  <ChatBox
+                    sessionId={cadEngineResult?.job_id}
+                    imageId={cadEngineResult?.job_id}
+                    onRenderRequest={(state) => {
+                      console.log('Chat render request:', state);
+                    }}
+                  />
+                </div>
+              )}
+
               {/* EXPORT */}
               {((cadEngineResult || cadDoc) && !isProcessing) && (
                 <div className="p-5 bg-white mt-auto border-t border-slate-200">
@@ -653,6 +684,17 @@ const App: React.FC = () => {
                             Full Preview
                           </a>
                         </div>
+                        {cadEngineResult.preview_svg && (
+                          <div className="mt-2">
+                            <a
+                              href={cadEngineResult.preview_svg}
+                              target="_blank"
+                              className="block text-center bg-emerald-600 text-white text-xs py-2 rounded-lg hover:bg-emerald-700 font-medium"
+                            >
+                              SVG Preview (Instant)
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
