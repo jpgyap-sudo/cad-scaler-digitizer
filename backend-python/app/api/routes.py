@@ -196,6 +196,18 @@ async def digitize(
 
         _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
 
+        # Generate SVG preview alongside DXF
+        try:
+            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.svg_exporter import drawing_to_svg
+            svg_name = f'{job_id}_digitized.svg'
+            svg_path = OUT / svg_name
+            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70))
+            with open(str(svg_path), 'w') as f2:
+                f2.write(drawing_to_svg(model))
+        except Exception:
+            svg_name = None
+
         try:
             os.remove(str(img_path))
         except Exception:
@@ -205,6 +217,7 @@ async def digitize(
             'job_id': job_id,
             'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
+            'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'furniture': {
                 'type': f_type,
                 'confidence': confidence,
@@ -364,10 +377,23 @@ async def digitize_hybrid(
         print(f"[HYBRID] Dispatch: ftype='{ftype}' w={real_w} h={real_h}")
         _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
 
+        # Generate SVG preview alongside DXF
+        try:
+            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.svg_exporter import drawing_to_svg
+            svg_name = f'{job_id}_hybrid.svg'
+            svg_path = OUT / svg_name
+            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70))
+            with open(str(svg_path), 'w') as f2:
+                f2.write(drawing_to_svg(model))
+        except Exception:
+            svg_name = None
+
         return JSONResponse({
             'job_id': job_id,
             'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
+            'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True},
             'detected': {
                 'lines': len(constrained['lines']),
@@ -395,22 +421,21 @@ def download(filename: str):
 
 @router.get("/preview/svg/{filename}")
 def preview_svg(filename: str):
-    """Generate instant SVG preview from DrawingModel (no matplotlib needed)."""
+    """Serve pre-generated SVG preview (generated alongside DXF)."""
     safe = os.path.basename(filename)
     dxf_path = OUT / safe
-    if not dxf_path.exists():
-        return JSONResponse({"error": "DXF not found"}, status_code=404)
+    svg_path = OUT / safe.replace('.dxf', '.svg')
 
-    svg_name = safe.replace('.dxf', '.svg')
-    svg_path = OUT / svg_name
+    if svg_path.exists():
+        return FileResponse(svg_path, media_type="image/svg+xml")
 
-    if not svg_path.exists():
+    # Fallback: try to generate from DXF
+    if dxf_path.exists():
+        import ezdxf, re
         try:
-            import ezdxf, re
             doc = ezdxf.readfile(str(dxf_path))
             from app.backend.drawing_model import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
-
             top_dia, height = 80.0, 70.0
             for e in doc.modelspace():
                 if e.dxftype() == "DIMENSION":
@@ -421,15 +446,15 @@ def preview_svg(filename: str):
                         top_dia = val
                     if val and ("H" in txt or "height" in txt.lower()):
                         height = val
-
             model = build_round_pedestal_model(top_dia, height)
             svg = drawing_to_svg(model)
             with open(str(svg_path), 'w') as f:
                 f.write(svg)
+            return FileResponse(svg_path, media_type="image/svg+xml")
         except Exception as e:
             return JSONResponse({"error": f"SVG failed: {e}"}, status_code=500)
 
-    return FileResponse(svg_path, media_type="image/svg+xml")
+    return JSONResponse({"error": "DXF not found — re-upload image to generate a new drawing"}, status_code=404)
 
 
 @router.get("/preview/{filename}")
