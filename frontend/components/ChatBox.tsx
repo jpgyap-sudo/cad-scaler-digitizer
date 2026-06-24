@@ -14,8 +14,6 @@ interface ChatBoxProps {
   className?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, className = '' }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -41,7 +39,13 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
       if (sessionId) formData.append('session_id', sessionId);
       if (imageId) formData.append('image_id', imageId);
 
-      const resp = await fetch(`${API_BASE}/api/chat`, {
+      // Use /py-api/ proxy pattern (same as cadEngine.ts)
+      const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+      const apiUrl = base.startsWith('http')
+        ? `${base}/api/chat`
+        : `${window.location.origin}/py-api/chat`;
+
+      const resp = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });
@@ -59,7 +63,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
         onRenderRequest(data.state);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Chat unavailable (Ollama offline).' }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        text: 'Chat unavailable. Make sure OPENAI_API_KEY is set on the server.'
+      }]);
     } finally {
       setLoading(false);
     }
@@ -73,58 +80,70 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
   };
 
   return (
-    <div className={`chatbox-container ${className}`}>
-      <div className="chatbox-header" onClick={() => setExpanded(!expanded)}>
+    <div className={className}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center space-x-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+      >
         <MessageSquare size={16} />
-        <span className="chatbox-title">Drawing Assistant</span>
-        {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-      </div>
+        <span>Drawing Assistant</span>
+        {expanded ? <ChevronDown size={14} className="ml-auto" /> : <ChevronUp size={14} className="ml-auto" />}
+      </button>
 
       {expanded && (
-        <>
-          <div className="chatbox-messages">
+        <div className="mt-2 border border-slate-200 rounded-lg overflow-hidden bg-white">
+          <div className="h-48 overflow-y-auto p-3 space-y-2 bg-slate-50" style={{ minHeight: '120px', maxHeight: '220px' }}>
             {messages.length === 0 && (
-              <div className="chatbox-hint">
-                Describe materials, dimensions, or corrections.
-                <br />
-                e.g. <em>"The base is hammered brass"</em> or <em>"Make top 90cm"</em>
+              <div className="text-xs text-slate-400 text-center py-4 leading-relaxed">
+                <p className="font-medium text-slate-500 mb-1">Describe your item</p>
+                <p>e.g. <em className="text-indigo-500">"The base is hammered brass"</em></p>
+                <p>e.g. <em className="text-indigo-500">"Make the top 90cm diameter"</em></p>
+                <p>e.g. <em className="text-indigo-500">"This is a round pedestal table"</em></p>
               </div>
             )}
             {messages.map((msg, i) => (
-              <div key={i} className={`chat-msg chat-msg-${msg.role}`}>
-                <div className="chat-msg-text">{msg.text}</div>
-                {msg.action === 'render' && (
-                  <div className="chat-msg-action">Drawing updated</div>
-                )}
+              <div key={i} className={`text-xs ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                <div className={`inline-block px-3 py-1.5 rounded-lg max-w-[85%] ${
+                  msg.role === 'user'
+                    ? 'bg-indigo-600 text-white rounded-br-sm'
+                    : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'
+                }`}>
+                  {msg.text}
+                  {msg.action === 'render' && (
+                    <div className="text-[10px] mt-1 text-indigo-300">drawing updated</div>
+                  )}
+                </div>
               </div>
             ))}
             {loading && (
-              <div className="chat-msg chat-msg-assistant">
-                <Loader2 size={14} className="spin" />
+              <div className="text-left">
+                <div className="inline-block px-3 py-1.5 rounded-lg bg-white border border-slate-200">
+                  <Loader2 size={14} className="animate-spin text-indigo-400" />
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          <div className="chatbox-input-row">
+          <div className="flex items-center border-t border-slate-200 p-2 gap-2 bg-white">
             <input
               type="text"
-              className="chatbox-input"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Add materials, dimensions, notes..."
+              placeholder="Description, materials, dimensions..."
               disabled={loading}
+              className="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 disabled:opacity-50"
             />
             <button
-              className="chatbox-send"
               onClick={sendMessage}
               disabled={loading || !input.trim()}
+              className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
             >
-              {loading ? <Loader2 size={14} className="spin" /> : <Send size={14} />}
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

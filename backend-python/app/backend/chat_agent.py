@@ -1,38 +1,39 @@
 """
 Conversational Chat Agent — parse user messages into structured drawing state.
 
-Uses Ollama (Hermes 3) to extract intent from natural language messages.
-Maintains a DrawingState that accumulates corrections across conversation turns.
+Primary: OpenAI GPT-4o (fast, reliable JSON output)
+Fallback: Ollama Hermes 3 (local, no API key needed)
 
 Supported intents:
 - MATERIAL: component material/finish/color overrides
 - DIMENSION: measurement corrections
 - VISIBILITY: component confirm/deny
-- NOTE: general annotations
+- NOTE: general annotations, workflow instructions
 - FURNITURE_TYPE: type correction
 """
 
 import json
+import os
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-CHAT_MODEL = "hermes3:3b"  # Fast, good at structured output
+CHAT_MODEL = "hermes3:3b"  # Ollama fallback
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
 @dataclass
 class DrawingState:
     """Accumulated user corrections to the CAD drawing."""
     furniture_type: Optional[str] = None
-    materials: Dict[str, str] = field(default_factory=dict)   # component -> material desc
-    dimensions: Dict[str, float] = field(default_factory=dict) # component -> value_cm
-    visibility: Dict[str, bool] = field(default_factory=dict)  # component -> confirmed
+    materials: Dict[str, str] = field(default_factory=dict)
+    dimensions: Dict[str, float] = field(default_factory=dict)
+    visibility: Dict[str, bool] = field(default_factory=dict)
     notes: List[str] = field(default_factory=list)
-    corrections: List[str] = field(default_factory=list)       # history
+    corrections: List[str] = field(default_factory=list)
 
     def apply_to_template_params(self) -> dict:
-        """Return overrides suitable for passing to template functions."""
         return {
             "furniture_type": self.furniture_type,
             "materials": dict(self.materials),
@@ -54,42 +55,91 @@ class DrawingState:
 
 @dataclass
 class ChatResponse:
-    """Result of processing a user chat message."""
-    message: str                             # AI response text
-    state: DrawingState                      # Updated drawing state
-    extracted: dict                          # Raw extraction from LLM
-    action: str = "continue"                 # "done", "render", "continue"
-    render_hint: Optional[str] = None        # What to re-render
+    message: str
+    state: DrawingState
+    extracted: dict
+    action: str = "continue"
+    render_hint: Optional[str] = None
 
 
-SYSTEM_PROMPT = """You are a furniture CAD assistant. Parse user messages about furniture drawings.
+SYSTEM_PROMPT = """You are a furniture CAD assistant for a shop drawing generator app.
 
-Return ONLY valid JSON with these fields:
+Your job: analyze user messages about furniture items and return structured JSON.
+
+The app generates professional CAD drawings (DXF format) from uploaded furniture images. Users can chat with you to:
+1. Describe the item (materials, finish, style)
+2. Provide exact dimensions
+3. Correct the AI's furniture type detection
+4. Specify which components are visible or hidden
+5. Teach you workflow preferences (e.g., 'always use brushed steel for modern pieces')
+
+Return ONLY valid JSON:
 {
-  "response": "your helpful reply to the user",
-  "action": "continue" or "render" or "done",
+  "response": "your concise, helpful reply to the user (1-2 sentences)",
+  "action": "continue" or "render",
   "updates": {
-    "furniture_type": null or corrected type (round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard),
-    "materials": {"component_name": "material description"},
-    "dimensions": {"component_name": value_in_cm},
-    "visibility": {"component_name": true_or_false},
-    "notes": ["note text"]
+    "furniture_type": null or one of: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard,
+    "materials": {"component": "material description"},
+    "dimensions": {"component": value_in_cm_number},
+    "visibility": {"component": true_or_false},
+    "notes": ["note text for the drawing"]
   }
 }
 
+Material components: tabletop, pedestal_base, neck_ring, legs, seat, backrest, frame, drawer_front, base_foot
+Dimension keys: top_diameter_cm, overall_height_cm, base_diameter_cm, top_thickness_cm, width_cm, depth_cm
+Visibility: set to false to hide a component, true to show it
+
 Rules:
-- If user specifies a material, add to materials dict. Keys: tabletop, pedestal_base, neck_ring, legs, seat, etc.
-- If user gives a measurement, add to dimensions dict. Keys: top_diameter_cm, overall_height_cm, base_diameter_cm, top_thickness_cm, etc.
-- If user confirms/denies a component, set visibility to true/false.
-- If user corrects the furniture type, set furniture_type.
-- If user asks to render/generate/show, set action to "render".
-- Be conversational but concise.
-- If you don't understand, ask a clarifying question.
+- Be conversational and helpful
+- Extract ALL measurable details from user messages
+- If user says 'render', 'generate', 'show me', or 'update drawing' → set action to "render"
+- If user describes a workflow preference, store it in notes
+- Default action is "continue" unless user explicitly asks for rendering
 """
 
 
-def _ollama_chat(prompt: str, context: Optional[str] = None) -> str:
-    """Call Ollama Hermes 3 model for intent parsing."""
+def _openai_chat(prompt: str, context: Optional[str] = None) -> Optional[str]:
+    """Call OpenAI GPT-4o for intent parsing."""
+    if not OPENAI_API_KEY:
+        return None
+
+    system = SYSTEM_PROMPT
+    user_msg = prompt
+    if context:
+        user_msg = f"Current drawing state:\n{context}\n\nUser message: {prompt}"
+
+    payload = json.dumps({
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_msg},
+        ],
+        "max_tokens": 600,
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }).encode()
+
+    try:
+        req = urllib.request.Request(
+            "https://api.openai.com/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+            content = result["choices"][0]["message"]["content"]
+            return content
+    except Exception as e:
+        print(f"[ChatAgent] OpenAI error: {e}")
+        return None
+
+
+def _ollama_chat(prompt: str, context: Optional[str] = None) -> Optional[str]:
+    """Call Ollama Hermes 3 as fallback."""
     full_prompt = SYSTEM_PROMPT
     if context:
         full_prompt += f"\n\nCurrent drawing state:\n{context}\n\nUser message: {prompt}"
@@ -119,7 +169,6 @@ def _extract_json(text: str) -> Optional[dict]:
     if not text:
         return None
     text = text.strip()
-    # Strip markdown fences
     if text.startswith("```"):
         text = text.split("\n", 1)[-1] if "\n" in text else text[3:]
     if text.rstrip().endswith("```"):
@@ -128,7 +177,6 @@ def _extract_json(text: str) -> Optional[dict]:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        # Try to find JSON object in text
         import re
         m = re.search(r'\{[\s\S]*\}', text)
         if m:
@@ -140,19 +188,10 @@ def _extract_json(text: str) -> Optional[dict]:
 
 
 def process_message(message: str, state: Optional[DrawingState] = None) -> ChatResponse:
-    """
-    Process a user chat message and update drawing state.
-
-    Args:
-        message: User's natural language message
-        state: Current drawing state (None for first message)
-
-    Returns:
-        ChatResponse with AI reply and updated state
-    """
+    """Process a user chat message, trying OpenAI first, then Ollama."""
     state = state or DrawingState()
 
-    # Build context from current state
+    # Build context
     context_parts = []
     if state.furniture_type:
         context_parts.append(f"Furniture type: {state.furniture_type}")
@@ -166,24 +205,29 @@ def process_message(message: str, state: Optional[DrawingState] = None) -> ChatR
         context_parts.append(f"Notes: {'; '.join(state.notes)}")
     context = "\n".join(context_parts) if context_parts else None
 
-    # Call Ollama
-    raw = _ollama_chat(message, context)
+    # Try OpenAI first, fall back to Ollama
+    raw = _openai_chat(message, context)
+    backend = "OpenAI"
+    if raw is None:
+        raw = _ollama_chat(message, context)
+        backend = "Ollama"
+
     extracted = _extract_json(raw) if raw else {}
 
     if not extracted:
         return ChatResponse(
-            message=raw or "I didn't understand that. Could you rephrase?",
+            message=raw or "I couldn't process that. Try describing the material or dimensions.",
             state=state,
             extracted={},
             action="continue",
         )
 
-    # Apply updates to state
+    # Apply updates
     updates = extracted.get("updates", {})
 
     if updates.get("furniture_type"):
         state.furniture_type = updates["furniture_type"]
-        state.corrections.append(f"Type corrected to {updates['furniture_type']}")
+        state.corrections.append(f"Type: {updates['furniture_type']}")
 
     if updates.get("materials"):
         state.materials.update(updates["materials"])
@@ -213,22 +257,8 @@ def process_message(message: str, state: Optional[DrawingState] = None) -> ChatR
     )
 
 
-# Public API
-def chat_with_agent(
-    message: str,
-    session_state: Optional[Dict] = None,
-) -> dict:
-    """
-    Main entry point for the chat endpoint.
-
-    Args:
-        message: User's message
-        session_state: Previous state dict (from state.to_dict())
-
-    Returns:
-        dict with "response", "state", "action", "render_hint"
-    """
-    # Reconstruct state from previous session
+def chat_with_agent(message: str, session_state: Optional[Dict] = None) -> dict:
+    """Main entry point for the chat endpoint."""
     prev_state = None
     if session_state:
         prev_state = DrawingState(
