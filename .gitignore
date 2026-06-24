@@ -2,9 +2,12 @@ node_modules/
 dist/
 .env
 .env.local
+.env.production
+.env.*.local
 *.log
 .DS_Store
 __pycache__/
 *.pyc
 *.pyo
 uploads/
+backend-python/.env

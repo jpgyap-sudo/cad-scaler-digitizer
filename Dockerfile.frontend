@@ -1,10 +1,12 @@
-# Frontend build stage
+# Frontend — multi-stage build
 FROM node:20-alpine AS build
 
 WORKDIR /app
 COPY frontend/package.json ./
 RUN npm install
 COPY frontend/ .
+# Use production env so Vite bakes in correct API paths
+COPY frontend/.env.production .env
 RUN npm run build
 
 # Nginx serve stage

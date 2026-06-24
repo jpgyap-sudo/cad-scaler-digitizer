@@ -17,6 +17,12 @@ services:
     restart: unless-stopped
     networks:
       - cad-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   frontend:
     build:
@@ -24,9 +30,10 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: cad-digitizer-frontend
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - cad-network
