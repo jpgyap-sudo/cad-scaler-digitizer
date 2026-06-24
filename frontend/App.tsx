@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import {
   UploadCloud, Download, Loader2, Bot, Cpu, CheckCircle2, AlertCircle,
   Info, Shapes, Ruler, Image, FileText, ChevronDown, RefreshCw,
@@ -19,6 +19,41 @@ import {
   getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult,
   getPreviewUrl, getPdfUrl
 } from './services/cadEngine';
+
+// ─── Global Error Boundary ────────────────────────────────────────────────────
+interface ErrorBoundaryState { hasError: boolean; message: string; }
+class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(err: Error): ErrorBoundaryState {
+    return { hasError: true, message: err?.message || String(err) };
+  }
+  componentDidCatch(err: Error, info: ErrorInfo) {
+    console.error('[ErrorBoundary]', err, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen flex flex-col items-center justify-center bg-slate-50 p-8">
+          <div className="bg-white border border-red-200 rounded-2xl p-8 max-w-lg shadow-lg text-center">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Something went wrong</h2>
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3 mb-4 font-mono break-words">{this.state.message}</p>
+            <button
+              onClick={() => { this.setState({ hasError: false, message: '' }); window.location.reload(); }}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const MAX_CORRECTION_LOOPS = 3;
 const BRAIN_API = `${import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001'}/api/brain`;
@@ -204,7 +239,10 @@ const App: React.FC = () => {
     setCadEngineResult(null);
     setVerification(null);
     setError(null);
+    setMode('idle');
+    setProcessState('idle');  // ← Reset so upload screen re-appears with Start button
     setPendingFile(file);
+    setImageSrc(null);  // Clear old preview until new one loads
 
     // Show preview immediately
     const reader = new FileReader();
@@ -264,9 +302,10 @@ const App: React.FC = () => {
 
   // Summary stats
   const dims = cadEngineResult?.detected?.dimensions || [];
-  const detectedFurniture = cadEngineResult?.furniture;
+  const detectedFurniture = cadEngineResult?.furniture ?? null;
 
   return (
+    <ErrorBoundary>
     <div className="h-screen flex flex-col bg-slate-50 font-sans">
       <TechStackModal isOpen={isTechModalOpen} onClose={() => setIsTechModalOpen(false)} />
 
@@ -343,7 +382,7 @@ const App: React.FC = () => {
 
       {/* MAIN */}
       <main className="flex-1 flex overflow-hidden">
-        {!imageSrc && processState === 'idle' ? (
+        {processState === 'idle' ? (
           // === UPLOAD SCREEN ===
           <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto">
             <div className="max-w-2xl text-center mb-8">
@@ -440,16 +479,37 @@ const App: React.FC = () => {
               )}
             </div>
 
-            {/* Start button */}
-            {pendingFile && (
-              <button
-                onClick={handleStart}
-                className="mt-6 flex items-center space-x-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-lg font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
-              >
-                <Play className="w-6 h-6" />
-                <span>Start Digitizing</span>
-              </button>
-            )}
+            {/* Selected file + Start button */}
+            {pendingFile ? (
+              <div className="mt-6 w-full max-w-xl flex flex-col items-center">
+                {/* File accepted badge */}
+                <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="truncate max-w-xs">{pendingFile.name}</span>
+                </div>
+                {/* Image preview */}
+                {imageSrc && (
+                  <img
+                    src={imageSrc}
+                    alt="Selected drawing preview"
+                    className="max-h-48 max-w-full rounded-xl shadow-md border border-slate-200 mb-4 object-contain"
+                  />
+                )}
+                <button
+                  onClick={handleStart}
+                  className="flex items-center space-x-3 px-10 py-4 bg-indigo-600 text-white rounded-2xl text-lg font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-xl shadow-indigo-200 ring-4 ring-indigo-100"
+                >
+                  <Play className="w-6 h-6" />
+                  <span>Start Digitizing</span>
+                </button>
+                <button
+                  onClick={() => { setPendingFile(null); setImageSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  className="mt-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  ✕ Cancel selection
+                </button>
+              </div>
+            ) : null}
 
             {/* ChatBox + BrainStats on upload screen too */}
             <div className="mt-8 w-full max-w-md">
@@ -485,7 +545,7 @@ const App: React.FC = () => {
                       <span className="text-sm font-semibold">{error}</span>
                     </div>
                     <button
-                      onClick={() => { setImageSrc(null); setCadEngineResult(null); setCadDoc(null); setProcessState('idle'); }}
+                      onClick={() => { setImageSrc(null); setCadEngineResult(null); setCadDoc(null); setProcessState('idle'); setError(null); setMode('idle'); setPendingFile(null); }}
                       className="text-xs text-indigo-600 underline text-left p-1 hover:text-indigo-800"
                     >
                       ← Try again
@@ -825,6 +885,7 @@ const App: React.FC = () => {
         )}
       </main>
     </div>
+    </ErrorBoundary>
   );
 };
 

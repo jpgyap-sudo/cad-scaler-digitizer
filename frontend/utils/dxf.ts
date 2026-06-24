@@ -163,7 +163,7 @@ export function generateDXF(doc: CadDocument): string {
   dxf += dxfTables();
   dxf += '  0\nSECTION\n  2\nENTITIES\n';
 
-  const ppu = doc.calibration.pixelsPerUnit || 1;
+  const ppu = doc.calibration?.pixelsPerUnit || 1;
 
   for (const view of doc.views) {
     for (const prim of view.primitives) {
