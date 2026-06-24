@@ -948,3 +948,155 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix wiring: replace text_normalizer imports with text_tokenizer, add semantic_validator, remove dead import
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d17dd9cae588419ecd5bd5e1d5d296a1674fe617
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d17dd9cae588419ecd5bd5e1d5d296a1674fe617
+**Files:** backend-python/app/backend/dxf_exporter.py
+
+**Summary:**
+Commit: Fix wiring: replace text_normalizer imports with text_tokenizer, add semantic_validator, remove dead import
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix wiring: replace text_normalizer imports with text_tokenizer, add semantic_validator, remove dead import*
+
+#### Lesson Learned
+
+Commit: Fix wiring: replace text_normalizer imports with text_tokenizer, add semantic_validator, remove dead import
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: critical audit fixes - save_generic, furniture dispatch, OCR regex, API response fields, DXF templates
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ba6f0c1797393c4507b5a34bcbeebff67cb7a110
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** ba6f0c1797393c4507b5a34bcbeebff67cb7a110
+**Files:** 
+
+**Summary:**
+Commit: fix: critical audit fixes - save_generic, furniture dispatch, OCR regex, API response fields, DXF templates
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: critical audit fixes - save_generic, furniture dispatch, OCR regex, API response fields, DXF templates*
+
+#### Lesson Learned
+
+Commit: fix: critical audit fixes - save_generic, furniture dispatch, OCR regex, API response fields, DXF templates
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] deploy: fix docker compose + production env for container build
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bd438884026547b76a85aabbe309da196d4393d6
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** bd438884026547b76a85aabbe309da196d4393d6
+**Files:** Dockerfile.frontend,docker-compose.yml,frontend/.env.production
+
+**Summary:**
+Commit: deploy: fix docker compose + production env for container build
+Files: Dockerfile.frontend,docker-compose.yml,frontend/.env.production
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: deploy: fix docker compose + production env for container build*
+
+#### Lesson Learned
+
+Commit: deploy: fix docker compose + production env for container build
+Files: Dockerfile.frontend,docker-compose.yml,frontend/.env.production
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] deploy: fix docker compose + production env for container build
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7b434b5ec26d08e1dfaa5ae84f6ab724741a602d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7b434b5ec26d08e1dfaa5ae84f6ab724741a602d
+**Files:** .gitignore,Dockerfile.frontend,docker-compose.yml
+
+**Summary:**
+Commit: deploy: fix docker compose + production env for container build
+Files: .gitignore,Dockerfile.frontend,docker-compose.yml
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: deploy: fix docker compose + production env for container build*
+
+#### Lesson Learned
+
+Commit: deploy: fix docker compose + production env for container build
+Files: .gitignore,Dockerfile.frontend,docker-compose.yml
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
