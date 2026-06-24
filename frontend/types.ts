@@ -97,7 +97,7 @@ export interface CadView {
 export interface CadDocument {
   title: string;
   views: CadView[];
-  calibration: {
+  calibration?: {
     found: boolean;
     pixelsPerUnit: number;
     originalScale?: string;

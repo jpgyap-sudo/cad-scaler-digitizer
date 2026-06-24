@@ -17,7 +17,7 @@ import {
 } from './services/cadEngine';
 
 const MAX_CORRECTION_LOOPS = 3;
-const BRAIN_API = 'http://localhost:5001/api/brain';
+const BRAIN_API = `${import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001'}/api/brain`;
 
 type EngineMode = 'opencv' | 'ai' | 'hybrid';
 type ProcessState = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
@@ -283,7 +283,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Engine health */}
-          {engineHealthy !== null && engineMode === 'opencv' && (
+          {engineHealthy !== null && engineMode !== 'ai' && (
             <span className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full border ${
               engineHealthy
                 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'

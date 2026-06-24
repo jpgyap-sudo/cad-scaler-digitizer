@@ -14,9 +14,20 @@ for tp in [r'C:\Program Files\Tesseract-OCR\tesseract.exe',
         pytesseract.pytesseract.tesseract_cmd = tp
         break
 
+# Require EITHER a unit OR a label tag after the number to avoid matching random digits
 DIM_RE = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(cm|mm|m|in|ft)?\s*"
-    r"(dia|diameter|h|height|w|width|d|depth|thk|thickness|l|length)?", re.I
+    r"(\d+(?:\.\d+)?)"
+    r"\s*(?:(cm|mm|m|in|ft)\s*(dia|diameter|h|height|w|width|d|depth|thk|thickness|l|length)?"
+    r"|(?:^|\s)(dia|diameter|h|height|w|width|d|depth|thk|thickness|l|length))",
+    re.I
+)
+# Simpler and safer alternative — match number followed by unit, OR label=number, OR number+label
+_DIM_RE = re.compile(
+    r"(?P<label>dia(?:meter)?|h(?:eight)?|w(?:idth)?|d(?:epth)?|thk|thickness|l(?:ength)?)?\s*[=:]?\s*"
+    r"(?P<value>\d+(?:\.\d+)?)\s*"
+    r"(?P<unit>cm|mm|m\b|in|ft|\")?\s*"
+    r"(?P<label2>dia(?:meter)?|h(?:eight)?|w(?:idth)?|d(?:epth)?|thk|thickness)?",
+    re.I
 )
 
 _paddle_ocr = None
@@ -34,17 +45,41 @@ def _get_paddle():
 
 
 def _extract_dimensions(text: str) -> list:
+    """Extract dimensions that have either a unit or a label — avoids matching bare numbers."""
     dims = []
-    for m in DIM_RE.finditer(text):
-        value = float(m.group(1))
-        unit = (m.group(2) or "cm").lower()
-        tag = (m.group(3) or "").lower()
-        if unit == "mm": value /= 10
-        elif unit == "m": value *= 100
-        elif unit == "in": value *= 2.54
-        elif unit == "ft": value *= 30.48
-        if 1 <= value <= 10000:
-            dims.append({"value_cm": round(value, 1), "tag": tag, "raw": m.group(0)})
+    m = _DIM_RE.finditer(text)
+    for match in m:
+        label = (match.group('label') or match.group('label2') or '').lower()
+        raw_val = match.group('value')
+        unit = (match.group('unit') or '').lower().strip('"')
+
+        # Must have at least a unit or a label to be a real dimension
+        if not label and not unit:
+            continue
+
+        try:
+            value = float(raw_val)
+        except Exception:
+            continue
+
+        # Unit conversion to cm
+        if unit == 'mm':
+            value /= 10
+        elif unit == 'm':
+            value *= 100
+        elif unit == 'in' or unit == '"':
+            value *= 2.54
+        elif unit == 'ft':
+            value *= 30.48
+        # else assume cm
+
+        # Sanity-check: furniture dimensions are 2cm–1000cm
+        if 2.0 <= value <= 1000.0:
+            dims.append({
+                "value_cm": round(value, 1),
+                "tag": label,
+                "raw": match.group(0).strip()
+            })
     return dims
 
 

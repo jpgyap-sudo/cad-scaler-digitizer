@@ -125,12 +125,20 @@ export async function digitizeHybrid(
 
 /**
  * Get the DXF download URL for a result.
+ * Always builds through the Vite proxy (/py-api/download/...) for localhost;
+ * or prepends full base URL in production.
  */
 export function getDownloadUrl(result: DigitizeResult): string {
   if (!result || !result.download) return '';
-  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  // Rewrite /api/download → /py-api/download so Vite proxy routes it
   const dlPath = result.download.replace('/api/', '/py-api/');
-  return base ? `${base}${result.download}` : `${window.location.origin}${dlPath}`;
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  if (base.startsWith('http')) {
+    // Production: absolute base URL provided
+    return `${base}${result.download}`;
+  }
+  // Dev: use relative path through Vite proxy
+  return `${window.location.origin}${dlPath}`;
 }
 
 /**
