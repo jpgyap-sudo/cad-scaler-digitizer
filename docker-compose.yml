@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: cad-digitizer-frontend
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - api
     restart: unless-stopped

@@ -644,3 +644,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix Docker: replace libgl1-mesa-glx with libgl1
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 16fed36af485aec616431ef1f46e1e3c28c31e97
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 16fed36af485aec616431ef1f46e1e3c28c31e97
+**Files:** Dockerfile.api,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix Docker: replace libgl1-mesa-glx with libgl1
+Files: Dockerfile.api,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix Docker: replace libgl1-mesa-glx with libgl1*
+
+#### Lesson Learned
+
+Commit: Fix Docker: replace libgl1-mesa-glx with libgl1
+Files: Dockerfile.api,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
