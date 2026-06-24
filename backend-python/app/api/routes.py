@@ -485,3 +485,58 @@ async def ml_retrain():
     from app.services.ml_engine import retrain_models
     result = retrain_models()
     return JSONResponse(result)
+
+
+# ========= CHAT ENDPOINT =========
+
+CHAT_SESSIONS: dict = {}  # session_id -> DrawingState dict
+
+
+@router.post("/chat")
+async def chat_message(
+    message: str = Form(...),
+    session_id: str = Form(None),
+    image_id: str = Form(None),
+):
+    """
+    Conversational chatbox for refining furniture drawings.
+
+    Accepts natural language messages about materials, dimensions,
+    component visibility, and furniture type corrections.
+    Returns structured state updates that feed into the DXF pipeline.
+    """
+    from app.backend.chat_agent import chat_with_agent
+
+    sid = session_id or "default"
+    prev_state = CHAT_SESSIONS.get(sid)
+
+    result = chat_with_agent(message, prev_state)
+    CHAT_SESSIONS[sid] = result["state"]
+
+    return JSONResponse({
+        "session_id": sid,
+        "response": result["response"],
+        "action": result["action"],
+        "render_hint": result["render_hint"],
+        "state": result["state"],
+        "image_id": image_id,
+    })
+
+
+@router.get("/chat/state")
+async def chat_state(session_id: str = "default"):
+    """Get current drawing state for a chat session."""
+    state = CHAT_SESSIONS.get(session_id, {})
+    return JSONResponse({
+        "session_id": session_id,
+        "state": state,
+    })
+
+
+@router.get("/chat/sessions")
+async def chat_sessions():
+    """List active chat sessions."""
+    return JSONResponse({
+        "sessions": list(CHAT_SESSIONS.keys()),
+        "count": len(CHAT_SESSIONS),
+    })
