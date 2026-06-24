@@ -57,17 +57,30 @@ def _force_extents_in_file(path):
             content = f.read()
     except Exception:
         return
-    # Calculate bounding box from all coordinate groups in the file
+    # Parse DXF line-by-line: group codes (10/20) precede values on next line.
+    # Only scan ENTITIES section — skip HEADER coordinates (EXTMIN/EXTMAX defaults).
     all_x, all_y = [], []
-    for m in re.finditer(r'\b(?:10|20)\s+([-\d.e+]+)', content):
-        try:
-            val = float(m.group(1))
-            if m.group(0).startswith('10'):
-                all_x.append(val)
-            else:
-                all_y.append(val)
-        except ValueError:
+    lines = content.split('\n')
+    in_entities = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == 'ENTITIES':
+            in_entities = True
             continue
+        if stripped == 'ENDSEC' and in_entities:
+            break
+        if not in_entities:
+            continue
+        code = stripped
+        if code in ('10', '20') and i + 1 < len(lines):
+            try:
+                val = float(lines[i + 1].strip())
+                if code == '10':
+                    all_x.append(val)
+                else:
+                    all_y.append(val)
+            except ValueError:
+                continue
     if not all_x or not all_y:
         return
     mnx, mxx = min(all_x), max(all_x)
@@ -76,11 +89,15 @@ def _force_extents_in_file(path):
     margin_y = max(10, (mxy - mny) * 0.05)
     new_min = f'$EXTMIN\n 10\n{mnx - margin_x}\n 20\n{mny - margin_y}\n 30\n0.0'
     new_max = f'$EXTMAX\n 10\n{mxx + margin_x}\n 20\n{mxy + margin_y}\n 30\n0.0'
-    # Replace existing or add after header section start
-    if '$EXTMIN' in content:
-        content = re.sub(r'\$EXTMIN\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+', new_min, content)
-    if '$EXTMAX' in content:
-        content = re.sub(r'\$EXTMAX\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+', new_max, content)
+    # Replace existing $EXTMIN/$EXTMAX groups spanning 7 lines each
+    content = re.sub(
+        r'\$EXTMIN\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+',
+        new_min, content
+    )
+    content = re.sub(
+        r'\$EXTMAX\n\s*10\n[-\d.e+]+\n\s*20\n[-\d.e+]+\n\s*30\n[-\d.e+]+',
+        new_max, content
+    )
     try:
         with open(path, 'w', encoding='utf-8', errors='replace') as f:
             f.write(content)
@@ -235,7 +252,7 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     ext = max(4, r_px * 0.1)
     _add_centerline(msp, (cx - r_px - ext, cy), (cx + r_px + ext, cy))
     _add_centerline(msp, (cx, cy - r_px - ext), (cx, cy + r_px + ext))
-    _add_diameter_dim(msp, (cx, cy), r_px)
+    _add_diameter_dim(msp, (cx, cy), r_px, f'%%c{top_dia_cm:g} cm')
     _add_mtext(msp, 'TOP VIEW', (cx - 15, cy + r_px + ext + 5), 3)
 
     # ===== FRONT VIEW =====
@@ -454,7 +471,7 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45):
         _add_polyline(msp, points, closed=True, layer='OBJECT')
     _add_centerline(msp, (cx - r - 5, y_mid), (cx + r + 5, y_mid))
     _add_centerline(msp, (cx, y_mid - r - 5), (cx, y_mid + r + 5))
-    _add_diameter_dim(msp, (cx, y_mid), r)
+    _add_diameter_dim(msp, (cx, y_mid), r, f'%%c{min(width_cm, depth_cm):g} cm')
     _add_mtext(msp, 'TOP VIEW', (cx - 10, y_mid + r + 10), 3)
     generate_title_block(msp, f"Coffee Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
     return _save(doc, path)
