@@ -1290,3 +1290,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix 3 regressions: normalize AI furniture_type in hybrid path, add aliases, tighten DXF test
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7640b7bcff5f439be7c44370241dc519189243ac
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7640b7bcff5f439be7c44370241dc519189243ac
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/furniture_classifier.py,backend-python/tests/test_dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: Fix 3 regressions: normalize AI furniture_type in hybrid path, add aliases, tighten DXF test
+Files: backend-python/app/api/routes.py,backend-python/app/backend/furniture_classifier.py,backend-python/tests/test_dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 3 regressions: normalize AI furniture_type in hybrid path, add aliases, tighten DXF test*
+
+#### Lesson Learned
+
+Commit: Fix 3 regressions: normalize AI furniture_type in hybrid path, add aliases, tighten DXF test
+Files: backend-python/app/api/routes.py,backend-python/app/backend/furniture_classifier.py,backend-python/tests/test_dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

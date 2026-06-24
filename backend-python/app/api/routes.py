@@ -224,7 +224,7 @@ async def digitize_hybrid(
         except Exception as e:
             print(f"[Hybrid] OpenAI error: {e}")
 
-        # Also run OpenCV pipeline for geometry
+        # Also run OpenCV pipeline for geometry + classification
         img, gray = load_image(str(img_path))
         binary = preprocess(gray)
         lines_raw = detect_lines(binary)
@@ -235,16 +235,34 @@ async def digitize_hybrid(
         constrained = process_constraints(lines, circles, dims, rects)
         corrected_dims = autocorrect_dimensions(dims, {})
 
+        # Run OpenCV classifier as fallback for AI
+        opencv_classifier = classify_furniture(ocr_lines, constrained['circles'], constrained['lines'], constrained.get('rects'))
+        opencv_type = opencv_classifier.get('type', 'generic_2d_furniture')
+        opencv_conf = opencv_classifier.get('confidence', 0.3)
+
         try:
             os.remove(str(img_path))
         except Exception:
             pass
 
-        ftype = normalize_furniture_type(furniture_type or ai_result.get('furniture_type', '') or 'generic_2d_furniture')
+        # Priority: user override > AI result > OpenCV classifier > generic fallback
+        raw_ai_type = (ai_result.get('furniture_type', '') or '').strip()
+        if furniture_type:
+            ftype = normalize_furniture_type(furniture_type)
+            print(f"[HYBRID] Using user override: {furniture_type} → {ftype}")
+        elif raw_ai_type:
+            ftype = normalize_furniture_type(raw_ai_type)
+            print(f"[HYBRID] Using AI: '{raw_ai_type}' → '{ftype}'")
+        else:
+            ftype = normalize_furniture_type(opencv_type)
+            print(f"[HYBRID] AI empty, using OpenCV classifier: '{opencv_type}' → '{ftype}'")
+
         try:
             conf = float(ai_result.get('confidence', 0) or 0)
         except Exception:
             conf = 0.5
+        # Use max confidence from both engines
+        conf = max(conf, opencv_conf)
 
         # Merge AI dimensions with OCR dims
         ai_dims = ai_result.get('dimensions', []) or []
@@ -258,6 +276,7 @@ async def digitize_hybrid(
 
         real_w = _parse_float(real_width_cm)
         real_h = _parse_float(real_height_cm)
+        print(f"[HYBRID] Dispatch: ftype='{ftype}' w={real_w} h={real_h}")
         _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
 
         return JSONResponse({
