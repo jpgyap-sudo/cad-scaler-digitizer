@@ -253,6 +253,18 @@ async def digitize(
         except Exception:
             svg_name = None
 
+        # Central Brain: record drawing + proportions
+        try:
+            from app.backend.brain_sync import record_drawing, record_proportion
+            record_drawing(job_id, f_type, dxf_name,
+                           entity_counts={}, dimensions_used={"w": real_w, "h": real_h},
+                           preview_urls={"svg": f"/api/preview/svg/{dxf_name}"})
+            if real_w and real_w > 0:
+                record_proportion(f_type, "top_diameter_cm", float(real_w or 80),
+                                  "pedestal_diameter_cm", float(real_w or 80) * 0.55)
+        except Exception:
+            pass
+
         try:
             os.remove(str(img_path))
         except Exception:
@@ -817,6 +829,36 @@ async def ml_retrain():
     return JSONResponse(result)
 
 
+# ========= CENTRAL BRAIN (Postgres Intelligence) =========
+
+@router.get("/brain/report")
+async def brain_report():
+    """Get Central Brain intelligence report."""
+    from app.backend.brain_sync import get_intelligence_report
+    return JSONResponse(get_intelligence_report())
+
+
+@router.get("/brain/proportions")
+async def brain_proportions(
+    furniture_type: str = "round_pedestal_table",
+    anchor_dimension: str = "top_diameter_cm",
+    anchor_value: float = 80.0,
+    component: str = "pedestal_diameter_cm",
+):
+    """Get proportion estimate from the brain."""
+    from app.backend.brain_sync import get_proportion_estimate
+    est = get_proportion_estimate(furniture_type, anchor_dimension, anchor_value, component)
+    return JSONResponse({"estimate": est} if est else {"estimate": None, "note": "Not enough data yet"})
+
+
+@router.get("/brain/materials")
+async def brain_materials(component: str = "tabletop", furniture_type: str = None):
+    """Get material suggestions from the brain."""
+    from app.backend.brain_sync import get_material_suggestions
+    suggestions = get_material_suggestions(component, furniture_type)
+    return JSONResponse({"component": component, "suggestions": suggestions})
+
+
 # ========= STYLE PRESETS (Scan2CAD-inspired) =========
 
 @router.get("/presets")
@@ -891,6 +933,19 @@ async def chat_message(
 
     # Echo Drafter: learn from user corrections in this message
     corrections = learn_from_chat(sid, prev_state or {}, result["state"], user_id=session_id or "default")
+
+    # Central Brain: record corrections + materials to Postgres
+    try:
+        from app.backend.brain_sync import record_correction as brc, record_material as brm
+        for c in corrections:
+            brc(sid, result["state"].get("furniture_type", ""),
+                c.field, c.old_value, c.new_value,
+                correction_type="dimension" if c.field.endswith("_cm") else "material")
+        # Record material choices
+        for comp, mat in result["state"].get("materials", {}).items():
+            brm(comp, str(mat))
+    except Exception as e:
+        print(f"[BrainSync] Record failed: {e}")
 
     # If model has enough confidence, include adjustment hints
     hints = get_adjustment_hints(user_id=session_id or "default") if len(corrections) > 0 else []

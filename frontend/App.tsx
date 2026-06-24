@@ -660,6 +660,7 @@ const App: React.FC = () => {
                   <ChatBox
                     sessionId={cadEngineResult?.job_id}
                     imageId={cadEngineResult?.job_id}
+                    dxfFile={cadEngineResult?.dxf_file}
                     onRenderRequest={handleChatRender}
                   />
                 </div>

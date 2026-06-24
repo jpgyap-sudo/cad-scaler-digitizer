@@ -555,7 +555,7 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45):
     return _save(doc, path)
 
 
-def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45):
+def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation_result=None):
     """Round coffee table — top view circle with diameter dimension."""
     doc = setup_doc()
     msp = doc.modelspace()
@@ -578,7 +578,7 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45):
     return _save(doc, path)
 
 
-def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_cm=45):
+def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_cm=45, _validation_result=None):
     """Dining chair with seat, backrest, and 4 legs in front view."""
     doc = setup_doc()
     msp = doc.modelspace()
@@ -624,7 +624,7 @@ def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_
     return _save(doc, path)
 
 
-def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200):
+def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_result=None):
     """Wardrobe with double doors, shelves, hanging rail, and handles."""
     doc = setup_doc()
     msp = doc.modelspace()
@@ -671,7 +671,7 @@ def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200):
     return _save(doc, path)
 
 
-def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, counter_height_cm=75):
+def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, counter_height_cm=75, _validation_result=None):
     """Reception counter with top view, front view, and transaction height label."""
     doc = setup_doc()
     msp = doc.modelspace()

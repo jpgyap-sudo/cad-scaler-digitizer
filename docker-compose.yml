@@ -11,6 +11,11 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8000
+      - PG_HOST=host.docker.internal
+      - PG_PORT=5432
+      - PG_DATABASE=cad_digitizer
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
     volumes:
       - cad_temp:/tmp/cad_digitizer_outputs
       - cad_uploads:/tmp/cad_digitizer_uploads

@@ -639,3 +639,48 @@ def build_sofa_model(
         views=[front_view], title_block=title,
         known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
     )
+
+
+def build_coffee_table_model(w=100.0, d=60.0, h=45.0) -> DrawingModel:
+    sc, cx, ym = 0.6, 100.0, 190.0; r = min(w, d) / 2 * sc
+    from datetime import datetime as dt; n = dt.now().strftime('%Y-%m-%d')
+    tv = View(name="TOP VIEW")
+    tv.circles.append(CircleComponent(center=Point(cx, ym), radius=r, layer="OBJECT"))
+    tv.lines.append(LineComponent(Point(cx-r-5, ym), Point(cx+r+5, ym), "CENTER"))
+    tv.lines.append(LineComponent(Point(cx, ym-r-5), Point(cx, ym+r+5), "CENTER"))
+    tv.dimensions.append(DimensionComponent(Point(cx-r, ym), Point(cx+r, ym), f"%%c{min(w,d):g} cm", "DIMENSION"))
+    tv.texts.append(TextComponent("TOP VIEW", Point(cx-10, ym+r+10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    return DrawingModel("coffee_table", [tv], tb, {"width_cm": w, "depth_cm": d, "overall_height_cm": h})
+
+
+def build_dining_chair_model(w=45.0, h=90.0) -> DrawingModel:
+    sc, w2 = 0.5, w * 0.5 * 0.5; fx = (420 - w * 0.5) / 2
+    fy, ty = 50.0, 50.0 + h * 0.5; sy = fy + h * 0.5 * 0.5
+    ref_point = Point(fx, ty+10)
+    from datetime import datetime as dt; n = dt.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    p1 = Point(fx, sy); p2 = Point(fx+w*0.5, sy); p3 = Point(fx+w*0.5, ty); p4 = Point(fx, ty)
+    fv.polygons.append(PolygonComponent([p1, p2, p3, p4], "OBJECT", "backrest"))
+    p5 = Point(fx, fy); p6 = Point(fx+w*0.5, fy); p7 = Point(fx+w*0.5, sy); p8 = Point(fx, sy)
+    fv.polygons.append(PolygonComponent([p5, p6, p7, p8], "OBJECT", "seat"))
+    fv.dimensions.append(DimensionComponent(Point(fx+w*0.5+8, fy), Point(fx+w*0.5+8, ty), f"H = {h:g} cm", "DIMENSION"))
+    fv.texts.append(TextComponent("FRONT VIEW", ref_point, 3, "MTEXT"))
+    tb = TitleBlockData(f"Dining Chair {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    return DrawingModel("dining_chair", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+
+
+def build_wardrobe_model(w=120.0, d=60.0, h=200.0) -> DrawingModel:
+    return build_cabinet_model(w, d, h)
+
+
+def build_reception_counter_model(w=180.0, h=110.0) -> DrawingModel:
+    sc = 0.3; fx = (420 - w * sc) / 2; fy, ty = 50.0, 50.0 + h * sc
+    from datetime import datetime as dt; n = dt.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent([Point(fx, fy), Point(fx+w*sc, fy), Point(fx+w*sc, ty), Point(fx, ty)], "OBJECT", "counter_body"))
+    fv.dimensions.append(DimensionComponent(Point(fx+w*sc+8, fy), Point(fx+w*sc+8, ty), f"H = {h:g} cm", "DIMENSION"))
+    fv.dimensions.append(DimensionComponent(Point(fx, fy-8), Point(fx+w*sc, fy-8), f"W = {w:g} cm", "DIMENSION"))
+    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, ty+10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Reception Counter {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:3", revision="A", date=n)
+    return DrawingModel("reception_counter", [fv], tb, {"width_cm": w, "overall_height_cm": h})

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Send, Loader2, ChevronDown, ChevronUp, Bookmark } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -10,14 +10,16 @@ interface ChatMessage {
 interface ChatBoxProps {
   sessionId?: string;
   imageId?: string;
+  dxfFile?: string;
   onRenderRequest?: (state: any) => void;
   className?: string;
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, className = '' }) => {
+const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRenderRequest, className = '' }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [chatState, setChatState] = useState<any>({});
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,15 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const apiPost = async (path: string, body: FormData) => {
+    const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+    const apiUrl = base.startsWith('http')
+      ? `${base}${path}`
+      : `${window.location.origin}${path.startsWith('/') ? '' : '/'}${path.replace(/^\//, '')}`;
+    const resp = await fetch(apiUrl, { method: 'POST', body });
+    return resp.json();
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -39,17 +50,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
       if (sessionId) formData.append('session_id', sessionId);
       if (imageId) formData.append('image_id', imageId);
 
-      // Use /py-api/ proxy pattern (same as cadEngine.ts)
-      const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
-      const apiUrl = base.startsWith('http')
-        ? `${base}/api/chat`
-        : `${window.location.origin}/py-api/chat`;
-
-      const resp = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await resp.json();
+      const data = await apiPost('/py-api/chat', formData);
 
       const aiMsg: ChatMessage = {
         role: 'assistant',
@@ -61,6 +62,19 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
 
       if (data.action === 'render' && onRenderRequest) {
         onRenderRequest(data.state);
+        // Also regenerate DXF by calling /api/adjust with updated dimensions
+        if (dxfFile && data.state?.dimensions) {
+          try {
+            const adjForm = new FormData();
+            adjForm.append('dxf_file', dxfFile);
+            for (const [k, v] of Object.entries(data.state.dimensions)) {
+              adjForm.append(k, String(v));
+            }
+            await apiPost('/py-api/adjust', adjForm);
+          } catch (e) {
+            console.error('DXF regen from chat failed:', e);
+          }
+        }
       }
     } catch (e) {
       setMessages(prev => [...prev, {
@@ -72,12 +86,24 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+  const savePreset = async () => {
+    if (!chatState || Object.keys(chatState.materials || {}).length === 0) return;
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      const name = prompt('Preset name:') || 'My Style';
+      formData.append('name', name);
+      if (sessionId) formData.append('session_id', sessionId);
+      await apiPost('/py-api/presets/save', formData);
+      setMessages(prev => [...prev, { role: 'assistant', text: `Preset "${name}" saved! Next upload, select it to pre-fill.` }]);
+    } catch (e) {
+      console.error('Save preset failed:', e);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const hasMaterials = Object.keys(chatState?.materials || {}).length > 0;
 
   return (
     <div className={className}>
@@ -130,7 +156,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder="Description, materials, dimensions..."
               disabled={loading}
               className="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 disabled:opacity-50"
@@ -143,6 +169,20 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, onRenderRequest, 
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             </button>
           </div>
+
+          {/* Save Preset button */}
+          {hasMaterials && (
+            <div className="border-t border-slate-100 p-2">
+              <button
+                onClick={savePreset}
+                disabled={saving}
+                className="w-full flex items-center justify-center space-x-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {saving ? <Loader2 size={12} className="animate-spin" /> : <Bookmark size={12} />}
+                <span>{saving ? 'Saving...' : 'Save as Preset'}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
