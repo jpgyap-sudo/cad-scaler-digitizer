@@ -165,6 +165,19 @@ async def digitize(
         f_type = normalize_furniture_type(furniture_type or classifier_result['type'])
         confidence = classifier_result.get('confidence', 0.5)
 
+        # Echo Drafter: record user correction if furniture_type was explicitly overridden
+        if furniture_type and furniture_type.strip():
+            from app.backend.feedback_learner import record_correction
+            record_correction(
+                job_id, "furniture_type",
+                classifier_result.get('type', ''), f_type,
+                context={"confidence": confidence, "endpoint": "digitize"},
+            )
+            if real_w:
+                record_correction(job_id, "top_diameter_cm", None, real_w)
+            if real_h:
+                record_correction(job_id, "overall_height_cm", None, real_h)
+
         print(f"[DIGITIZE] RAW furniture_type form param: '{furniture_type}'")
         print(f"[DIGITIZE] Classifier type: '{classifier_result['type']}'")
         print(f"[DIGITIZE] NORMALIZED: '{f_type}'")
@@ -568,12 +581,19 @@ async def chat_message(
     Returns structured state updates that feed into the DXF pipeline.
     """
     from app.backend.chat_agent import chat_with_agent
+    from app.backend.feedback_learner import learn_from_chat, get_adjustment_hints, load_preferences, apply_preferences
 
     sid = session_id or "default"
     prev_state = CHAT_SESSIONS.get(sid)
 
     result = chat_with_agent(message, prev_state)
     CHAT_SESSIONS[sid] = result["state"]
+
+    # Echo Drafter: learn from user corrections in this message
+    corrections = learn_from_chat(sid, prev_state or {}, result["state"], user_id=session_id or "default")
+
+    # If model has enough confidence, include adjustment hints
+    hints = get_adjustment_hints(user_id=session_id or "default") if len(corrections) > 0 else []
 
     return JSONResponse({
         "session_id": sid,
@@ -582,6 +602,8 @@ async def chat_message(
         "render_hint": result["render_hint"],
         "state": result["state"],
         "image_id": image_id,
+        "corrections_learned": len(corrections),
+        "adjustment_hints": hints[:5] if hints else [],
     })
 
 
@@ -601,4 +623,55 @@ async def chat_sessions():
     return JSONResponse({
         "sessions": list(CHAT_SESSIONS.keys()),
         "count": len(CHAT_SESSIONS),
+    })
+
+
+# ========= ECHO DRAFTER — Learning Endpoints =========
+
+@router.get("/learn/preferences")
+async def get_preferences(user_id: str = "default"):
+    """Get learned user preferences from Echo Drafter."""
+    from app.backend.feedback_learner import load_preferences, get_adjustment_hints
+    model = load_preferences(user_id)
+    return JSONResponse({
+        "user_id": user_id,
+        "preferences": model.to_dict(),
+        "hints": get_adjustment_hints(user_id),
+        "model_active": model.correction_count >= 3,
+    })
+
+
+@router.get("/learn/users")
+async def list_learned_users():
+    """List all users with stored preference models."""
+    from app.backend.feedback_learner import get_all_users, load_preferences
+    users = get_all_users()
+    result = {}
+    for uid in users:
+        model = load_preferences(uid)
+        result[uid] = {
+            "corrections": model.correction_count,
+            "confidence": round(model.confidence, 2),
+            "last_updated": model.last_updated,
+        }
+    return JSONResponse({"users": result, "total": len(users)})
+
+
+@router.post("/learn/apply")
+async def apply_learned_preferences(
+    user_id: str = Form("default"),
+    session_id: str = Form(None),
+):
+    """
+    Apply learned preferences to pre-adjust current drawing session.
+    Returns adjusted parameters that anticipate user corrections.
+    """
+    from app.backend.feedback_learner import apply_preferences, load_preferences, get_adjustment_hints
+    state = CHAT_SESSIONS.get(session_id or "default", {})
+    adjusted = apply_preferences(state, user_id)
+    hints = get_adjustment_hints(user_id)
+    return JSONResponse({
+        "user_id": user_id,
+        "adjusted_params": adjusted,
+        "hints": hints,
     })
