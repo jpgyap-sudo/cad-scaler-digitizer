@@ -21,15 +21,15 @@ Y-AXIS NOTE:
 from typing import Optional
 from app.backend.drawing_model import DrawingModel, View
 
-# Layer color map
+# Layer color map — AutoCAD classic style
 LAYER_COLORS = {
-    "OBJECT": "#1a1a1a",
-    "DIMENSION": "#16a34a",
-    "LEADER": "#0891b2",
-    "CENTER": "#2563eb",
-    "MTEXT": "#334155",
-    "TEXT": "#475569",
-    "HATCH": "#94a3b8",
+    "OBJECT": "#1a1a1a",       # black object lines
+    "DIMENSION": "#e6c700",    # yellow dimensions (AutoCAD classic)
+    "LEADER": "#000000",       # black leader lines (matches reference)
+    "CENTER": "#2563eb",       # blue centerlines
+    "MTEXT": "#1a1a1a",        # black text
+    "TEXT": "#1a1a1a",
+    "HATCH": "#94a3b8",        # gray hatch
     "HIDDEN": "#94a3b8",
     "TITLE": "#7c3aed",
     "BORDER": "#1a1a1a",
@@ -122,17 +122,21 @@ def _render_view_flipped(view: View, page_h: float) -> str:
         color = _color("LEADER")
         sx, sy = l.start.x, fy(l.start.y)
         ex, ey = l.end.x, fy(l.end.y)
+        # Draw leader line
         elements.append(_svg_line(sx, sy, ex, ey, stroke=color, sw=0.8))
-        # Arrowhead triangle at end point
+        # Small horizontal shoulder at text end (like AutoCAD leaders)
+        shoulder = 5
+        elements.append(_svg_line(sx - shoulder, sy, sx, sy, stroke=color, sw=0.8))
+        # Arrowhead triangle at end point (pointing toward object)
         dx, dy = ex - sx, ey - sy
         mag = max(0.1, (dx**2 + dy**2)**0.5)
         ux, uy = dx / mag, dy / mag
-        arrow = 4
-        p1 = (ex - arrow * ux + 2 * uy, ey - arrow * uy - 2 * ux)
-        p2 = (ex - arrow * ux - 2 * uy, ey - arrow * uy + 2 * ux)
+        arrow = 3
+        p1 = (ex - arrow * ux + 1.5 * uy, ey - arrow * uy - 1.5 * ux)
+        p2 = (ex - arrow * ux - 1.5 * uy, ey - arrow * uy + 1.5 * ux)
         elements.append(_svg_polygon([(ex, ey), p1, p2], stroke=color, fill=color, sw=0.5))
-        # Label at start of leader (text reads correctly — no flip needed for text)
-        elements.append(_svg_text(sx + 5, sy - 3, l.text, color=color, size=8))
+        # Label at start (to the right of shoulder)
+        elements.append(_svg_text(sx - shoulder - 2, sy + 3, l.text, color=color, size=7, anchor="end"))
 
     # Texts
     for t in view.texts:
@@ -159,17 +163,20 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     Returns:
         Complete SVG document as a string
     """
-    w = width or int(model.page_width * 3)
-    h = height or int(model.page_height * 3)
-    PH = model.page_height  # page height used for Y-flip
+    # Use a wider virtual canvas to fit the larger-scale drawing
+    VW = max(model.page_width, 600.0)   # virtual width
+    VH = max(model.page_height, 420.0)  # virtual height
+    w = width or int(VW * 2)
+    h = height or int(VH * 2)
+    PH = VH  # page height used for Y-flip
 
     svg_parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {model.page_width:.0f} {model.page_height:.0f}" width="{w}" height="{h}">',
-        f'<rect width="{model.page_width:.0f}" height="{model.page_height:.0f}" fill="white"/>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VW:.0f} {VH:.0f}" width="{w}" height="{h}">',
+        f'<rect width="{VW:.0f}" height="{VH:.0f}" fill="white"/>',
     ]
 
     # === SHEET BORDER ===
-    svg_parts.append(_svg_rect(0, 0, model.page_width, model.page_height,
+    svg_parts.append(_svg_rect(0, 0, VW, VH,
                                 stroke=LAYER_COLORS["BORDER"], sw=1.5))
 
     # === VIEWS — Y-flipped so DXF Y-up coords render correctly in SVG Y-down space ===
@@ -177,36 +184,43 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
         svg_parts.append(f'<!-- {view.name} -->')
         svg_parts.append(_render_view_flipped(view, PH))
 
-    # === TITLE BLOCK (Bottom-Right in SVG coords) ===
+    # === TITLE BLOCK (Bottom-Right, safely within VW/VH) ===
     tb = model.title_block
-    tb_w, tb_h = 180, 60
-    ox, oy = model.page_width - tb_w - 10, model.page_height - tb_h - 10
+    tb_w, tb_h = 210, 70
+    ox, oy = VW - tb_w - 8, VH - tb_h - 8
     svg_parts.append(_svg_rect(ox, oy, tb_w, tb_h, stroke=LAYER_COLORS["TITLE"], sw=1.0))
-    row_h = tb_h / 4
-    col_mid = ox + tb_w * 0.65
-    for i in range(1, 4):
-        y = oy + row_h * i
-        svg_parts.append(_svg_line(ox, y, ox + tb_w, y, stroke=LAYER_COLORS["TITLE"], sw=0.5))
+    row_h = tb_h / 5
+    col_mid = ox + tb_w * 0.62
+    for i in range(1, 5):
+        yy = oy + row_h * i
+        svg_parts.append(_svg_line(ox, yy, ox + tb_w, yy, stroke=LAYER_COLORS["TITLE"], sw=0.5))
     svg_parts.append(_svg_line(col_mid, oy, col_mid, oy + tb_h, stroke=LAYER_COLORS["TITLE"], sw=0.5))
     c = LAYER_COLORS["TITLE"]
-    svg_parts.append(_svg_text(ox + 3, oy + 10, f"DRAWN: {tb.designer[:25]}", c, 7))
-    svg_parts.append(_svg_text(ox + 3, oy + 20, f"SCALE: {tb.scale}  DATE: {tb.date}", c, 7))
-    svg_parts.append(_svg_text(col_mid + 3, oy + 20, f"REV: {tb.revision}", c, 7))
-    svg_parts.append(_svg_text(ox + 3, oy + 30, f"DRAWING: {tb.drawing_title[:50]}", c, 7))
-    svg_parts.append(_svg_text(ox + 3, oy + 40, f"PROJECT: {tb.project[:30]}", c, 7))
-    svg_parts.append(_svg_text(col_mid + 3, oy + 40, f"CLIENT: {tb.client[:20] or '  '}", c, 7))
+    svg_parts.append(_svg_text(ox + 3, oy + 11,  f"DRAWN: {tb.designer[:25]}", c, 7))
+    svg_parts.append(_svg_text(ox + 3, oy + 25,  f"SCALE: {tb.scale}", c, 7))
+    svg_parts.append(_svg_text(col_mid + 3, oy + 11, f"DATE: {tb.date}", c, 7))
+    svg_parts.append(_svg_text(col_mid + 3, oy + 25, f"REV: {tb.revision}", c, 7))
+    svg_parts.append(_svg_text(ox + 3, oy + 39,  f"DRAWING: {tb.drawing_title[:40]}", c, 7))
+    svg_parts.append(_svg_text(ox + 3, oy + 53,  f"PROJECT: {tb.project[:30]}", c, 7))
+    svg_parts.append(_svg_text(col_mid + 3, oy + 53, f"CLIENT: {tb.client[:18] or '—'}", c, 7))
 
-    # === MATERIAL NOTES (Bottom-Left) ===
-    nx, ny = 12, model.page_height - 20
-    svg_parts.append(_svg_text(nx, ny, "MATERIAL / FINISH NOTES:", LAYER_COLORS["MTEXT"], 9))
+    # === MATERIAL NOTES (Bottom-Left, stacked upward from bottom) ===
+    note_line_h = 8
+    total_note_lines = len(tb.material_notes) + len(tb.general_notes) + 4  # +4 for headers
+    ny_start = VH - 8
+    nx = 8
+    cur_y = ny_start
+    svg_parts.append(_svg_text(nx, cur_y, "MATERIAL / FINISH NOTES:", LAYER_COLORS["MTEXT"], 8))
+    cur_y += note_line_h
     for i, note in enumerate(tb.material_notes):
-        svg_parts.append(_svg_text(nx, ny + 9 + i * 7, f"  {i+1}. {note[:60]}", LAYER_COLORS["MTEXT"], 7))
-
-    # === GENERAL NOTES (below material notes) ===
-    gy = ny + 9 + len(tb.material_notes) * 7 + 8
-    svg_parts.append(_svg_text(nx, gy, "GENERAL NOTES:", LAYER_COLORS["MTEXT"], 9))
+        svg_parts.append(_svg_text(nx + 4, cur_y, f"{i+1}. {note[:65]}", LAYER_COLORS["MTEXT"], 6.5))
+        cur_y += note_line_h - 1
+    cur_y += 4
+    svg_parts.append(_svg_text(nx, cur_y, "GENERAL NOTES:", LAYER_COLORS["MTEXT"], 8))
+    cur_y += note_line_h
     for i, note in enumerate(tb.general_notes):
-        svg_parts.append(_svg_text(nx, gy + 9 + i * 7, f"  {i+1}. {note[:60]}", LAYER_COLORS["MTEXT"], 7))
+        svg_parts.append(_svg_text(nx + 4, cur_y, f"{i+1}. {note[:65]}", LAYER_COLORS["MTEXT"], 6.5))
+        cur_y += note_line_h - 1
 
     svg_parts.append("</svg>")
     return "\n".join(svg_parts)

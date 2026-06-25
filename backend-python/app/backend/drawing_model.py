@@ -270,43 +270,275 @@ def build_round_pedestal_model(
     top_dia_cm: float = 80.0,
     height_cm: float = 70.0,
     base_dia_cm: float = 44.0,
-    neck_dia_cm: float = 22.4,
+    neck_dia_cm: float = 30.0,
     top_thick_cm: float = 4.0,
+    collar_dia_cm: float = 50.0,
+    base_thick_cm: float = 1.0,
     client: str = "",
     project: str = "Furniture Shop Drawing",
     material_notes: Optional[List[str]] = None,
 ) -> DrawingModel:
     """
-    Build a complete DrawingModel for a round pedestal table.
-    This replaces the direct DXF generation in save_round_pedestal_table.
+    Build a complete DrawingModel for a round pedestal table matching
+    professional shop drawing format.
+
+    Components (top to bottom):
+      - Tabletop slab          : top_dia_cm wide, top_thick_cm tall
+      - Metal collar plate     : collar_dia_cm wide, ~10% height  (matte hairline black steel)
+      - Neck connector ring    : neck_dia_cm wide, connects collar to pedestal
+      - Textured pedestal cone : widens from neck_dia → base_dia over ~75% height
+      - Base glide plate       : base_dia_cm wide, base_thick_cm tall (anti-sliding glides)
+
+    Scale: 2 units per cm  (sc=2, so 80cm top = 160px wide — fills sheet properly)
     """
-    sc = 0.5
-    r_px = top_dia_cm / 2 * sc
-    h_px = height_cm * sc
-    thick_px = top_thick_cm * sc
-    nr_px = neck_dia_cm * 0.5 * sc
-    br_px = base_dia_cm * 0.5 * sc
-    y_mid = 180.0
-    cx, cy = 100.0, y_mid
-    fx = 280.0
-
-    # Heights
-    remaining_h = max(1.0, height_cm - top_thick_cm)
-    neck_h_cm = remaining_h * 0.15
-    ped_h_cm = remaining_h * 0.70
-    base_h_cm = remaining_h * 0.15
-    neck_h_px = neck_h_cm * sc
-    ped_h_px = ped_h_cm * sc
-    base_h_px = base_h_cm * sc
-
-    top_y = y_mid + h_px / 2
-    bot_y = y_mid - h_px / 2
-    neck_top_y = top_y - thick_px
-    neck_bot_y = neck_top_y - neck_h_px
-    ped_bot_y = neck_bot_y - ped_h_px
-
     from datetime import datetime
     now = datetime.now().strftime('%Y-%m-%d')
+
+    # ── Scale: 1 unit = 0.5 cm  →  sc=2 means 1 cm = 2 drawing-units
+    sc = 2.0
+
+    # Derived pixel sizes
+    r_top    = top_dia_cm    / 2 * sc   # tabletop half-width
+    r_collar = collar_dia_cm / 2 * sc   # collar half-width
+    r_neck   = neck_dia_cm   / 2 * sc   # neck half-width
+    r_base   = base_dia_cm   / 2 * sc   # pedestal base half-width
+
+    thick_top  = top_thick_cm  * sc     # tabletop thickness
+    thick_base = base_thick_cm * sc     # base plate thickness
+
+    # Distribute remaining height between collar, pedestal cone, and nothing else
+    remaining_h   = max(1.0, height_cm - top_thick_cm - base_thick_cm)
+    collar_h_cm   = remaining_h * 0.14   # ~10cm for 70cm table
+    ped_h_cm      = remaining_h * 0.86   # rest is pedestal cone
+
+    collar_h = collar_h_cm * sc
+    ped_h    = ped_h_cm    * sc
+    h_total  = height_cm * sc
+
+    # Anchor: base sits at floor_y, tabletop top at floor_y + h_total
+    floor_y  = 30.0
+    top_y    = floor_y + h_total           # top of tabletop
+    tab_bot  = top_y   - thick_top         # bottom of tabletop slab
+    col_top  = tab_bot                     # collar starts here
+    col_bot  = col_top  - collar_h         # collar ends here
+    ped_bot  = col_bot  - ped_h            # pedestal cone ends here (= top of base)
+    base_bot = floor_y                     # bottom of base plate
+
+    # X centre of front view
+    fx = 160.0
+
+    # Leader X start (right side callouts)
+    lx_start = fx + r_top + 12
+    lx_text  = lx_start + 5
+
+    # ===== TOP VIEW (small, top-left) =====
+    top_view = View(name="TOP VIEW")
+    tv_cx, tv_cy = 55.0, top_y - r_top * 0.5   # small circle top-left
+    tv_r = top_dia_cm / 2 * 0.6   # smaller scale for top view
+
+    top_view.circles.append(CircleComponent(center=Point(tv_cx, tv_cy), radius=tv_r, layer="OBJECT"))
+    # Radial grain lines
+    for i in range(8):
+        angle = 2 * math.pi * i / 8
+        x1 = tv_cx + tv_r * 0.15 * math.cos(angle)
+        y1 = tv_cy + tv_r * 0.15 * math.sin(angle)
+        x2 = tv_cx + tv_r * math.cos(angle)
+        y2 = tv_cy + tv_r * math.sin(angle)
+        top_view.lines.append(LineComponent(start=Point(x1, y1), end=Point(x2, y2), layer="HATCH"))
+    # Centerlines
+    ext = max(4.0, tv_r * 0.12)
+    top_view.lines.append(LineComponent(start=Point(tv_cx - tv_r - ext, tv_cy),
+                                         end=Point(tv_cx + tv_r + ext, tv_cy), layer="CENTER"))
+    top_view.lines.append(LineComponent(start=Point(tv_cx, tv_cy - tv_r - ext),
+                                         end=Point(tv_cx, tv_cy + tv_r + ext), layer="CENTER"))
+    # Diameter dim on top view
+    top_view.dimensions.append(DimensionComponent(
+        p1=Point(tv_cx - tv_r, tv_cy + tv_r + ext),
+        p2=Point(tv_cx + tv_r, tv_cy + tv_r + ext),
+        label=f"\u00d8{top_dia_cm:g}", layer="DIMENSION"))
+    top_view.texts.append(TextComponent(content="TOP VIEW",
+        position=Point(tv_cx - 12, tv_cy - tv_r - ext - 3), height=2.5, layer="MTEXT"))
+
+    # ===== FRONT VIEW =====
+    front_view = View(name="FRONT VIEW")
+
+    # 1. Tabletop slab (wide flat rectangle)
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y),
+                Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)],
+        layer="OBJECT", name="tabletop"))
+    # Woodgrain hatch on tabletop
+    front_view.hatches.append(HatchComponent(
+        points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y),
+                Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)],
+        pattern="ANSI31", scale=0.8, angle_deg=45, layer="HATCH"))
+
+    # 2. Metal collar plate (wide, sits directly under tabletop)
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_collar, col_top), Point(fx + r_collar, col_top),
+                Point(fx + r_collar, col_bot), Point(fx - r_collar, col_bot)],
+        layer="OBJECT", name="collar_plate"))
+
+    # 3. Neck connector (narrow rectangle, same width as neck)
+    #    (In reference this is implied by the collar narrowing toward pedestal)
+    #    We draw a thin visible rectangle between collar and pedestal
+    neck_h_px = collar_h * 0.3
+    neck_top_y = col_bot
+    neck_bot_y = col_bot - neck_h_px
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_neck, neck_top_y), Point(fx + r_neck, neck_top_y),
+                Point(fx + r_neck, neck_bot_y), Point(fx - r_neck, neck_bot_y)],
+        layer="OBJECT", name="neck_ring"))
+
+    # 4. Textured pedestal cone (trapezoidal: narrow at top, wide at bottom)
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y),
+                Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)],
+        layer="OBJECT", name="pedestal_body"))
+    # Cross-hatch texture on pedestal
+    front_view.hatches.append(HatchComponent(
+        points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y),
+                Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)],
+        pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
+
+    # 5. Base glide plate (wide flat plate at floor)
+    front_view.polygons.append(PolygonComponent(
+        points=[Point(fx - r_base, ped_bot), Point(fx + r_base, ped_bot),
+                Point(fx + r_base, base_bot), Point(fx - r_base, base_bot)],
+        layer="OBJECT", name="base_plate"))
+
+    # ── CENTRELINE ──────────────────────────────────────────────────────────
+    front_view.lines.append(LineComponent(
+        start=Point(fx, base_bot - 6), end=Point(fx, top_y + 6), layer="CENTER"))
+
+    # ── DIMENSIONS ──────────────────────────────────────────────────────────
+    dim_x_left = fx - r_top - 8   # left-side dimension chain X
+
+    # Overall height (left side, spanning full height)
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(dim_x_left - 10, base_bot),
+        p2=Point(dim_x_left - 10, top_y),
+        label=f"{height_cm:g}", layer="DIMENSION"))
+
+    # Tabletop thickness (left side)
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(dim_x_left, tab_bot),
+        p2=Point(dim_x_left, top_y),
+        label=f"{top_thick_cm:g}", layer="DIMENSION"))
+
+    # Sub-height: collar + neck section
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(dim_x_left, neck_bot_y),
+        p2=Point(dim_x_left, tab_bot),
+        label=f"{collar_h_cm:.0f}", layer="DIMENSION"))
+
+    # Sub-height: pedestal cone + base
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(dim_x_left, base_bot),
+        p2=Point(dim_x_left, neck_bot_y),
+        label=f"{ped_h_cm:.0f}", layer="DIMENSION"))
+
+    # Top diameter (top of drawing)
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - r_top, top_y + 6),
+        p2=Point(fx + r_top, top_y + 6),
+        label=f"{top_dia_cm:g}", layer="DIMENSION"))
+
+    # Collar diameter (inside drawing)
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - r_collar, col_top - 4),
+        p2=Point(fx + r_collar, col_top - 4),
+        label=f"{collar_dia_cm:g}", layer="DIMENSION"))
+
+    # Neck / pedestal top diameter
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - r_neck, neck_bot_y - 4),
+        p2=Point(fx + r_neck, neck_bot_y - 4),
+        label=f"{neck_dia_cm:g}", layer="DIMENSION"))
+
+    # Pedestal base / base plate diameter
+    front_view.dimensions.append(DimensionComponent(
+        p1=Point(fx - r_base, ped_bot - 4),
+        p2=Point(fx + r_base, ped_bot - 4),
+        label=f"{base_dia_cm:g}", layer="DIMENSION"))
+
+    # ── LEADER ANNOTATIONS (right side) ─────────────────────────────────────
+    # 1. Collar plate → "Dia XXcm Metal base plate with screw holes - matte black steel"
+    col_mid_y = (col_top + col_bot) / 2
+    front_view.leaders.append(LeaderComponent(
+        start=Point(lx_text, col_mid_y),
+        end=Point(fx + r_collar, col_mid_y),
+        text=f"Dia {collar_dia_cm:.0f}cm Metal base plate with screw holes- matte black steel",
+        layer="LEADER"))
+
+    # 2. Neck ring → "Matte hairline black steel"
+    front_view.leaders.append(LeaderComponent(
+        start=Point(lx_text, neck_top_y),
+        end=Point(fx + r_neck, neck_top_y),
+        text="Matte hairline black steel",
+        layer="LEADER"))
+
+    # 3. Pedestal top → "Dia XXcm Metal base plate - matte black steel"
+    front_view.leaders.append(LeaderComponent(
+        start=Point(lx_text, neck_bot_y),
+        end=Point(fx + r_neck, neck_bot_y),
+        text=f"Dia {base_dia_cm:.0f}cm Metal base plate - matte black steel",
+        layer="LEADER"))
+
+    # 4. Pedestal body midpoint → "Black hammered textured - apply PU coating"
+    ped_mid_y = (neck_bot_y + ped_bot) / 2
+    front_view.leaders.append(LeaderComponent(
+        start=Point(lx_text, ped_mid_y),
+        end=Point(fx + (r_neck + r_base) / 2, ped_mid_y),
+        text="Black hammered textured- apply a layer of PU coating for paint protection",
+        layer="LEADER"))
+
+    # 5. Base plate → "Black table base with anti-sliding glides"
+    base_mid_y = (ped_bot + base_bot) / 2
+    front_view.leaders.append(LeaderComponent(
+        start=Point(lx_text, base_mid_y),
+        end=Point(fx + r_base, base_mid_y),
+        text="Black table base with anti-sliding glides",
+        layer="LEADER"))
+
+    # View label
+    front_view.texts.append(TextComponent(
+        content="FRONT VIEW",
+        position=Point(fx - r_top, base_bot - 12),
+        height=3, layer="MTEXT"))
+
+    # ===== TITLE BLOCK =====
+    title = TitleBlockData(
+        drawing_title=f"Round Pedestal Table \u00d8{top_dia_cm:.0f} x H{height_cm:.0f}",
+        project=project,
+        client=client,
+        scale="1:2",
+        revision="A",
+        designer="AI CAD Drafter",
+        date=now,
+        material_notes=material_notes or [
+            "WOOD TOP \u2014 Solid hardwood, stained finish",
+            "PEDESTAL BASE \u2014 Black hammered textured metal, PU coat",
+            "COLLAR PLATE \u2014 Matte hairline black steel",
+            "BASE GLIDES \u2014 Anti-sliding rubber feet",
+        ],
+        general_notes=[
+            "ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED",
+            "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED",
+        ],
+    )
+
+    return DrawingModel(
+        furniture_type="round_pedestal_table",
+        views=[top_view, front_view],
+        title_block=title,
+        known_dimensions={"top_diameter_cm": top_dia_cm, "overall_height_cm": height_cm},
+        estimated_components={
+            "pedestal_diameter_cm": base_dia_cm,
+            "neck_diameter_cm": neck_dia_cm,
+            "top_thickness_cm": top_thick_cm,
+        },
+    )
 
     # ===== TOP VIEW =====
     top_view = View(name="TOP VIEW")
