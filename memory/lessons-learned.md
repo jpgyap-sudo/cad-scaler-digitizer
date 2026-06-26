@@ -2392,3 +2392,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: collar plate diameter wasn't adjustable; preview SVG could show wrong top diameter
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 50405d438acfe67e3bf58f7e5752964443ca46b4
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 50405d438acfe67e3bf58f7e5752964443ca46b4
+**Files:** 
+
+**Summary:**
+Commit: fix: collar plate diameter wasn't adjustable; preview SVG could show wrong top diameter
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: collar plate diameter wasn't adjustable; preview SVG could show wrong top diameter*
+
+#### Lesson Learned
+
+Commit: fix: collar plate diameter wasn't adjustable; preview SVG could show wrong top diameter
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

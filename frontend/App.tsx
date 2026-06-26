@@ -587,9 +587,15 @@ const App: React.FC = () => {
                 )}
               </div>
 
+              {/* SCROLLABLE BODY -- everything below Status (results, BrainStats,
+                  sliders, chat) shares one scroll region so a taller SliderPanel
+                  (e.g. more component sections) can't push ChatBox/Export off
+                  the bottom with no way to reach them. */}
+              <div className="flex-1 overflow-y-auto">
+
               {/* RESULTS - OpenCV Engine */}
               {cadEngineResult && !isProcessing && (
-                <div className="p-5 flex-1 overflow-y-auto space-y-4">
+                <div className="p-5 space-y-4">
                   {/* File info */}
                   <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded-lg flex items-center space-x-2">
                     <FileText className="w-3.5 h-3.5" />
@@ -692,7 +698,7 @@ const App: React.FC = () => {
 
               {/* RESULTS - AI Engine */}
               {cadDoc && !isProcessing && (
-                <div className="p-5 flex-1 overflow-y-auto space-y-4">
+                <div className="p-5 space-y-4">
                   {verification && (
                     <div>
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quality</h3>
@@ -783,6 +789,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
+              </div>
               {/* EXPORT */}
               {((cadEngineResult || cadDoc) && !isProcessing) && (
                 <div className="p-5 bg-white mt-auto border-t border-slate-200">
