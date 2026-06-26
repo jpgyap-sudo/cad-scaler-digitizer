@@ -2316,3 +2316,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: leader annotation text overlapping itself and the TOP VIEW
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7c79bb2ba3eda61ea8c0be90951bd2ad844cc6a5
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 7c79bb2ba3eda61ea8c0be90951bd2ad844cc6a5
+**Files:** 
+
+**Summary:**
+Commit: fix: leader annotation text overlapping itself and the TOP VIEW
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: leader annotation text overlapping itself and the TOP VIEW*
+
+#### Lesson Learned
+
+Commit: fix: leader annotation text overlapping itself and the TOP VIEW
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

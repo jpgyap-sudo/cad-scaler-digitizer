@@ -149,6 +149,20 @@ def _render_view_flipped(view: View, page_h: float) -> str:
         elements.append(_svg_text(t.position.x, fy(t.position.y), t.content,
                                    color=color, size=t.height * 3.5))
 
+    # Invisible click hit-areas, one per named component, drawn last so they
+    # sit on top of hatches/outlines regardless of fill -- lets the frontend
+    # embed this SVG inline and detect which physical part the user clicked
+    # (data-component) to jump straight to the matching dimension slider.
+    for p in view.polygons:
+        if not p.name:
+            continue
+        pts_str = " ".join(f"{pt.x:.1f},{fy(pt.y):.1f}" for pt in p.points)
+        elements.append(
+            f'<polygon points="{pts_str}" fill="transparent" stroke="none" '
+            f'data-component="{p.name}" class="cad-part" '
+            f'style="cursor:pointer;pointer-events:all"/>'
+        )
+
     return "\n  ".join(elements)
 
 

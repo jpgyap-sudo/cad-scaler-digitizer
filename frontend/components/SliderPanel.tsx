@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sliders, Loader2 } from 'lucide-react';
 
 interface DimSlider {
@@ -16,6 +16,8 @@ interface SliderPanelProps {
   furnitureType?: string;
   onAdjusted: (dims: Record<string, number>, svgUrl: string) => void;
   className?: string;
+  /** Slider key to scroll to and highlight, e.g. from clicking a part of the drawing. */
+  highlightKey?: string | null;
 }
 
 const ROUND_SLIDERS: DimSlider[] = [
@@ -46,17 +48,29 @@ const BASE_SHAPE_RATIOS: Record<BaseShape, { neck: number; base: number }> = {
   flared: { neck: 0.28, base: 0.55 },
 };
 
-const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitureType, onAdjusted, className = '' }) => {
+const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitureType, onAdjusted, className = '', highlightKey }) => {
   const isRound = !furnitureType?.includes('rectangular');
   const sliders = isRound ? ROUND_SLIDERS : RECT_SLIDERS;
   const [dims, setDims] = useState<Record<string, number>>(initialDims);
   const [loading, setLoading] = useState(false);
   const [baseShape, setBaseShape] = useState<BaseShape | null>(null);
+  const [flashKey, setFlashKey] = useState<string | null>(null);
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     setDims(initialDims);
     setBaseShape(null);
   }, [initialDims]);
+
+  // Clicking a part of the drawing scrolls its slider into view and flashes
+  // a highlight ring briefly, so it's obvious which control just got focus.
+  useEffect(() => {
+    if (!highlightKey) return;
+    rowRefs.current[highlightKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlashKey(highlightKey);
+    const t = setTimeout(() => setFlashKey(null), 1600);
+    return () => clearTimeout(t);
+  }, [highlightKey]);
 
   const handleSliderChange = (key: string, value: number) => {
     setDims(prev => ({ ...prev, [key]: value }));
@@ -139,33 +153,58 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
       )}
 
       <div className="space-y-3">
-        {sliders.map(s => (
-          <div key={s.key} className="space-y-1">
-            <div className="flex justify-between text-[10px] text-slate-500">
-              <span>{s.label}</span>
-              <span className="font-mono font-bold text-indigo-600">{dims[s.key] ?? '-'} {s.unit}</span>
+        {sliders.map(s => {
+          const value = dims[s.key] ?? (s.min + s.max) / 2;
+          return (
+            <div
+              key={s.key}
+              ref={el => { rowRefs.current[s.key] = el; }}
+              className={`space-y-1 rounded-lg transition-shadow ${
+                flashKey === s.key ? 'ring-2 ring-indigo-400 bg-indigo-50/60' : ''
+              }`}
+            >
+              <div className="flex justify-between items-center text-[10px] text-slate-500">
+                <span>{s.label}</span>
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="number"
+                    min={s.min}
+                    max={s.max}
+                    step={s.step}
+                    value={value}
+                    onChange={e => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v)) handleSliderChange(s.key, Math.min(s.max, Math.max(s.min, v)));
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApply(); }}
+                    className="w-14 px-1 py-0.5 text-right font-mono font-bold text-indigo-600 bg-white
+                      border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  />
+                  <span className="text-slate-400">{s.unit}</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={s.min}
+                max={s.max}
+                step={s.step}
+                value={value}
+                onChange={e => handleSliderChange(s.key, parseFloat(e.target.value))}
+                onInput={e => handleSliderChange(s.key, parseFloat((e.target as HTMLInputElement).value))}
+                className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600
+                  [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-indigo-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-[9px] text-slate-400">
+                <span>{s.min}</span>
+                <span>{s.max}</span>
+              </div>
             </div>
-            <input
-              type="range"
-              min={s.min}
-              max={s.max}
-              step={s.step}
-              value={dims[s.key] ?? (s.min + s.max) / 2}
-              onChange={e => handleSliderChange(s.key, parseFloat(e.target.value))}
-              onInput={e => handleSliderChange(s.key, parseFloat((e.target as HTMLInputElement).value))}
-              className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600
-                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow
-                [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-indigo-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-            />
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{s.min}</span>
-              <span>{s.max}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button

@@ -7,6 +7,7 @@ import {
 import TechStackModal from './components/TechStackModal';
 import ChatBox from './components/ChatBox';
 import SliderPanel from './components/SliderPanel';
+import InteractiveSvgPreview from './components/InteractiveSvgPreview';
 import BrainStats from './components/BrainStats';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
@@ -93,6 +94,23 @@ const App: React.FC = () => {
     top_diameter_cm: 80, overall_height_cm: 70, base_diameter_cm: 44,
     neck_diameter_cm: 22.4, top_thickness_cm: 4,
   });
+  const [highlightedSliderKey, setHighlightedSliderKey] = useState<string | null>(null);
+
+  // Clicking a part of the rendered drawing jumps to the slider(s) that
+  // control it. pedestal_body spans both base and neck diameter, so it
+  // highlights base_diameter_cm first -- the most common thing someone
+  // clicking the column wants to fix.
+  const COMPONENT_TO_SLIDER: Record<string, string> = {
+    tabletop: 'top_diameter_cm',
+    collar_plate: 'top_thickness_cm',
+    neck_ring: 'neck_diameter_cm',
+    pedestal_body: 'base_diameter_cm',
+    base_plate: 'base_diameter_cm',
+  };
+  const setHighlightedComponent = (component: string) => {
+    const key = COMPONENT_TO_SLIDER[component];
+    if (key) setHighlightedSliderKey(key);
+  };
 
   // Manual dimension inputs
   const [realWidthCm, setRealWidthCm] = useState<string>('');
@@ -739,6 +757,7 @@ const App: React.FC = () => {
                     dxfFile={cadEngineResult.dxf_file}
                     initialDims={currentDims}
                     furnitureType={cadEngineResult?.furniture?.type}
+                    highlightKey={highlightedSliderKey}
                     onAdjusted={(dims, svgUrl) => {
                       setCurrentDims(dims);
                       setSvgPreviewUrl(svgUrl);
@@ -806,12 +825,21 @@ const App: React.FC = () => {
                     </div>
                     {cadEngineResult.dxf_file && (
                       <div className="mt-3 space-y-2">
-                        <img
-                          src={getPreviewUrl(cadEngineResult.dxf_file)}
-                          alt="DXF Preview"
-                          className="w-full rounded-lg border border-slate-200"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                        {cadEngineResult.preview_svg ? (
+                          <InteractiveSvgPreview
+                            src={`${cadEngineResult.preview_svg}?v=${previewSvgVersion}`}
+                            alt="DXF Preview"
+                            className="w-full rounded-lg border border-slate-200 [&_[data-component]:hover]:fill-indigo-500/10"
+                            onPartClick={setHighlightedComponent}
+                          />
+                        ) : (
+                          <img
+                            src={getPreviewUrl(cadEngineResult.dxf_file)}
+                            alt="DXF Preview"
+                            className="w-full rounded-lg border border-slate-200"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
                         <div className="flex gap-2">
                           <a
                             href={getPdfUrl(cadEngineResult.dxf_file)}
