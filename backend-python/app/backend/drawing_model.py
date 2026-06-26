@@ -378,3 +378,52 @@ class DrawingModel:
             known_dimensions=data.get("known_dimensions", {}),
             estimated_components=data.get("estimated_components", {}),
         )
+
+
+# ===== Builder Functions =====
+# (re-added after refactoring — called by routes.py and svg_exporter.py)
+
+def build_round_pedestal_model(
+    top_dia_cm: float = 80.0,
+    height_cm: float = 70.0,
+    base_dia_cm: float | None = None,
+    neck_dia_cm: float | None = None,
+    top_thick_cm: float = 4.0,
+    collar_dia_cm: float | None = None,
+) -> DrawingModel:
+    """Build a DrawingModel for a round pedestal table."""
+    model = DrawingModel(
+        furniture_type="round_pedestal_table",
+        scale=0.5,
+        known_dimensions={
+            "top_diameter_cm": top_dia_cm,
+            "overall_height_cm": height_cm,
+        },
+        estimated_components={
+            "pedestal_diameter_cm": base_dia_cm or top_dia_cm * 0.55,
+            "neck_diameter_cm": neck_dia_cm or top_dia_cm * 0.28,
+            "top_thickness_cm": top_thick_cm,
+            "collar_diameter_cm": collar_dia_cm or top_dia_cm * 0.625,
+        },
+    )
+    return model
+
+
+def build_rectangular_table_model(
+    width_cm: float = 120.0,
+    depth_cm: float = 80.0,
+    height_cm: float = 70.0,
+    leg_thickness_cm: float = 6.0,
+) -> DrawingModel:
+    """Build a DrawingModel for a rectangular table."""
+    model = DrawingModel(
+        furniture_type="rectangular_table",
+        scale=0.5,
+        known_dimensions={
+            "width_cm": width_cm,
+            "depth_cm": depth_cm,
+            "overall_height_cm": height_cm,
+            "leg_thickness_cm": leg_thickness_cm,
+        },
+    )
+    return model
