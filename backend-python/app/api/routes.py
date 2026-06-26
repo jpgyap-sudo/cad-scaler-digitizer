@@ -35,6 +35,11 @@ UPLOAD = Path(tempfile.gettempdir()) / "cad_digitizer_uploads"
 UPLOAD.mkdir(exist_ok=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
+# Below this confidence, the classifier guess is unreliable enough that the
+# UI should ask the user to confirm/correct the furniture type rather than
+# silently rendering a possibly-wrong template.
+CLASSIFIER_CONFIRM_THRESHOLD = 0.55
+
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
                         depth_cm=None, leg_thickness_cm=None):
@@ -290,6 +295,74 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     return extra
 
 
+def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=None):
+    """Build the DrawingModel used for SVG preview, dispatching on furniture type.
+    Mirrors _dispatch_furniture's type handling so every type gets its own
+    geometry instead of silently falling back to round_pedestal_table.
+    `detected` (optional dict of lines/circles/rects) drives the generic
+    fallback when the type is unrecognized/unclassified.
+    """
+    from app.backend.drawing_builders import (
+        build_round_pedestal_model, build_rectangular_table_model,
+        build_cabinet_model, build_sofa_model, build_coffee_table_model,
+        build_dining_chair_model, build_wardrobe_model,
+        build_reception_counter_model, build_bed_headboard_model,
+        build_generic_model,
+    )
+
+    if f_type == 'rectangular_table':
+        w = resolved.get('width_cm', real_w or 120)
+        d = resolved.get('depth_cm', 80)
+        h = resolved.get('overall_height_cm', real_h or 70)
+        lt = resolved.get('leg_thickness_cm', 6)
+        return build_rectangular_table_model(float(w), float(d), float(h), float(lt))
+    if f_type == 'cabinet':
+        w = resolved.get('width_cm', real_w or 100)
+        d = resolved.get('depth_cm', 50)
+        h = resolved.get('overall_height_cm', real_h or 180)
+        return build_cabinet_model(float(w), float(d), float(h))
+    if f_type == 'sofa':
+        w = resolved.get('width_cm', real_w or 200)
+        d = resolved.get('depth_cm', 80)
+        h = resolved.get('overall_height_cm', real_h or 85)
+        return build_sofa_model(float(w), float(d), float(h))
+    if f_type == 'coffee_table':
+        w = resolved.get('width_cm', real_w or 100)
+        d = resolved.get('depth_cm', 60)
+        h = resolved.get('overall_height_cm', real_h or 45)
+        return build_coffee_table_model(float(w), float(d), float(h))
+    if f_type in ('dining_chair', 'chair'):
+        w = resolved.get('width_cm', real_w or 45)
+        h = resolved.get('overall_height_cm', real_h or 90)
+        return build_dining_chair_model(float(w), float(h))
+    if f_type == 'wardrobe':
+        w = resolved.get('width_cm', real_w or 120)
+        d = resolved.get('depth_cm', 60)
+        h = resolved.get('overall_height_cm', real_h or 200)
+        return build_wardrobe_model(float(w), float(d), float(h))
+    if f_type == 'reception_counter':
+        w = resolved.get('width_cm', real_w or 180)
+        h = resolved.get('overall_height_cm', real_h or 110)
+        return build_reception_counter_model(float(w), float(h))
+    if f_type == 'bed_headboard':
+        w = resolved.get('width_cm', real_w or 180)
+        h = resolved.get('overall_height_cm', real_h or 60)
+        return build_bed_headboard_model(float(w), float(h))
+
+    if f_type == 'round_pedestal_table':
+        svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
+                      if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
+        svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
+        svg_height = resolved.get('overall_height_cm', real_h or 70)
+        return build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
+
+    # Unrecognized/generic type — trace the actually-detected geometry
+    # instead of fabricating an unrelated round-pedestal-table shape.
+    if detected:
+        return build_generic_model(detected.get('lines'), detected.get('circles'), detected.get('rects'))
+    return build_generic_model()
+
+
 # ===== Accuracy Pipeline =====
 
 def _run_accuracy_pipeline(img_path: str, lines, circles, rects, ocr_lines, dims):
@@ -411,25 +484,14 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
 
         svg_name = None
         try:
-            from app.backend.drawing_model import (build_round_pedestal_model,
-                                                    build_rectangular_table_model)
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_digitized.svg'
             svg_path = OUT / svg_name
             resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
-            if f_type == 'rectangular_table':
-                w = resolved.get('width_cm', real_w or 120)
-                d = resolved.get('depth_cm', 80)
-                h = resolved.get('overall_height_cm', real_h or 70)
-                lt = resolved.get('leg_thickness_cm', 6)
-                model = build_rectangular_table_model(float(w), float(d), float(h), float(lt))
-            else:
-                svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
-                              if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
-                svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
-                svg_height = resolved.get('overall_height_cm', real_h or 70)
-                model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
-            with open(str(svg_path), 'w') as f2:
+            detected = {'lines': constrained['lines'], 'circles': constrained['circles'],
+                        'rects': constrained.get('rects')}
+            model = _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected)
+            with open(str(svg_path), 'w', encoding='utf-8') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
 
@@ -443,6 +505,7 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'component_schema': (dispatch_extra or {}).get('component_schema'),
             'furniture': {'type': f_type, 'confidence': confidence,
+                          'needs_confirmation': confidence < CLASSIFIER_CONFIRM_THRESHOLD,
                           'required_dimensions': classifier_result.get('required_dimensions', []),
                           'recommended_template': classifier_result.get('recommended_template', '')},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
@@ -553,25 +616,14 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         svg_name = None
         try:
-            from app.backend.drawing_model import (build_round_pedestal_model,
-                                                    build_rectangular_table_model)
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_hybrid.svg'
             svg_path = OUT / svg_name
             resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
-            if ftype == 'rectangular_table':
-                w = resolved.get('width_cm', real_w or 120)
-                d = resolved.get('depth_cm', 80)
-                h = resolved.get('overall_height_cm', real_h or 70)
-                lt = resolved.get('leg_thickness_cm', 6)
-                model = build_rectangular_table_model(float(w), float(d), float(h), float(lt))
-            else:
-                svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
-                              if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
-                svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
-                svg_height = resolved.get('overall_height_cm', real_h or 70)
-                model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
-            with open(str(svg_path), 'w') as f2:
+            detected = {'lines': constrained['lines'], 'circles': constrained['circles'],
+                        'rects': constrained.get('rects')}
+            model = _build_svg_model(ftype, resolved, real_w, real_h, dispatch_extra, detected)
+            with open(str(svg_path), 'w', encoding='utf-8') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
 
@@ -581,7 +633,8 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'component_schema': (dispatch_extra or {}).get('component_schema'),
-            'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True},
+            'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True,
+                          'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': merged_dims, 'ocr_lines': ocr_lines[:20]},
@@ -638,7 +691,7 @@ def download(filename: str):
 def preview_svg(filename: str):
     safe = os.path.basename(filename)
     svg_path = OUT / safe.replace('.dxf', '.svg')
-    if svg_path.exists(): return FileResponse(svg_path, media_type="image/svg+xml")
+    if svg_path.exists(): return FileResponse(svg_path, media_type="image/svg+xml; charset=utf-8")
     dxf_path = OUT / safe
     if dxf_path.exists():
         import ezdxf, re
@@ -656,8 +709,8 @@ def preview_svg(filename: str):
                     if val and ("H" in txt or "height" in txt.lower()): height = val
             model = build_round_pedestal_model(top_dia, height)
             svg = drawing_to_svg(model)
-            with open(str(svg_path), 'w') as f: f.write(svg)
-            return FileResponse(svg_path, media_type="image/svg+xml")
+            with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
+            return FileResponse(svg_path, media_type="image/svg+xml; charset=utf-8")
         except Exception as e: return JSONResponse({"error": f"SVG failed: {e}"}, status_code=500)
     return JSONResponse({"error": "DXF not found"}, status_code=404)
 
@@ -714,7 +767,7 @@ async def adjust_dimensions(dxf_file: str = Form(...),
             model = build_rectangular_table_model(w, d, h, lt)
             svg = drawing_to_svg(model)
             svg_path = OUT / safe.replace('.dxf', '.svg')
-            with open(str(svg_path), 'w') as f: f.write(svg)
+            with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
 
             return JSONResponse({"furniture_type": "rectangular_table", "dxf_file": safe,
                 "preview_svg": f"/api/preview/svg/{safe}",
@@ -751,7 +804,7 @@ async def adjust_dimensions(dxf_file: str = Form(...),
             top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625))
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')
-        with open(str(svg_path), 'w') as f: f.write(svg)
+        with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
 
         try:
             from app.backend.brain_sync import record_proportion
@@ -953,7 +1006,7 @@ def view_drawing(filename: str):
                     if val and ("H" in txt or "height" in txt.lower()): height = val
             model = build_round_pedestal_model(top_dia, height)
             svg = drawing_to_svg(model)
-            with open(str(svg_path), 'w') as f: f.write(svg)
+            with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
     if not svg_path.exists(): return JSONResponse({"error": "Drawing not found"}, status_code=404)
     svg = svg_path.read_text()
     return HTMLResponse(f"""<!DOCTYPE html><html><head><title>CAD Drawing — {safe}</title>

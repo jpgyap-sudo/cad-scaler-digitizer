@@ -14,7 +14,7 @@ export default defineConfig({
       },
       // Proxy /py-api requests directly to the Python CAD engine
       '/py-api': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => {
           if (path.includes('/health')) return '/health';

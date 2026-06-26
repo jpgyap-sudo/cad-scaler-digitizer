@@ -287,7 +287,7 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     svg_parts.append(_svg_text(col_mid + 3, oy + 25, f"REV: {tb.revision}", c, 7))
     svg_parts.append(_svg_text(ox + 3, oy + 39,  f"DRAWING: {tb.drawing_title[:40]}", c, 7))
     svg_parts.append(_svg_text(ox + 3, oy + 53,  f"PROJECT: {tb.project[:30]}", c, 7))
-    svg_parts.append(_svg_text(col_mid + 3, oy + 53, f"CLIENT: {tb.client[:18] or '—'}", c, 7))
+    svg_parts.append(_svg_text(col_mid + 3, oy + 53, f"CLIENT: {tb.client[:18] or '-'}", c, 7))
 
     # === MATERIAL NOTES (Bottom-Left, stacked upward from bottom) ===
     # Total vertical space this block will consume, so it can be anchored to

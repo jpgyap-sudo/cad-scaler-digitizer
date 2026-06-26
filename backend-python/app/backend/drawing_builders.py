@@ -207,48 +207,104 @@ def build_coffee_table_model(w=100.0, d=60.0, h=45.0):
     sc, cx, ym = 0.6, 100.0, 190.0; r = min(w, d) / 2 * sc; n = datetime.now().strftime('%Y-%m-%d')
     tv = View(name="TOP VIEW")
     tv.circles.append(CircleComponent(center=Point(cx, ym), radius=r, layer="OBJECT"))
-    tv.lines.append(LineComponent(Point(cx-r-5, ym), Point(cx+r+5, ym), "CENTER"))
-    tv.lines.append(LineComponent(Point(cx, ym-r-5), Point(cx, ym+r+5), "CENTER"))
-    tv.dimensions.append(DimensionComponent(Point(cx-r, ym), Point(cx+r, ym), f"%%c{min(w,d):g} cm", "DIMENSION"))
-    tv.texts.append(TextComponent("TOP VIEW", Point(cx-10, ym+r+10), 3, "MTEXT"))
+    tv.lines.append(LineComponent(start=Point(cx-r-5, ym), end=Point(cx+r+5, ym), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(cx, ym-r-5), end=Point(cx, ym+r+5), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(cx-r, ym), p2=Point(cx+r, ym), label=f"%%c{min(w,d):g} cm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(cx-10, ym+r+10), height=3, layer="MTEXT"))
     tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
-    return DrawingModel("coffee_table", [tv], tb, {"width_cm": w, "depth_cm": d, "overall_height_cm": h})
+    return DrawingModel(furniture_type="coffee_table", views=[tv], title_block=tb,
+        known_dimensions={"width_cm": w, "depth_cm": d, "overall_height_cm": h})
 
 
 def build_dining_chair_model(w=45.0, h=90.0):
     sc, w2 = 0.5, w * 0.5 * 0.5; fx = (420 - w * 0.5) / 2; fy, ty = 50.0, 50.0 + h * 0.5; sy = fy + h * 0.5 * 0.5
     n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
-    fv.polygons.append(PolygonComponent([Point(fx, sy), Point(fx+w*0.5, sy), Point(fx+w*0.5, ty), Point(fx, ty)], "OBJECT", "backrest"))
-    fv.polygons.append(PolygonComponent([Point(fx, fy), Point(fx+w*0.5, fy), Point(fx+w*0.5, sy), Point(fx, sy)], "OBJECT", "seat"))
-    fv.dimensions.append(DimensionComponent(Point(fx+w*0.5+8, fy), Point(fx+w*0.5+8, ty), f"H = {h:g} cm", "DIMENSION"))
-    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, ty+10), 3, "MTEXT"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx, sy), Point(fx+w*0.5, sy), Point(fx+w*0.5, ty), Point(fx, ty)], layer="OBJECT", name="backrest"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx, fy), Point(fx+w*0.5, fy), Point(fx+w*0.5, sy), Point(fx, sy)], layer="OBJECT", name="seat"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx+w*0.5+8, fy), p2=Point(fx+w*0.5+8, ty), label=f"H = {h:g} cm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, ty+10), height=3, layer="MTEXT"))
     tb = TitleBlockData(f"Dining Chair {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
-    return DrawingModel("dining_chair", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+    return DrawingModel(furniture_type="dining_chair", views=[fv], title_block=tb,
+        known_dimensions={"width_cm": w, "overall_height_cm": h})
 
 
 def build_wardrobe_model(w=120.0, d=60.0, h=200.0):
     return build_cabinet_model(w, d, h)
 
 
+def build_generic_model(lines=None, circles=None, rects=None, client="", project="Furniture Shop Drawing"):
+    """Build a DrawingModel straight from raw detected pixel-space geometry,
+    for furniture types with no dedicated template. Normalizes/scales the
+    detected lines, circles and rectangles to fit the page instead of
+    fabricating a round-pedestal-table shape that has nothing to do with
+    what was actually drawn.
+    """
+    lines = lines or []
+    circles = [c for c in (circles or []) if len(c) >= 3 and c[2] > 0]
+    rects = rects or []
+    n = datetime.now().strftime('%Y-%m-%d')
+
+    xs, ys = [], []
+    for (x1, y1), (x2, y2) in lines:
+        xs += [x1, x2]; ys += [y1, y2]
+    for cx, cy, r in circles:
+        xs += [cx - r, cx + r]; ys += [cy - r, cy + r]
+    for x1, y1, x2, y2 in rects:
+        xs += [x1, x2]; ys += [y1, y2]
+
+    view = View(name="DETECTED GEOMETRY")
+    if not xs or not ys:
+        tb = TitleBlockData("Generic 2D Furniture Drawing", project=project, client=client,
+                             scale="1:1", revision="A", date=n)
+        return DrawingModel(furniture_type="generic_2d_furniture", views=[view], title_block=tb)
+
+    src_w = max(xs) - min(xs) or 1.0
+    src_h = max(ys) - min(ys) or 1.0
+    # Target footprint inside the page, leaving room for the title block/border.
+    target_w, target_h = 320.0, 220.0
+    sc = min(target_w / src_w, target_h / src_h)
+    ox, oy = 50.0, 40.0
+
+    def tx(x): return ox + (x - min(xs)) * sc
+    def ty(y): return oy + (y - min(ys)) * sc
+
+    for (x1, y1), (x2, y2) in lines:
+        view.lines.append(LineComponent(start=Point(tx(x1), ty(y1)), end=Point(tx(x2), ty(y2)), layer="OBJECT"))
+    for cx, cy, r in circles:
+        view.circles.append(CircleComponent(center=Point(tx(cx), ty(cy)), radius=r * sc, layer="OBJECT"))
+    for x1, y1, x2, y2 in rects:
+        view.polygons.append(PolygonComponent(
+            points=[Point(tx(x1), ty(y1)), Point(tx(x2), ty(y1)), Point(tx(x2), ty(y2)), Point(tx(x1), ty(y2))],
+            layer="OBJECT", name="rect"))
+    view.texts.append(TextComponent(content="DETECTED GEOMETRY (unclassified)",
+                                     position=Point(ox, oy + target_h + 12), height=3, layer="MTEXT"))
+
+    tb = TitleBlockData("Generic 2D Furniture Drawing", project=project, client=client,
+                         scale="1:1", revision="A", date=n)
+    return DrawingModel(furniture_type="generic_2d_furniture", views=[view], title_block=tb)
+
+
 def build_reception_counter_model(w=180.0, h=110.0):
     sc = 0.3; fx = (420 - w * sc) / 2; fy, ty = 50.0, 50.0 + h * sc; n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
-    fv.polygons.append(PolygonComponent([Point(fx, fy), Point(fx+w*sc, fy), Point(fx+w*sc, ty), Point(fx, ty)], "OBJECT", "counter_body"))
-    fv.dimensions.append(DimensionComponent(Point(fx+w*sc+8, fy), Point(fx+w*sc+8, ty), f"H = {h:g} cm", "DIMENSION"))
-    fv.dimensions.append(DimensionComponent(Point(fx, fy-8), Point(fx+w*sc, fy-8), f"W = {w:g} cm", "DIMENSION"))
-    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, ty+10), 3, "MTEXT"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx, fy), Point(fx+w*sc, fy), Point(fx+w*sc, ty), Point(fx, ty)], layer="OBJECT", name="counter_body"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx+w*sc+8, fy), p2=Point(fx+w*sc+8, ty), label=f"H = {h:g} cm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx, fy-8), p2=Point(fx+w*sc, fy-8), label=f"W = {w:g} cm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, ty+10), height=3, layer="MTEXT"))
     tb = TitleBlockData(f"Reception Counter {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:3", revision="A", date=n)
-    return DrawingModel("reception_counter", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+    return DrawingModel(furniture_type="reception_counter", views=[fv], title_block=tb,
+        known_dimensions={"width_cm": w, "overall_height_cm": h})
 
 
 def build_bed_headboard_model(w=180.0, h=60.0, d=5.0, client="", project="Furniture Shop Drawing"):
     sc = 0.4; w2 = w * sc; h2 = h * sc; fx = (420 - w2) / 2; floor_y = 30.0; top_y = floor_y + h2
     n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
-    fv.polygons.append(PolygonComponent([Point(fx, floor_y), Point(fx + w2, floor_y), Point(fx + w2, top_y), Point(fx, top_y)], "OBJECT", "headboard"))
-    fv.dimensions.append(DimensionComponent(Point(fx + w2 + 8, floor_y), Point(fx + w2 + 8, top_y), f"H = {h:g} cm", "DIMENSION"))
-    fv.dimensions.append(DimensionComponent(Point(fx, floor_y - 8), Point(fx + w2, floor_y - 8), f"W = {w:g} cm", "DIMENSION"))
-    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, top_y + 10), 3, "MTEXT"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx, floor_y), Point(fx + w2, floor_y), Point(fx + w2, top_y), Point(fx, top_y)], layer="OBJECT", name="headboard"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {h:g} cm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {w:g} cm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
     tb = TitleBlockData(f"Bed Headboard {w:.0f}x{h:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=n)
-    return DrawingModel("bed_headboard", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+    return DrawingModel(furniture_type="bed_headboard", views=[fv], title_block=tb,
+        known_dimensions={"width_cm": w, "overall_height_cm": h})

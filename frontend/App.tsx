@@ -19,7 +19,7 @@ import { renderCadToCanvas } from './components/CadCanvas';
 import {
   digitizeWithBackend, digitizeHybrid, downloadDxf, checkEngineHealth,
   getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult,
-  getPreviewUrl, getPdfUrl
+  getPreviewUrl, getPdfUrl, getSvgPreviewUrl
 } from './services/cadEngine';
 
 // ─── Global Error Boundary ────────────────────────────────────────────────────
@@ -697,6 +697,12 @@ const App: React.FC = () => {
                         <div className="text-xs text-slate-500 mt-1">
                           Confidence: {Math.round(detectedFurniture.confidence * 100)}%
                         </div>
+                        {detectedFurniture.needs_confirmation && (
+                          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg mt-2 p-2">
+                            Low confidence - please confirm the furniture type above or pick the
+                            correct one from the "Furniture Type" dropdown and re-upload.
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -944,7 +950,7 @@ const App: React.FC = () => {
                       <div className="mt-3 space-y-2">
                         {cadEngineResult.preview_svg ? (
                           <InteractiveSvgPreview
-                            src={`${cadEngineResult.preview_svg}?v=${previewSvgVersion}`}
+                            src={`${getSvgPreviewUrl(cadEngineResult.preview_svg)}?v=${previewSvgVersion}`}
                             alt="DXF Preview"
                             className="w-full rounded-lg border border-slate-200 [&_[data-component]:hover]:fill-indigo-500/10"
                             onPartClick={handlePartClick}
@@ -983,7 +989,7 @@ const App: React.FC = () => {
                         {cadEngineResult.preview_svg && (
                           <div className="mt-2">
                             <a
-                              href={cadEngineResult.preview_svg}
+                              href={getSvgPreviewUrl(cadEngineResult.preview_svg)}
                               target="_blank"
                               className="block text-center bg-emerald-600 text-white text-xs py-2 rounded-lg hover:bg-emerald-700 font-medium"
                             >
@@ -996,7 +1002,7 @@ const App: React.FC = () => {
                           <div className="mt-2">
                             <p className="text-[10px] text-slate-400 mb-1">Updated Preview</p>
                             <img
-                              src={`${svgPreviewUrl}?v=${previewSvgVersion}`}
+                              src={`${getSvgPreviewUrl(svgPreviewUrl)}?v=${previewSvgVersion}`}
                               alt="Updated preview"
                               className="w-full rounded-lg border border-indigo-200 shadow-sm"
                             />
