@@ -2202,3 +2202,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: Adjust Dimensions sliders now seed from actual detected dims, not stock defaults
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit cbba0e69609eca7742879162d462fd6a86314bc2
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** cbba0e69609eca7742879162d462fd6a86314bc2
+**Files:** 
+
+**Summary:**
+Commit: fix: Adjust Dimensions sliders now seed from actual detected dims, not stock defaults
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Adjust Dimensions sliders now seed from actual detected dims, not stock defaults*
+
+#### Lesson Learned
+
+Commit: fix: Adjust Dimensions sliders now seed from actual detected dims, not stock defaults
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

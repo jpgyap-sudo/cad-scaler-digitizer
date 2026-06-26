@@ -95,7 +95,13 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
               step={s.step}
               value={dims[s.key] ?? (s.min + s.max) / 2}
               onChange={e => handleSliderChange(s.key, parseFloat(e.target.value))}
-              className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600"
+              onInput={e => handleSliderChange(s.key, parseFloat((e.target as HTMLInputElement).value))}
+              className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600
+                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow
+                [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                [&::-moz-range-thumb]:bg-indigo-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
             <div className="flex justify-between text-[9px] text-slate-400">
               <span>{s.min}</span>

@@ -94,8 +94,14 @@ def _extract_pedestal_dims(corrected_dims):
     return top_dia, base_dia, neck_dia
 
 
-def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
-    """Route furniture type to the correct DXF template, applying user-overridden dimensions."""
+def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None):
+    """Route furniture type to the correct DXF template, applying user-overridden dimensions.
+
+    visual_base_estimate: optional {"profile", "neck_ratio", "base_ratio"} from GPT-4o
+    visually inspecting the pedestal's silhouette. Used only when no explicit base/neck
+    dimension TEXT was found -- it takes priority over the blind 0.55/0.28 ratio default,
+    since most real photos have no printed dimension labels at all.
+    """
     print(f"[DISPATCH] Exporter: {f_type}")
 
     def _dim(tags, default):
@@ -114,6 +120,20 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
         labeled_top, base_dia, neck_dia = _extract_pedestal_dims(corrected_dims)
         dia = real_w or labeled_top or _dim(['dia', 'diameter', 'w', 'width'], 80.0)
         height = real_h or _dim(['h', 'height'], 70.0)
+
+        if (base_dia is None or neck_dia is None) and isinstance(visual_base_estimate, dict):
+            try:
+                base_ratio = float(visual_base_estimate.get('base_ratio') or 0) or None
+                neck_ratio = float(visual_base_estimate.get('neck_ratio') or 0) or None
+                if base_dia is None and base_ratio:
+                    base_dia = round(dia * base_ratio, 1)
+                if neck_dia is None and neck_ratio:
+                    neck_dia = round(dia * neck_ratio, 1)
+                print(f"[DISPATCH] Visual base estimate applied: profile="
+                      f"{visual_base_estimate.get('profile')} base_dia={base_dia} neck_dia={neck_dia}")
+            except (TypeError, ValueError):
+                pass
+
         extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia}
         try:
             save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height,
@@ -400,7 +420,7 @@ async def digitize_hybrid(
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value -- do not assume it narrows toward the top. Return JSON with furniture_type (one of those exact strings), confidence (0-1 float), dimensions array [{tag, value_cm}]."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value -- do not assume it narrows toward the top. If the furniture is a round_pedestal_table, ALSO visually inspect the pedestal's actual silhouette in the photo (regardless of whether any text labels are visible) and return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": neck-diameter-divided-by-top-diameter as seen in the photo (0-1, use ~1.0 if it looks like a straight cylinder), \"base_ratio\": foot-diameter-divided-by-top-diameter as seen in the photo (0-1)}. This visual estimate is used whenever no explicit base/neck dimension text exists, so look carefully at the actual shape rather than guessing a generic taper. Return JSON with furniture_type (one of those exact strings), confidence (0-1 float), dimensions array [{tag, value_cm}], visual_base_estimate."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
@@ -508,7 +528,8 @@ async def digitize_hybrid(
         print("NORMALIZED:", ftype)
         print("EXPORTER USED:", "save_round_pedestal_table" if ftype == "round_pedestal_table" else "OTHER")
         print(f"[HYBRID] Dispatch: ftype='{ftype}' w={real_w} h={real_h}")
-        dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
+        visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
+        dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate)
 
         # Generate SVG preview alongside DXF
         try:
