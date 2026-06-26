@@ -122,16 +122,42 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
             print(f"[DISPATCH] save_round_pedestal_table FAILED: {e} -- falling back to generic")
             save_generic(str(dxf_path), [], [], [])
 
+        # Surface the dimensions actually used (including ratio-estimated ones)
+        # so the frontend's Adjust Dimensions sliders start from real values
+        # instead of generic hardcoded defaults.
+        try:
+            from app.backend.visual_ratio_scaler import estimate_proportions
+            ocr_components = {k: v for k, v in
+                              {"pedestal_diameter_cm": base_dia, "neck_diameter_cm": neck_dia}.items()
+                              if v is not None}
+            sr = estimate_proportions("round_pedestal_table",
+                                       {"top_diameter_cm": dia, "overall_height_cm": height},
+                                       ocr_components or None)
+            extra['resolved_dimensions'] = {
+                'top_diameter_cm': round(dia, 1),
+                'overall_height_cm': round(height, 1),
+                'base_diameter_cm': round(sr.get('pedestal_diameter_cm', dia * 0.55), 1),
+                'neck_diameter_cm': round(sr.get('neck_diameter_cm', dia * 0.28), 1),
+                'top_thickness_cm': round(sr.get('top_thickness_cm', 4.0), 1),
+            }
+        except Exception as e:
+            print(f"[DISPATCH] resolved_dimensions failed: {e}")
+
     elif f_type == 'rectangular_table':
         print("EXPORTER USED: save_rectangular_table")
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 70.0)
         d = _dim(['d', 'depth'], 80.0)
+        lt = _dim(['leg', 'thickness'], 6.0)
         try:
-            save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+            save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_thickness_cm=lt)
         except Exception as e:
             print(f"[DISPATCH] save_rectangular_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'width_cm': round(w, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h, 1), 'leg_thickness_cm': round(lt, 1),
+        }
 
     elif f_type == 'cabinet':
         print("EXPORTER USED: save_cabinet")
@@ -294,7 +320,8 @@ async def digitize(
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_digitized.svg'
             svg_path = OUT / svg_name
-            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items() if v is not None}
+            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
+                          if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
             model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
@@ -323,6 +350,7 @@ async def digitize(
             'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
+            'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'furniture': {
                 'type': f_type,
                 'confidence': confidence,
@@ -460,7 +488,7 @@ async def digitize_hybrid(
             tag = d.get('tag', '').lower()
             val = float(d.get('value_cm', 0))
             if val > 0:
-                if any(k in tag for k in ['dia', 'diameter']):
+                if tag in ('top_dia', 'dia', 'diameter'):
                     known_dims['top_diameter_cm'] = val
                 elif any(k in tag for k in ['h', 'height']):
                     known_dims['overall_height_cm'] = val
@@ -488,7 +516,8 @@ async def digitize_hybrid(
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_hybrid.svg'
             svg_path = OUT / svg_name
-            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items() if v is not None}
+            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
+                          if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
             model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
@@ -500,6 +529,7 @@ async def digitize_hybrid(
             'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
+            'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True},
             'detected': {
                 'lines': len(constrained['lines']),

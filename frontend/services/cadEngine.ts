@@ -9,6 +9,7 @@ export type DigitizeResult = {
   download: string;
   dxf_file: string;
   preview_svg?: string;
+  resolved_dimensions?: Record<string, number>;
   furniture: {
     type: string;
     confidence: number;

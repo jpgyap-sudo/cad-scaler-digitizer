@@ -2164,3 +2164,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: straight cylinder pedestals no longer render as cones; flesh out FreeCAD plugin
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7936b3034679aa95eaa49b244de129d51c712f38
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 7936b3034679aa95eaa49b244de129d51c712f38
+**Files:** 
+
+**Summary:**
+Commit: fix: straight cylinder pedestals no longer render as cones; flesh out FreeCAD plugin
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: straight cylinder pedestals no longer render as cones; flesh out FreeCAD plugin*
+
+#### Lesson Learned
+
+Commit: fix: straight cylinder pedestals no longer render as cones; flesh out FreeCAD plugin
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

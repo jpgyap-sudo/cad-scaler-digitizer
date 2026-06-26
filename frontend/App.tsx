@@ -214,6 +214,14 @@ const App: React.FC = () => {
       setMode('complete');
       setStatus(isHybrid ? 'Hybrid engine complete. Cross-validated DXF ready.' : 'OpenCV engine complete. DXF ready for download.');
 
+      // Seed the Adjust Dimensions sliders with the values the engine actually
+      // used (including ratio-estimated ones), not the generic hardcoded defaults --
+      // otherwise "Apply & Preview" would silently overwrite a correctly-detected
+      // drawing with an 80/70/44/22.4/4 stock table.
+      if (result.resolved_dimensions) {
+        setCurrentDims(result.resolved_dimensions);
+      }
+
       // Auto-show co-generated SVG preview
       if (result.preview_svg) {
         setSvgPreviewUrl(result.preview_svg);
