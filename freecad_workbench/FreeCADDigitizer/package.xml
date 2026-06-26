@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+  <name>FreeCADDigitizer</name>
+  <version>1.0.0</version>
+  <date>2026-06-25</date>
+  <description>
+    AI Furniture Digitizer — Convert furniture drawing images (PNG/JPEG/PDF)
+    into parametric CAD sketches and shop drawings.
+
+    Workflow:
+    1. Import a furniture drawing image into FreeCAD
+    2. Generate CAD Sketch — sends image to the CAD engine (OpenCV + OCR + AI)
+    3. DXF is automatically imported into the active document
+
+    Requires the CAD engine running locally (port 8000) or at cad.abcx124.xyz.
+  </description>
+  <maintainer email="dev@cad.abcx124.xyz">CAD Scaler Digitizer</maintainer>
+  <license file="LICENSE">MIT</license>
+  <url type="repository" branch="master">https://github.com/user/cad-scaler-digitizer</url>
+  <url type="website">https://cad.abcx124.xyz</url>
+
+  <content>
+    <workbench>
+      <name>AI Furniture Digitizer</name>
+      <classname>FreeCADDigitizerWorkbench</classname>
+      <description>Import furniture drawings and generate CAD sketches via the CAD engine API.</description>
+      <subdirectory>./</subdirectory>
+      <icon></icon>
+    </workbench>
+  </content>
+
+  <freecad min="0.20" max="1.0" />
+
+  <dependencies>
+    <dependency type="python" optional="true">ezdxf</dependency>
+    <dependency type="python" optional="true">requests</dependency>
+  </dependencies>
+
+  <tags>
+    <tag>furniture</tag>
+    <tag>dxf</tag>
+    <tag>cad</tag>
+    <tag>digitizer</tag>
+    <tag>shop-drawing</tag>
+    <tag>ai</tag>
+    <tag>opencv</tag>
+  </tags>
+</package>

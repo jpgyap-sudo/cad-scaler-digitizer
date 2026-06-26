@@ -1974,3 +1974,193 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Fix 2 critical bugs: ChatBox missing + AI mode freeze
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5edbb0a8fb169bb146fbb4694b27c7384e8fc472
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 5edbb0a8fb169bb146fbb4694b27c7384e8fc472
+**Files:** 
+
+**Summary:**
+Commit: Fix 2 critical bugs: ChatBox missing + AI mode freeze
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix 2 critical bugs: ChatBox missing + AI mode freeze*
+
+#### Lesson Learned
+
+Commit: Fix 2 critical bugs: ChatBox missing + AI mode freeze
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] Fix ChatBox/BrainStats invisible on initial load
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bcfdcfc1662b816f164652bf01097f313856564e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** bcfdcfc1662b816f164652bf01097f313856564e
+**Files:** 
+
+**Summary:**
+Commit: Fix ChatBox/BrainStats invisible on initial load
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Fix ChatBox/BrainStats invisible on initial load*
+
+#### Lesson Learned
+
+Commit: Fix ChatBox/BrainStats invisible on initial load
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: white screen on DXF create + missing Start button after re-upload
+
+Date: 2026-06-24
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 681337eea3ca1a6f10c6cc03c413ed294808a1a4
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 681337eea3ca1a6f10c6cc03c413ed294808a1a4
+**Files:** frontend/App.tsx,frontend/utils/dxf.ts
+
+**Summary:**
+Commit: fix: white screen on DXF create + missing Start button after re-upload
+Files: frontend/App.tsx,frontend/utils/dxf.ts
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: white screen on DXF create + missing Start button after re-upload*
+
+#### Lesson Learned
+
+Commit: fix: white screen on DXF create + missing Start button after re-upload
+Files: frontend/App.tsx,frontend/utils/dxf.ts
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: SVG preview upside-down - Y-axis flip for DXF Y-up to SVG Y-down
+
+Date: 2026-06-25
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f5b38ea6f5e563eff4a4239fa67c9f900e57b939
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** f5b38ea6f5e563eff4a4239fa67c9f900e57b939
+**Files:** backend-python/app/backend/svg_exporter.py
+
+**Summary:**
+Commit: fix: SVG preview upside-down - Y-axis flip for DXF Y-up to SVG Y-down
+Files: backend-python/app/backend/svg_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: SVG preview upside-down - Y-axis flip for DXF Y-up to SVG Y-down*
+
+#### Lesson Learned
+
+Commit: fix: SVG preview upside-down - Y-axis flip for DXF Y-up to SVG Y-down
+Files: backend-python/app/backend/svg_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: pedestal shop drawing - proper scale, 5 leader annotations, 8 dims, AutoCAD colors
+
+Date: 2026-06-25
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d1e64b09cb0b71d712efdc21ef9f540cce3ba538
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d1e64b09cb0b71d712efdc21ef9f540cce3ba538
+**Files:** backend-python/app/backend/drawing_model.py,backend-python/app/backend/svg_exporter.py
+
+**Summary:**
+Commit: fix: pedestal shop drawing - proper scale, 5 leader annotations, 8 dims, AutoCAD colors
+Files: backend-python/app/backend/drawing_model.py,backend-python/app/backend/svg_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: pedestal shop drawing - proper scale, 5 leader annotations, 8 dims, AutoCAD colors*
+
+#### Lesson Learned
+
+Commit: fix: pedestal shop drawing - proper scale, 5 leader annotations, 8 dims, AutoCAD colors
+Files: backend-python/app/backend/drawing_model.py,backend-python/app/backend/svg_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

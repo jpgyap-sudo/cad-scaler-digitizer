@@ -27,13 +27,18 @@ UPLOAD.mkdir(exist_ok=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
-def _save_drawing_model(f_type, dxf_path, width_cm, height_cm):
+def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None):
     """Save DrawingModel JSON alongside DXF for parametric adjustment."""
     if f_type != 'round_pedestal_table':
         return
     try:
         from app.backend.drawing_model import build_round_pedestal_model
-        model = build_round_pedestal_model(float(width_cm), float(height_cm))
+        kwargs = {}
+        if base_dia_cm is not None:
+            kwargs['base_dia_cm'] = base_dia_cm
+        if neck_dia_cm is not None:
+            kwargs['neck_dia_cm'] = neck_dia_cm
+        model = build_round_pedestal_model(float(width_cm), float(height_cm), **kwargs)
         json_path = Path(str(dxf_path).replace('.dxf', '.json'))
         import json as j
         with open(json_path, 'w') as f:
@@ -57,6 +62,38 @@ def count_feedback() -> int:
     return get_feedback_count()
 
 
+def _extract_pedestal_dims(corrected_dims):
+    """Pull explicitly-labeled top/base/neck diameters for a round pedestal table.
+
+    The drawing geometry always renders the pedestal body as a trapezoid
+    (neck_dia -> base_dia). When a drawing explicitly labels the base/neck
+    diameter (e.g. "Dia 44cm base plate"), those values must override the
+    hardcoded 0.55/0.28 ratio defaults -- otherwise a straight cylindrical
+    base (base_dia == neck_dia) gets drawn as a cone.
+    """
+    top_dia = base_dia = neck_dia = None
+    for d in corrected_dims:
+        tag = (d.get('tag') or '').lower().strip()
+        val = d.get('value_cm')
+        if not val:
+            continue
+        if tag == 'base_dia' and base_dia is None:
+            base_dia = val
+        elif tag == 'neck_dia' and neck_dia is None:
+            neck_dia = val
+        elif tag == 'collar_dia' and neck_dia is None:
+            neck_dia = val
+        elif tag in ('top_dia', 'dia', 'diameter') and top_dia is None:
+            top_dia = val
+    # A single explicitly-labeled base/neck diameter (no taper labeled) means
+    # the pedestal is a straight cylinder, not a cone -- use it for both ends.
+    if base_dia is not None and neck_dia is None:
+        neck_dia = base_dia
+    elif neck_dia is not None and base_dia is None:
+        base_dia = neck_dia
+    return top_dia, base_dia, neck_dia
+
+
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
     """Route furniture type to the correct DXF template, applying user-overridden dimensions."""
     print(f"[DISPATCH] Exporter: {f_type}")
@@ -71,12 +108,16 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
                     return d['value_cm']
         return default
 
+    extra = {}
     if f_type == 'round_pedestal_table':
         print("EXPORTER USED: save_round_pedestal_table")
-        dia = real_w or _dim(['dia', 'diameter', 'w', 'width'], 80.0)
+        labeled_top, base_dia, neck_dia = _extract_pedestal_dims(corrected_dims)
+        dia = real_w or labeled_top or _dim(['dia', 'diameter', 'w', 'width'], 80.0)
         height = real_h or _dim(['h', 'height'], 70.0)
+        extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia}
         try:
-            save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height)
+            save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height,
+                                       base_dia_cm=base_dia, neck_dia_cm=neck_dia)
         except Exception as e:
             print(f"[DISPATCH] save_round_pedestal_table FAILED: {e} -- falling back to generic")
             save_generic(str(dxf_path), [], [], [])
@@ -169,7 +210,9 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h):
         save_generic(str(dxf_path), [], [], [])
 
     # Generate DrawingModel JSON alongside DXF for parametric adjustment + validation
-    _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0)
+    _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
+                         base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'))
+    return extra
 
 
 @router.post("/digitize")
@@ -243,7 +286,7 @@ async def digitize(
         dxf_path = OUT / dxf_name
         scale, _, warns = validate_scale(corrected_dims, constrained['lines'])
 
-        _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
+        dispatch_extra = _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
 
         # Generate SVG preview alongside DXF
         try:
@@ -251,7 +294,8 @@ async def digitize(
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_digitized.svg'
             svg_path = OUT / svg_name
-            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70))
+            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items() if v is not None}
+            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception:
@@ -328,7 +372,7 @@ async def digitize_hybrid(
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. Return JSON with furniture_type (one of those exact strings), confidence (0-1 float), dimensions array [{tag, value_cm}]."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value -- do not assume it narrows toward the top. Return JSON with furniture_type (one of those exact strings), confidence (0-1 float), dimensions array [{tag, value_cm}]."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
@@ -436,7 +480,7 @@ async def digitize_hybrid(
         print("NORMALIZED:", ftype)
         print("EXPORTER USED:", "save_round_pedestal_table" if ftype == "round_pedestal_table" else "OTHER")
         print(f"[HYBRID] Dispatch: ftype='{ftype}' w={real_w} h={real_h}")
-        _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
+        dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h)
 
         # Generate SVG preview alongside DXF
         try:
@@ -444,7 +488,8 @@ async def digitize_hybrid(
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_hybrid.svg'
             svg_path = OUT / svg_name
-            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70))
+            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items() if v is not None}
+            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception:
@@ -879,18 +924,16 @@ async def batch_convert(files: List[UploadFile] = File(...)):
                 with img_path.open("wb") as f:
                     f.write(await file.read())
                 # Quick digitize (OpenCV only for batch — fast)
-                from app.backend.vision import detect_primitives
-                from app.backend.ocr import extract_ocr_dimensions
-                from app.backend.geometry_cleanup import process_constraints
-                from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
-                from app.backend.dimension_validator import validate_scale, correct_dimensions
-
-                geom = detect_primitives(str(img_path))
-                ocr_dims, ocr_lines = extract_ocr_dimensions(str(img_path))
-                constrained = process_constraints(geom["lines"], geom["circles"], geom.get("rects", []))
+                img, gray = load_image(str(img_path))
+                binary = preprocess(gray)
+                lines = normalize_lines(detect_lines(binary))
+                circles = detect_circles(gray)
+                rects = detect_rectangles(binary)
+                ocr_lines, ocr_dims = ocr_dimensions(str(img_path))
+                constrained = process_constraints(lines, circles, ocr_dims, rects)
                 classifier = classify_furniture(ocr_lines, constrained["circles"], constrained["lines"], constrained.get("rects"))
                 ftype = normalize_furniture_type(classifier["type"])
-                corrected_dims, _ = correct_dimensions(ocr_dims, constrained["lines"])
+                corrected_dims = autocorrect_dimensions(ocr_dims, {})
 
                 dxf_name = f"{job_id}_batch.dxf"
                 dxf_path = OUT / dxf_name

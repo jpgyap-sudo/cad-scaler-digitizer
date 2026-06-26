@@ -30,9 +30,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
 
   const apiPost = async (path: string, body: FormData) => {
     const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
-    const apiUrl = base.startsWith('http')
-      ? `${base}${path}`
-      : `${window.location.origin}${path.startsWith('/') ? '' : '/'}${path.replace(/^\//, '')}`;
+    let apiUrl: string;
+    if (base.startsWith('http')) {
+      // Absolute URL (e.g. http://localhost:8000): strip /py-api/ prefix —
+      // Python engine serves routes at /api/*, not /py-api/*
+      const apiPath = path.replace('/py-api/', '/api/');
+      apiUrl = `${base.replace(/\/$/, '')}${apiPath}`;
+    } else {
+      // Relative path (e.g. /py-api): keep as-is — Vite/nginx proxy handles rewrite
+      apiUrl = `${window.location.origin}${path}`;
+    }
     const resp = await fetch(apiUrl, { method: 'POST', body });
     return resp.json();
   };

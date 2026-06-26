@@ -14,6 +14,7 @@
     "brain:init": "curl -X GET http://localhost:5001/api/brain/init"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "@playwright/test": "^1.61.1"
   }
 }

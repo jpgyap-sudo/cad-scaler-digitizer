@@ -48,7 +48,7 @@ def _openai_ocr_sync(image_path: str) -> list:
             json={
                 "model": "gpt-4o",
                 "messages": [
-                    {"role": "system", "content": "Extract ALL dimension labels. Return JSON array: [{\"value_cm\":number,\"tag\":\"dia|h|w|d\",\"raw\":\"text\"}]. Convert to cm."},
+                    {"role": "system", "content": "Extract ALL dimension labels from this furniture drawing. For each one, use the nearby label text to pick the most specific tag: 'top_dia' (tabletop/overall diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (neck/collar/narrowest-point diameter), 'collar_dia' (metal collar plate diameter), 'height' (overall height), 'width', 'depth', 'thickness'. If a diameter's context is unclear, use 'dia'. Return JSON array: [{\"value_cm\":number,\"tag\":\"top_dia|base_dia|neck_dia|collar_dia|height|width|depth|thickness|dia\",\"raw\":\"original text incl. nearby label\"}]. Convert all values to cm."},
                     {"role": "user", "content": [{"type":"text","text":"Read all dimensions."},
                         {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}","detail":"high"}}]}
                 ],
