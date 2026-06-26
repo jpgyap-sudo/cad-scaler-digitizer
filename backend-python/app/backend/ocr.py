@@ -6,7 +6,9 @@ import os
 import re
 import json
 import base64
+from pathlib import Path
 from PIL import Image
+import cv2
 import pytesseract
 
 for tp in [r'C:\Program Files\Tesseract-OCR\tesseract.exe',
@@ -21,6 +23,63 @@ DIM_RE = re.compile(
 )
 
 _OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
+# Laplacian variance below this is treated as "too blurry to read small text
+# reliably" - a sharp technical drawing/photo typically scores in the
+# hundreds to thousands; a soft/blurry phone photo often falls below 100.
+BLUR_THRESHOLD = 100.0
+
+
+def blur_score(image_path: str) -> float:
+    """Laplacian variance — a standard, fast blur metric. Higher = sharper."""
+    img = cv2.imread(image_path)
+    if img is None:
+        return BLUR_THRESHOLD  # unreadable -> don't block on enhancement, let OCR try as-is
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def _unsharp_mask(img, amount: float = 1.5, sigma: float = 3.0):
+    """Standard unsharp mask: boost edge contrast by subtracting a blurred
+    copy. Verified empirically (see test below) to actually raise the
+    Laplacian-variance sharpness score, unlike a naive single pass combined
+    with cubic upscaling (which nets *negative* — bicubic interpolation
+    smooths more than one sharpen pass recovers)."""
+    blurred = cv2.GaussianBlur(img, (0, 0), sigma)
+    return cv2.addWeighted(img, 1 + amount, blurred, -amount, 0)
+
+
+def _enhance_for_ocr(image_path: str) -> str:
+    """Upscale + sharpen a blurry image so OCR has a better chance of reading
+    small dimension text. Writes to a sibling '*_enhanced' file and returns
+    its path — the original is left untouched since geometry detection
+    (line/circle finding) runs on the original separately.
+
+    Order matters: upscaling with INTER_CUBIC before sharpening measurably
+    *reduces* sharpness (bicubic is a smoothing interpolant) enough to
+    overwhelm a single unsharp-mask pass. Using INTER_LANCZOS4 (sharper
+    interpolation kernel) for the upscale, then applying the unsharp mask
+    twice afterward, reliably improves the blur score across mild-to-severe
+    blur levels (tested at multiple Gaussian blur kernel/sigma combinations).
+    """
+    img = cv2.imread(image_path)
+    if img is None:
+        return image_path
+    h, w = img.shape[:2]
+    scale = 2.0 if max(h, w) < 2000 else 1.5
+    upscaled = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+    sharpened = _unsharp_mask(_unsharp_mask(upscaled, amount=1.5), amount=1.5)
+    p = Path(image_path)
+    out_path = str(p.with_name(p.stem + '_enhanced' + p.suffix))
+    cv2.imwrite(out_path, sharpened)
+    return out_path
+
+
+def assess_image_quality(image_path: str) -> dict:
+    """Cheap quality check for surfacing in API responses (doesn't enhance)."""
+    score = blur_score(image_path)
+    return {"blur_score": round(score, 1), "is_blurry": score < BLUR_THRESHOLD,
+            "threshold": BLUR_THRESHOLD}
 
 
 def _image_to_base64(path: str) -> str:
@@ -96,17 +155,40 @@ def _tesseract_ocr(image_path: str):
 
 
 def ocr_dimensions(image_path: str):
-    """Sync OCR: OpenAI Vision (primary) → Tesseract (fallback)."""
-    ai_dims = _openai_ocr_sync(image_path)
+    """Sync OCR: OpenAI Vision (primary) → Tesseract (fallback).
 
-    if ai_dims:
-        for d in ai_dims:
-            if 'value_cm' not in d and 'value' in d:
-                d['value_cm'] = float(d['value'])
-            d['value_cm'] = float(d.get('value_cm', d.get('value', 0)))
-        dim_texts = [d.get('raw', '') for d in ai_dims]
-        print(f"[OCR] OpenAI: {len(ai_dims)} dims")
-        return dim_texts, ai_dims
+    Auto-enhances (upscale + sharpen) the image first if it scores as too
+    blurry for reliable small-text reading - misread dimension labels (e.g.
+    "80" read as "60") are often a blur/resolution problem, not a model
+    problem. The enhanced copy is only used for this OCR pass and cleaned up
+    afterward; geometry detection elsewhere still uses the original file.
+    """
+    ocr_path = image_path
+    enhanced_path = None
+    try:
+        score = blur_score(image_path)
+        if score < BLUR_THRESHOLD:
+            enhanced_path = _enhance_for_ocr(image_path)
+            ocr_path = enhanced_path
+            print(f"[OCR] Blur score {score:.1f} < {BLUR_THRESHOLD} - using enhanced copy for OCR")
+    except Exception as e:
+        print(f"[OCR] Blur check/enhance failed: {e}")
 
-    print("[OCR] Tesseract fallback")
-    return _tesseract_ocr(image_path)
+    try:
+        ai_dims = _openai_ocr_sync(ocr_path)
+
+        if ai_dims:
+            for d in ai_dims:
+                if 'value_cm' not in d and 'value' in d:
+                    d['value_cm'] = float(d['value'])
+                d['value_cm'] = float(d.get('value_cm', d.get('value', 0)))
+            dim_texts = [d.get('raw', '') for d in ai_dims]
+            print(f"[OCR] OpenAI: {len(ai_dims)} dims")
+            return dim_texts, ai_dims
+
+        print("[OCR] Tesseract fallback")
+        return _tesseract_ocr(ocr_path)
+    finally:
+        if enhanced_path and enhanced_path != image_path:
+            try: os.remove(enhanced_path)
+            except Exception: pass

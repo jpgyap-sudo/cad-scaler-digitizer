@@ -465,6 +465,8 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
         lines = normalize_lines(lines_raw)
         circles = detect_circles(gray)
         rects = detect_rectangles(binary)
+        from app.backend.ocr import assess_image_quality
+        image_quality = assess_image_quality(str(img_path))
         ocr_lines, dims = ocr_dimensions(str(img_path))
         constrained = process_constraints(lines, circles, dims, rects)
 
@@ -531,7 +533,11 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': corrected_dims, 'ocr_lines': ocr_lines[:20]},
             'accuracy_pipeline': accuracy_results,
-            'warnings': warns,
+            'image_quality': image_quality,
+            'warnings': (warns + [f"Source image looked blurry (sharpness {image_quality['blur_score']:.0f}, "
+                                   f"threshold {image_quality['threshold']:.0f}) - dimension text was read from an "
+                                   f"auto-sharpened copy; please double-check the numbers above against the photo."]
+                         if image_quality.get('is_blurry') else warns),
         })
     except Exception as e:
         return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
@@ -581,6 +587,8 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         lines = normalize_lines(lines_raw)
         circles = detect_circles(gray)
         rects = detect_rectangles(binary)
+        from app.backend.ocr import assess_image_quality
+        image_quality = assess_image_quality(str(img_path))
         ocr_lines, dims = ocr_dimensions(str(img_path))
         constrained = process_constraints(lines, circles, dims, rects)
 
@@ -675,7 +683,12 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'ai_analysis': ai_result,
             'materials': raw_materials or {},
             'accuracy_pipeline': accuracy_results,
-            'warnings': scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', []),
+            'image_quality': image_quality,
+            'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
+                         + ([f"Source image looked blurry (sharpness {image_quality['blur_score']:.0f}, "
+                             f"threshold {image_quality['threshold']:.0f}) - dimension text was read from an "
+                             f"auto-sharpened copy; please double-check the numbers above against the photo."]
+                            if image_quality.get('is_blurry') else [])),
         })
     except Exception as e:
         return JSONResponse({"error": f"Hybrid failed: {e}", "trace": traceback.format_exc()}, status_code=500)
