@@ -463,43 +463,31 @@ def build_round_pedestal_model(
         label=f"{base_dia_cm:g}", layer="DIMENSION"))
 
     # ── LEADER ANNOTATIONS (right side) ─────────────────────────────────────
-    # 1. Collar plate → "Dia XXcm Metal base plate with screw holes - matte black steel"
-    col_mid_y = (col_top + col_bot) / 2
-    front_view.leaders.append(LeaderComponent(
-        start=Point(lx_text, col_mid_y),
-        end=Point(fx + r_collar, col_mid_y),
-        text=f"Dia {collar_dia_cm:.0f}cm Metal base plate with screw holes- matte black steel",
-        layer="LEADER"))
-
-    # 2. Neck ring → "Matte hairline black steel"
-    front_view.leaders.append(LeaderComponent(
-        start=Point(lx_text, neck_top_y),
-        end=Point(fx + r_neck, neck_top_y),
-        text="Matte hairline black steel",
-        layer="LEADER"))
-
-    # 3. Pedestal top → "Dia XXcm Metal base plate - matte black steel"
-    front_view.leaders.append(LeaderComponent(
-        start=Point(lx_text, neck_bot_y),
-        end=Point(fx + r_neck, neck_bot_y),
-        text=f"Dia {base_dia_cm:.0f}cm Metal base plate - matte black steel",
-        layer="LEADER"))
-
-    # 4. Pedestal body midpoint → "Black hammered textured - apply PU coating"
+    # Each leader's `end` stays anchored to the real feature it's pointing at,
+    # but on a tall/slender pedestal the collar+neck region can be only a few
+    # units tall -- if the text landing points used those same raw midpoints,
+    # consecutive labels land closer together than one line of text is tall
+    # and render on top of each other. Enforce a minimum vertical gap between
+    # text landing points (top to bottom) while the leader line itself still
+    # points at the true feature location.
     ped_mid_y = (neck_bot_y + ped_bot) / 2
-    front_view.leaders.append(LeaderComponent(
-        start=Point(lx_text, ped_mid_y),
-        end=Point(fx + (r_neck + r_base) / 2, ped_mid_y),
-        text="Black hammered textured- apply a layer of PU coating for paint protection",
-        layer="LEADER"))
-
-    # 5. Base plate → "Black table base with anti-sliding glides"
     base_mid_y = (ped_bot + base_bot) / 2
-    front_view.leaders.append(LeaderComponent(
-        start=Point(lx_text, base_mid_y),
-        end=Point(fx + r_base, base_mid_y),
-        text="Black table base with anti-sliding glides",
-        layer="LEADER"))
+    raw_callouts = [
+        ((col_top + col_bot) / 2, fx + r_collar,
+         f"Dia {collar_dia_cm:.0f}cm Metal base plate with screw holes- matte black steel"),
+        (neck_top_y, fx + r_neck, "Matte hairline black steel"),
+        (neck_bot_y, fx + r_neck, f"Dia {base_dia_cm:.0f}cm Metal base plate - matte black steel"),
+        (ped_mid_y, fx + (r_neck + r_base) / 2,
+         "Black hammered textured- apply a layer of PU coating for paint protection"),
+        (base_mid_y, fx + r_base, "Black table base with anti-sliding glides"),
+    ]
+    min_label_gap = 9.0
+    prev_text_y = None
+    for target_y, target_x, text in raw_callouts:
+        text_y = target_y if prev_text_y is None else min(target_y, prev_text_y - min_label_gap)
+        front_view.leaders.append(LeaderComponent(
+            start=Point(lx_text, text_y), end=Point(target_x, target_y), text=text, layer="LEADER"))
+        prev_text_y = text_y
 
     # View label
     front_view.texts.append(TextComponent(

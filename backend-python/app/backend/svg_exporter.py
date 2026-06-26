@@ -124,9 +124,14 @@ def _render_view_flipped(view: View, page_h: float) -> str:
         ex, ey = l.end.x, fy(l.end.y)
         # Draw leader line
         elements.append(_svg_line(sx, sy, ex, ey, stroke=color, sw=0.8))
-        # Small horizontal shoulder at text end (like AutoCAD leaders)
+        # Small horizontal shoulder at text end (like AutoCAD leaders).
+        # These are right-side callouts (start.x sits to the right of the
+        # front view, see drawing_model.py's lx_text), so the shoulder and
+        # text must grow further RIGHT, away from the object -- anchor="end"
+        # here previously made long strings grow LEFT from this point,
+        # shooting clean across the page into the TOP VIEW.
         shoulder = 5
-        elements.append(_svg_line(sx - shoulder, sy, sx, sy, stroke=color, sw=0.8))
+        elements.append(_svg_line(sx, sy, sx + shoulder, sy, stroke=color, sw=0.8))
         # Arrowhead triangle at end point (pointing toward object)
         dx, dy = ex - sx, ey - sy
         mag = max(0.1, (dx**2 + dy**2)**0.5)
@@ -135,8 +140,8 @@ def _render_view_flipped(view: View, page_h: float) -> str:
         p1 = (ex - arrow * ux + 1.5 * uy, ey - arrow * uy - 1.5 * ux)
         p2 = (ex - arrow * ux - 1.5 * uy, ey - arrow * uy + 1.5 * ux)
         elements.append(_svg_polygon([(ex, ey), p1, p2], stroke=color, fill=color, sw=0.5))
-        # Label at start (to the right of shoulder)
-        elements.append(_svg_text(sx - shoulder - 2, sy + 3, l.text, color=color, size=7, anchor="end"))
+        # Label after the shoulder, growing rightward into the margin
+        elements.append(_svg_text(sx + shoulder + 2, sy + 3, l.text, color=color, size=7, anchor="start"))
 
     # Texts
     for t in view.texts:

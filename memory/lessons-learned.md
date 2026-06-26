@@ -2278,3 +2278,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] feat: Base Shape override toggle + fix broken /adjust round-pedestal regen
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 930e2e5974771e98aeb332fbdbbbbd8187cd7cde
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 930e2e5974771e98aeb332fbdbbbbd8187cd7cde
+**Files:** 
+
+**Summary:**
+Commit: feat: Base Shape override toggle + fix broken /adjust round-pedestal regen
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: feat: Base Shape override toggle + fix broken /adjust round-pedestal regen*
+
+#### Lesson Learned
+
+Commit: feat: Base Shape override toggle + fix broken /adjust round-pedestal regen
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
