@@ -69,14 +69,13 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     has_large_circle = False
     if len(sorted_circles) >= 1 and sorted_circles[0][2] >= 80:
         if len(sorted_circles) >= 2:
-            # Multiple circles: largest must be 5x bigger than 2nd largest
             has_large_circle = sorted_circles[0][2] >= sorted_circles[1][2] * 5
         else:
-            # Only one circle and it's large enough
             has_large_circle = True
 
     has_dia = any("dia" in t.lower() or "diameter" in t.lower() or "%%c" in t or "\u00d8" in t for t in ocr_lines)
     has_round = any(s in text for s in ["round", "circular", "pedestal", "\u00d8"])
+    has_pedestal = "pedestal" in text  # very strong round-pedestal-table signal
     has_table = "table" in text
     has_rect = any(s in text for s in ["rect", "square"])
     has_sofa = any(s in text for s in ["sofa", "couch", "loveseat", "settee"])
@@ -98,8 +97,18 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
             if h > 0:
                 aspect_ratio = w / h
 
+    # Priority 0: an explicit "pedestal" label is decisive for a round
+    # pedestal table — a drawing that says "TEXTURED PEDESTAL BASE" with a
+    # diameter callout is one even if the word "table" never appears.
+    # Guard: skip when an explicit competing furniture type is named, because
+    # the app stamps a boilerplate "PEDESTAL BASE" line into every drawing's
+    # material notes — without this guard a titled "Sofa"/"Cabinet" drawing
+    # would match on that boilerplate and be misread as a round table.
+    competing_type = has_sofa or has_cabinet or has_bed or has_chair or has_rect
+    if has_pedestal and (has_dia or has_round or has_large_circle) and not competing_type:
+        ftype, confidence = "round_pedestal_table", 0.85
     # Priority 1: Round table — requires LARGE circle OR strong text evidence
-    if has_large_circle and (has_round or has_dia or has_table):
+    elif has_large_circle and (has_round or has_dia or has_table):
         ftype, confidence = "round_pedestal_table", 0.85
     elif has_large_circle and has_table:
         ftype, confidence = "round_pedestal_table", 0.70

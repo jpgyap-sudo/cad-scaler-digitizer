@@ -113,9 +113,16 @@ def _openai_ocr_sync(image_path: str) -> list:
                 ],
                 "max_tokens": 1000,
                 "response_format": {"type": "json_object"},
-                "timeout": 30
-            }
+                # NOTE: 'timeout' must NOT go in the JSON body — OpenAI rejects
+                # it with HTTP 400 "Unrecognized request argument supplied:
+                # timeout", which made this call fail for EVERY image and
+                # silently fall back to Tesseract (which misreads digits, e.g.
+                # 80 -> 60). It belongs on the httpx call instead.
+            },
+            timeout=30,
         )
+        if r.status_code != 200:
+            print(f"[OCR] OpenAI HTTP {r.status_code}: {r.text[:200]}")
         if r.status_code == 200:
             content = r.json()['choices'][0]['message']['content']
             data = json.loads(content)
@@ -183,8 +190,20 @@ def ocr_dimensions(image_path: str):
                     d['value_cm'] = float(d['value'])
                 d['value_cm'] = float(d.get('value_cm', d.get('value', 0)))
             dim_texts = [d.get('raw', '') for d in ai_dims]
-            print(f"[OCR] OpenAI: {len(ai_dims)} dims")
-            return dim_texts, ai_dims
+            # OpenAI returns only the structured dimension labels, which
+            # starves the furniture classifier of the descriptive keywords it
+            # keys on (e.g. "PEDESTAL", "WOOD TOP", "DIA"). Tesseract reads ALL
+            # visible text (even if it garbles digits — which don't matter for
+            # keyword classification), so use its full text lines for the
+            # classifier while keeping OpenAI's accurate dimension VALUES.
+            tess_lines = []
+            try:
+                tess_lines, _ = _tesseract_ocr(ocr_path)
+            except Exception:
+                pass
+            text_lines = list(dict.fromkeys([t for t in (dim_texts + tess_lines) if t.strip()]))
+            print(f"[OCR] OpenAI: {len(ai_dims)} dims (+{len(tess_lines)} text lines for classification)")
+            return text_lines, ai_dims
 
         print("[OCR] Tesseract fallback")
         return _tesseract_ocr(ocr_path)
