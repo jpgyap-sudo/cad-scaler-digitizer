@@ -258,6 +258,29 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     # Generate DrawingModel JSON alongside DXF for parametric adjustment + validation
     _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
                          base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'))
+
+    # Central Brain: record drawing history + proportions for every digitize call
+    # (both /digitize and /digitize/hybrid -- previously only /digitize fed the brain).
+    # Silently no-ops if Postgres is unreachable (brain_sync handles that internally).
+    try:
+        from app.backend.brain_sync import record_drawing, record_proportion
+        resolved = extra.get('resolved_dimensions') or {}
+        record_drawing(dxf_path.stem, f_type, dxf_path.name, dimensions_used=resolved)
+        if f_type == 'round_pedestal_table':
+            top_dia = resolved.get('top_diameter_cm')
+            # Only teach the brain from genuinely-known values (label text or visual
+            # estimate, captured in base_dia_cm/neck_dia_cm before ratio-fallback was
+            # applied) -- feeding the ratio default back into itself would just
+            # compound fake confidence on a guess instead of real evidence.
+            if top_dia and extra.get('base_dia_cm') is not None:
+                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia,
+                                  'pedestal_diameter_cm', extra['base_dia_cm'])
+            if top_dia and extra.get('neck_dia_cm') is not None:
+                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia,
+                                  'neck_diameter_cm', extra['neck_dia_cm'])
+    except Exception as e:
+        print(f"[DISPATCH] brain_sync recording failed: {e}")
+
     return extra
 
 
@@ -347,18 +370,6 @@ async def digitize(
                 f2.write(drawing_to_svg(model))
         except Exception:
             svg_name = None
-
-        # Central Brain: record drawing + proportions
-        try:
-            from app.backend.brain_sync import record_drawing, record_proportion
-            record_drawing(job_id, f_type, dxf_name,
-                           entity_counts={}, dimensions_used={"w": real_w, "h": real_h},
-                           preview_urls={"svg": f"/api/preview/svg/{dxf_name}"})
-            if real_w and real_w > 0:
-                record_proportion(f_type, "top_diameter_cm", float(real_w or 80),
-                                  "pedestal_diameter_cm", float(real_w or 80) * 0.55)
-        except Exception:
-            pass
 
         try:
             os.remove(str(img_path))

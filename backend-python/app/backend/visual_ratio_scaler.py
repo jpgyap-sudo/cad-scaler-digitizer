@@ -76,6 +76,23 @@ RECTANGULAR_TABLE_RATIOS = {
 }
 
 
+def _brain_estimate(furniture_type: str, anchor_dimension: str, anchor_value: float,
+                    component: str, min_samples: int = 3, min_confidence: float = 0.3) -> Optional[Dict]:
+    """Query Central Brain for a learned proportion, if it has enough real samples.
+
+    Returns None below the sample/confidence floor so a handful of noisy
+    early corrections can't outrank the standard furniture-catalog ratios.
+    """
+    try:
+        from app.backend.brain_sync import get_proportion_estimate
+        est = get_proportion_estimate(furniture_type, anchor_dimension, anchor_value, component)
+        if est and est.get("sample_count", 0) >= min_samples and est.get("confidence", 0) >= min_confidence:
+            return est
+    except Exception as e:
+        print(f"[VisualRatioScaler] Brain query failed: {e}")
+    return None
+
+
 def estimate_round_pedestal(top_diameter_cm: float, overall_height_cm: float,
                             ocr_components: Optional[Dict[str, float]] = None) -> ScaleResult:
     """
@@ -104,33 +121,48 @@ def estimate_round_pedestal(top_diameter_cm: float, overall_height_cm: float,
     top_dia = known["top_diameter_cm"]
     total_h = known["overall_height_cm"]
 
-    # ---- Estimate from ratios ----
+    # ---- Estimate: OCR/visual known > Central Brain learned ratio > static ratio default ----
     # Pedestal diameter: typically 50-60% of top diameter
     ped_ratio, ped_conf, _ = ROUND_PEDESTAL_RATIOS["pedestal_diameter_cm"]
-    ped_dia = ocr.get("pedestal_diameter_cm") or (top_dia * ped_ratio)
+    if "pedestal_diameter_cm" in ocr:
+        ped_dia, ped_src, ped_used_conf = ocr["pedestal_diameter_cm"], "known", 0.85
+    else:
+        brain = _brain_estimate("round_pedestal_table", "top_diameter_cm", top_dia, "pedestal_diameter_cm")
+        if brain:
+            ped_dia, ped_src = brain["estimated_value"], "brain"
+            ped_used_conf = min(0.93, brain["confidence"])
+        else:
+            ped_dia, ped_src, ped_used_conf = top_dia * ped_ratio, "ratio", ped_conf
     components["pedestal_diameter_cm"] = ComponentEstimate(
-        value_cm=round(ped_dia, 1),
-        confidence=0.85 if "pedestal_diameter_cm" in ocr else ped_conf,
-        source="known" if "pedestal_diameter_cm" in ocr else "ratio"
-    )
+        value_cm=round(ped_dia, 1), confidence=ped_used_conf, source=ped_src)
 
     # Neck diameter: narrowest part of pedestal
     neck_ratio, neck_conf, _ = ROUND_PEDESTAL_RATIOS["neck_diameter_cm"]
-    neck_dia = ocr.get("neck_diameter_cm") or (top_dia * neck_ratio)
+    if "neck_diameter_cm" in ocr:
+        neck_dia, neck_src, neck_used_conf = ocr["neck_diameter_cm"], "known", 0.80
+    else:
+        brain = _brain_estimate("round_pedestal_table", "top_diameter_cm", top_dia, "neck_diameter_cm")
+        if brain:
+            neck_dia, neck_src = brain["estimated_value"], "brain"
+            neck_used_conf = min(0.93, brain["confidence"])
+        else:
+            neck_dia, neck_src, neck_used_conf = top_dia * neck_ratio, "ratio", neck_conf
     components["neck_diameter_cm"] = ComponentEstimate(
-        value_cm=round(neck_dia, 1),
-        confidence=0.80 if "neck_diameter_cm" in ocr else neck_conf,
-        source="known" if "neck_diameter_cm" in ocr else "ratio"
-    )
+        value_cm=round(neck_dia, 1), confidence=neck_used_conf, source=neck_src)
 
     # Top thickness
     thick_ratio, thick_conf, _ = ROUND_PEDESTAL_RATIOS["top_thickness_cm"]
-    top_thick = ocr.get("top_thickness_cm") or max(3.0, top_dia * thick_ratio)
+    if "top_thickness_cm" in ocr:
+        top_thick, thick_src, thick_used_conf = ocr["top_thickness_cm"], "known", 0.75
+    else:
+        brain = _brain_estimate("round_pedestal_table", "top_diameter_cm", top_dia, "top_thickness_cm")
+        if brain:
+            top_thick, thick_src = brain["estimated_value"], "brain"
+            thick_used_conf = min(0.93, brain["confidence"])
+        else:
+            top_thick, thick_src, thick_used_conf = max(3.0, top_dia * thick_ratio), "ratio", thick_conf
     components["top_thickness_cm"] = ComponentEstimate(
-        value_cm=round(top_thick, 1),
-        confidence=0.75 if "top_thickness_cm" in ocr else thick_conf,
-        source="known" if "top_thickness_cm" in ocr else "ratio"
-    )
+        value_cm=round(top_thick, 1), confidence=thick_used_conf, source=thick_src)
 
     # Pedestal body height (main column portion)
     ped_h_ratio, ped_h_conf, _ = ROUND_PEDESTAL_RATIOS["pedestal_height_ratio"]

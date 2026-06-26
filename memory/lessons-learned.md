@@ -2240,3 +2240,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: slider thumb not draggable + cone base on photos with no printed dims
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit cd58accf83c33f885376fff6a0bc2d4afe97ca41
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** cd58accf83c33f885376fff6a0bc2d4afe97ca41
+**Files:** 
+
+**Summary:**
+Commit: fix: slider thumb not draggable + cone base on photos with no printed dims
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: slider thumb not draggable + cone base on photos with no printed dims*
+
+#### Lesson Learned
+
+Commit: fix: slider thumb not draggable + cone base on photos with no printed dims
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
