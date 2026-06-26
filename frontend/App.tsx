@@ -94,21 +94,23 @@ const App: React.FC = () => {
     top_diameter_cm: 80, overall_height_cm: 70, base_diameter_cm: 44,
     neck_diameter_cm: 22.4, top_thickness_cm: 4,
   });
-  const [highlightedSliderKey, setHighlightedSliderKey] = useState<string | null>(null);
-
-  // Clicking a part of the rendered drawing jumps to the slider(s) that
-  // control it. pedestal_body spans both base and neck diameter, so it
-  // highlights base_diameter_cm first -- the most common thing someone
-  // clicking the column wants to fix.
-  const COMPONENT_TO_SLIDER: Record<string, string> = {
+  // Component name clicked on the rendered drawing (matches the schema's
+  // section names 1:1, see _component_schema in routes.py -- and the
+  // data-component attributes svg_exporter.py emits) -- no manual mapping
+  // needed, the backend already names sections to match the SVG parts.
+  const [highlightedComponent, setHighlightedComponent] = useState<string | null>(null);
+  // Legacy flat-mode fallback for furniture types without a component schema yet.
+  const FLAT_COMPONENT_TO_SLIDER: Record<string, string> = {
     tabletop: 'top_diameter_cm',
     collar_plate: 'top_thickness_cm',
     neck_ring: 'neck_diameter_cm',
     pedestal_body: 'base_diameter_cm',
     base_plate: 'base_diameter_cm',
   };
-  const setHighlightedComponent = (component: string) => {
-    const key = COMPONENT_TO_SLIDER[component];
+  const [highlightedSliderKey, setHighlightedSliderKey] = useState<string | null>(null);
+  const handlePartClick = (component: string) => {
+    setHighlightedComponent(component);
+    const key = FLAT_COMPONENT_TO_SLIDER[component];
     if (key) setHighlightedSliderKey(key);
   };
 
@@ -758,6 +760,8 @@ const App: React.FC = () => {
                     initialDims={currentDims}
                     furnitureType={cadEngineResult?.furniture?.type}
                     highlightKey={highlightedSliderKey}
+                    componentSchema={cadEngineResult?.component_schema}
+                    highlightComponent={highlightedComponent}
                     onAdjusted={(dims, svgUrl) => {
                       setCurrentDims(dims);
                       setSvgPreviewUrl(svgUrl);
@@ -830,7 +834,7 @@ const App: React.FC = () => {
                             src={`${cadEngineResult.preview_svg}?v=${previewSvgVersion}`}
                             alt="DXF Preview"
                             className="w-full rounded-lg border border-slate-200 [&_[data-component]:hover]:fill-indigo-500/10"
-                            onPartClick={setHighlightedComponent}
+                            onPartClick={handlePartClick}
                           />
                         ) : (
                           <img

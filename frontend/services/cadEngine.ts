@@ -4,12 +4,28 @@
  * Uses Vite dev proxy (/py-api/) to bypass Windows system proxy on localhost.
  */
 
+export interface ComponentDim {
+  key: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+}
+
+export interface ComponentSchema {
+  name: string;
+  label: string;
+  dims: ComponentDim[];
+}
+
 export type DigitizeResult = {
   job_id: string;
   download: string;
   dxf_file: string;
   preview_svg?: string;
   resolved_dimensions?: Record<string, number>;
+  component_schema?: ComponentSchema[] | null;
   furniture: {
     type: string;
     confidence: number;

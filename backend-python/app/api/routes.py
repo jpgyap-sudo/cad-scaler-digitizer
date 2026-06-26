@@ -94,6 +94,59 @@ def _extract_pedestal_dims(corrected_dims):
     return top_dia, base_dia, neck_dia
 
 
+def _component_schema(f_type):
+    """
+    Describe each named, clickable section of a furniture template and the
+    dimension(s) it owns -- e.g. "pedestal_body" -> base/neck diameter.
+
+    This lets the frontend render per-section editable controls for ANY
+    furniture type the same way, instead of one hardcoded flat slider list
+    per template. Component names match the data-component attributes
+    svg_exporter.py emits, so clicking a part of the drawing can jump
+    straight to its section. Dimension keys are the same form fields
+    /adjust already accepts -- this is a presentation grouping, not a new
+    API surface. Returns None for furniture types without a schema yet;
+    the frontend falls back to its flat slider list for those.
+    """
+    if f_type == 'round_pedestal_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "top_diameter_cm", "label": "Diameter", "min": 40, "max": 160, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"},
+            ]},
+            {"name": "collar_plate", "label": "Collar Plate", "dims": [
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"},
+            ]},
+            {"name": "neck_ring", "label": "Neck", "dims": [
+                {"key": "neck_diameter_cm", "label": "Diameter", "min": 10, "max": 60, "step": 0.5, "unit": "cm"},
+            ]},
+            {"name": "pedestal_body", "label": "Pedestal Column", "dims": [
+                {"key": "neck_diameter_cm", "label": "Top Width", "min": 10, "max": 60, "step": 0.5, "unit": "cm"},
+                {"key": "base_diameter_cm", "label": "Base Width", "min": 20, "max": 100, "step": 1, "unit": "cm"},
+            ]},
+            {"name": "base_plate", "label": "Base Plate", "dims": [
+                {"key": "base_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"},
+            ]},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 30, "max": 150, "step": 1, "unit": "cm"},
+            ]},
+        ]
+    if f_type == 'rectangular_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 60, "max": 300, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 40, "max": 150, "step": 1, "unit": "cm"},
+            ]},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_thickness_cm", "label": "Thickness", "min": 3, "max": 15, "step": 0.5, "unit": "cm"},
+            ]},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 30, "max": 150, "step": 1, "unit": "cm"},
+            ]},
+        ]
+    return None
+
+
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None):
     """Route furniture type to the correct DXF template, applying user-overridden dimensions.
 
@@ -255,6 +308,8 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
         save_generic(str(dxf_path), [], [], [])
 
+    extra['component_schema'] = _component_schema(f_type)
+
     # Generate DrawingModel JSON alongside DXF for parametric adjustment + validation
     _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
                          base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'))
@@ -382,6 +437,7 @@ async def digitize(
             'download': f'/api/download/{dxf_name}',
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
+            'component_schema': (dispatch_extra or {}).get('component_schema'),
             'furniture': {
                 'type': f_type,
                 'confidence': confidence,
@@ -562,6 +618,7 @@ async def digitize_hybrid(
             'download': f'/api/download/{dxf_name}',
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
+            'component_schema': (dispatch_extra or {}).get('component_schema'),
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True},
             'detected': {
                 'lines': len(constrained['lines']),

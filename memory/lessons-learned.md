@@ -2354,3 +2354,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: drawing rendered in lower-left corner of an oversized blank canvas
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bf5c88cc2646b3a5a5b3eb2c33d2569247d7b25d
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** bf5c88cc2646b3a5a5b3eb2c33d2569247d7b25d
+**Files:** 
+
+**Summary:**
+Commit: fix: drawing rendered in lower-left corner of an oversized blank canvas
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: drawing rendered in lower-left corner of an oversized blank canvas*
+
+#### Lesson Learned
+
+Commit: fix: drawing rendered in lower-left corner of an oversized blank canvas
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

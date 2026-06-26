@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sliders, Loader2 } from 'lucide-react';
+import { ComponentSchema } from '../services/cadEngine';
 
 interface DimSlider {
   key: string;
@@ -16,8 +17,13 @@ interface SliderPanelProps {
   furnitureType?: string;
   onAdjusted: (dims: Record<string, number>, svgUrl: string) => void;
   className?: string;
-  /** Slider key to scroll to and highlight, e.g. from clicking a part of the drawing. */
+  /** Slider key to scroll to and highlight (flat mode), e.g. from clicking a part of the drawing. */
   highlightKey?: string | null;
+  /** Backend-described sections for this furniture type (see _component_schema in routes.py).
+   *  When present, sliders render grouped by physical section instead of one flat list, and
+   *  clicking a drawing part (highlightComponent) scrolls to + flashes its whole section. */
+  componentSchema?: ComponentSchema[] | null;
+  highlightComponent?: string | null;
 }
 
 const ROUND_SLIDERS: DimSlider[] = [
@@ -48,14 +54,23 @@ const BASE_SHAPE_RATIOS: Record<BaseShape, { neck: number; base: number }> = {
   flared: { neck: 0.28, base: 0.55 },
 };
 
-const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitureType, onAdjusted, className = '', highlightKey }) => {
+const SliderPanel: React.FC<SliderPanelProps> = ({
+  dxfFile, initialDims, furnitureType, onAdjusted, className = '', highlightKey, componentSchema, highlightComponent,
+}) => {
   const isRound = !furnitureType?.includes('rectangular');
-  const sliders = isRound ? ROUND_SLIDERS : RECT_SLIDERS;
+  const flatSliders = isRound ? ROUND_SLIDERS : RECT_SLIDERS;
+  // All dim keys referenced anywhere in the schema (or the flat list, if no schema) --
+  // used to know which fields to actually submit to /adjust.
+  const allDimKeys = componentSchema
+    ? Array.from(new Set(componentSchema.flatMap(c => c.dims.map(d => d.key))))
+    : flatSliders.map(s => s.key);
   const [dims, setDims] = useState<Record<string, number>>(initialDims);
   const [loading, setLoading] = useState(false);
   const [baseShape, setBaseShape] = useState<BaseShape | null>(null);
   const [flashKey, setFlashKey] = useState<string | null>(null);
+  const [flashSection, setFlashSection] = useState<string | null>(null);
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     setDims(initialDims);
@@ -72,6 +87,15 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
     return () => clearTimeout(t);
   }, [highlightKey]);
 
+  // Same idea, but for a whole grouped section when a component schema is available.
+  useEffect(() => {
+    if (!highlightComponent) return;
+    sectionRefs.current[highlightComponent]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlashSection(highlightComponent);
+    const t = setTimeout(() => setFlashSection(null), 1600);
+    return () => clearTimeout(t);
+  }, [highlightComponent]);
+
   const handleSliderChange = (key: string, value: number) => {
     setDims(prev => ({ ...prev, [key]: value }));
   };
@@ -82,9 +106,9 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
     try {
       const formData = new FormData();
       formData.append('dxf_file', dxfFile);
-      for (const s of sliders) {
-        if (payload[s.key] !== undefined) {
-          formData.append(s.key, String(payload[s.key]));
+      for (const key of allDimKeys) {
+        if (payload[key] !== undefined) {
+          formData.append(key, String(payload[key]));
         }
       }
 
@@ -120,6 +144,57 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
     applyDims(next);
   };
 
+  const renderDimRow = (s: DimSlider, flashed: boolean) => {
+    const value = dims[s.key] ?? (s.min + s.max) / 2;
+    return (
+      <div
+        key={s.key}
+        ref={el => { rowRefs.current[s.key] = el; }}
+        className={`space-y-1 rounded-lg transition-shadow ${flashed ? 'ring-2 ring-indigo-400 bg-indigo-50/60' : ''}`}
+      >
+        <div className="flex justify-between items-center text-[10px] text-slate-500">
+          <span>{s.label}</span>
+          <div className="flex items-center space-x-1">
+            <input
+              type="number"
+              min={s.min}
+              max={s.max}
+              step={s.step}
+              value={value}
+              onChange={e => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v)) handleSliderChange(s.key, Math.min(s.max, Math.max(s.min, v)));
+              }}
+              onKeyDown={e => { if (e.key === 'Enter') handleApply(); }}
+              className="w-14 px-1 py-0.5 text-right font-mono font-bold text-indigo-600 bg-white
+                border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+            <span className="text-slate-400">{s.unit}</span>
+          </div>
+        </div>
+        <input
+          type="range"
+          min={s.min}
+          max={s.max}
+          step={s.step}
+          value={value}
+          onChange={e => handleSliderChange(s.key, parseFloat(e.target.value))}
+          onInput={e => handleSliderChange(s.key, parseFloat((e.target as HTMLInputElement).value))}
+          className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600
+            [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow
+            [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+            [&::-moz-range-thumb]:bg-indigo-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+        />
+        <div className="flex justify-between text-[9px] text-slate-400">
+          <span>{s.min}</span>
+          <span>{s.max}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={className}>
       <div className="flex items-center space-x-2 mb-3">
@@ -152,60 +227,33 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
         </div>
       )}
 
-      <div className="space-y-3">
-        {sliders.map(s => {
-          const value = dims[s.key] ?? (s.min + s.max) / 2;
-          return (
+      {componentSchema && componentSchema.length > 0 ? (
+        // Grouped mode: each clickable drawing part gets its own section --
+        // clicking the drawing scrolls/flashes the whole section, not just one row.
+        <div className="space-y-4">
+          {componentSchema.map(section => (
             <div
-              key={s.key}
-              ref={el => { rowRefs.current[s.key] = el; }}
-              className={`space-y-1 rounded-lg transition-shadow ${
-                flashKey === s.key ? 'ring-2 ring-indigo-400 bg-indigo-50/60' : ''
+              key={section.name}
+              ref={el => { sectionRefs.current[section.name] = el; }}
+              className={`p-2 rounded-xl border transition-colors ${
+                flashSection === section.name ? 'border-indigo-400 bg-indigo-50/60' : 'border-slate-100'
               }`}
             >
-              <div className="flex justify-between items-center text-[10px] text-slate-500">
-                <span>{s.label}</span>
-                <div className="flex items-center space-x-1">
-                  <input
-                    type="number"
-                    min={s.min}
-                    max={s.max}
-                    step={s.step}
-                    value={value}
-                    onChange={e => {
-                      const v = parseFloat(e.target.value);
-                      if (!isNaN(v)) handleSliderChange(s.key, Math.min(s.max, Math.max(s.min, v)));
-                    }}
-                    onKeyDown={e => { if (e.key === 'Enter') handleApply(); }}
-                    className="w-14 px-1 py-0.5 text-right font-mono font-bold text-indigo-600 bg-white
-                      border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                  />
-                  <span className="text-slate-400">{s.unit}</span>
-                </div>
+              <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">
+                {section.label}
               </div>
-              <input
-                type="range"
-                min={s.min}
-                max={s.max}
-                step={s.step}
-                value={value}
-                onChange={e => handleSliderChange(s.key, parseFloat(e.target.value))}
-                onInput={e => handleSliderChange(s.key, parseFloat((e.target as HTMLInputElement).value))}
-                className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-600
-                  [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow
-                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-indigo-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-[9px] text-slate-400">
-                <span>{s.min}</span>
-                <span>{s.max}</span>
+              <div className="space-y-3">
+                {section.dims.map(d => renderDimRow(d, false))}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        // Flat fallback for furniture types without a defined component schema yet.
+        <div className="space-y-3">
+          {flatSliders.map(s => renderDimRow(s, flashKey === s.key))}
+        </div>
+      )}
 
       <button
         onClick={handleApply}
