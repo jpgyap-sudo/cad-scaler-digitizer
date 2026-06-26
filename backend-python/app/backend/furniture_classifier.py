@@ -9,7 +9,6 @@ def normalize_furniture_type(ftype: str) -> str:
 
     aliases = {
         "round_pedestal_table": "round_pedestal_table",
-        "table": "round_pedestal_table",
         "round_table": "round_pedestal_table",
         "round_table_or_circular_part": "round_pedestal_table",
         "circular_table": "round_pedestal_table",
@@ -44,20 +43,40 @@ def normalize_furniture_type(ftype: str) -> str:
         "reception_counter": "reception_counter",
         "counter": "reception_counter",
         "desk": "reception_counter",
+        "table": "generic_2d_furniture",  # Fallback: "table" alone is too generic
     }
     return aliases.get(s, s)
 
 
 def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list = None) -> dict:
     """Classify furniture type from features with alias normalization.
-    IMPORTANT: Do NOT require circles[] for round table detection — OCR text like
-    'Round Table', 'Pedestal', 'DIA', 'Diameter', 'Ø' is sufficient evidence.
+    
+    Geometry rules:
+    - Large circles (radius >= 20px) → round table evidence
+    - Small circles (radius < 20px) → annotation artifacts, ignored for classification
+    - Many rectangles + text keywords → cabinet / sofa / chair
+    - Aspect ratio of bounding box → rectangular vs square vs round
     """
     text = " ".join(ocr_lines).lower()
     rects = rects or []
 
-    has_dia = any("dia" in t.lower() or "diameter" in t.lower() or "%%c" in t or "Ø" in t for t in ocr_lines)
-    has_round = any(s in text for s in ["round", "circular", "pedestal", "Ø"])
+    # Filter out annotation circles (dimension arrows create tiny circles).
+    # A real tabletop circle is typically 5-10x larger than annotation circles.
+    # Strategy: if the largest circle is >80px AND at least 5x bigger than
+    #            the second-largest, it's a real round tabletop.
+    sorted_circles = sorted([c for c in circles if len(c) >= 3 and c[2] > 0],
+                            key=lambda c: c[2], reverse=True)
+    has_large_circle = False
+    if len(sorted_circles) >= 1 and sorted_circles[0][2] >= 80:
+        if len(sorted_circles) >= 2:
+            # Multiple circles: largest must be 5x bigger than 2nd largest
+            has_large_circle = sorted_circles[0][2] >= sorted_circles[1][2] * 5
+        else:
+            # Only one circle and it's large enough
+            has_large_circle = True
+
+    has_dia = any("dia" in t.lower() or "diameter" in t.lower() or "%%c" in t or "\u00d8" in t for t in ocr_lines)
+    has_round = any(s in text for s in ["round", "circular", "pedestal", "\u00d8"])
     has_table = "table" in text
     has_rect = any(s in text for s in ["rect", "square"])
     has_sofa = any(s in text for s in ["sofa", "couch", "loveseat", "settee"])
@@ -68,30 +87,50 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     ftype = "generic_2d_furniture"
     confidence = 0.30
 
-    # Priority 1: Round table (OCR text is stronger evidence than circle detection)
-    if (has_dia or has_round or has_table) and ("round" in text or "circular" in text or "pedestal" in text or has_dia):
-        ftype, confidence = "round_pedestal_table", 0.85 if has_table else 0.75
-    elif circles and (has_round or has_dia):
+    # Compute bounding box aspect ratio from lines
+    aspect_ratio = 1.0
+    if lines:
+        xs = [p[0] for ln in lines for p in (ln if len(ln) == 2 else [(ln[0], ln[1]), (ln[2], ln[3])])]
+        ys = [p[1] for ln in lines for p in (ln if len(ln) == 2 else [(ln[0], ln[1]), (ln[2], ln[3])])]
+        if xs and ys:
+            w = max(xs) - min(xs)
+            h = max(ys) - min(ys)
+            if h > 0:
+                aspect_ratio = w / h
+
+    # Priority 1: Round table — requires LARGE circle OR strong text evidence
+    if has_large_circle and (has_round or has_dia or has_table):
+        ftype, confidence = "round_pedestal_table", 0.85
+    elif has_large_circle and has_table:
+        ftype, confidence = "round_pedestal_table", 0.70
+    elif (has_round or has_dia) and has_table:
+        # Strong text evidence without large circle — still round table
         ftype, confidence = "round_pedestal_table", 0.75
-    # Priority 2: Rectangular table
-    elif len(rects) >= 1 and (has_table or has_rect):
+    elif has_large_circle:
+        # Large circle but no text — moderate confidence
+        ftype, confidence = "round_pedestal_table", 0.55
+    
+    # Priority 2: Rectangular table — many rectangles or wide aspect ratio
+    elif (len(rects) >= 1 and (has_table or has_rect)) or (has_table and aspect_ratio > 1.4):
         ftype, confidence = "rectangular_table", 0.80 if has_table else 0.60
-    # Priority 3: Sofa
+    
+    # Priority 3: Sofa — wide + low aspect ratio, or text keywords
     elif has_sofa or (len(rects) >= 2 and "seat" in text):
         ftype, confidence = "sofa", 0.85 if has_sofa else 0.50
-    # Priority 4: Cabinet
-    elif has_cabinet or (len(rects) >= 1 and "door" in text):
-        ftype, confidence = "cabinet", 0.80 if has_cabinet else 0.50
-    # Priority 5: Bed
-    elif has_bed:
-        ftype, confidence = "bed_headboard", 0.85
-    # Priority 6: Chair
+    
+    # Priority 4: Cabinet — tall aspect ratio, or text keywords
+    elif has_cabinet or (len(rects) >= 1 and "door" in text) or (aspect_ratio < 0.7 and len(rects) >= 1):
+        ftype, confidence = "cabinet", 0.80 if has_cabinet else 0.45
+    
+    # Priority 5: Bed — extremely wide, or text keywords
+    elif has_bed or (aspect_ratio > 3.0 and len(rects) >= 1):
+        ftype, confidence = "bed_headboard", 0.85 if has_bed else 0.35
+    
+    # Priority 6: Chair — small, or text keywords
     elif has_chair or (len(rects) >= 2 and len(lines) >= 6):
         ftype, confidence = "chair", 0.80 if has_chair else 0.40
-    # Priority 7: Circles without text — might be round table
-    elif circles:
-        ftype, confidence = "round_pedestal_table", 0.50
-    # Priority 8: Table mentioned without any other clue
+    
+    # Priority 7: Table mentioned without other clues
     elif has_table:
         ftype, confidence = "rectangular_table", 0.40
 
