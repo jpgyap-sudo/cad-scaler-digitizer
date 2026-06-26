@@ -65,6 +65,7 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
     ? Array.from(new Set(componentSchema.flatMap(c => c.dims.map(d => d.key))))
     : flatSliders.map(s => s.key);
   const [dims, setDims] = useState<Record<string, number>>(initialDims);
+  const [materials, setMaterials] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [baseShape, setBaseShape] = useState<BaseShape | null>(null);
   const [flashKey, setFlashKey] = useState<string | null>(null);
@@ -129,7 +130,33 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
     }
   };
 
-  const handleApply = () => applyDims();
+  const applyMaterials = async () => {
+    const changed = Object.fromEntries(Object.entries(materials).filter(([, v]) => v.trim()));
+    if (Object.keys(changed).length === 0) return;
+    try {
+      const formData = new FormData();
+      formData.append('dxf_file', dxfFile);
+      formData.append('materials', JSON.stringify(changed));
+
+      const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+      const apiUrl = base.startsWith('http')
+        ? `${base}/api/material/edit`
+        : `${window.location.origin}/py-api/material/edit`;
+
+      const resp = await fetch(apiUrl, { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (data.preview_svg) {
+        onAdjusted(dims, data.preview_svg);
+      }
+    } catch (e) {
+      console.error('Material edit failed:', e);
+    }
+  };
+
+  const handleApply = async () => {
+    await applyDims();
+    await applyMaterials();
+  };
 
   const handleBaseShape = (shape: BaseShape) => {
     setBaseShape(shape);
@@ -245,6 +272,20 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
               <div className="space-y-3">
                 {section.dims.map(d => renderDimRow(d, false))}
               </div>
+              {section.material && (
+                <div className="mt-2">
+                  <div className="text-[9px] text-slate-400 mb-1">Material / Finish</div>
+                  <input
+                    type="text"
+                    placeholder={section.material.default}
+                    value={materials[section.material.key] ?? ''}
+                    onChange={e => setMaterials(prev => ({ ...prev, [section.material!.key]: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApply(); }}
+                    className="w-full px-2 py-1 text-[11px] text-slate-700 bg-white border border-slate-200
+                      rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

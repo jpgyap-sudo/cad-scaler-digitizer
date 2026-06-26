@@ -100,16 +100,21 @@ def _component_schema(f_type):
         return [
             {"name": "tabletop", "label": "Tabletop", "dims": [
                 {"key": "top_diameter_cm", "label": "Diameter", "min": 40, "max": 160, "step": 1, "unit": "cm"},
-                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"}]},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Solid hardwood, stained finish"}},
             {"name": "collar_plate", "label": "Collar Plate", "dims": [
-                {"key": "collar_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"}]},
+                {"key": "collar_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"}],
+             "material": {"key": "collar_plate", "default": "Matte hairline black steel"}},
             {"name": "neck_ring", "label": "Neck", "dims": [
-                {"key": "neck_diameter_cm", "label": "Diameter", "min": 10, "max": 60, "step": 0.5, "unit": "cm"}]},
+                {"key": "neck_diameter_cm", "label": "Diameter", "min": 10, "max": 60, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "neck_ring", "default": "Brushed stainless steel"}},
             {"name": "pedestal_body", "label": "Pedestal Column", "dims": [
                 {"key": "neck_diameter_cm", "label": "Top Width", "min": 10, "max": 60, "step": 0.5, "unit": "cm"},
-                {"key": "base_diameter_cm", "label": "Base Width", "min": 20, "max": 100, "step": 1, "unit": "cm"}]},
+                {"key": "base_diameter_cm", "label": "Base Width", "min": 20, "max": 100, "step": 1, "unit": "cm"}],
+             "material": {"key": "pedestal_body", "default": "Black hammered textured metal, PU coat"}},
             {"name": "base_plate", "label": "Base Plate", "dims": [
-                {"key": "base_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"}]},
+                {"key": "base_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"}],
+             "material": {"key": "base_foot", "default": "Anti-sliding rubber feet"}},
             {"name": "overall", "label": "Overall", "dims": [
                 {"key": "overall_height_cm", "label": "Height", "min": 30, "max": 150, "step": 1, "unit": "cm"}]},
         ]
@@ -1011,13 +1016,19 @@ def preview_dxf(filename: str):
             from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
             import ezdxf
             doc = ezdxf.readfile(str(path))
-            fig = plt.figure(figsize=(11.7, 8.3), dpi=100)
+            # dpi=100 rendered dimension text (2.5 world-unit height on a
+            # 420-unit-wide page) at ~7px tall - well below what's needed for
+            # reliable digit legibility if this preview is ever re-uploaded
+            # as a "photo" (a real workflow: users round-trip a generated
+            # drawing back through digitize). 200 keeps file size reasonable
+            # while making digits ~3x taller in pixels.
+            fig = plt.figure(figsize=(11.7, 8.3), dpi=200)
             ax = fig.add_axes([0, 0, 1, 1])
             ctx = RenderContext(doc)
             backend = MatplotlibBackend(ax)
             Frontend(ctx, backend).draw_layout(doc.modelspace(), finalize=True)
             ax.set_xlim(-10, 440); ax.set_ylim(-10, 310); ax.axis('off')
-            fig.savefig(str(png_path), dpi=100, facecolor='white', bbox_inches='tight', pad_inches=0.1)
+            fig.savefig(str(png_path), dpi=200, facecolor='white', bbox_inches='tight', pad_inches=0.1)
             plt.close(fig)
         except Exception as e: return JSONResponse({"error": f"Preview failed: {e}"}, status_code=500)
     return FileResponse(png_path, media_type="image/png")

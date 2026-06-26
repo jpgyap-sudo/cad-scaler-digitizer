@@ -167,13 +167,21 @@ def _add_dimension(msp, p1, p2, loc, text=None):
 
 
 def _add_diameter_dim(msp, center, radius, text=None):
-    """Add diameter dimension with %%c symbol."""
+    """Add diameter dimension with %%c symbol.
+
+    Text offset scales with radius (floor 8) - a fixed 8-unit gap was only
+    ~7.5% of a 20-unit radius circle, which at typical full-page preview
+    render resolution anti-aliases into the centerline above it, visually
+    corrupting the leading digit of the label (this is what caused OCR to
+    misread a correctly-generated "80" as "60"/"90" on round-trip tests).
+    """
     label = text or f'%%c{radius * 2:g} cm'
+    text_gap = max(12, radius * 0.6)
     _add_dimension(
         msp,
         (center[0] - radius, center[1]),
         (center[0] + radius, center[1]),
-        (center[0], center[1] - radius - 8),
+        (center[0], center[1] - radius - text_gap),
         label
     )
 
@@ -304,8 +312,9 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     _add_hatch_polygon(msp, [(cx + r_px * math.cos(2 * math.pi * i / 64),
                               cy + r_px * math.sin(2 * math.pi * i / 64))
                              for i in range(64)], 'ANSI31', 0.3, 45.0)
-    # Centerlines
-    ext = max(4, r_px * 0.1)
+    # Centerlines - small fixed tick, kept well under _add_diameter_dim's
+    # (now radius-scaled) text gap so the line can never reach the label.
+    ext = 3
     _add_centerline(msp, (cx - r_px - ext, cy), (cx + r_px + ext, cy))
     _add_centerline(msp, (cx, cy - r_px - ext), (cx, cy + r_px + ext))
     _add_diameter_dim(msp, (cx, cy), r_px, f'%%c{top_dia_cm:g} cm')

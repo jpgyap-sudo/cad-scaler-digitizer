@@ -17,6 +17,7 @@ export interface ComponentSchema {
   name: string;
   label: string;
   dims: ComponentDim[];
+  material?: { key: string; default: string };
 }
 
 export interface AccuracyAssociation {
