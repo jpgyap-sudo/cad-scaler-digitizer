@@ -69,6 +69,48 @@ def _svg_text(x, y, text, color="#1a1a1a", size=10, anchor="start"):
     return f'<text x="{x:.1f}" y="{y:.1f}" fill="{color}" font-family="monospace" font-size="{size}px" text-anchor="{anchor}">{safe}</text>'
 
 
+def _bbox_of_model(model: DrawingModel) -> tuple:
+    """
+    Compute the true bounding box of everything that gets drawn (DXF-space,
+    pre-flip), so the SVG canvas can be sized and shifted to fit the actual
+    content instead of using a fixed page size that may be larger or smaller
+    than the drawing -- a mismatch leaves the content stranded in a corner
+    surrounded by dead white space instead of properly composed on the sheet.
+    """
+    xs, ys = [], []
+
+    def add(x, y):
+        xs.append(x)
+        ys.append(y)
+
+    for view in model.views:
+        for c in view.circles:
+            add(c.center.x - c.radius, c.center.y - c.radius)
+            add(c.center.x + c.radius, c.center.y + c.radius)
+        for p in view.polygons:
+            for pt in p.points:
+                add(pt.x, pt.y)
+        for l in view.lines:
+            add(l.start.x, l.start.y)
+            add(l.end.x, l.end.y)
+        for d in view.dimensions:
+            add(d.p1.x, d.p1.y)
+            add(d.p2.x, d.p2.y)
+        for l in view.leaders:
+            add(l.start.x, l.start.y)
+            add(l.end.x, l.end.y)
+            # Leader text grows rightward from start.x (see _render_view_flipped) --
+            # account for its width or long callouts get clipped/ignored in the bbox.
+            add(l.start.x + len(l.text) * 4.3 + 10, l.start.y)
+        for t in view.texts:
+            add(t.position.x, t.position.y)
+            add(t.position.x + len(t.content) * t.height * 0.85, t.position.y)
+
+    if not xs:
+        return 0.0, 0.0, model.page_width, model.page_height
+    return min(xs), min(ys), max(xs), max(ys)
+
+
 def _render_view_flipped(view: View, page_h: float) -> str:
     """
     Render a single view with Y-axis flipped.
@@ -182,12 +224,33 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     Returns:
         Complete SVG document as a string
     """
-    # Use a wider virtual canvas to fit the larger-scale drawing
-    VW = max(model.page_width, 600.0)   # virtual width
-    VH = max(model.page_height, 420.0)  # virtual height
+    # Auto-fit the canvas to the actual drawn content instead of a fixed page
+    # size -- a mismatch (canvas bigger than the content) leaves the drawing
+    # stranded in a corner with most of the sheet empty, which is what was
+    # happening with the old fixed-minimum 600x420 canvas.
+    min_x, min_y, max_x, max_y = _bbox_of_model(model)
+    margin = 18.0
+    # Reserve a footer band below the geometry for the title block + notes,
+    # sized to whichever needs more room.
+    tb_h = 70.0
+    notes_lines = len(model.title_block.material_notes) + len(model.title_block.general_notes) + 4
+    notes_h = notes_lines * 7.0
+    footer_h = max(tb_h + 16.0, notes_h + 8.0)
+
+    content_w = max(1.0, max_x - min_x)
+    content_h = max(1.0, max_y - min_y)
+
+    VW = content_w + margin * 2
+    # PH (used by the Y-flip below) is independent of VH: choose it so the
+    # tallest point of the drawing (max_y, the tabletop) lands `margin` from
+    # the top of the canvas, then size VH to fit the flipped content plus
+    # the reserved footer band underneath it.
+    PH = max_y + margin
+    VH = (PH - min_y) + footer_h + margin
+    shift_x = margin - min_x
+
     w = width or int(VW * 2)
     h = height or int(VH * 2)
-    PH = VH  # page height used for Y-flip
 
     svg_parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VW:.0f} {VH:.0f}" width="{w}" height="{h}">',
@@ -198,10 +261,13 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     svg_parts.append(_svg_rect(0, 0, VW, VH,
                                 stroke=LAYER_COLORS["BORDER"], sw=1.5))
 
-    # === VIEWS — Y-flipped so DXF Y-up coords render correctly in SVG Y-down space ===
+    # === VIEWS — Y-flipped so DXF Y-up coords render correctly in SVG Y-down space,
+    # then shifted right by shift_x so the leftmost content sits `margin` from the edge.
+    svg_parts.append(f'<g transform="translate({shift_x:.1f},0)">')
     for view in model.views:
         svg_parts.append(f'<!-- {view.name} -->')
         svg_parts.append(_render_view_flipped(view, PH))
+    svg_parts.append('</g>')
 
     # === TITLE BLOCK (Bottom-Right, safely within VW/VH) ===
     tb = model.title_block
@@ -224,11 +290,16 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     svg_parts.append(_svg_text(col_mid + 3, oy + 53, f"CLIENT: {tb.client[:18] or '—'}", c, 7))
 
     # === MATERIAL NOTES (Bottom-Left, stacked upward from bottom) ===
+    # Total vertical space this block will consume, so it can be anchored to
+    # END near the bottom margin instead of starting there and overflowing
+    # off the canvas as the lines accumulate downward.
     note_line_h = 8
-    total_note_lines = len(tb.material_notes) + len(tb.general_notes) + 4  # +4 for headers
-    ny_start = VH - 8
+    total_block_h = (
+        note_line_h + len(tb.material_notes) * (note_line_h - 1)
+        + 4 + note_line_h + len(tb.general_notes) * (note_line_h - 1)
+    )
     nx = 8
-    cur_y = ny_start
+    cur_y = VH - 8 - total_block_h
     svg_parts.append(_svg_text(nx, cur_y, "MATERIAL / FINISH NOTES:", LAYER_COLORS["MTEXT"], 8))
     cur_y += note_line_h
     for i, note in enumerate(tb.material_notes):
