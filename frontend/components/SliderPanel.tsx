@@ -33,27 +33,44 @@ const RECT_SLIDERS: DimSlider[] = [
   { key: 'leg_thickness_cm', label: 'Leg Thickness', min: 3, max: 15, step: 0.5, unit: 'cm' },
 ];
 
+type BaseShape = 'cylinder' | 'tapered' | 'flared';
+
+// One-click starting ratios (relative to top diameter) for each base profile.
+// Tapered = narrows toward the floor (the classic cone). Flared = widens
+// toward the floor (a stable foot). Cylinder = same width top-to-bottom.
+// These are just sensible defaults -- the diameter sliders below remain
+// fully adjustable afterward.
+const BASE_SHAPE_RATIOS: Record<BaseShape, { neck: number; base: number }> = {
+  cylinder: { neck: 0.40, base: 0.40 },
+  tapered: { neck: 0.55, base: 0.28 },
+  flared: { neck: 0.28, base: 0.55 },
+};
+
 const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitureType, onAdjusted, className = '' }) => {
-  const sliders = furnitureType?.includes('rectangular') ? RECT_SLIDERS : ROUND_SLIDERS;
+  const isRound = !furnitureType?.includes('rectangular');
+  const sliders = isRound ? ROUND_SLIDERS : RECT_SLIDERS;
   const [dims, setDims] = useState<Record<string, number>>(initialDims);
   const [loading, setLoading] = useState(false);
+  const [baseShape, setBaseShape] = useState<BaseShape | null>(null);
 
   useEffect(() => {
     setDims(initialDims);
+    setBaseShape(null);
   }, [initialDims]);
 
   const handleSliderChange = (key: string, value: number) => {
     setDims(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleApply = async () => {
+  const applyDims = async (overrideDims?: Record<string, number>) => {
+    const payload = overrideDims ?? dims;
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append('dxf_file', dxfFile);
       for (const s of sliders) {
-        if (dims[s.key] !== undefined) {
-          formData.append(s.key, String(dims[s.key]));
+        if (payload[s.key] !== undefined) {
+          formData.append(s.key, String(payload[s.key]));
         }
       }
 
@@ -74,12 +91,52 @@ const SliderPanel: React.FC<SliderPanelProps> = ({ dxfFile, initialDims, furnitu
     }
   };
 
+  const handleApply = () => applyDims();
+
+  const handleBaseShape = (shape: BaseShape) => {
+    setBaseShape(shape);
+    const topDia = dims['top_diameter_cm'] ?? 80;
+    const ratios = BASE_SHAPE_RATIOS[shape];
+    const next = {
+      ...dims,
+      base_diameter_cm: Math.round(topDia * ratios.base * 10) / 10,
+      neck_diameter_cm: Math.round(topDia * ratios.neck * 10) / 10,
+    };
+    setDims(next);
+    applyDims(next);
+  };
+
   return (
     <div className={className}>
       <div className="flex items-center space-x-2 mb-3">
         <Sliders size={14} className="text-indigo-500" />
         <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Adjust Dimensions</span>
       </div>
+
+      {isRound && (
+        <div className="mb-3">
+          <div className="text-[10px] text-slate-500 mb-1">
+            Base Shape
+            <span className="text-slate-400 normal-case"> -- AI guessed this from the photo; override if wrong</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {(['cylinder', 'tapered', 'flared'] as BaseShape[]).map(shape => (
+              <button
+                key={shape}
+                onClick={() => handleBaseShape(shape)}
+                disabled={loading}
+                className={`px-2 py-1.5 rounded-lg text-[10px] font-bold capitalize transition-colors disabled:opacity-50 ${
+                  baseShape === shape
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {shape}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {sliders.map(s => (

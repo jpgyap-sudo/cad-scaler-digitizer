@@ -704,6 +704,7 @@ async def adjust_dimensions(
             })
 
         # Round pedestal table (original flow)
+        from app.backend.drawing_model import build_round_pedestal_model
         top_dia, height = 80.0, 70.0
         base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
         for txt in dim_texts:
@@ -750,6 +751,17 @@ async def adjust_dimensions(
         svg_path = OUT / safe.replace('.dxf', '.svg')
         with open(str(svg_path), 'w') as f:
             f.write(svg)
+
+        # Central Brain: a manual /adjust is direct human confirmation of the
+        # real shape -- a stronger signal than an AI guess, so always teach it.
+        try:
+            from app.backend.brain_sync import record_proportion
+            record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia,
+                              'pedestal_diameter_cm', base_dia)
+            record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia,
+                              'neck_diameter_cm', neck_dia)
+        except Exception as e:
+            print(f"[Adjust] brain_sync recording failed: {e}")
 
         return JSONResponse({
             "dxf_file": safe,
