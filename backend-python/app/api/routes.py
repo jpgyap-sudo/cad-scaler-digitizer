@@ -778,7 +778,20 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                               top_thickness_cm: float = Form(None),
                               width_cm: float = Form(None),
                               depth_cm: float = Form(None),
-                              leg_thickness_cm: float = Form(None)):
+                              leg_thickness_cm: float = Form(None),
+                              materials: str = Form(None)):
+    # materials: optional JSON object of {component: text} applied in the SAME
+    # regeneration as the dimension changes, so the UI can do dimensions +
+    # materials in ONE request instead of two sequential calls (a stalled
+    # first call used to block the second entirely).
+    material_overrides = {}
+    if materials:
+        try:
+            parsed = json.loads(materials)
+            if isinstance(parsed, dict):
+                material_overrides = {k: v for k, v in parsed.items() if v}
+        except (json.JSONDecodeError, ValueError):
+            pass
     safe = os.path.basename(dxf_file)
     dxf_path = OUT / safe
     if not dxf_path.exists(): return JSONResponse({"error": "DXF not found"}, status_code=404)
@@ -872,6 +885,12 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         if neck_diameter_cm is not None: neck_dia = neck_diameter_cm
         if top_thickness_cm is not None: top_thick = top_thickness_cm
         if collar_diameter_cm is not None: collar_dia = collar_diameter_cm
+
+        # Merge any material overrides sent alongside the dimension change so a
+        # single /adjust call applies both (and persists them via the sidecar
+        # write further down, which already serializes sidecar_materials).
+        if material_overrides:
+            sidecar_materials = {**sidecar_materials, **material_overrides}
 
         from app.backend.dxf_exporter import save_round_pedestal_table
         try: save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,

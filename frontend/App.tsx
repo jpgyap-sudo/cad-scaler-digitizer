@@ -21,6 +21,7 @@ import {
   getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult,
   getPreviewUrl, getPdfUrl, getSvgPreviewUrl
 } from './services/cadEngine';
+import { useAppVersion } from './hooks/useAppVersion';
 
 // ─── Global Error Boundary ────────────────────────────────────────────────────
 interface ErrorBoundaryState { hasError: boolean; message: string; }
@@ -74,6 +75,7 @@ const FURNITURE_TYPES = [
 ];
 
 const App: React.FC = () => {
+  const { updateAvailable } = useAppVersion();
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [cadDoc, setCadDoc] = useState<CadDocument | null>(null);
   const [cadEngineResult, setCadEngineResult] = useState<DigitizeResult | null>(null);
@@ -410,6 +412,22 @@ const App: React.FC = () => {
     <div className="h-screen flex flex-col bg-slate-50 font-sans">
       <TechStackModal isOpen={isTechModalOpen} onClose={() => setIsTechModalOpen(false)} />
 
+      {/* New-build detector: a long-lived tab keeps running its original
+          bundle after a deploy, so users silently run stale code (this was
+          the actual cause of "I can't edit materials" — a cached bundle).
+          Prompt a reload instead of forcing it so in-progress edits survive. */}
+      {updateAvailable && (
+        <div className="bg-amber-500 text-white text-sm px-4 py-2 flex items-center justify-center gap-3 flex-shrink-0 z-30">
+          <span>A new version of the app is available.</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-3 py-1 bg-white text-amber-700 rounded font-bold hover:bg-amber-50"
+          >
+            Reload
+          </button>
+        </div>
+      )}
+
       {/* HEADER */}
       <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between flex-shrink-0 shadow-sm z-20">
         <div className="flex items-center space-x-3">
@@ -707,6 +725,31 @@ const App: React.FC = () => {
                     </div>
                   )}
 
+                  {/* EDIT CONTROLS — dimensions + materials. Placed directly
+                      under the Furniture summary (not buried below Notes/OCR/
+                      BrainStats as before) so the primary editing affordance is
+                      the first thing the user reaches. */}
+                  {cadEngineResult.dxf_file && (
+                    <div className="border-2 border-indigo-200 bg-indigo-50/40 rounded-xl p-3">
+                      <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center">
+                        <Settings className="w-3.5 h-3.5 mr-1.5" /> Edit Drawing — Dimensions & Materials
+                      </h3>
+                      <SliderPanel
+                        dxfFile={cadEngineResult.dxf_file}
+                        initialDims={currentDims}
+                        furnitureType={cadEngineResult?.furniture?.type}
+                        highlightKey={highlightedSliderKey}
+                        componentSchema={cadEngineResult?.component_schema}
+                        highlightComponent={highlightedComponent}
+                        onAdjusted={(dims, svgUrl) => {
+                          setCurrentDims(dims);
+                          setSvgPreviewUrl(svgUrl);
+                          setPreviewSvgVersion(v => v + 1);
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* Detected Features */}
                   <div>
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -869,25 +912,6 @@ const App: React.FC = () => {
               <div className="p-4 border-t border-slate-200">
                 <BrainStats />
               </div>
-
-              {/* SLIDERS */}
-              {cadEngineResult && !isProcessing && cadEngineResult.dxf_file && (
-                <div className="p-4 border-t border-slate-200">
-                  <SliderPanel
-                    dxfFile={cadEngineResult.dxf_file}
-                    initialDims={currentDims}
-                    furnitureType={cadEngineResult?.furniture?.type}
-                    highlightKey={highlightedSliderKey}
-                    componentSchema={cadEngineResult?.component_schema}
-                    highlightComponent={highlightedComponent}
-                    onAdjusted={(dims, svgUrl) => {
-                      setCurrentDims(dims);
-                      setSvgPreviewUrl(svgUrl);
-                      setPreviewSvgVersion(v => v + 1);
-                    }}
-                  />
-                </div>
-              )}
 
               {/* CHATBOX — visible during upload and after result */}
               {!isProcessing && (

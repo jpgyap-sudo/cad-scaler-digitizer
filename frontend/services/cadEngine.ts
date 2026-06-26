@@ -58,10 +58,13 @@ export type DigitizeResult = {
   furniture: {
     type: string;
     confidence: number;
+    needs_confirmation?: boolean;
     required_dimensions?: string[];
     missing_dimensions?: string[];
     recommended_template?: string;
   };
+  image_quality?: { blur_score: number; is_blurry: boolean; threshold: number };
+  materials?: Record<string, { description: string; inferred: boolean } | string>;
   detected: {
     lines: number;
     circles: number;

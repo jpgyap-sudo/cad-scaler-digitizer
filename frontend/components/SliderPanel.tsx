@@ -78,6 +78,19 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
     setBaseShape(null);
   }, [initialDims]);
 
+  // Seed material fields with each section's current/default text so they
+  // render as real, editable values (black text) rather than a gray
+  // placeholder that looks read-only - users couldn't tell the field was
+  // editable when it only showed a faint placeholder.
+  useEffect(() => {
+    if (!componentSchema) return;
+    const seed: Record<string, string> = {};
+    for (const section of componentSchema) {
+      if (section.material) seed[section.material.key] = section.material.default;
+    }
+    setMaterials(seed);
+  }, [componentSchema]);
+
   // Clicking a part of the drawing scrolls its slider into view and flashes
   // a highlight ring briefly, so it's obvious which control just got focus.
   useEffect(() => {
@@ -101,6 +114,10 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
     setDims(prev => ({ ...prev, [key]: value }));
   };
 
+  // Single request applies dimensions AND materials together. Previously this
+  // was two sequential calls (/adjust then /material/edit); if the first
+  // stalled, the material call never ran, so material edits silently did
+  // nothing. /adjust now accepts a `materials` field and regenerates once.
   const applyDims = async (overrideDims?: Record<string, number>) => {
     const payload = overrideDims ?? dims;
     setLoading(true);
@@ -111,6 +128,19 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
         if (payload[key] !== undefined) {
           formData.append(key, String(payload[key]));
         }
+      }
+
+      // Only send material fields the user actually changed from the section
+      // default, so a dimension-only edit doesn't clobber AI-inferred materials.
+      const defaults: Record<string, string> = {};
+      for (const section of componentSchema ?? []) {
+        if (section.material) defaults[section.material.key] = section.material.default;
+      }
+      const changedMaterials = Object.fromEntries(
+        Object.entries(materials).filter(([k, v]) => v.trim() && v.trim() !== (defaults[k] ?? '').trim())
+      );
+      if (Object.keys(changedMaterials).length > 0) {
+        formData.append('materials', JSON.stringify(changedMaterials));
       }
 
       const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
@@ -130,33 +160,7 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
     }
   };
 
-  const applyMaterials = async () => {
-    const changed = Object.fromEntries(Object.entries(materials).filter(([, v]) => v.trim()));
-    if (Object.keys(changed).length === 0) return;
-    try {
-      const formData = new FormData();
-      formData.append('dxf_file', dxfFile);
-      formData.append('materials', JSON.stringify(changed));
-
-      const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
-      const apiUrl = base.startsWith('http')
-        ? `${base}/api/material/edit`
-        : `${window.location.origin}/py-api/material/edit`;
-
-      const resp = await fetch(apiUrl, { method: 'POST', body: formData });
-      const data = await resp.json();
-      if (data.preview_svg) {
-        onAdjusted(dims, data.preview_svg);
-      }
-    } catch (e) {
-      console.error('Material edit failed:', e);
-    }
-  };
-
-  const handleApply = async () => {
-    await applyDims();
-    await applyMaterials();
-  };
+  const handleApply = () => applyDims();
 
   const handleBaseShape = (shape: BaseShape) => {
     setBaseShape(shape);
@@ -274,15 +278,16 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
               </div>
               {section.material && (
                 <div className="mt-2">
-                  <div className="text-[9px] text-slate-400 mb-1">Material / Finish</div>
+                  <label className="text-[9px] font-semibold text-indigo-500 mb-1 flex items-center gap-1">
+                    ✏️ Material / Finish (editable)
+                  </label>
                   <input
                     type="text"
-                    placeholder={section.material.default}
                     value={materials[section.material.key] ?? ''}
                     onChange={e => setMaterials(prev => ({ ...prev, [section.material!.key]: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') handleApply(); }}
-                    className="w-full px-2 py-1 text-[11px] text-slate-700 bg-white border border-slate-200
-                      rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    className="w-full px-2 py-1.5 text-[11px] text-slate-800 bg-white border border-indigo-200
+                      rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 hover:border-indigo-300"
                   />
                 </div>
               )}
