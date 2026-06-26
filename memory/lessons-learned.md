@@ -2430,3 +2430,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: Drawing Assistant chat clipped off-screen by a non-scrolling sidebar
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f872ffe70d3e4b89515f42e8daa582317eaa5ffe
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** f872ffe70d3e4b89515f42e8daa582317eaa5ffe
+**Files:** 
+
+**Summary:**
+Commit: fix: Drawing Assistant chat clipped off-screen by a non-scrolling sidebar
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Drawing Assistant chat clipped off-screen by a non-scrolling sidebar*
+
+#### Lesson Learned
+
+Commit: fix: Drawing Assistant chat clipped off-screen by a non-scrolling sidebar
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
