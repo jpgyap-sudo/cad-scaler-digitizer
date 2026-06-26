@@ -229,3 +229,211 @@ when nothing changed (see gap-log #5).
   via `save_round_pedestal_table(...)` and an SVG via
   `build_round_pedestal_model(...)` with identical params, and diff their
   resolved component dimensions/positions.
+
+---
+
+## Update (commit a7d7190): what actually shipped, and what's next
+
+Materials (§1) shipped, but scoped to `round_pedestal_table` only, via a
+**separate endpoint** (`POST /api/material/edit`) rather than the
+`materials_json` param on `/adjust` this doc originally proposed — both
+work; the separate endpoint was simpler to land without touching `/adjust`'s
+already-complex branch logic. Chat vocabulary (§4) got the missing
+`neck_diameter_cm`/`collar_diameter_cm` keys and a relational-reasoning rule,
+but is still a static prompt fragment, not schema-generated. See
+`docs/gap-log.md` for the precise diff between "designed" and "shipped."
+
+Two things remain, in order of how soon you'll hit them:
+
+## Generalizing /adjust and /material/edit beyond round_pedestal_table
+
+**The problem, concretely.** `_dispatch_furniture()` and `_build_svg_model()`
+(both in `routes.py`) already have a correct branch per furniture type — a
+sofa digitizes correctly today. But `POST /adjust` and `POST
+/api/material/edit` are hand-written with only `round_pedestal_table` (and
+`rectangular_table`, for `/adjust`'s dimensions) wired up. A user adjusting a
+sofa via chat gets either silently wrong output (`/adjust` reinterprets it
+as a round pedestal table — gap-log #1b) or an explicit error
+(`/api/material/edit` — gap-log #1).
+
+**Why this happened.** Both endpoints were extended incrementally by adding
+an `if furniture_type == 'round_pedestal_table': ... elif == 'rectangular_table': ...`
+branch per type, mirroring `_dispatch_furniture`'s shape. That's the wrong
+shape to copy here — `_dispatch_furniture` *has* to branch per type because
+each type's builder function takes different positional dimension
+arguments. But `/adjust` and `/material/edit` don't need to know the
+builder's argument names; they need to know **what's editable**, which is
+exactly what `_component_schema(furniture_type)` already encodes.
+
+**The fix: drive both endpoints from the schema instead of from a copy of
+the dispatch branches.**
+
+```python
+def _builder_for(furniture_type: str):
+    """One lookup table instead of two copies of the if/elif chain."""
+    return {
+        'round_pedestal_table': (save_round_pedestal_table, build_round_pedestal_model),
+        'rectangular_table': (save_rectangular_table, build_rectangular_table_model),
+        'cabinet': (save_cabinet, build_cabinet_model),
+        'sofa': (save_sofa, build_sofa_model),
+        'coffee_table': (save_coffee_table, build_coffee_table_model),
+        'dining_chair': (save_dining_chair, build_dining_chair_model),
+        'wardrobe': (save_wardrobe, build_wardrobe_model),
+        'reception_counter': (save_reception_counter, build_reception_counter_model),
+        'bed_headboard': (save_bed_headboard, build_bed_headboard_model),
+    }.get(furniture_type)
+
+
+def adjust_dimensions_generic(dxf_file, furniture_type, dim_overrides: dict, materials_overrides: dict):
+    """Replaces the per-type branches in /adjust and /material/edit."""
+    dxf_path = OUT / os.path.basename(dxf_file)
+    json_path = Path(str(dxf_path).replace('.dxf', '.json'))
+    sidecar = json.loads(json_path.read_text(encoding='utf-8')) if json_path.exists() else {}
+    known = sidecar.get('known_dimensions', {})
+    est = sidecar.get('estimated_components', {})
+    materials = {**sidecar.get('materials', {}), **(materials_overrides or {})}
+
+    schema = _component_schema(furniture_type)  # the single source of truth
+    if schema is None:
+        raise ValueError(f"No editable schema for {furniture_type}")
+
+    # Flatten schema's declared dim keys -> resolve value: override > known > est > schema midpoint default
+    resolved = {}
+    for section in schema:
+        for d in section['dims']:
+            k = d['key']
+            resolved[k] = (dim_overrides or {}).get(k, known.get(k, est.get(k, (d['min'] + d['max']) / 2)))
+
+    save_fn, build_fn = _builder_for(furniture_type)
+    save_fn(str(dxf_path), materials=materials, **resolved)            # real DXF
+    model = build_fn(materials=materials, **resolved)                  # SVG preview
+    ...
+```
+
+This requires every `save_*`/`build_*` function's parameter NAMES to exactly
+match the `dims[].key` values in `_component_schema` for that type (mostly
+true already — `width_cm`, `height_cm`, etc. — but audit each type; e.g.
+`build_dining_chair_model(w, h)` uses `w`/`h` positionally, not
+`width_cm`/`overall_height_cm` as keyword names, so it needs a small adapter
+or a rename). Once that's true, `/adjust` and `/material/edit` become ~20
+lines each regardless of furniture type, and **every new furniture type
+added to `_component_schema` + the builder lookup table is automatically
+editable via chat with zero new endpoint code.** This is the same principle
+as the dynamic-schema work below, just applied to the 9 types that already
+have hand-written geometry.
+
+## Dynamic schema and geometry generation for novel furniture types
+
+**The question this answers:** can the agent auto-generate a component
+schema (and the storage for it) for a furniture type it's never seen,
+purely from the photo / a user's description, instead of requiring a
+developer to hand-write a new `build_X_model`/`save_X_table` pair every
+time? **Short answer: the schema/metadata side, yes, easily, today. The
+geometry side needs new generic-rendering code first — a schema alone
+doesn't draw anything.**
+
+### Part A — schema generation (cheap, do this first)
+
+`_component_schema()` already returns the exact shape an LLM can produce:
+`[{name, label, dims: [{key, label, min, max, step, unit}]}]`. The hybrid
+digitize endpoint (`routes.py`) already sends a furniture photo to GPT-4o
+and parses structured JSON back (`ai_result`) — extending that *same call*
+(no new API cost) to also return a schema for unrecognized types is a small
+addition to the existing system prompt:
+
+```
+If the furniture type is NOT one of [round_pedestal_table, rectangular_table,
+cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter,
+bed_headboard], set furniture_type to a new descriptive snake_case name and
+ALSO return a "generated_schema" array in this exact shape:
+[{"name": "component_snake_case", "label": "Human Label",
+  "dims": [{"key": "dimension_name_cm", "label": "...", "min": N, "max": N,
+            "step": N, "unit": "cm"}]}]
+List components top-to-bottom as they appear in the photo. Reuse standard
+keys (width_cm, overall_height_cm, depth_cm) where the concept matches one
+of those; invent new ones only for genuinely new measurements.
+```
+
+`routes.py` then does: `schema = _component_schema(ftype) or ai_result.get('generated_schema')`
+— existing types keep using the fast, free, hand-tuned hardcoded schema;
+anything new gets one running through the LLM.
+
+### Part B — persisting the generated schema (the "table" half of the question)
+
+Yes, this should be a new Postgres table, sitting next to the existing six
+in `create_ml_tables.sql`:
+
+```sql
+CREATE TABLE IF NOT EXISTS furniture_templates (
+    id SERIAL PRIMARY KEY,
+    furniture_type TEXT NOT NULL UNIQUE,   -- the LLM-coined snake_case name
+    schema JSONB NOT NULL,                 -- the generated_schema array
+    source TEXT DEFAULT 'llm_generated',   -- 'llm_generated' | 'hand_written' | 'user_confirmed'
+    confirmed_by_user BOOLEAN DEFAULT FALSE,
+    usage_count INTEGER DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_templates_type ON furniture_templates(furniture_type);
+```
+
+On every digitize where `ftype` isn't in the hardcoded 9: check this table
+first (`SELECT schema FROM furniture_templates WHERE furniture_type = %s`)
+before calling the LLM at all — the system "learns" a furniture type once
+and reuses the schema for every future photo of that type, same pattern as
+`component_proportions` already does for dimension ratios. Bump
+`usage_count` on reuse; this is also a natural place to surface a "X people
+have digitized a [type] — want to confirm this is right?" prompt that flips
+`confirmed_by_user` once a human has actually checked the auto-generated
+schema, which is the right gate before trusting it as heavily as a
+hand-written one.
+
+### Part C — the part schema generation does NOT solve: drawing it
+
+A schema is just `{name, dims}` — it tells the slider panel what to render
+and tells `/adjust` what's editable. It does not tell `svg_exporter.py` or
+`dxf_exporter.py` how to turn `{top_width_cm: 60, height_cm: 40}` into actual
+polygons, because every existing builder hand-codes its own coordinate math
+specific to that furniture's shape (a chair's seat+backrest geometry has
+nothing in common with a wardrobe's door panels).
+
+The unblock is the same `ColumnSegment` abstraction proposed in §3 above for
+merge support — generalize it from "an optional refactor for merging" into
+**the actual generic renderer for novel types**:
+
+```python
+@dataclass
+class ColumnSegment:
+    name: str
+    top_width_cm: float
+    bottom_width_cm: float   # == top_width_cm for a straight-sided segment
+    height_cm: float
+    shape: str = "rect"      # "rect" | "circle" (circle ignores bottom_width)
+
+def render_segment_stack(segments: List[ColumnSegment]) -> DrawingModel:
+    """Generic front-view renderer: stacks segments bottom-to-top, each a
+    trapezoid (or circle, for a top-view companion) at its own width.
+    This is what makes an LLM-generated schema *drawable* without a
+    hand-written builder — ask GPT-4o for the segment list (component name,
+    top/bottom width, height, shape) instead of just the schema, and this
+    one function replaces all 9 of build_*_model for any furniture whose
+    silhouette is "a vertical stack of primitives" (true for every
+    round/rect table, chair, cabinet, wardrobe — false for genuinely
+    asymmetric shapes like an L-sectional sofa, which still needs a
+    hand-written builder)."""
+```
+
+Extend Part A's LLM prompt to ALSO return this segment list (not just the
+schema) for unrecognized types, store it alongside the schema in
+`furniture_templates.schema` (e.g. `{"sections": [...], "segments": [...]}`),
+and route `_dispatch_furniture`/`_build_svg_model` to `render_segment_stack`
+whenever `furniture_type` isn't in the hand-written `_builder_for()` lookup
+table from the section above. This is the point at which "auto-generate a
+schema and draw a never-seen-before furniture type from one photo" becomes
+fully real, not just metadata with an empty canvas.
+
+**Sequencing:** Part A (schema only, no drawing) is low-risk and immediately
+useful even alone — it at least gives the user an editable slider panel for
+new types instead of nothing. Part C (the generic renderer) is the
+substantial piece of work and should reuse/merge with the `ColumnSegment`
+refactor from §3, not be built twice.
