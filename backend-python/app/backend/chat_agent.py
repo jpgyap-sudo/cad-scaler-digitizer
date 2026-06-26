@@ -86,13 +86,17 @@ Return ONLY valid JSON:
   }
 }
 
-Material components: tabletop, pedestal_base, neck_ring, legs, seat, backrest, frame, drawer_front, base_foot
-Dimension keys: top_diameter_cm, overall_height_cm, base_diameter_cm, top_thickness_cm, width_cm, depth_cm
+Material components: tabletop, pedestal_body, collar_plate, neck_ring, legs, seat, backrest, frame, drawer_front, base_foot
+Dimension keys: top_diameter_cm, overall_height_cm, base_diameter_cm, neck_diameter_cm, collar_diameter_cm, top_thickness_cm, width_cm, depth_cm, leg_thickness_cm
 Visibility: set to false to hide a component, true to show it
+
+The drawing state given as context (if any) shows the CURRENT value of every dimension already set — use it to resolve relative/relational requests.
 
 Rules:
 - Be conversational and helpful
 - Extract ALL measurable details from user messages
+- If the user gives a RELATIONAL instruction without an exact number (e.g. "make the base a different diameter than the pedestal/neck", "the legs should be thicker", "make it wider than the top") you MUST still compute and return a concrete number in updates.dimensions using the current state shown in context plus normal furniture proportions - never leave it unset or silently do nothing. State your reasoning briefly in the response (e.g. "neck is 50cm, so I set the base to 65cm").
+- If a relational request references a component with no key in "Dimension keys" above, pick the closest matching key - do not skip the request.
 - If user says 'render', 'generate', 'show me', or 'update drawing' → set action to "render"
 - If user describes a workflow preference, store it in notes
 - Default action is "continue" unless user explicitly asks for rendering

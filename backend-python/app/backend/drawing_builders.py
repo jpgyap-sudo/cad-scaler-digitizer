@@ -29,6 +29,7 @@ def build_round_pedestal_model(
     client: str = "",
     project: str = "Furniture Shop Drawing",
     material_notes: Optional[List[str]] = None,
+    materials: Optional[Dict[str, str]] = None,
 ) -> DrawingModel:
     """Build a complete DrawingModel for a round pedestal table."""
     now = datetime.now().strftime('%Y-%m-%d')
@@ -100,12 +101,14 @@ def build_round_pedestal_model(
 
     ped_mid_y = (neck_bot_y + ped_bot) / 2
     base_mid_y = (ped_bot + base_bot) / 2
+    mats = materials or {}
     raw_callouts = [
-        ((col_top + col_bot) / 2, fx + r_collar, f"Dia {collar_dia_cm:.0f}cm Metal base plate"),
-        (neck_top_y, fx + r_neck, "Matte hairline black steel"),
-        (neck_bot_y, fx + r_neck, f"Dia {base_dia_cm:.0f}cm Metal base plate"),
-        (ped_mid_y, fx + (r_neck + r_base) / 2, "Black hammered textured PU coating"),
-        (base_mid_y, fx + r_base, "Black table base with anti-sliding glides"),
+        ((col_top + col_bot) / 2, fx + r_collar,
+         mats.get('collar_plate', f"Dia {collar_dia_cm:.0f}cm Metal base plate")),
+        (neck_top_y, fx + r_neck, mats.get('neck_ring', "Matte hairline black steel")),
+        (neck_bot_y, fx + r_neck, mats.get('base_plate', f"Dia {base_dia_cm:.0f}cm Metal base plate")),
+        (ped_mid_y, fx + (r_neck + r_base) / 2, mats.get('pedestal_body', "Black hammered textured PU coating")),
+        (base_mid_y, fx + r_base, mats.get('base_foot', "Black table base with anti-sliding glides")),
     ]
     min_label_gap = 9.0
     prev_text_y = None
@@ -120,10 +123,10 @@ def build_round_pedestal_model(
         project=project, client=client, scale="1:2", revision="A",
         designer="AI CAD Drafter", date=now,
         material_notes=material_notes or [
-            "WOOD TOP — Solid hardwood, stained finish",
-            "PEDESTAL BASE — Black hammered textured metal, PU coat",
-            "COLLAR PLATE — Matte hairline black steel",
-            "BASE GLIDES — Anti-sliding rubber feet",
+            f"WOOD TOP — {mats.get('tabletop', 'Solid hardwood, stained finish')}",
+            f"PEDESTAL BASE — {mats.get('pedestal_body', 'Black hammered textured metal, PU coat')}",
+            f"COLLAR PLATE — {mats.get('collar_plate', 'Matte hairline black steel')}",
+            f"BASE GLIDES — {mats.get('base_foot', 'Anti-sliding rubber feet')}",
         ],
         general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED", "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED"],
     )

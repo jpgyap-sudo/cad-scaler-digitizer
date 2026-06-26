@@ -214,7 +214,7 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                                base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
-                               collar_dia_cm=None,
+                               collar_dia_cm=None, materials=None,
                                _scale_result=None, _validation_result=None):
     """Round pedestal table shop drawing with anti-hallucination rules.
     
@@ -373,9 +373,10 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     _add_dimension(msp, (fx + r_px + 10, base_bot_y), (fx + r_px + 10, top_y),
                    (fx + r_px + 20, (base_bot_y + top_y) / 2), f'H = {height_cm:g} cm')
     # Material leaders
-    _add_leader(msp, 'WOOD TOP', (fx + r_px + 15, top_y - thick_px / 2),
+    mats = materials or {}
+    _add_leader(msp, mats.get('tabletop', 'WOOD TOP'), (fx + r_px + 15, top_y - thick_px / 2),
                 (fx + r_px, top_y - thick_px / 2))
-    _add_leader(msp, 'TEXTURED PEDESTAL BASE',
+    _add_leader(msp, mats.get('pedestal_body', 'TEXTURED PEDESTAL BASE'),
                  (fx + br_px + 15, (neck_bot_y + ped_bot_y) / 2),
                  (fx + br_px, (neck_bot_y + ped_bot_y) / 2))
     _add_mtext(msp, 'FRONT VIEW', (fx - r_px, top_y + 10), 3)
@@ -385,9 +386,9 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                          scale=f"1:{2 if sc == 0.5 else int(1/sc)}",
                          revision="A",
                          material_notes=[
-                             "WOOD TOP — Solid hardwood, stained finish",
-                             "PEDESTAL BASE — Textured hammered metal, black powder coat",
-                             "NECK RING — Brushed stainless steel",
+                             f"WOOD TOP — {mats.get('tabletop', 'Solid hardwood, stained finish')}",
+                             f"PEDESTAL BASE — {mats.get('pedestal_body', 'Textured hammered metal, black powder coat')}",
+                             f"NECK RING — {mats.get('neck_ring', 'Brushed stainless steel')}",
                          ])
     return _save(doc, path)
 

@@ -42,7 +42,7 @@ CLASSIFIER_CONFIRM_THRESHOLD = 0.55
 
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
-                        depth_cm=None, leg_thickness_cm=None):
+                        depth_cm=None, leg_thickness_cm=None, materials=None):
     """Save per-furniture-type DrawingModel JSON alongside the DXF file."""
     try:
         from app.backend.drawing_model import build_round_pedestal_model, build_rectangular_table_model
@@ -60,8 +60,11 @@ def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None,
         else:
             return  # Other types don't have DrawingModel builders yet
 
-        with open(json_path, 'w') as f:
-            json.dump(model.to_dict(), f, indent=2)
+        data = model.to_dict()
+        if materials:
+            data['materials'] = materials
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
     except Exception as e:
         print(f"[DrawingModel] JSON save failed: {e}")
 
@@ -170,7 +173,8 @@ def _component_schema(f_type):
     return None
 
 
-def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None):
+def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None,
+                         materials=None):
     print(f"[DISPATCH] Exporter: {f_type}")
 
     def _dim(tags, default):
@@ -196,10 +200,10 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                 if neck_dia is None and neck_ratio: neck_dia = round(dia * neck_ratio, 1)
             except (TypeError, ValueError): pass
 
-        extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia}
+        extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'materials': materials or {}}
         try:
             save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height,
-                                       base_dia_cm=base_dia, neck_dia_cm=neck_dia)
+                                       base_dia_cm=base_dia, neck_dia_cm=neck_dia, materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_round_pedestal_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -222,6 +226,10 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                 'collar_diameter_cm': round(dia * 0.625, 1),
             }
         except Exception as e: print(f"[DISPATCH] resolved_dimensions failed: {e}")
+
+        from app.backend.dimension_validator import check_round_pedestal_proportions
+        extra['proportion_warnings'] = check_round_pedestal_proportions(
+            dia, extra.get('resolved_dimensions', {}))
 
     elif f_type == 'rectangular_table':
         w = real_w or _dim(['w', 'width'], 120.0)
@@ -279,7 +287,8 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
                          base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'),
                          depth_cm=extra.get('resolved_dimensions', {}).get('depth_cm'),
-                         leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'))
+                         leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'),
+                         materials=extra.get('materials'))
     try:
         from app.backend.brain_sync import record_drawing, record_proportion
         resolved = extra.get('resolved_dimensions') or {}
@@ -354,7 +363,8 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
                       if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
         svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
         svg_height = resolved.get('overall_height_cm', real_h or 70)
-        return build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
+        return build_round_pedestal_model(float(svg_top_dia), float(svg_height),
+                                           materials=(dispatch_extra or {}).get('materials'), **svg_kwargs)
 
     # Unrecognized/generic type — trace the actually-detected geometry
     # instead of fabricating an unrelated round-pedestal-table shape.
@@ -460,7 +470,9 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
             ys = [p[1] for ln in constrained['lines'] for p in ln]
             if ys: pixel_measurements['height'] = max(ys) - min(ys)
 
-        corrected_dims = autocorrect_dimensions(dims, pixel_measurements)
+        scale_cm_per_pixel, _scale_conf, scale_warns = validate_scale(dims, constrained['lines'])
+        corrected_dims = autocorrect_dimensions(dims, pixel_measurements, scale_cm_per_pixel=scale_cm_per_pixel)
+        dim_warns = [d['warning'] for d in corrected_dims if d.get('warning')]
         accuracy_results = _run_accuracy_pipeline(img_path, lines, circles, rects, ocr_lines, dims)
 
         classifier_result = classify_furniture(ocr_lines, constrained['circles'], constrained['lines'], constrained.get('rects'))
@@ -479,8 +491,8 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
 
         dxf_name = f'{job_id}_digitized.dxf'
         dxf_path = OUT / dxf_name
-        _, _, warns = validate_scale(corrected_dims, constrained['lines'])
         dispatch_extra = _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
+        warns = scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
 
         svg_name = None
         try:
@@ -542,7 +554,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value. If the furniture is a round_pedestal_table, ALSO visually inspect the pedestal's actual silhouette and return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": ..., \"base_ratio\": ...}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value. If the furniture is a round_pedestal_table, ALSO visually inspect the pedestal's actual silhouette and return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": ..., \"base_ratio\": ...}. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
@@ -564,7 +576,18 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         rects = detect_rectangles(binary)
         ocr_lines, dims = ocr_dimensions(str(img_path))
         constrained = process_constraints(lines, circles, dims, rects)
-        corrected_dims = autocorrect_dimensions(dims, {})
+
+        pixel_measurements = {}
+        if constrained['circles']:
+            pixel_measurements['diameter'] = constrained['circles'][0][2] * 2
+        if constrained['lines']:
+            xs = [p[0] for ln in constrained['lines'] for p in ln]
+            if xs: pixel_measurements['width'] = max(xs) - min(xs)
+            ys = [p[1] for ln in constrained['lines'] for p in ln]
+            if ys: pixel_measurements['height'] = max(ys) - min(ys)
+        scale_cm_per_pixel, _scale_conf, scale_warns = validate_scale(dims, constrained['lines'])
+        corrected_dims = autocorrect_dimensions(dims, pixel_measurements, scale_cm_per_pixel=scale_cm_per_pixel)
+        dim_warns = [d['warning'] for d in corrected_dims if d.get('warning')]
 
         accuracy_results = _run_accuracy_pipeline(img_path, lines, circles, rects, ocr_lines, dims)
 
@@ -612,7 +635,11 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         real_w = _parse_float(real_width_cm)
         real_h = _parse_float(real_height_cm)
         visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
-        dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate)
+        raw_materials = ai_result.get('materials') if isinstance(ai_result, dict) else None
+        materials = {k: (v.get('description', '') if isinstance(v, dict) else str(v))
+                     for k, v in (raw_materials or {}).items() if v}
+        dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate,
+                                              materials=materials)
 
         svg_name = None
         try:
@@ -639,8 +666,9 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': merged_dims, 'ocr_lines': ocr_lines[:20]},
             'ai_analysis': ai_result,
+            'materials': raw_materials or {},
             'accuracy_pipeline': accuracy_results,
-            'warnings': [],
+            'warnings': scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', []),
         })
     except Exception as e:
         return JSONResponse({"error": f"Hybrid failed: {e}", "trace": traceback.format_exc()}, status_code=500)
@@ -777,14 +805,41 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         top_dia, height = 80.0, 70.0
         base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
         collar_dia = None
-        for txt in dim_texts:
-            nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
-            val = float(nums[0]) if nums else None
-            if val:
-                if "%%c" in txt or "dia" in txt.lower():
-                    if val > 50: top_dia = val
-                    else: base_dia = val
-                if "h =" in txt.lower() or "height" in txt.lower(): height = val
+
+        # Prefer the structured JSON sidecar saved at generation time over
+        # scraping DIMENSION entity text: the text-scrape heuristic ("dia"
+        # text with value > 50cm is the top diameter, else the base") breaks
+        # whenever a non-top component (e.g. a 60cm base plate) also exceeds
+        # 50cm - it gets misread as the top diameter, silently corrupting an
+        # otherwise-correct value on every subsequent /adjust call.
+        json_path = Path(str(dxf_path).replace('.dxf', '.json'))
+        loaded_from_sidecar = False
+        sidecar_materials = {}
+        if json_path.exists():
+            try:
+                sidecar = json.loads(json_path.read_text(encoding='utf-8'))
+                known = sidecar.get('known_dimensions', {})
+                est = sidecar.get('estimated_components', {})
+                sidecar_materials = sidecar.get('materials', {})
+                if known.get('top_diameter_cm'): top_dia = known['top_diameter_cm']
+                if known.get('overall_height_cm'): height = known['overall_height_cm']
+                if est.get('pedestal_diameter_cm'): base_dia = est['pedestal_diameter_cm']
+                if est.get('neck_diameter_cm'): neck_dia = est['neck_diameter_cm']
+                if est.get('top_thickness_cm'): top_thick = est['top_thickness_cm']
+                if est.get('collar_diameter_cm'): collar_dia = est['collar_diameter_cm']
+                loaded_from_sidecar = True
+            except Exception as e:
+                print(f"[Adjust] sidecar load failed: {e}")
+
+        if not loaded_from_sidecar:
+            for txt in dim_texts:
+                nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                val = float(nums[0]) if nums else None
+                if val:
+                    if "%%c" in txt or "dia" in txt.lower():
+                        if val > 50: top_dia = val
+                        else: base_dia = val
+                    if "h =" in txt.lower() or "height" in txt.lower(): height = val
 
         if top_diameter_cm is not None: top_dia = top_diameter_cm
         if overall_height_cm is not None: height = overall_height_cm
@@ -796,12 +851,14 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         from app.backend.dxf_exporter import save_round_pedestal_table
         try: save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
                                          base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-                                         top_thick_cm=top_thick, collar_dia_cm=collar_dia)
+                                         top_thick_cm=top_thick, collar_dia_cm=collar_dia,
+                                         materials=sidecar_materials)
         except Exception as e: print(f"[Adjust] DXF regen failed: {e}")
 
         model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
             base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-            top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625))
+            top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625),
+            materials=sidecar_materials)
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')
         with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
@@ -812,12 +869,111 @@ async def adjust_dimensions(dxf_file: str = Form(...),
             record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'neck_diameter_cm', neck_dia)
         except Exception as e: print(f"[Adjust] brain_sync recording failed: {e}")
 
+        final_collar_dia = round(collar_dia or top_dia * 0.625, 1)
+        from app.backend.dimension_validator import check_round_pedestal_proportions
+        proportion_warnings = check_round_pedestal_proportions(top_dia, {
+            'collar_diameter_cm': final_collar_dia,
+            'pedestal_diameter_cm': base_dia,
+            'neck_diameter_cm': neck_dia,
+        })
+
+        # Persist the adjusted state so it doesn't go stale on the *next*
+        # /adjust call (which loads defaults from this same sidecar).
+        try:
+            json_path.write_text(json.dumps({
+                'known_dimensions': {'top_diameter_cm': top_dia, 'overall_height_cm': height},
+                'estimated_components': {'pedestal_diameter_cm': base_dia, 'neck_diameter_cm': neck_dia,
+                                          'top_thickness_cm': top_thick, 'collar_diameter_cm': final_collar_dia},
+                'materials': sidecar_materials,
+            }, indent=2), encoding='utf-8')
+        except Exception as e:
+            print(f"[Adjust] sidecar persist failed: {e}")
+
         return JSONResponse({"dxf_file": safe, "preview_svg": f"/api/preview/svg/{safe}",
             "dimensions": {"top_diameter_cm": round(top_dia, 1), "overall_height_cm": round(height, 1),
                            "base_diameter_cm": round(base_dia, 1), "neck_diameter_cm": round(neck_dia, 1),
                            "top_thickness_cm": round(top_thick, 1),
-                           "collar_diameter_cm": round(collar_dia or top_dia * 0.625, 1)}})
+                           "collar_diameter_cm": final_collar_dia},
+            "warnings": proportion_warnings})
     except Exception as e: return JSONResponse({"error": f"Adjust failed: {e}"}, status_code=500)
+
+
+@router.post("/material/edit")
+async def edit_materials(dxf_file: str = Form(...), materials: str = Form(...),
+                          drawing_title: str = Form(None), project: str = Form(None),
+                          client: str = Form(None)):
+    """Edit per-component material/finish text (and optional title-block text)
+    on an existing drawing, regenerating both DXF and SVG with the current
+    dimensions preserved from the sidecar JSON.
+
+    `materials` is a JSON object string: {"tabletop": "...", "collar_plate": "...", ...}
+    Known component keys for round_pedestal_table: tabletop, collar_plate,
+    neck_ring, pedestal_body, base_foot.
+    """
+    safe = os.path.basename(dxf_file)
+    dxf_path = OUT / safe
+    if not dxf_path.exists():
+        return JSONResponse({"error": "DXF not found"}, status_code=404)
+
+    try:
+        new_materials = json.loads(materials)
+        if not isinstance(new_materials, dict):
+            return JSONResponse({"error": "materials must be a JSON object"}, status_code=400)
+    except json.JSONDecodeError as e:
+        return JSONResponse({"error": f"Invalid materials JSON: {e}"}, status_code=400)
+
+    json_path = Path(str(dxf_path).replace('.dxf', '.json'))
+    if not json_path.exists():
+        return JSONResponse({"error": "No drawing data found for this file - re-digitize first"}, status_code=404)
+
+    try:
+        sidecar = json.loads(json_path.read_text(encoding='utf-8'))
+        furniture_type = sidecar.get('furniture_type', 'round_pedestal_table')
+        known = sidecar.get('known_dimensions', {})
+        est = sidecar.get('estimated_components', {})
+        merged_materials = {**sidecar.get('materials', {}), **new_materials}
+
+        from app.backend.svg_exporter import drawing_to_svg
+
+        if furniture_type == 'round_pedestal_table':
+            from app.backend.drawing_builders import build_round_pedestal_model
+            from app.backend.dxf_exporter import save_round_pedestal_table
+            top_dia = known.get('top_diameter_cm', 80.0)
+            height = known.get('overall_height_cm', 70.0)
+            base_dia = est.get('pedestal_diameter_cm', 44.0)
+            neck_dia = est.get('neck_diameter_cm', 22.4)
+            top_thick = est.get('top_thickness_cm', 4.0)
+            collar_dia = est.get('collar_diameter_cm')
+
+            try:
+                save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
+                                           base_dia_cm=base_dia, neck_dia_cm=neck_dia,
+                                           top_thick_cm=top_thick, collar_dia_cm=collar_dia,
+                                           materials=merged_materials)
+            except Exception as e:
+                print(f"[MaterialEdit] DXF regen failed: {e}")
+
+            model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
+                base_dia_cm=base_dia, neck_dia_cm=neck_dia, top_thick_cm=top_thick,
+                collar_dia_cm=(collar_dia or top_dia * 0.625), materials=merged_materials,
+                project=project or "Furniture Shop Drawing", client=client or "")
+        else:
+            return JSONResponse({"error": f"Material editing not yet supported for {furniture_type}"},
+                                 status_code=400)
+
+        svg = drawing_to_svg(model)
+        svg_path = OUT / safe.replace('.dxf', '.svg')
+        with open(str(svg_path), 'w', encoding='utf-8') as f:
+            f.write(svg)
+
+        sidecar['materials'] = merged_materials
+        json_path.write_text(json.dumps(sidecar, indent=2), encoding='utf-8')
+
+        return JSONResponse({"dxf_file": safe, "preview_svg": f"/api/preview/svg/{safe}",
+                              "materials": merged_materials})
+    except Exception as e:
+        return JSONResponse({"error": f"Material edit failed: {e}", "trace": traceback.format_exc()},
+                             status_code=500)
 
 
 @router.get("/preview/{filename}")
@@ -1058,11 +1214,28 @@ if _CHAT_STORE.exists():
     except Exception: pass
 
 @router.post("/chat")
-async def chat_message(message: str = Form(...), session_id: str = Form(None), image_id: str = Form(None)):
+async def chat_message(message: str = Form(...), session_id: str = Form(None), image_id: str = Form(None),
+                        dxf_file: str = Form(None)):
     from app.backend.chat_agent import chat_with_agent
     from app.backend.feedback_learner import learn_from_chat, get_adjustment_hints, load_preferences, apply_preferences
     sid = session_id or "default"
     prev_state = CHAT_SESSIONS.get(sid)
+
+    # Seed the chat's known dimensions from the drawing's own sidecar JSON so
+    # the LLM can reason about values it was never explicitly told via chat
+    # (e.g. neck/collar diameter set during initial generation, not chat) -
+    # without this, relational requests like "make X different from Y" have
+    # no "current value of Y" to reason from and silently no-op.
+    if dxf_file and (not prev_state or not prev_state.get("dimensions")):
+        try:
+            json_path = OUT / os.path.basename(dxf_file).replace('.dxf', '.json')
+            if json_path.exists():
+                sidecar = json.loads(json_path.read_text(encoding='utf-8'))
+                seeded_dims = {**sidecar.get('known_dimensions', {}), **sidecar.get('estimated_components', {})}
+                prev_state = {**(prev_state or {}), "dimensions": {**seeded_dims, **(prev_state or {}).get("dimensions", {})}}
+        except Exception as e:
+            print(f"[Chat] sidecar seed failed: {e}")
+
     result = chat_with_agent(message, prev_state)
     CHAT_SESSIONS[sid] = result["state"]
     try:

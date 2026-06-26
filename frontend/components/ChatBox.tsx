@@ -56,6 +56,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
       formData.append('message', userMsg.text);
       if (sessionId) formData.append('session_id', sessionId);
       if (imageId) formData.append('image_id', imageId);
+      if (dxfFile) formData.append('dxf_file', dxfFile);
 
       const data = await apiPost('/py-api/chat', formData);
 
@@ -80,6 +81,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
             await apiPost('/py-api/adjust', adjForm);
           } catch (e) {
             console.error('DXF regen from chat failed:', e);
+          }
+        }
+        // Material/finish descriptions from chat were only ever stored in
+        // session state, never applied to the drawing - push them through too.
+        if (dxfFile && data.state?.materials && Object.keys(data.state.materials).length > 0) {
+          try {
+            const matForm = new FormData();
+            matForm.append('dxf_file', dxfFile);
+            matForm.append('materials', JSON.stringify(data.state.materials));
+            await apiPost('/py-api/material/edit', matForm);
+          } catch (e) {
+            console.error('Material edit from chat failed:', e);
           }
         }
       }
