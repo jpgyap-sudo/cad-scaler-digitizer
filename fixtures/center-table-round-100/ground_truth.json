@@ -1,0 +1,40 @@
+{
+  "name": "center-table-round-100",
+  "furniture_type": "round_pedestal_table",
+  "parameters": {
+    "top_dia_cm": 100,
+    "height_cm": 75,
+    "base_dia_cm": 55.00000000000001,
+    "neck_dia_cm": 28.000000000000004,
+    "top_thick_cm": 4.0,
+    "collar_dia_cm": 62.5
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\center-table-round-100\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "top_dia",
+      "value_cm": 100,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 75,
+      "tolerance_pct": 5
+    },
+    {
+      "tag": "base_dia",
+      "value_cm": 55.00000000000001,
+      "tolerance_pct": 15
+    },
+    {
+      "tag": "neck_dia",
+      "value_cm": 28.000000000000004,
+      "tolerance_pct": 15
+    },
+    {
+      "tag": "top_thickness",
+      "value_cm": 5,
+      "tolerance_pct": 20
+    }
+  ]
+}

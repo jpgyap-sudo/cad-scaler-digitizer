@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-06-26T07:31:50.829Z",
-  "total_fixtures": 8,
+  "timestamp": "2026-06-27T03:25:00.000Z",
+  "total_fixtures": 12,
   "fixtures": [
     {
       "name": "fabric-sofa-105x92x87",
@@ -49,6 +49,30 @@
       "type": "bed_headboard",
       "path": "fixtures/king-bed-180x200/spec.json",
       "reference_image": "fixtures/king-bed-180x200/reference.jpg"
+    },
+    {
+      "name": "cabinet",
+      "type": "cabinet",
+      "path": "fixtures/cabinet/spec.json",
+      "reference_image": "fixtures/cabinet/reference.jpg"
+    },
+    {
+      "name": "rectangular_table",
+      "type": "rectangular_table",
+      "path": "fixtures/rectangular_table/spec.json",
+      "reference_image": "fixtures/rectangular_table/reference.jpg"
+    },
+    {
+      "name": "round_table",
+      "type": "round_pedestal_table",
+      "path": "fixtures/round_table/spec.json",
+      "reference_image": "fixtures/round_table/reference.jpg"
+    },
+    {
+      "name": "sofa",
+      "type": "sofa",
+      "path": "fixtures/sofa/spec.json",
+      "reference_image": "fixtures/sofa/reference.jpg"
     }
   ]
 }

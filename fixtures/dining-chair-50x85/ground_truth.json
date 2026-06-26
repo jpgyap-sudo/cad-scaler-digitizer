@@ -1,0 +1,31 @@
+{
+  "name": "dining-chair-50x85",
+  "furniture_type": "dining_chair",
+  "parameters": {
+    "width_cm": 50,
+    "height_cm": 85
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\dining-chair-50x85\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 50,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 50,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 85,
+      "tolerance_pct": 5
+    },
+    {
+      "tag": "seat_height",
+      "value_cm": 45,
+      "tolerance_pct": 10
+    }
+  ]
+}

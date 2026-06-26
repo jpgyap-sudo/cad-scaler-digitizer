@@ -1,0 +1,40 @@
+{
+  "name": "round_table",
+  "furniture_type": "round_pedestal_table",
+  "parameters": {
+    "top_dia_cm": 80,
+    "height_cm": 70,
+    "base_dia_cm": 44.0,
+    "neck_dia_cm": 22.4,
+    "top_thick_cm": 4.0,
+    "collar_dia_cm": 50.0
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\round_table\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "top_dia",
+      "value_cm": 80.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "height",
+      "value_cm": 70.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "base_dia",
+      "value_cm": 44.0,
+      "tolerance_pct": 10.0
+    },
+    {
+      "tag": "neck_dia",
+      "value_cm": 22.4,
+      "tolerance_pct": 10.0
+    },
+    {
+      "tag": "thickness",
+      "value_cm": 4.0,
+      "tolerance_pct": 15.0
+    }
+  ]
+}

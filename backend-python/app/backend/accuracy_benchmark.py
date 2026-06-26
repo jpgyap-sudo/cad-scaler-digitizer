@@ -52,7 +52,8 @@ class GroundTruthFixture:
     image_path: str
     furniture_type: str
     dimensions: List[GroundTruthDimension]
-    line_counts: Dict[str, int] = field(default_factory=dict)  # Expected line counts per role
+    line_counts: Dict[str, int] = field(default_factory=dict)
+    expected_dxf_path: Optional[str] = None  # Path to ground-truth DXF for comparison
 
     def to_dict(self) -> dict:
         return {
@@ -60,6 +61,7 @@ class GroundTruthFixture:
             "furniture_type": self.furniture_type,
             "dimensions": [{"tag": d.tag, "value_cm": d.value_cm, "tolerance_pct": d.tolerance_pct}
                           for d in self.dimensions],
+            "has_expected_dxf": self.expected_dxf_path is not None,
         }
 
 
@@ -95,6 +97,8 @@ class FixtureResult:
     association_count: int
     scale_px_per_cm: Optional[float]
     errors: List[str] = field(default_factory=list)
+    dxf_match: Optional[bool] = None  # Whether output DXF matches expected
+    dxf_dimension_error_pct: Optional[float] = None  # Dimension value deviation from expected DXF
 
     @property
     def overall_score(self) -> float:
@@ -134,6 +138,8 @@ class FixtureResult:
             "scale_px_per_cm": round(self.scale_px_per_cm, 4) if self.scale_px_per_cm else None,
             "errors": self.errors,
             "overall_score": round(self.overall_score, 1),
+            "dxf_match": self.dxf_match,
+            "dxf_dimension_error_pct": round(self.dxf_dimension_error_pct, 2) if self.dxf_dimension_error_pct is not None else None,
         }
 
 
@@ -171,10 +177,14 @@ class BenchmarkResult:
 # ===== Benchmark Runner =====
 
 def _find_pipeline_value(associations, tag: str) -> Optional[float]:
-    """Find a dimension value from the pipeline output by tag."""
+    """Find a dimension value from the pipeline output by tag.
+    Uses word-boundary matching to avoid false positives
+    (e.g. 'height' matching 'Seat Height')."""
+    import re
     for assoc in associations:
         text = assoc.text.lower()
-        if tag in text or (tag == "top_dia" and ("dia" in text or "diameter" in text)):
+        # Word-boundary match for the tag (e.g. 'height' does not match 'seat height')
+        if re.search(rf'(?<![\w])(?:{re.escape(tag)})(?![\w])', text):
             return assoc.value_cm
     return None
 
@@ -218,8 +228,11 @@ def _extract_dims_from_dxf(dxf_path: str) -> list:
                 
                 if value and value > 0:
                     # Heuristic tag assignment based on text content
+                    # Use explicit markers only — do NOT match on bare 'c' (which
+                    # appears in 'cm', 'circle', 'color', etc.) to avoid every
+                    # dimension value being falsely tagged as a diameter.
                     text_lower = text.lower()
-                    if '%%c' in text or 'dia' in text_lower or 'c' in text_lower:
+                    if '%%c' in text or 'dia' in text_lower:
                         tag = 'top_dia'
                     elif 'h=' in text_lower or 'height' in text_lower or text_lower.startswith('h'):
                         tag = 'height'
@@ -365,6 +378,40 @@ def run_single_fixture(fixture: GroundTruthFixture) -> FixtureResult:
         scale_solution = compute_scale(associations.associations, lines, known_dims)
         scale_px_per_cm = scale_solution.combined_scale.px_per_cm if scale_solution.combined_scale else None
 
+        # Compare against expected DXF file if available
+        dxf_match = None
+        dxf_dim_error = None
+        if fixture.expected_dxf_path and os.path.exists(fixture.expected_dxf_path):
+            try:
+                expected_dims = _extract_dims_from_dxf(fixture.expected_dxf_path)
+                # Use the same dimension extraction on the output DXF (if one was generated)
+                # Since run_single_fixture doesn't generate a DXF, we compare the
+                # expected DXF's dimensions against our pipeline associations
+                if expected_dims and associations.associations:
+                    expected_map = {d['tag']: d['value_cm'] for d in expected_dims if d['value_cm'] > 0}
+                    actual_map = {}
+                    for assoc in associations.associations:
+                        tag = assoc.text.split()[0].lower().replace(':', '').replace('=', '')
+                        actual_map[tag] = assoc.value_cm
+
+                    # Compare dimensions found in both
+                    matching = 0
+                    errors_pct = []
+                    for tag, exp_val in expected_map.items():
+                        act_val = actual_map.get(tag) or actual_map.get(tag.replace('_', ''), None)
+                        if act_val and act_val > 0:
+                            err = abs(act_val - exp_val) / exp_val * 100
+                            errors_pct.append(err)
+                            if err < 15:  # Within 15% threshold
+                                matching += 1
+
+                    dxf_match = matching >= max(1, len(expected_map) // 2)
+                    dxf_dim_error = sum(errors_pct) / len(errors_pct) if errors_pct else None
+                    if not dxf_match:
+                        errors.append(f"DXF mismatch: only {matching}/{len(expected_map)} dims match expected")
+            except Exception as e:
+                errors.append(f"DXF comparison failed: {e}")
+
         return FixtureResult(
             name=fixture.name,
             furniture_type_match=furniture_match,
@@ -373,6 +420,8 @@ def run_single_fixture(fixture: GroundTruthFixture) -> FixtureResult:
             association_count=len(associations.associations),
             scale_px_per_cm=scale_px_per_cm,
             errors=errors,
+            dxf_match=dxf_match,
+            dxf_dimension_error_pct=dxf_dim_error,
         )
 
     except Exception as e:
@@ -479,6 +528,7 @@ def load_fixtures() -> List[GroundTruthFixture]:
             image_path=str(image_path),
             furniture_type=spec.get("furniture_type", "unknown"),
             dimensions=dimensions,
+            expected_dxf_path=str(subdir / "expected.dxf") if (subdir / "expected.dxf").exists() else None,
         ))
 
     return loaded

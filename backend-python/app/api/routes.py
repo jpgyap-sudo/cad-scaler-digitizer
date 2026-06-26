@@ -284,13 +284,13 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
         return []
 
     # Collect all required dimension keys from the schema
-    try:
-        schema_keys = set()
-        for section in schema:
-            for dim in section.get('dims', []):
-                schema_keys.add(dim['key'])
+    schema_keys = set()
+    for section in schema:
+        for dim in section.get('dims', []):
+            schema_keys.add(dim['key'])
 
-        # Critical keys that every furniture type MUST have:
+    # Critical keys that every furniture type MUST have:
+    try:
         critical_overrides = {
             'round_pedestal_table': ['top_diameter_cm', 'overall_height_cm'],
             'rectangular_table': ['width_cm', 'depth_cm', 'overall_height_cm'],
@@ -305,11 +305,8 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
         }
         critical_keys = critical_overrides.get(f_type, list(schema_keys)[:3])
 
-    # Find what's missing
-    try:
+        # Find what's missing
         has_val_for = {}
-
-        # User-supplied real_w/real_h count as known
         if real_w is not None and real_w > 0:
             has_val_for['width_cm'] = True
             has_val_for['top_diameter_cm'] = True

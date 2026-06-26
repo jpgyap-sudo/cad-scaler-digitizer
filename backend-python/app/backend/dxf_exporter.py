@@ -105,7 +105,10 @@ def _force_extents_in_file(path):
         pass
 
 
-def _add_polyline(msp, points, closed=False, layer='OBJECT'):
+def _add_polyline(msp, points, closed=False, layer=None):
+    """Add a polyline. Defaults to OUTLINE layer if not specified."""
+    if layer is None:
+        layer = 'OUTLINE'
     if len(points) < 2:
         return
     try:
@@ -117,7 +120,10 @@ def _add_polyline(msp, points, closed=False, layer='OBJECT'):
             _add_line(msp, points[-1], points[0], layer)
 
 
-def _add_mtext(msp, text, pos, height=3, layer='MTEXT'):
+def _add_mtext(msp, text, pos, height=3, layer=None):
+    """Add multi-line text. Defaults to ANNOTATIONS layer."""
+    if layer is None:
+        layer = 'ANNOTATIONS'
     if not text:
         return
     text = clean_text_for_dxf(str(text))
@@ -132,7 +138,10 @@ def _add_mtext(msp, text, pos, height=3, layer='MTEXT'):
             pass
 
 
-def _add_text(msp, txt, pt, h=2.5, layer='TEXT'):
+def _add_text(msp, txt, pt, h=2.5, layer=None):
+    """Add single-line text. Defaults to ANNOTATIONS layer."""
+    if layer is None:
+        layer = 'ANNOTATIONS'
     if not txt:
         return
     txt = clean_text_for_dxf(str(txt))
@@ -143,14 +152,17 @@ def _add_text(msp, txt, pt, h=2.5, layer='TEXT'):
         pass
 
 
-def _add_line(msp, a, b, layer='OBJECT'):
+def _add_line(msp, a, b, layer=None):
+    """Add a line. Defaults to OUTLINE layer."""
+    if layer is None:
+        layer = 'OUTLINE'
     if abs(a[0] - b[0]) + abs(a[1] - b[1]) < 1e-6:
         return
     msp.add_line(a, b, dxfattribs={'layer': layer})
 
 
 def _add_centerline(msp, p1, p2):
-    _add_line(msp, p1, p2, 'CENTER')
+    _add_line(msp, p1, p2, 'CENTERLINES')
 
 
 def _add_dimension(msp, p1, p2, loc, text=None):
@@ -161,9 +173,9 @@ def _add_dimension(msp, p1, p2, loc, text=None):
             d.dimension.dxf.text = normalize_dimension_text(text)
         d.render()
     except Exception:
-        _add_line(msp, p1, p2, 'DIMENSION')
+        _add_line(msp, p1, p2, 'DIMENSIONS')
         if text:
-            _add_text(msp, normalize_dimension_text(text), loc, 2.5, 'TEXT')
+            _add_text(msp, normalize_dimension_text(text), loc, 2.5, 'DIMENSIONS')
 
 
 def _add_diameter_dim(msp, center, radius, text=None):

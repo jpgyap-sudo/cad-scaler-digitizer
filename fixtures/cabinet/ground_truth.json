@@ -1,0 +1,27 @@
+{
+  "name": "cabinet",
+  "furniture_type": "cabinet",
+  "parameters": {
+    "width_cm": 100,
+    "depth_cm": 50,
+    "height_cm": 180
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\cabinet\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 100.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "depth",
+      "value_cm": 50.0,
+      "tolerance_pct": 10.0
+    },
+    {
+      "tag": "height",
+      "value_cm": 180.0,
+      "tolerance_pct": 5.0
+    }
+  ]
+}

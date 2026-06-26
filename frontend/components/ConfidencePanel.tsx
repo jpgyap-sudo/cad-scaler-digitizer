@@ -25,6 +25,15 @@ export interface DimItem {
   assigned_to?: string;
 }
 
+export interface LineRoleItem {
+  line_id: string;
+  role: string;
+  confidence: number;
+  /** Pixel coordinates for highlighting on the drawing */
+  p1?: [number, number];
+  p2?: [number, number];
+}
+
 interface ConfidencePanelProps {
   /** Dimensions from the accuracy pipeline */
   dimensions: DimItem[];
@@ -38,12 +47,13 @@ interface ConfidencePanelProps {
     dim_line?: { length_px: number } | null;
     associated_circle?: [number, number, number] | null;
   }>;
-  /** Line role data from accuracy pipeline */
+  /** Line role data from accuracy pipeline (enhanced with individual line IDs) */
   lineRoles?: {
-    object_edges?: Array<{ role: string; confidence: number }>;
-    dimension_lines?: Array<{ role: string; confidence: number }>;
-    leaders?: Array<{ role: string; confidence: number }>;
-    unknown?: Array<{ role: string; confidence: number }>;
+    object_edges?: LineRoleItem[];
+    dimension_lines?: LineRoleItem[];
+    leaders?: LineRoleItem[];
+    centerlines?: LineRoleItem[];
+    unknown?: LineRoleItem[];
   };
   /** Callback when user corrects a dimension value */
   onCorrectValue?: (text: string, newValue: number) => void;
@@ -96,6 +106,25 @@ function getSourceConfig(source: string) {
   return SOURCE_CONFIG[source] || SOURCE_CONFIG['unknown'];
 }
 
+// Available line roles for reclassification
+const LINE_ROLES = [
+  { value: 'OBJECT_EDGE', label: 'Object Edge', color: 'text-slate-700', bg: 'bg-slate-100' },
+  { value: 'DIMENSION_LINE', label: 'Dimension Line', color: 'text-blue-700', bg: 'bg-blue-50' },
+  { value: 'EXTENSION_LINE', label: 'Extension Line', color: 'text-blue-500', bg: 'bg-blue-50' },
+  { value: 'LEADER', label: 'Leader / Callout', color: 'text-amber-700', bg: 'bg-amber-50' },
+  { value: 'CENTERLINE', label: 'Centerline', color: 'text-cyan-700', bg: 'bg-cyan-50' },
+  { value: 'HIDDEN', label: 'Hidden / Dashed', color: 'text-gray-500', bg: 'bg-gray-50' },
+  { value: 'UNKNOWN', label: 'Unclassified', color: 'text-red-600', bg: 'bg-red-50' },
+];
+
+const ROLE_CATEGORIES: Array<{ key: string; label: string; color: string; bg: string }> = [
+  { key: 'object_edges', label: 'Object Edges', color: 'text-slate-700', bg: 'bg-slate-100' },
+  { key: 'dimension_lines', label: 'Dimension Lines', color: 'text-blue-700', bg: 'bg-blue-50' },
+  { key: 'leaders', label: 'Leaders / Callouts', color: 'text-amber-700', bg: 'bg-amber-50' },
+  { key: 'centerlines', label: 'Centerlines', color: 'text-cyan-700', bg: 'bg-cyan-50' },
+  { key: 'unknown', label: 'Unclassified', color: 'text-red-600', bg: 'bg-red-50' },
+];
+
 export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
   dimensions,
   associations,
@@ -114,6 +143,24 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+  const [reclassifyingLine, setReclassifyingLine] = useState<string | null>(null);
+  const [lineRoleCorrections, setLineRoleCorrections] = useState<Map<string, string>>(() => {
+    try {
+      const stored = sessionStorage.getItem('cad_line_role_corrections');
+      if (stored) {
+        const pairs: [string, string][] = JSON.parse(stored);
+        return new Map(pairs);
+      }
+    } catch { /* ignore */ }
+    return new Map();
+  });
+
+  // Persist line role corrections to sessionStorage
+  const persistLineRoleCorrections = (map: Map<string, string>) => {
+    try {
+      sessionStorage.setItem('cad_line_role_corrections', JSON.stringify([...map.entries()]));
+    } catch { /* ignore */ }
+  };
 
   // Merge associations into dimensions if available
   const mergedItems = useMemo(() => {
@@ -164,6 +211,17 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
     newLocked.delete(text);
     setLockedTexts(newLocked);
     persistLocks(newLocked);
+  };
+
+  const handleReclassifyLine = (lineId: string, newRole: string) => {
+    const newMap = new Map(lineRoleCorrections);
+    newMap.set(lineId, newRole);
+    setLineRoleCorrections(newMap);
+    persistLineRoleCorrections(newMap);
+    setReclassifyingLine(null);
+    if (onCorrectLineRole) {
+      onCorrectLineRole(lineId, newRole);
+    }
   };
 
   if (mergedItems.length === 0) {
@@ -338,7 +396,7 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
         })}
       </div>
 
-      {/* Line Role Correction (FG-3) */}
+      {/* Line Role Correction (interactive reclassification) */}
       {lineRoles && (
         <div className="border-t border-slate-200 pt-3 mt-3">
           <button
@@ -354,26 +412,113 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
             </span>
           </button>
           {showLineRoles && (
-            <div className="mt-2 space-y-1">
-              {[
-                { key: 'object_edges', label: 'Object Edges', color: 'text-slate-700', bg: 'bg-slate-100' },
-                { key: 'dimension_lines', label: 'Dimension Lines', color: 'text-blue-700', bg: 'bg-blue-50' },
-                { key: 'leaders', label: 'Leaders', color: 'text-amber-700', bg: 'bg-amber-50' },
-                { key: 'unknown', label: 'Unclassified', color: 'text-red-600', bg: 'bg-red-50' },
-              ].map(({ key, label, color, bg }) => {
-                const items = (lineRoles as any)[key] || [];
-                const count = items.length;
-                if (count === 0) return null;
+            <div className="mt-2 space-y-3">
+              {ROLE_CATEGORIES.map(({ key, label, color, bg }) => {
+                const items = (lineRoles as any)[key] as LineRoleItem[] | undefined;
+                if (!items || items.length === 0) return null;
+
+                // Count corrections in this category
+                const correctedCount = items.filter(
+                  item => lineRoleCorrections.has(item.line_id)
+                ).length;
+
                 return (
-                  <div key={key} className={`flex justify-between items-center px-2 py-1.5 rounded-lg text-xs ${bg}`}>
-                    <span className={`font-medium ${color}`}>{label}</span>
-                    <span className="font-bold">{count} lines</span>
+                  <div key={key} className={`rounded-lg p-2 ${bg} border border-slate-200`}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className={`text-xs font-bold ${color}`}>{label}</span>
+                      <span className="text-[10px] text-slate-500">
+                        {items.length} lines
+                        {correctedCount > 0 && (
+                          <span className="ml-1 text-purple-600 font-medium">
+                            ({correctedCount} corrected)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {items.slice(0, 8).map((item, idx) => {
+                        const correctedRole = lineRoleCorrections.get(item.line_id);
+                        const displayRole = correctedRole || item.role;
+                        const roleConfig = LINE_ROLES.find(r => r.value === displayRole) || LINE_ROLES[6];
+                        const isReclassifying = reclassifyingLine === item.line_id;
+
+                        return (
+                          <div
+                            key={item.line_id || idx}
+                            className={`flex items-center justify-between px-2 py-1 rounded text-[11px] ${
+                              correctedRole ? 'bg-purple-50 border border-purple-200' : 'bg-white/60'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <span
+                                className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${roleConfig.bg} ${roleConfig.color}`}
+                              >
+                                {roleConfig.label}
+                              </span>
+                              <span className="text-slate-400 truncate">
+                                Line #{item.line_id?.slice(0, 8) || idx + 1}
+                              </span>
+                              <span
+                                className={`text-[10px] font-mono px-1 rounded ${
+                                  item.confidence >= 0.7
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : item.confidence >= 0.4
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {(item.confidence * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {correctedRole && (
+                                <span className="text-[10px] text-purple-500" title="User-corrected">
+                                  ✏️
+                                </span>
+                              )}
+                              {isReclassifying ? (
+                                <select
+                                  value={displayRole}
+                                  onChange={e => handleReclassifyLine(item.line_id, e.target.value)}
+                                  onBlur={() => setReclassifyingLine(null)}
+                                  className="text-[10px] border border-indigo-300 rounded px-1 py-0.5 bg-white focus:ring-1 focus:ring-indigo-400"
+                                  autoFocus
+                                >
+                                  {LINE_ROLES.map(r => (
+                                    <option key={r.value} value={r.value}>
+                                      {r.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <button
+                                  onClick={() => setReclassifyingLine(item.line_id)}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                                    correctedRole
+                                      ? 'text-purple-600 hover:bg-purple-100'
+                                      : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+                                  }`}
+                                  title="Reclassify this line"
+                                >
+                                  ↻
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {items.length > 8 && (
+                        <p className="text-[10px] text-slate-400 text-center pt-1">
+                          +{items.length - 8} more lines
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
               {onCorrectLineRole && (
                 <p className="text-[10px] text-slate-400 mt-1 px-1">
-                  Click a line on the drawing to reclassify it.
+                  Click ↻ to reclassify a line. Corrections improve future accuracy.
                 </p>
               )}
             </div>

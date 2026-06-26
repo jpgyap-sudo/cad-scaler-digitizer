@@ -825,6 +825,30 @@ const App: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Missing Dimensions - Ask user for values */}
+                  {cadEngineResult?.furniture?.missing_dimensions && 
+                   cadEngineResult.furniture.missing_dimensions.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Missing Dimensions</h3>
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                        <p className="text-xs text-indigo-700 font-medium mb-2">
+                          I could not detect all dimensions. Please provide the following:
+                        </p>
+                        <ul className="space-y-1">
+                          {cadEngineResult.furniture.missing_dimensions.map((md, i) => (
+                            <li key={i} className="flex items-center justify-between bg-white rounded-lg px-2 py-1.5 text-xs border border-indigo-100">
+                              <span className="text-indigo-800 font-medium">{md}</span>
+                              <span className="text-slate-400">unknown</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="text-[10px] text-indigo-500 mt-2">
+                          Re-upload with known dimensions, or use the Chat Assistant to set values.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Warnings */}
                   {(cadEngineResult.warnings || []).length > 0 && (
                     <div>

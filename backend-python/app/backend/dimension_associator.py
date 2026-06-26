@@ -17,6 +17,7 @@ This creates the "dimension graph" that links text ↔ lines ↔ objects.
 """
 
 import math
+import statistics
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict, Set
 from app.backend.ocr_layout_parser import TextBox
@@ -294,6 +295,252 @@ def _find_nearby_object_lines(
     return parallel, perpendicular
 
 
+# ===== Multi-Factor Scoring System =====
+
+def _detect_arrow_direction(
+    p1: Tuple[float, float], p2: Tuple[float, float],
+    vision_lines: List[Tuple[float, float, float, float]],
+    search_radius: float = 30.0,
+) -> Optional[Tuple[float, float]]:
+    """Detect which direction the arrowhead points from a dimension endpoint.
+    Returns a unit direction vector (dx, dy) or None if no arrow found."""
+    best_dir = None
+    best_score = 0.0
+
+    for x1, y1, x2, y2 in vision_lines:
+        # Check if this short line originates near p1
+        d1 = math.hypot(x1 - p1[0], y1 - p1[1])
+        d2 = math.hypot(x2 - p1[0], y2 - p1[1])
+        if min(d1, d2) > search_radius:
+            continue
+
+        # Get the direction away from the endpoint
+        if d1 < d2:
+            dx, dy = x2 - x1, y2 - y1
+        else:
+            dx, dy = x1 - x2, y1 - y2
+
+        length = math.hypot(dx, dy) or 0.001
+        dx, dy = dx / length, dy / length
+
+        # Arrow lines should point away from the dimension line
+        dim_dx = p2[0] - p1[0]
+        dim_dy = p2[1] - p1[1]
+        dim_len = math.hypot(dim_dx, dim_dy) or 0.001
+        dim_dx, dim_dy = dim_dx / dim_len, dim_dy / dim_len
+
+        # Arrow should be roughly perpendicular to the dimension line (cos ~= 0)
+        dot = abs(dx * dim_dx + dy * dim_dy)
+        perp_score = 1.0 - min(1.0, dot * 2)  # High when perpendicular
+
+        if perp_score > best_score:
+            best_score = perp_score
+            best_dir = (dx, dy)
+
+    return best_dir if best_score > 0.3 else None
+
+
+def _text_orientation_score(
+    text_box: 'TextBox',
+    dim_line: 'DimensionLine',
+) -> float:
+    """Score how well the text orientation aligns with the dimension line.
+    Returns 0.0-1.0 where 1.0 = perfectly aligned."""
+    dim_angle = _line_angle(dim_line.p1, dim_line.p2)
+
+    # Text orientation: assume horizontal (0 rad) or aligned with dimension line
+    text_angle = getattr(text_box, 'angle', 0.0) or 0.0
+
+    # Nomalize both to [0, pi/2]
+    def norm_angle(a):
+        a = abs(a) % math.pi
+        if a > math.pi / 2:
+            a = math.pi - a
+        return a
+
+    text_norm = norm_angle(text_angle)
+    dim_norm = norm_angle(dim_angle)
+
+    # Score: 1.0 if aligned, 0.0 if perpendicular
+    diff = abs(text_norm - dim_norm)
+    return max(0.0, 1.0 - diff / (math.pi / 2))
+
+
+def _distance_score(
+    text_box: 'TextBox',
+    dim_line: 'DimensionLine',
+    max_dist: float = 100.0,
+) -> float:
+    """Score based on distance between text and dimension line.
+    Returns 0.0-1.0 where 1.0 = very close."""
+    cx, cy = text_box.center
+    dist = _segment_distance(cx, cy, dim_line.p1[0], dim_line.p1[1],
+                              dim_line.p2[0], dim_line.p2[1])
+    return max(0.0, 1.0 - (dist / max_dist))
+
+
+def _angle_alignment_score(
+    text_box: 'TextBox',
+    dim_line: 'DimensionLine',
+    object_lines: List[Tuple[float, float, float, float]],
+) -> float:
+    """Score how well the dimension line is parallel to the measured object edge.
+    Returns 0.0-1.0 where 1.0 = perfectly parallel."""
+    if not object_lines:
+        return 0.5  # Neutral if no object lines
+
+    dim_angle = _line_angle(dim_line.p1, dim_line.p2)
+
+    # Average angle of nearby object lines
+    obj_angles = []
+    for x1, y1, x2, y2 in object_lines:
+        obj_angles.append(_line_angle((x1, y1), (x2, y2)))
+
+    if not obj_angles:
+        return 0.5
+
+    # Find the alignment between dimension line and nearest object line angle
+    best_alignment = 0.0
+    for oa in obj_angles:
+        diff = _angle_difference(dim_angle, oa)
+        # Parallel or anti-parallel = good alignment
+        alignment = 1.0 - min(diff, math.pi - diff) / (math.pi / 4)
+        best_alignment = max(best_alignment, alignment)
+
+    return max(0.0, min(1.0, best_alignment))
+
+
+def _arrow_presence_score(
+    dim_line: 'DimensionLine',
+    vision_lines: List[Tuple[float, float, float, float]],
+) -> float:
+    """Score based on arrowhead presence at dimension line endpoints.
+    Returns 0.0-1.0 where 1.0 = arrows at both ends."""
+    arrow1 = _detect_arrow_direction(dim_line.p1, dim_line.p2, vision_lines)
+    arrow2 = _detect_arrow_direction(dim_line.p2, dim_line.p1, vision_lines)
+
+    if arrow1 and arrow2:
+        return 1.0
+    elif arrow1 or arrow2:
+        return 0.6
+    return 0.2
+
+
+def _validate_value_consistency(
+    value_cm: float,
+    dim_line: 'DimensionLine',
+    is_diameter: bool,
+    associated_circle: Optional[Tuple[float, float, float]] = None,
+    px_per_cm_estimate: Optional[float] = 2.0,
+) -> Tuple[float, str]:
+    """Check whether the OCR value is consistent with the pixel measurement.
+    Returns (consistency_score, evidence_string)."""
+    if value_cm <= 0 or px_per_cm_estimate is None:
+        return 0.3, "no scale estimate available"
+
+    if is_diameter and associated_circle:
+        _, _, r_px = associated_circle
+        pixel_dia = r_px * 2
+        expected_cm = pixel_dia / px_per_cm_estimate
+    elif dim_line:
+        pixel_len = dim_line.length_px
+        expected_cm = pixel_len / px_per_cm_estimate
+    else:
+        return 0.3, "no pixel measurement to compare"
+
+    if expected_cm <= 0:
+        return 0.3, "zero pixel measurement"
+
+    # Compare OCR value to pixel-derived value
+    ratio = value_cm / max(expected_cm, 0.01)
+    if 0.7 <= ratio <= 1.4:
+        # Good agreement
+        error = abs(1.0 - ratio)
+        score = max(0.0, 1.0 - error * 2)
+        evidence = f"value consistent with pixel measurement (ratio {ratio:.2f})"
+    elif 0.5 <= ratio <= 2.0:
+        score = 0.4
+        evidence = f"value somewhat off from pixel measurement (ratio {ratio:.2f})"
+    else:
+        score = 0.1
+        evidence = f"value drastically different from pixel measurement (ratio {ratio:.2f}) — likely wrong leader"
+
+    return score, evidence
+
+
+def _score_association(
+    text_box: 'TextBox',
+    dim_line: 'DimensionLine',
+    vision_lines: List[Tuple[float, float, float, float]],
+    object_lines: List[Tuple[float, float, float, float]],
+    value_cm: float,
+    is_diameter: bool,
+    associated_circle: Optional[Tuple[float, float, float]],
+    ext_start: Optional[Tuple[float, float]],
+    ext_end: Optional[Tuple[float, float]],
+    px_per_cm_estimate: Optional[float] = None,
+) -> Tuple[float, List[str]]:
+    """Compute a weighted multi-factor confidence score for a dimension association.
+
+    Weights:
+        distance:           0.25  — how close text is to the dimension line
+        angle_alignment:    0.20  — how parallel dim line is to object edge
+        arrow_presence:     0.20  — arrowheads at both ends
+        text_orientation:   0.10  — text rotation matches drawing
+        value_consistency:  0.15  — OCR value matches pixel measurement
+        extension_lines:    0.10  — extension lines found
+
+    Returns (confidence 0.0-1.0, evidence_list).
+    """
+    evidence: List[str] = []
+    score = 0.0
+
+    # 1. Distance score (25%)
+    dist_score = _distance_score(text_box, dim_line)
+    score += dist_score * 0.25
+    if dist_score < 0.5:
+        evidence.append(f"text far from dim line (dist={dist_score:.2f})")
+
+    # 2. Angle alignment score (20%)
+    angle_score = _angle_alignment_score(text_box, dim_line, object_lines)
+    score += angle_score * 0.20
+    if angle_score < 0.5:
+        evidence.append(f"poor angle alignment ({angle_score:.2f})")
+
+    # 3. Arrow presence score (20%)
+    arrow_score = _arrow_presence_score(dim_line, vision_lines)
+    score += arrow_score * 0.20
+    if arrow_score >= 1.0:
+        evidence.append("arrows at both ends of dimension line")
+    elif arrow_score >= 0.6:
+        evidence.append("arrow at one end of dimension line")
+    else:
+        evidence.append("no clear arrowheads on dimension line")
+
+    # 4. Text orientation score (10%)
+    orient_score = _text_orientation_score(text_box, dim_line)
+    score += orient_score * 0.10
+
+    # 5. Value consistency score (15%)
+    val_score, val_evidence = _validate_value_consistency(
+        value_cm, dim_line, is_diameter, associated_circle, px_per_cm_estimate)
+    score += val_score * 0.15
+    evidence.append(val_evidence)
+
+    # 6. Extension lines score (10%)
+    if ext_start and ext_end:
+        ext_score = 1.0
+        evidence.append("extension lines at both ends")
+    elif ext_start or ext_end:
+        ext_score = 0.6
+        evidence.append("extension line at one end")
+    else:
+        ext_score = 0.2
+    score += ext_score * 0.10
+
+    return min(1.0, max(0.0, score)), evidence
+
+
 # ===== Main Association Logic =====
 
 def associate_dimensions(
@@ -338,6 +585,14 @@ def associate_dimensions(
     associations: List[Association] = []
     matched_labels: Set[int] = set()
 
+    # Pre-compute a rough px_per_cm estimate for value-consistency scoring
+    # Use the median ratio from all usable dim lines
+    rough_scale_estimates = []
+    for dl in dim_lines:
+        if dl.length_px > 30:
+            rough_scale_estimates.append(dl.length_px)
+    rough_px_per_cm = statistics.median(rough_scale_estimates) / 80.0 if rough_scale_estimates else None
+
     for label in dimension_labels:
         idx = text_boxes.index(label)
         if idx in matched_labels:
@@ -349,6 +604,8 @@ def associate_dimensions(
         evidence: List[str] = []
         associated_circle = None
         associated_lines = []
+        ext_start = None
+        ext_end = None
 
         if is_dia:
             # Diameter: find nearest circle
@@ -356,63 +613,66 @@ def associate_dimensions(
             if circle:
                 associated_circle = circle
                 evidence.append(f"matched to circle at ({circle[0]:.0f}, {circle[1]:.0f}), r={circle[2]:.0f}px")
-                confidence = 0.85
             else:
                 evidence.append("diameter label but no circle found nearby")
-                confidence = 0.40
+
+        if best_dim_line:
+            evidence.append(f"matched to dimension line ({best_dim_line.p1[0]:.0f},{best_dim_line.p1[1]:.0f})-({best_dim_line.p2[0]:.0f},{best_dim_line.p2[1]:.0f})")
+
+            # Find extension lines
+            ext_start, ext_end = _find_extension_lines(
+                best_dim_line.p1, best_dim_line.p2, flat_lines)
+
+            # Find object lines near this dimension
+            parallel_lines, perp_lines = _find_nearby_object_lines(
+                label, best_dim_line, flat_lines, flat_lines)
+            associated_lines = parallel_lines + perp_lines
+            if associated_lines:
+                evidence.append(f"{len(associated_lines)} nearby object lines")
         else:
-            if best_dim_line:
-                evidence.append(f"matched to dimension line ({best_dim_line.p1[0]:.0f},{best_dim_line.p1[1]:.0f})-({best_dim_line.p2[0]:.0f},{best_dim_line.p2[1]:.0f})")
+            # No dimension line found — try geometric matching
+            evidence.append("no dimension line found, using geometric proximity")
+            parallel_lines, _ = _find_nearby_object_lines(
+                label, None, flat_lines, flat_lines)
+            if parallel_lines:
+                evidence.append(f"found {len(parallel_lines)} potential object lines nearby")
+                associated_lines = parallel_lines
 
-                # Find extension lines
-                ext_start, ext_end = _find_extension_lines(
-                    best_dim_line.p1, best_dim_line.p2, flat_lines)
-
-                if ext_start:
-                    evidence.append("extension line found at start")
-                if ext_end:
-                    evidence.append("extension line found at end")
-
-                # Find object lines near this dimension
-                parallel_lines, perp_lines = _find_nearby_object_lines(
-                    label, best_dim_line, flat_lines, flat_lines)
-
-                associated_lines = parallel_lines + perp_lines
-                if associated_lines:
-                    evidence.append(f"{len(associated_lines)} nearby object lines")
-
-                # Confidence scoring
-                conf = 0.5
-                if ext_start and ext_end:
-                    conf = 0.85  # Both extension lines visible
-                elif ext_start or ext_end:
-                    conf = 0.70  # One extension line
-                if associated_lines:
-                    conf = min(1.0, conf + 0.1)
-                confidence = conf
-            else:
-                # No dimension line found — try geometric matching
-                evidence.append("no dimension line found, using geometric proximity")
-                # Search for parallel object lines near label
-                parallel_lines, _ = _find_nearby_object_lines(
-                    label, None, text_boxes, flat_lines)
-                if parallel_lines:
-                    evidence.append(f"found {len(parallel_lines)} potential object lines nearby")
-                    associated_lines = parallel_lines
-                    confidence = 0.45
-                else:
-                    confidence = 0.20
+        # Compute confidence via multi-factor scoring (upgraded from simple proximity)
+        if best_dim_line:
+            confidence, score_evidence = _score_association(
+                text_box=label,
+                dim_line=best_dim_line,
+                vision_lines=flat_lines,
+                object_lines=associated_lines,
+                value_cm=label.value_cm or 0.0,
+                is_diameter=is_dia,
+                associated_circle=associated_circle,
+                ext_start=ext_start,
+                ext_end=ext_end,
+                px_per_cm_estimate=rough_px_per_cm,
+            )
+            evidence.extend(score_evidence)
+        elif is_dia and associated_circle:
+            # Diameter with circle but no dimension line: use circle-based scoring
+            confidence = 0.85 if associated_circle else 0.40
+        elif associated_lines:
+            # Object lines found but no dim line: moderate confidence
+            confidence = 0.45
+        else:
+            # Nothing matched: very low confidence
+            confidence = 0.20
 
         assoc = Association(
             text=label.text,
             value_cm=label.value_cm or 0.0,
             text_box=label,
             dim_line=best_dim_line,
-            associated_lines=associated_lines[:10],  # Limit evidence
+            associated_lines=associated_lines[:10],
             associated_circle=associated_circle,
             confidence=min(1.0, max(0.0, confidence)),
             is_diameter=is_dia,
-            evidence=evidence[:5],  # Keep top evidence
+            evidence=evidence[:8],
         )
         associations.append(assoc)
         matched_labels.add(idx)

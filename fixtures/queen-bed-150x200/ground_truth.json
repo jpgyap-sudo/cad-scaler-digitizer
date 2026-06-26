@@ -1,0 +1,31 @@
+{
+  "name": "queen-bed-150x200",
+  "furniture_type": "bed_headboard",
+  "parameters": {
+    "width_cm": 150,
+    "height_cm": 60
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\queen-bed-150x200\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 150,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 200,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 60,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "thickness",
+      "value_cm": 5,
+      "tolerance_pct": 20
+    }
+  ]
+}

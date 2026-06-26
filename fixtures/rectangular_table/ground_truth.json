@@ -1,0 +1,33 @@
+{
+  "name": "rectangular_table",
+  "furniture_type": "rectangular_table",
+  "parameters": {
+    "width_cm": 120,
+    "depth_cm": 80,
+    "height_cm": 70,
+    "leg_thickness_cm": 6.0
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\rectangular_table\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 120.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "depth",
+      "value_cm": 80.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "height",
+      "value_cm": 70.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "leg_thickness",
+      "value_cm": 6.0,
+      "tolerance_pct": 10.0
+    }
+  ]
+}

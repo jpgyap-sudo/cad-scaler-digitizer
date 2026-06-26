@@ -1,0 +1,33 @@
+{
+  "name": "fabric-sofa-105x92x87",
+  "furniture_type": "sofa",
+  "parameters": {
+    "width_cm": 105,
+    "depth_cm": 92,
+    "height_cm": 87,
+    "seat_height_cm": 45
+  },
+  "expected_dxf": "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\fixtures\\fabric-sofa-105x92x87\\expected.dxf",
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 105,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 92,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 87,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "seat_height",
+      "value_cm": 45,
+      "tolerance_pct": 15
+    }
+  ]
+}

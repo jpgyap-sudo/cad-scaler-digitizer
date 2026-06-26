@@ -167,15 +167,21 @@ def handle_correction_submission(session_id: str,
     Returns:
         Summary of what was corrected
     """
-    # Build dataclasses from dicts, filtering only known fields for safety
+    # Build dataclasses from dicts, injecting session_id and filtering only
+    # known fields for safety (the API endpoint receives session_id as a
+    # separate form field, not inside each correction dict).
     dc_fields = {f.name for f in DimensionCorrection.__dataclass_fields__.values()}
     rc_fields = {f.name for f in LineRoleCorrection.__dataclass_fields__.values()}
     dim_corrections = [
-        DimensionCorrection(**{k: v for k, v in c.items() if k in dc_fields})
+        DimensionCorrection(**{k: v for k, v in c.items()
+                                if k in dc_fields and k != 'session_id'},
+                             session_id=session_id)
         for c in dimension_corrections
     ]
     role_corrections = [
-        LineRoleCorrection(**{k: v for k, v in c.items() if k in rc_fields})
+        LineRoleCorrection(**{k: v for k, v in c.items()
+                               if k in rc_fields and k != 'session_id'},
+                            session_id=session_id)
         for c in line_role_corrections
     ]
 
