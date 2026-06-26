@@ -10,6 +10,9 @@ git pull
 echo "=== Setting up PostgreSQL ML tables ==="
 su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_ml_tables.sql" 2>/dev/null || true
 
+echo "=== Setting up PostgreSQL monitoring tables ==="
+su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_monitoring_tables.sql" 2>/dev/null || true
+
 echo "=== Rebuilding Docker containers ==="
 OPENAI_API_KEY=$(cat .env | grep OPENAI_API_KEY | cut -d= -f2-)
 docker compose up -d --build

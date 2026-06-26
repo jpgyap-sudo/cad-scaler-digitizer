@@ -29,6 +29,31 @@ services:
       retries: 3
       start_period: 15s
 
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: cad-digitizer-monitor
+    command: python -m app.monitoring.assistant_monitor
+    env_file:
+      - backend-python/.env
+    environment:
+      - PG_HOST=host.docker.internal
+      - PG_PORT=5432
+      - PG_DATABASE=cad_digitizer
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
+      - MONITOR_POLL_INTERVAL=300
+      - MONITOR_AGGREGATE_INTERVAL=3600
+      - MONITOR_ANALYSIS_INTERVAL=21600
+      - MONITOR_LOG_LEVEL=INFO
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cad-network
+
   frontend:
     build:
       context: .

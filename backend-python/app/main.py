@@ -19,8 +19,12 @@ if _env_path.exists():
                     os.environ[_k] = _v.strip().strip('"').strip("'")
 
 from app.api.routes import router
+from app.monitoring.middleware import MonitoringMiddleware
 
 app = FastAPI(title="AI Furniture CAD Digitizer", version="2.0.0")
+
+# Add monitoring middleware to auto-log all requests
+app.add_middleware(MonitoringMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

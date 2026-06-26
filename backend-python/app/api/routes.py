@@ -96,6 +96,14 @@ def _extract_pedestal_dims(corrected_dims):
 
 
 def _component_schema(f_type):
+    """Return editable component schema for a furniture type.
+    Each section has a name (matching the DXF/SVG layer), a human label,
+    dimension sliders, and optional material defaults.
+
+    The returned keys in dims[].key MUST match the parameter names on the
+    corresponding save_*() and build_*_model() functions so that /adjust and
+    /material/edit can dispatch generically without per-type branching.
+    """
     if f_type == 'round_pedestal_table':
         return [
             {"name": "tabletop", "label": "Tabletop", "dims": [
@@ -122,60 +130,222 @@ def _component_schema(f_type):
         return [
             {"name": "tabletop", "label": "Tabletop", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 60, "max": 300, "step": 1, "unit": "cm"},
-                {"key": "depth_cm", "label": "Depth", "min": 40, "max": 150, "step": 1, "unit": "cm"}]},
+                {"key": "depth_cm", "label": "Depth", "min": 40, "max": 150, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Solid wood, clear coat"}},
             {"name": "legs", "label": "Legs", "dims": [
-                {"key": "leg_thickness_cm", "label": "Thickness", "min": 3, "max": 15, "step": 0.5, "unit": "cm"}]},
+                {"key": "leg_thickness_cm", "label": "Thickness", "min": 3, "max": 15, "step": 0.5, "unit": "cm"},
+                {"key": "leg_inset_cm", "label": "Inset from edge", "min": 2, "max": 20, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Solid wood, matching top"}},
+            {"name": "stretchers", "label": "Stretchers", "dims": [
+                {"key": "stretcher_thickness_cm", "label": "Thickness", "min": 1, "max": 8, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "stretchers", "default": "Solid wood"}},
             {"name": "overall", "label": "Overall", "dims": [
                 {"key": "overall_height_cm", "label": "Height", "min": 30, "max": 150, "step": 1, "unit": "cm"}]},
         ]
     if f_type == 'sofa':
         return [
-            {"name": "body", "label": "Body", "dims": [
+            {"name": "body", "label": "Sofa Body", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 80, "max": 350, "step": 1, "unit": "cm"},
                 {"key": "depth_cm", "label": "Depth", "min": 60, "max": 150, "step": 1, "unit": "cm"},
-                {"key": "overall_height_cm", "label": "Height", "min": 50, "max": 120, "step": 1, "unit": "cm"}]},
+                {"key": "overall_height_cm", "label": "Overall Height", "min": 50, "max": 120, "step": 1, "unit": "cm"}],
+             "material": {"key": "body", "default": "Upholstered fabric"}},
+            {"name": "armrests", "label": "Armrests", "dims": [
+                {"key": "armrest_width_cm", "label": "Width", "min": 8, "max": 30, "step": 1, "unit": "cm"},
+                {"key": "armrest_height_cm", "label": "Height", "min": 15, "max": 40, "step": 1, "unit": "cm"}],
+             "material": {"key": "armrests", "default": "Solid wood frame, upholstered"}},
+            {"name": "seat", "label": "Seat", "dims": [
+                {"key": "seat_height_cm", "label": "Seat Height", "min": 30, "max": 55, "step": 1, "unit": "cm"},
+                {"key": "seat_depth_cm", "label": "Seat Depth", "min": 45, "max": 80, "step": 1, "unit": "cm"}],
+             "material": {"key": "seat", "default": "High-density foam"}},
+            {"name": "backrest", "label": "Backrest", "dims": [
+                {"key": "backrest_height_cm", "label": "Backrest Height", "min": 30, "max": 70, "step": 1, "unit": "cm"}],
+             "material": {"key": "backrest", "default": "Upholstered fabric"}},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_height_cm", "label": "Leg Height", "min": 4, "max": 20, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Solid wood, tapered"}},
         ]
     if f_type == 'cabinet':
         return [
-            {"name": "body", "label": "Cabinet Body", "dims": [
+            {"name": "carcass", "label": "Cabinet Carcass", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 40, "max": 250, "step": 1, "unit": "cm"},
                 {"key": "depth_cm", "label": "Depth", "min": 30, "max": 80, "step": 1, "unit": "cm"},
-                {"key": "overall_height_cm", "label": "Height", "min": 60, "max": 250, "step": 1, "unit": "cm"}]},
+                {"key": "overall_height_cm", "label": "Overall Height", "min": 60, "max": 250, "step": 1, "unit": "cm"}],
+             "material": {"key": "carcass", "default": "18mm MDF, matte lacquer"}},
+            {"name": "doors", "label": "Doors", "dims": [
+                {"key": "door_count", "label": "Door Count", "min": 1, "max": 6, "step": 1, "unit": ""},
+                {"key": "door_thickness_cm", "label": "Door Thickness", "min": 1.5, "max": 3, "step": 0.1, "unit": "cm"}],
+             "material": {"key": "doors", "default": "MDF, painted finish"}},
+            {"name": "drawers", "label": "Drawers", "dims": [
+                {"key": "drawer_count", "label": "Drawer Count", "min": 0, "max": 8, "step": 1, "unit": ""}],
+             "material": {"key": "drawers", "default": "MDF, soft-close runners"}},
+            {"name": "base", "label": "Base / Plinth", "dims": [
+                {"key": "base_height_cm", "label": "Plinth Height", "min": 4, "max": 15, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "base", "default": "Solid wood plinth"}},
         ]
     if f_type in ('dining_chair', 'chair'):
         return [
             {"name": "seat", "label": "Seat", "dims": [
-                {"key": "width_cm", "label": "Width", "min": 30, "max": 70, "step": 1, "unit": "cm"}]},
+                {"key": "width_cm", "label": "Seat Width", "min": 30, "max": 70, "step": 1, "unit": "cm"},
+                {"key": "seat_depth_cm", "label": "Seat Depth", "min": 30, "max": 60, "step": 1, "unit": "cm"},
+                {"key": "seat_height_cm", "label": "Seat Height", "min": 35, "max": 55, "step": 1, "unit": "cm"}],
+             "material": {"key": "seat", "default": "Upholstered fabric over foam"}},
+            {"name": "backrest", "label": "Backrest", "dims": [
+                {"key": "backrest_height_cm", "label": "Backrest Height", "min": 20, "max": 60, "step": 1, "unit": "cm"},
+                {"key": "backrest_angle_deg", "label": "Rake Angle", "min": 0, "max": 15, "step": 1, "unit": "°"}],
+             "material": {"key": "backrest", "default": "Solid wood slats"}},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_thickness_cm", "label": "Leg Thickness", "min": 2, "max": 8, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Solid wood, stained"}},
             {"name": "overall", "label": "Overall", "dims": [
-                {"key": "overall_height_cm", "label": "Height", "min": 50, "max": 130, "step": 1, "unit": "cm"}]},
+                {"key": "overall_height_cm", "label": "Total Height", "min": 60, "max": 130, "step": 1, "unit": "cm"}]},
         ]
     if f_type == 'wardrobe':
         return [
-            {"name": "body", "label": "Wardrobe Body", "dims": [
+            {"name": "carcass", "label": "Wardrobe Body", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 60, "max": 300, "step": 1, "unit": "cm"},
                 {"key": "depth_cm", "label": "Depth", "min": 40, "max": 80, "step": 1, "unit": "cm"},
-                {"key": "overall_height_cm", "label": "Height", "min": 120, "max": 260, "step": 1, "unit": "cm"}]},
+                {"key": "overall_height_cm", "label": "Overall Height", "min": 120, "max": 260, "step": 1, "unit": "cm"}],
+             "material": {"key": "carcass", "default": "18mm MDF, matte white lacquer"}},
+            {"name": "doors", "label": "Doors", "dims": [
+                {"key": "door_count", "label": "Door Count", "min": 1, "max": 6, "step": 1, "unit": ""},
+                {"key": "door_style", "label": "Style", "min": 0, "max": 2, "step": 1, "unit": "swing|sliding|folding"}],
+             "material": {"key": "doors", "default": "MDF, matte lacquer"}},
+            {"name": "hanging_rail", "label": "Hanging Rail", "dims": [
+                {"key": "rail_height_cm", "label": "Rail Height", "min": 100, "max": 220, "step": 1, "unit": "cm"}],
+             "material": {"key": "hanging_rail", "default": "Chrome-plated steel tube"}},
+            {"name": "shelves", "label": "Shelves", "dims": [
+                {"key": "shelf_count", "label": "Shelf Count", "min": 0, "max": 8, "step": 1, "unit": ""}],
+             "material": {"key": "shelves", "default": "18mm MDF"}},
+            {"name": "base", "label": "Base", "dims": [
+                {"key": "base_height_cm", "label": "Base Height", "min": 4, "max": 15, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "base", "default": "Solid wood plinth"}},
         ]
     if f_type == 'bed_headboard':
         return [
-            {"name": "headboard", "label": "Headboard", "dims": [
+            {"name": "headboard", "label": "Headboard Panel", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 80, "max": 250, "step": 1, "unit": "cm"},
-                {"key": "overall_height_cm", "label": "Height", "min": 60, "max": 180, "step": 1, "unit": "cm"}]},
+                {"key": "overall_height_cm", "label": "Headboard Height", "min": 60, "max": 180, "step": 1, "unit": "cm"},
+                {"key": "panel_thickness_cm", "label": "Panel Thickness", "min": 2, "max": 10, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "headboard", "default": "Upholstered panel, velvet fabric"}},
+            {"name": "posts", "label": "Side Posts/Legs", "dims": [
+                {"key": "post_width_cm", "label": "Post Width", "min": 4, "max": 15, "step": 0.5, "unit": "cm"},
+                {"key": "post_height_cm", "label": "Post Height", "min": 20, "max": 100, "step": 1, "unit": "cm"}],
+             "material": {"key": "posts", "default": "Solid wood, stained finish"}},
+            {"name": "frame", "label": "Bed Frame", "dims": [
+                {"key": "mattress_width_cm", "label": "Mattress Width", "min": 90, "max": 200, "step": 10, "unit": "cm"},
+                {"key": "mattress_length_cm", "label": "Mattress Length", "min": 190, "max": 220, "step": 10, "unit": "cm"}],
+             "material": {"key": "frame", "default": "Solid wood slatted base"}},
         ]
     if f_type == 'coffee_table':
         return [
             {"name": "tabletop", "label": "Tabletop", "dims": [
-                {"key": "width_cm", "label": "Width", "min": 40, "max": 180, "step": 1, "unit": "cm"}]},
+                {"key": "width_cm", "label": "Width", "min": 40, "max": 180, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 30, "max": 120, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 8, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Tempered glass / solid wood"}},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_thickness_cm", "label": "Leg Thickness", "min": 2, "max": 10, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Powder-coated steel"}},
+            {"name": "lower_shelf", "label": "Lower Shelf", "dims": [
+                {"key": "lower_shelf_height_cm", "label": "Shelf Height", "min": 5, "max": 30, "step": 1, "unit": "cm"}],
+             "material": {"key": "lower_shelf", "default": "Solid wood / glass"}},
             {"name": "overall", "label": "Overall", "dims": [
                 {"key": "overall_height_cm", "label": "Height", "min": 20, "max": 60, "step": 1, "unit": "cm"}]},
         ]
     if f_type == 'reception_counter':
         return [
-            {"name": "counter", "label": "Counter", "dims": [
+            {"name": "counter_top", "label": "Counter Top", "dims": [
                 {"key": "width_cm", "label": "Width", "min": 80, "max": 400, "step": 1, "unit": "cm"},
-                {"key": "overall_height_cm", "label": "Height", "min": 80, "max": 140, "step": 1, "unit": "cm"}]},
+                {"key": "depth_cm", "label": "Depth", "min": 40, "max": 100, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Top Thickness", "min": 2, "max": 8, "step": 0.5, "unit": "cm"},
+                {"key": "overhang_cm", "label": "Overhang", "min": 1, "max": 10, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "counter_top", "default": "Engineered quartz / solid surface"}},
+            {"name": "front_panel", "label": "Front Panel", "dims": [
+                {"key": "overall_height_cm", "label": "Counter Height", "min": 80, "max": 140, "step": 1, "unit": "cm"}],
+             "material": {"key": "front_panel", "default": "MDF, matte lacquer"}},
+            {"name": "base", "label": "Base", "dims": [
+                {"key": "base_height_cm", "label": "Base Height", "min": 4, "max": 15, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "base", "default": "Brushed stainless steel"}},
         ]
     return None
+
+
+def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None):
+    """Determine which critical dimensions are still unknown for a furniture type.
+    Returns a list of human-readable strings like 'Width', 'Height', 'Depth'.
+    Used to prompt the user for missing values instead of silently guessing.
+    Soft-advisory: failures return [] rather than crashing the digitize endpoint."""
+    try:
+        schema = _component_schema(f_type)
+        if not schema:
+            return []
+    except Exception:
+        return []
+
+    # Collect all required dimension keys from the schema
+    try:
+        schema_keys = set()
+        for section in schema:
+            for dim in section.get('dims', []):
+                schema_keys.add(dim['key'])
+
+        # Critical keys that every furniture type MUST have:
+        critical_overrides = {
+            'round_pedestal_table': ['top_diameter_cm', 'overall_height_cm'],
+            'rectangular_table': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'sofa': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'cabinet': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'dining_chair': ['width_cm', 'overall_height_cm'],
+            'chair': ['width_cm', 'overall_height_cm'],
+            'wardrobe': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'bed_headboard': ['width_cm', 'overall_height_cm'],
+            'coffee_table': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'reception_counter': ['width_cm', 'depth_cm', 'overall_height_cm'],
+        }
+        critical_keys = critical_overrides.get(f_type, list(schema_keys)[:3])
+
+    # Find what's missing
+    try:
+        has_val_for = {}
+
+        # User-supplied real_w/real_h count as known
+        if real_w is not None and real_w > 0:
+            has_val_for['width_cm'] = True
+            has_val_for['top_diameter_cm'] = True
+        if real_h is not None and real_h > 0:
+            has_val_for['overall_height_cm'] = True
+            has_val_for['height_cm'] = True
+
+        for d in corrected_dims:
+            tag = d.get('tag', '').lower().strip()
+            val = d.get('value_cm')
+            if val and float(val) > 0:
+                if tag in ('top_dia', 'dia', 'diameter'):
+                    has_val_for['top_diameter_cm'] = True
+                elif tag in ('h', 'height', 'overall_height', 'total_height'):
+                    has_val_for['overall_height_cm'] = True
+                elif tag in ('w', 'width', 'overall_width', 'total_width'):
+                    has_val_for['width_cm'] = True
+                elif tag in ('d', 'depth', 'overall_depth', 'total_depth'):
+                    has_val_for['depth_cm'] = True
+                elif 'leg' in tag or 'thickness' in tag:
+                    has_val_for['leg_thickness_cm'] = True
+                has_val_for[tag] = True
+
+        missing = []
+        for key in critical_keys:
+            if key not in has_val_for:
+                for section in schema or []:
+                    for dim in section.get('dims', []):
+                        if dim['key'] == key:
+                            missing.append(f"{dim['label']} ({key})")
+                            break
+
+        return missing
+    except Exception as e:
+        print(f"[MissingDims] Error: {e}")
+        return []
 
 
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None,
@@ -533,7 +703,8 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
             'furniture': {'type': f_type, 'confidence': confidence,
                           'needs_confirmation': confidence < CLASSIFIER_CONFIRM_THRESHOLD,
                           'required_dimensions': classifier_result.get('required_dimensions', []),
-                          'recommended_template': classifier_result.get('recommended_template', '')},
+                          'recommended_template': classifier_result.get('recommended_template', ''),
+                          'missing_dimensions': _compute_missing_dimensions(f_type, corrected_dims, real_w, real_h)},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': corrected_dims, 'ocr_lines': ocr_lines[:20]},
@@ -681,7 +852,8 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'component_schema': (dispatch_extra or {}).get('component_schema'),
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True,
-                          'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD},
+                          'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD,
+                          'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h)},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': merged_dims, 'ocr_lines': ocr_lines[:20]},
@@ -1378,3 +1550,83 @@ async def apply_learned_preferences(user_id: str = Form("default"), session_id: 
     adjusted = apply_preferences(state, user_id)
     hints = get_adjustment_hints(user_id)
     return JSONResponse({"user_id": user_id, "adjusted_params": adjusted, "hints": hints})
+
+
+# ===== MONITORING ENDPOINTS =====
+
+@router.get("/monitor/dashboard")
+async def monitor_dashboard(days: int = 7):
+    """Get the performance monitoring dashboard."""
+    from app.monitoring.log_db import get_performance_dashboard
+    return JSONResponse(get_performance_dashboard(days))
+
+
+@router.get("/monitor/chats")
+async def monitor_chats(session_id: str = None, limit: int = 50):
+    """Get recent chat logs."""
+    from app.monitoring.log_db import get_recent_chats
+    return JSONResponse({"chats": get_recent_chats(session_id, limit)})
+
+
+@router.get("/monitor/tasks")
+async def monitor_tasks(task_type: str = None, limit: int = 50):
+    """Get recent task logs."""
+    from app.monitoring.log_db import get_recent_tasks
+    return JSONResponse({"tasks": get_recent_tasks(task_type, limit)})
+
+
+@router.get("/monitor/tools")
+async def monitor_tools(limit: int = 50):
+    """Get recent tool usage logs."""
+    from app.monitoring.log_db import get_recent_tools
+    return JSONResponse({"tools": get_recent_tools(limit)})
+
+
+@router.get("/monitor/decisions")
+async def monitor_decisions(decision_type: str = None, limit: int = 50):
+    """Get recent decision logs."""
+    from app.monitoring.log_db import get_recent_decisions
+    return JSONResponse({"decisions": get_recent_decisions(decision_type, limit)})
+
+
+@router.post("/monitor/metrics/refresh")
+async def monitor_refresh_metrics():
+    """Manually trigger daily metrics aggregation."""
+    from app.monitoring.log_db import update_performance_metrics
+    result = update_performance_metrics()
+    return JSONResponse({"refreshed": bool(result), "summary": result})
+
+
+@router.get("/monitor/recommendations")
+async def monitor_recommendations(limit: int = 20):
+    """Get open improvement recommendations."""
+    from app.monitoring.log_db import get_open_recommendations
+    return JSONResponse({"recommendations": get_open_recommendations(limit)})
+
+
+@router.post("/monitor/recommendations/{rec_id}/status")
+async def monitor_update_recommendation(rec_id: int, status: str = Form(...)):
+    """Update the status of an improvement recommendation."""
+    from app.monitoring.log_db import update_recommendation_status
+    ok = update_recommendation_status(rec_id, status)
+    return JSONResponse({"updated": ok, "recommendation_id": rec_id, "status": status})
+
+
+@router.get("/monitor/stats")
+async def monitor_stats():
+    """Get quick summary stats for the last 7 days."""
+    from app.monitoring.log_db import get_performance_dashboard
+    dashboard = get_performance_dashboard(7)
+    agg = dashboard.get("aggregated", {})
+    return JSONResponse({
+        "total_chats_7d": agg.get("total_chats", 0),
+        "total_tasks_7d": agg.get("total_tasks", 0),
+        "total_errors_7d": agg.get("total_errors", 0),
+        "avg_response_ms": agg.get("avg_response_time_ms"),
+        "openai_vs_ollama": {
+            "openai": agg.get("openai_usage", 0),
+            "ollama": agg.get("ollama_usage", 0),
+        },
+        "recommendations": dashboard.get("recommendations", {}),
+        "top_tools": dashboard.get("top_tools", [])[:5],
+    })
