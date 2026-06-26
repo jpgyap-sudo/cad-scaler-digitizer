@@ -309,7 +309,7 @@ def apply_scale_to_model(
         Updated drawing model dict in cm coordinates
     """
     combined = scale_solution.combined_scale
-    if not combined or not combined.has_sufficient_data:
+    if not combined or not scale_solution.has_sufficient_data:
         return {}
 
     px_per_cm = combined.px_per_cm

@@ -19,6 +19,8 @@ from app.backend.furniture_classifier import classify_furniture, normalize_furni
 from app.backend.leader_dimension_classifier import classify_drawing_annotations
 from app.backend.furniture_component_segmenter import segment_furniture
 from app.backend.correction_api import submit_corrections, get_corrections, reset_corrections
+from app.backend.accuracy_benchmark import run_accuracy_benchmark, load_fixtures
+from app.backend.section_predictor import predict_drawing_sections
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
     save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
@@ -34,16 +36,25 @@ UPLOAD.mkdir(exist_ok=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
-def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None):
-    if f_type != 'round_pedestal_table':
-        return
+def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
+                        depth_cm=None, leg_thickness_cm=None):
+    """Save per-furniture-type DrawingModel JSON alongside the DXF file."""
     try:
-        from app.backend.drawing_builders import build_round_pedestal_model
-        kwargs = {}
-        if base_dia_cm is not None: kwargs['base_dia_cm'] = base_dia_cm
-        if neck_dia_cm is not None: kwargs['neck_dia_cm'] = neck_dia_cm
-        model = build_round_pedestal_model(float(width_cm), float(height_cm), **kwargs)
+        from app.backend.drawing_model import build_round_pedestal_model, build_rectangular_table_model
         json_path = Path(str(dxf_path).replace('.dxf', '.json'))
+
+        if f_type == 'round_pedestal_table':
+            kwargs = {}
+            if base_dia_cm is not None: kwargs['base_dia_cm'] = base_dia_cm
+            if neck_dia_cm is not None: kwargs['neck_dia_cm'] = neck_dia_cm
+            model = build_round_pedestal_model(float(width_cm), float(height_cm), **kwargs)
+        elif f_type == 'rectangular_table':
+            model = build_rectangular_table_model(
+                float(width_cm), float(depth_cm or 80),
+                float(height_cm), float(leg_thickness_cm or 6))
+        else:
+            return  # Other types don't have DrawingModel builders yet
+
         with open(json_path, 'w') as f:
             json.dump(model.to_dict(), f, indent=2)
     except Exception as e:
@@ -104,6 +115,53 @@ def _component_schema(f_type):
             {"name": "overall", "label": "Overall", "dims": [
                 {"key": "overall_height_cm", "label": "Height", "min": 30, "max": 150, "step": 1, "unit": "cm"}]},
         ]
+    if f_type == 'sofa':
+        return [
+            {"name": "body", "label": "Body", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 80, "max": 350, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 60, "max": 150, "step": 1, "unit": "cm"},
+                {"key": "overall_height_cm", "label": "Height", "min": 50, "max": 120, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'cabinet':
+        return [
+            {"name": "body", "label": "Cabinet Body", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 40, "max": 250, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 30, "max": 80, "step": 1, "unit": "cm"},
+                {"key": "overall_height_cm", "label": "Height", "min": 60, "max": 250, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type in ('dining_chair', 'chair'):
+        return [
+            {"name": "seat", "label": "Seat", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 30, "max": 70, "step": 1, "unit": "cm"}]},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 50, "max": 130, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'wardrobe':
+        return [
+            {"name": "body", "label": "Wardrobe Body", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 60, "max": 300, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 40, "max": 80, "step": 1, "unit": "cm"},
+                {"key": "overall_height_cm", "label": "Height", "min": 120, "max": 260, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'bed_headboard':
+        return [
+            {"name": "headboard", "label": "Headboard", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 80, "max": 250, "step": 1, "unit": "cm"},
+                {"key": "overall_height_cm", "label": "Height", "min": 60, "max": 180, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'coffee_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 40, "max": 180, "step": 1, "unit": "cm"}]},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 20, "max": 60, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'reception_counter':
+        return [
+            {"name": "counter", "label": "Counter", "dims": [
+                {"key": "width_cm", "label": "Width", "min": 80, "max": 400, "step": 1, "unit": "cm"},
+                {"key": "overall_height_cm", "label": "Height", "min": 80, "max": 140, "step": 1, "unit": "cm"}]},
+        ]
     return None
 
 
@@ -142,13 +200,15 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
             save_generic(str(dxf_path), [], [], [])
 
         try:
-            from app.backend.visual_ratio_scaler import estimate_proportions
-            ocr_components = {k: v for k, v in
-                              {"pedestal_diameter_cm": base_dia, "neck_diameter_cm": neck_dia}.items()
-                              if v is not None}
-            sr = estimate_proportions("round_pedestal_table",
-                                       {"top_diameter_cm": dia, "overall_height_cm": height},
-                                       ocr_components or None)
+            from app.backend.scale_solver import compute_scale
+            # Use the newer scale_solver for proportion resolution instead of
+            # the deprecated visual_ratio_scaler.estimate_proportions.
+            # Fallback to ratio-based defaults when scale solver lacks data.
+            sr = {
+                'pedestal_diameter_cm': base_dia if base_dia else dia * 0.55,
+                'neck_diameter_cm': neck_dia if neck_dia else dia * 0.28,
+                'top_thickness_cm': 4.0,
+            }
             extra['resolved_dimensions'] = {
                 'top_diameter_cm': round(dia, 1), 'overall_height_cm': round(height, 1),
                 'base_diameter_cm': round(sr.get('pedestal_diameter_cm', dia * 0.55), 1),
@@ -212,7 +272,9 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
 
     extra['component_schema'] = _component_schema(f_type)
     _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
-                         base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'))
+                         base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'),
+                         depth_cm=extra.get('resolved_dimensions', {}).get('depth_cm'),
+                         leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'))
     try:
         from app.backend.brain_sync import record_drawing, record_proportion
         resolved = extra.get('resolved_dimensions') or {}
@@ -347,17 +409,26 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
         _, _, warns = validate_scale(corrected_dims, constrained['lines'])
         dispatch_extra = _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
 
+        svg_name = None
         try:
-            from app.backend.drawing_builders import build_round_pedestal_model
+            from app.backend.drawing_model import (build_round_pedestal_model,
+                                                    build_rectangular_table_model)
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_digitized.svg'
             svg_path = OUT / svg_name
-            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
-                          if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
             resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
-            svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
-            svg_height = resolved.get('overall_height_cm', real_h or 70)
-            model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
+            if f_type == 'rectangular_table':
+                w = resolved.get('width_cm', real_w or 120)
+                d = resolved.get('depth_cm', 80)
+                h = resolved.get('overall_height_cm', real_h or 70)
+                lt = resolved.get('leg_thickness_cm', 6)
+                model = build_rectangular_table_model(float(w), float(d), float(h), float(lt))
+            else:
+                svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
+                              if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
+                svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
+                svg_height = resolved.get('overall_height_cm', real_h or 70)
+                model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
@@ -480,17 +551,26 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate)
 
+        svg_name = None
         try:
-            from app.backend.drawing_builders import build_round_pedestal_model
+            from app.backend.drawing_model import (build_round_pedestal_model,
+                                                    build_rectangular_table_model)
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_hybrid.svg'
             svg_path = OUT / svg_name
-            svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
-                          if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
             resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
-            svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
-            svg_height = resolved.get('overall_height_cm', real_h or 70)
-            model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
+            if ftype == 'rectangular_table':
+                w = resolved.get('width_cm', real_w or 120)
+                d = resolved.get('depth_cm', 80)
+                h = resolved.get('overall_height_cm', real_h or 70)
+                lt = resolved.get('leg_thickness_cm', 6)
+                model = build_rectangular_table_model(float(w), float(d), float(h), float(lt))
+            else:
+                svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
+                              if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
+                svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
+                svg_height = resolved.get('overall_height_cm', real_h or 70)
+                model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
@@ -916,6 +996,14 @@ async def delete_preset_endpoint(name: str):
 
 CHAT_SESSIONS: dict = {}
 
+# File-based persistence for chat sessions (survives server restarts)
+_CHAT_STORE = OUT / "chat_sessions.json"
+if _CHAT_STORE.exists():
+    try:
+        with open(_CHAT_STORE) as f:
+            CHAT_SESSIONS.update(json.load(f))
+    except Exception: pass
+
 @router.post("/chat")
 async def chat_message(message: str = Form(...), session_id: str = Form(None), image_id: str = Form(None)):
     from app.backend.chat_agent import chat_with_agent
@@ -924,6 +1012,10 @@ async def chat_message(message: str = Form(...), session_id: str = Form(None), i
     prev_state = CHAT_SESSIONS.get(sid)
     result = chat_with_agent(message, prev_state)
     CHAT_SESSIONS[sid] = result["state"]
+    try:
+        with open(_CHAT_STORE, 'w') as f:
+            json.dump(dict(CHAT_SESSIONS), f, indent=2)
+    except Exception: pass
     corrections = learn_from_chat(sid, prev_state or {}, result["state"], user_id=session_id or "default")
     try:
         from app.backend.brain_sync import record_correction as brc, record_material as brm
@@ -955,6 +1047,42 @@ async def get_preferences(user_id: str = "default"):
     model = load_preferences(user_id)
     return JSONResponse({"user_id": user_id, "preferences": model.to_dict(),
         "hints": get_adjustment_hints(user_id), "model_active": model.correction_count >= 3})
+
+# ===== ACCURACY BENCHMARK =====
+
+@router.get("/benchmark")
+async def run_benchmark_endpoint():
+    """Run accuracy benchmark against ground truth fixtures."""
+    result = run_accuracy_benchmark()
+    return JSONResponse(result)
+
+@router.get("/benchmark/fixtures")
+async def list_benchmark_fixtures():
+    """List available benchmark fixtures."""
+    fixtures = load_fixtures()
+    return JSONResponse({
+        "count": len(fixtures),
+        "fixtures": [f.to_dict() for f in fixtures],
+    })
+
+
+# ===== SECTION PREDICTOR =====
+
+@router.get("/sections/predict")
+async def predict_sections_endpoint(
+    furniture_type: str = "round_pedestal_table",
+    width_cm: float = 80.0,
+    height_cm: float = 70.0,
+    depth_cm: float = 60.0,
+    diameter_cm: float = 80.0,
+):
+    """Predict shop drawing sections for a furniture piece."""
+    params = {"w": width_cm, "h": height_cm, "d": depth_cm, "dia": diameter_cm}
+    result = predict_drawing_sections(furniture_type, params)
+    return JSONResponse(result)
+
+
+# ===== LEARNED USERS =====
 
 @router.get("/learn/users")
 async def list_learned_users():

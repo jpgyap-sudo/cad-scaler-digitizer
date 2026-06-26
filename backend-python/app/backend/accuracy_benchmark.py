@@ -303,10 +303,10 @@ def run_benchmark(fixtures: List[GroundTruthFixture]) -> BenchmarkResult:
                 all_dim_errors.append(dim_acc.error_pct)
 
         passed = "PASS" if result.overall_score >= 60 else "FAIL"
-        print(f"  → {passed} (score: {result.overall_score:.0f}%, "
+        print(f"  -> {passed} (score: {result.overall_score:.0f}%, "
               f"dim accuracy: {result.dimension_accuracy_pct:.0f}%)")
         for err in result.errors:
-            print(f"  ⚠ {err}")
+            print(f"  ! {err}")
 
     avg_score = sum(r.overall_score for r in results) / len(results) if results else 0.0
     avg_dim_error = sum(all_dim_errors) / len(all_dim_errors) if all_dim_errors else 0.0
@@ -326,7 +326,7 @@ def run_benchmark(fixtures: List[GroundTruthFixture]) -> BenchmarkResult:
 
 def load_fixtures() -> List[GroundTruthFixture]:
     """Load ground truth fixtures from the fixtures directory."""
-    fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+    fixtures_dir = Path(__file__).parent.parent.parent.parent / "fixtures"
 
     if not fixtures_dir.exists():
         print(f"[BENCHMARK] No fixtures directory at {fixtures_dir}")
@@ -345,17 +345,20 @@ def load_fixtures() -> List[GroundTruthFixture]:
             spec = json.load(f)
 
         # Find image path
-        image_path = subdir / (spec.get("image", ""))
-        if not image_path.exists():
+        image_name = spec.get("image", "")
+        image_path = subdir / image_name if image_name else None
+        
+        if not image_path or not image_path.is_file():
             # Try any PNG/JPG in the directory
+            image_path = None
             for ext in [".png", ".jpg", ".jpeg", ".webp"]:
                 candidates = list(subdir.glob(f"*{ext}"))
                 if candidates:
                     image_path = candidates[0]
                     break
 
-        if not image_path.exists():
-            print(f"  ⚠ No image found for {subdir.name}")
+        if not image_path or not image_path.is_file():
+            print(f"  ! No image found for {subdir.name}")
             continue
 
         dimensions = [

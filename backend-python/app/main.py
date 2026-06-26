@@ -31,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
+app.include_router(router, prefix="/py-api")  # Vite dev proxy compatibility
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 

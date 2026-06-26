@@ -749,8 +749,27 @@ const App: React.FC = () => {
                           <ConfidencePanel
                             dimensions={confidenceDims}
                             associations={cadEngineResult?.accuracy_pipeline?.associations?.associations}
+                            lineRoles={cadEngineResult?.accuracy_pipeline?.line_roles}
                             onCorrectValue={handleCorrectValue}
                             onLockDimension={handleLockDimension}
+                            onCorrectLineRole={(lineId, newRole) => {
+                              if (!cadEngineResult?.job_id) return;
+                              fetch('/py-api/corrections/submit', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: new URLSearchParams({
+                                  session_id: cadEngineResult.job_id,
+                                  dimension_corrections: '[]',
+                                  line_role_corrections: JSON.stringify([{
+                                    session_id: cadEngineResult.job_id,
+                                    line_id: lineId,
+                                    original_role: '',
+                                    corrected_role: newRole,
+                                    is_locked: true,
+                                  }]),
+                                }),
+                              }).catch(err => console.error('[LineRole] Failed:', err));
+                            }}
                           />
                         </div>
                       )}

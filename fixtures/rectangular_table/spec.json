@@ -1,14 +1,40 @@
 {
   "type": "rectangular_table",
   "furniture_type": "rectangular_table",
-  "parameters": {"width_cm": 120, "depth_cm": 80, "height_cm": 70},
+  "parameters": {
+    "width_cm": 120,
+    "depth_cm": 80,
+    "height_cm": 70
+  },
   "dimensions": [
-    {"tag": "width", "value_cm": 120.0, "tolerance_pct": 5.0},
-    {"tag": "depth", "value_cm": 80.0, "tolerance_pct": 5.0},
-    {"tag": "height", "value_cm": 70.0, "tolerance_pct": 5.0},
-    {"tag": "leg_thickness", "value_cm": 6.0, "tolerance_pct": 10.0}
+    {
+      "tag": "width",
+      "value_cm": 120.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "depth",
+      "value_cm": 80.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "height",
+      "value_cm": 70.0,
+      "tolerance_pct": 5.0
+    },
+    {
+      "tag": "leg_thickness",
+      "value_cm": 6.0,
+      "tolerance_pct": 10.0
+    }
   ],
-  "expected_entities": {"LWPOLYLINE": 2, "LINE": 4, "DIMENSION": 4, "CENTER": 2},
+  "expected_entities": {
+    "LWPOLYLINE": 2,
+    "LINE": 4,
+    "DIMENSION": 4,
+    "CENTER": 2
+  },
   "min_file_size_bytes": 1000,
-  "notes": "Rectangular table: 120x80cm top, 70cm height, 6cm legs."
+  "notes": "Rectangular table: 120x80cm top, 70cm height, 6cm legs.",
+  "image": "reference.jpg"
 }

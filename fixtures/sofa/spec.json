@@ -1,6 +1,12 @@
 {
-  "type": "sofa",
+  "furniture_type": "sofa",
+  "image": "reference.jpg",
   "parameters": {"width_cm": 200, "depth_cm": 80, "height_cm": 85, "seat_height_cm": 45},
+  "dimensions": [
+    {"tag": "width", "value_cm": 200.0, "tolerance_pct": 5.0},
+    {"tag": "depth", "value_cm": 80.0, "tolerance_pct": 10.0},
+    {"tag": "height", "value_cm": 85.0, "tolerance_pct": 5.0}
+  ],
   "expected_entities": {"LINE": 10, "HIDDEN": 1, "TEXT": 1},
   "min_file_size_bytes": 800
 }

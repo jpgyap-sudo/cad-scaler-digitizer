@@ -38,10 +38,19 @@ interface ConfidencePanelProps {
     dim_line?: { length_px: number } | null;
     associated_circle?: [number, number, number] | null;
   }>;
+  /** Line role data from accuracy pipeline */
+  lineRoles?: {
+    object_edges?: Array<{ role: string; confidence: number }>;
+    dimension_lines?: Array<{ role: string; confidence: number }>;
+    leaders?: Array<{ role: string; confidence: number }>;
+    unknown?: Array<{ role: string; confidence: number }>;
+  };
   /** Callback when user corrects a dimension value */
   onCorrectValue?: (text: string, newValue: number) => void;
   /** Callback when user locks/confirms a dimension */
   onLockDimension?: (text: string) => void;
+  /** Callback when user corrects a line role */
+  onCorrectLineRole?: (lineId: string, newRole: string) => void;
 }
 
 const SOURCE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
@@ -90,12 +99,21 @@ function getSourceConfig(source: string) {
 export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
   dimensions,
   associations,
+  lineRoles,
   onCorrectValue,
   onLockDimension,
+  onCorrectLineRole,
 }) => {
   const [editingText, setEditingText] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
-  const [lockedTexts, setLockedTexts] = useState<Set<string>>(new Set());
+  const [showLineRoles, setShowLineRoles] = useState(false);
+  const [lockedTexts, setLockedTexts] = useState<Set<string>>(() => {
+    // Persist lock state in sessionStorage to survive re-renders
+    try {
+      const stored = sessionStorage.getItem('cad_locked_dims');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
 
   // Merge associations into dimensions if available
   const mergedItems = useMemo(() => {
@@ -128,10 +146,16 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
     setEditingText(null);
   };
 
+  const persistLocks = (locks: Set<string>) => {
+    try { sessionStorage.setItem('cad_locked_dims', JSON.stringify([...locks])); }
+    catch {}
+  };
+
   const handleLock = (text: string) => {
     const newLocked = new Set(lockedTexts);
     newLocked.add(text);
     setLockedTexts(newLocked);
+    persistLocks(newLocked);
     if (onLockDimension) onLockDimension(text);
   };
 
@@ -139,6 +163,7 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
     const newLocked = new Set(lockedTexts);
     newLocked.delete(text);
     setLockedTexts(newLocked);
+    persistLocks(newLocked);
   };
 
   if (mergedItems.length === 0) {
@@ -312,6 +337,49 @@ export const ConfidencePanel: React.FC<ConfidencePanelProps> = ({
           );
         })}
       </div>
+
+      {/* Line Role Correction (FG-3) */}
+      {lineRoles && (
+        <div className="border-t border-slate-200 pt-3 mt-3">
+          <button
+            onClick={() => setShowLineRoles(!showLineRoles)}
+            className="w-full flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors"
+          >
+            <span className="text-xs font-bold text-slate-600 flex items-center">
+              <span className="mr-1.5">📐</span>
+              Line Roles
+            </span>
+            <span className={`text-[10px] text-slate-400 transition-transform ${showLineRoles ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+          {showLineRoles && (
+            <div className="mt-2 space-y-1">
+              {[
+                { key: 'object_edges', label: 'Object Edges', color: 'text-slate-700', bg: 'bg-slate-100' },
+                { key: 'dimension_lines', label: 'Dimension Lines', color: 'text-blue-700', bg: 'bg-blue-50' },
+                { key: 'leaders', label: 'Leaders', color: 'text-amber-700', bg: 'bg-amber-50' },
+                { key: 'unknown', label: 'Unclassified', color: 'text-red-600', bg: 'bg-red-50' },
+              ].map(({ key, label, color, bg }) => {
+                const items = (lineRoles as any)[key] || [];
+                const count = items.length;
+                if (count === 0) return null;
+                return (
+                  <div key={key} className={`flex justify-between items-center px-2 py-1.5 rounded-lg text-xs ${bg}`}>
+                    <span className={`font-medium ${color}`}>{label}</span>
+                    <span className="font-bold">{count} lines</span>
+                  </div>
+                );
+              })}
+              {onCorrectLineRole && (
+                <p className="text-[10px] text-slate-400 mt-1 px-1">
+                  Click a line on the drawing to reclassify it.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

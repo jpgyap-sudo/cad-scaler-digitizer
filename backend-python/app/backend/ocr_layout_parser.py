@@ -23,7 +23,7 @@ import pytesseract
 for tp in [r'C:\Program Files\Tesseract-OCR\tesseract.exe',
            r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe']:
     if os.path.exists(tp):
-        pytesseract.pytesseract.tesseract_cmd = tp
+        pytesseract.tesseract_cmd = tp
         break
 
 # ===== Data Types =====

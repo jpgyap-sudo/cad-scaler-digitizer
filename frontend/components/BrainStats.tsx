@@ -63,10 +63,10 @@ const BrainStats: React.FC<{ className?: string }> = ({ className = '' }) => {
             </div>
           )}
 
-          {report?.confident_proportions?.length > 0 && (
+          {(report?.confident_proportions?.length ?? 0) > 0 && (
             <div className="text-[10px] text-slate-400">
               <Wrench size={12} className="inline mr-1" />
-              {report.confident_proportions.length} proportion(s) learned
+              {report!.confident_proportions!.length} proportion(s) learned
             </div>
           )}
         </div>

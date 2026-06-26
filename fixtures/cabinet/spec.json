@@ -1,6 +1,12 @@
 {
-  "type": "cabinet",
+  "furniture_type": "cabinet",
+  "image": "reference.jpg",
   "parameters": {"width_cm": 100, "depth_cm": 50, "height_cm": 180},
+  "dimensions": [
+    {"tag": "width", "value_cm": 100.0, "tolerance_pct": 5.0},
+    {"tag": "depth", "value_cm": 50.0, "tolerance_pct": 10.0},
+    {"tag": "height", "value_cm": 180.0, "tolerance_pct": 5.0}
+  ],
   "expected_entities": {"LINE": 9, "HIDDEN": 3, "CENTER": 1, "TEXT": 1},
   "min_file_size_bytes": 800
 }

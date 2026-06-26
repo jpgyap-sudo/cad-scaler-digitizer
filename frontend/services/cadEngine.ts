@@ -19,6 +19,33 @@ export interface ComponentSchema {
   dims: ComponentDim[];
 }
 
+export interface AccuracyAssociation {
+  text: string;
+  value_cm: number;
+  text_position: { x: number; y: number };
+  dim_line?: { p1: [number, number]; p2: [number, number]; length_px: number } | null;
+  associated_lines_count: number;
+  associated_circle: [number, number, number] | null;
+  confidence: number;
+  is_diameter: boolean;
+  evidence: string[];
+  source?: string;
+}
+
+export interface AccuracyPipeline {
+  layout?: Record<string, any>;
+  line_roles?: Record<string, any>;
+  associations?: {
+    associations: AccuracyAssociation[];
+    unassociated_labels: Array<{ text: string; x: number; y: number }>;
+    unassociated_geometry_count: number;
+    scale_px_per_cm?: number;
+    summary: string;
+  };
+  scale?: Record<string, any> | null;
+  reconstruction?: Record<string, any>;
+}
+
 export type DigitizeResult = {
   job_id: string;
   download: string;
@@ -26,6 +53,7 @@ export type DigitizeResult = {
   preview_svg?: string;
   resolved_dimensions?: Record<string, number>;
   component_schema?: ComponentSchema[] | null;
+  accuracy_pipeline?: AccuracyPipeline;
   furniture: {
     type: string;
     confidence: number;
@@ -37,7 +65,7 @@ export type DigitizeResult = {
     lines: number;
     circles: number;
     rectangles: number;
-    dimensions: Array<{ value_cm: number; tag: string; raw: string }>;
+    dimensions: Array<{ value_cm: number; tag: string; raw: string; source?: string; confidence?: number }>;
     ocr_lines: string[];
   };
   warnings: string[];
@@ -217,6 +245,18 @@ export function getPreviewUrl(dxfFile: string): string {
   const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
   if (base.startsWith('http')) return `${base}/api/preview/${dxfFile}`;
   return `${window.location.origin}/py-api/preview/${dxfFile}`;
+}
+
+/**
+ * Get SVG preview URL (handles both /api/ and /py-api/ prefixes).
+ */
+export function getSvgPreviewUrl(path: string): string {
+  if (!path) return '';
+  const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
+  // Rewrite /api/ -> /py-api/ for Vite dev proxy
+  const proxyPath = path.replace('/api/', '/py-api/');
+  if (base.startsWith('http')) return `${base}${path}`;
+  return `${window.location.origin}${proxyPath}`;
 }
 
 /**

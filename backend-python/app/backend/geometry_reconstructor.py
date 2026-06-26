@@ -223,7 +223,7 @@ def _snap_near_parallel_lines(
                                         endpoints[l][0], endpoints[l][1])
                         dists.append((d, k, l))
 
-                min_dist, ki, li = min(dists, key=lambda x: x[0])
+                min_dist, _, _ = min(dists, key=lambda x: x[0])
 
                 if min_dist < end_gap_threshold:
                     best_merge = j

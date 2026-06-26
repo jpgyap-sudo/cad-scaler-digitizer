@@ -167,11 +167,16 @@ def handle_correction_submission(session_id: str,
     Returns:
         Summary of what was corrected
     """
+    # Build dataclasses from dicts, filtering only known fields for safety
+    dc_fields = {f.name for f in DimensionCorrection.__dataclass_fields__.values()}
+    rc_fields = {f.name for f in LineRoleCorrection.__dataclass_fields__.values()}
     dim_corrections = [
-        DimensionCorrection(**c) for c in dimension_corrections
+        DimensionCorrection(**{k: v for k, v in c.items() if k in dc_fields})
+        for c in dimension_corrections
     ]
     role_corrections = [
-        LineRoleCorrection(**c) for c in line_role_corrections
+        LineRoleCorrection(**{k: v for k, v in c.items() if k in rc_fields})
+        for c in line_role_corrections
     ]
 
     path = save_corrections(session_id, dim_corrections, role_corrections)

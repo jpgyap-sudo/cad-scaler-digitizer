@@ -375,7 +375,7 @@ def associate_dimensions(
 
                 # Find object lines near this dimension
                 parallel_lines, perp_lines = _find_nearby_object_lines(
-                    label, best_dim_line, text_boxes, flat_lines)
+                    label, best_dim_line, flat_lines, flat_lines)
 
                 associated_lines = parallel_lines + perp_lines
                 if associated_lines:
