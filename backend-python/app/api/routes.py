@@ -38,7 +38,7 @@ def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None,
     if f_type != 'round_pedestal_table':
         return
     try:
-        from app.backend.drawing_model import build_round_pedestal_model
+        from app.backend.drawing_builders import build_round_pedestal_model
         kwargs = {}
         if base_dia_cm is not None: kwargs['base_dia_cm'] = base_dia_cm
         if neck_dia_cm is not None: kwargs['neck_dia_cm'] = neck_dia_cm
@@ -348,7 +348,7 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
         dispatch_extra = _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h)
 
         try:
-            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.drawing_builders import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_digitized.svg'
             svg_path = OUT / svg_name
@@ -481,7 +481,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate)
 
         try:
-            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.drawing_builders import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
             svg_name = f'{job_id}_hybrid.svg'
             svg_path = OUT / svg_name
@@ -564,7 +564,7 @@ def preview_svg(filename: str):
         import ezdxf, re
         try:
             doc = ezdxf.readfile(str(dxf_path))
-            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.drawing_builders import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
             top_dia, height = 80.0, 70.0
             for e in doc.modelspace():
@@ -630,7 +630,7 @@ async def adjust_dimensions(dxf_file: str = Form(...),
             try: save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_thickness_cm=lt)
             except Exception as e: print(f"[Adjust] Rect DXF regen failed: {e}")
 
-            from app.backend.drawing_model import build_rectangular_table_model
+            from app.backend.drawing_builders import build_rectangular_table_model
             model = build_rectangular_table_model(w, d, h, lt)
             svg = drawing_to_svg(model)
             svg_path = OUT / safe.replace('.dxf', '.svg')
@@ -640,7 +640,7 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                 "preview_svg": f"/api/preview/svg/{safe}",
                 "dimensions": {"width_cm": w, "depth_cm": d, "overall_height_cm": h, "leg_thickness_cm": lt}})
 
-        from app.backend.drawing_model import build_round_pedestal_model
+        from app.backend.drawing_builders import build_round_pedestal_model
         top_dia, height = 80.0, 70.0
         base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
         collar_dia = None
@@ -859,7 +859,7 @@ def view_drawing(filename: str):
     if not svg_path.exists():
         dxf_path = OUT / safe.replace('.svg', '.dxf')
         if dxf_path.exists():
-            from app.backend.drawing_model import build_round_pedestal_model
+            from app.backend.drawing_builders import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
             import ezdxf, re
             doc = ezdxf.readfile(str(dxf_path))

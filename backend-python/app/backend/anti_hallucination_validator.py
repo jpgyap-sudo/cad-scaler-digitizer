@@ -13,6 +13,8 @@ Visibility rules:
   VISIBLE   (confidence >= 0.70) -> draw SOLID on OBJECT layer
   ESTIMATED (0.30 <= confidence < 0.70) -> draw DASHED/HIDDEN, label as "EST."
   UNKNOWN   (confidence < 0.30) -> DO NOT DRAW
+
+Backward-compatible: accepts old Dict[str, float] format and converts automatically.
 """
 
 from dataclasses import dataclass, field
@@ -61,6 +63,12 @@ class ValidationResult:
     estimated_entities: List[str]     # Entity IDs drawn dashed
     visible_entities: List[str]       # Entity IDs drawn solid
     summary: str = ""
+
+    @property
+    def components(self):
+        """Backward-compatible access for old callers (dxf_exporter).
+        Maps entity_verdicts -> old callers iterate vr.components[name].visibility."""
+        return self.entity_verdicts
 
     def to_dict(self) -> dict:
         return {
@@ -115,11 +123,8 @@ def layer_for_entity(entity_type: str, visibility: Visibility, name: str) -> str
     """Choose the correct DXF layer based on entity type and visibility."""
     if visibility == "UNKNOWN":
         return "HIDDEN"
-
     name_lower = name.lower()
     type_lower = entity_type.lower()
-
-    # Entity-type-based layer assignment
     if "dimension" in type_lower or "dim" in name_lower:
         return "DIMENSION"
     if "leader" in type_lower or name_lower in ("leader", "callout"):
@@ -132,12 +137,10 @@ def layer_for_entity(entity_type: str, visibility: Visibility, name: str) -> str
         return "MTEXT"
     if "title" in name_lower or "border" in name_lower:
         return "TITLE"
-
     return "OBJECT"
 
 
 def linetype_for_visibility(visibility: Visibility) -> str:
-    """Choose linetype based on visibility class."""
     if visibility == "VISIBLE":
         return "CONTINUOUS"
     elif visibility == "ESTIMATED":
@@ -147,7 +150,6 @@ def linetype_for_visibility(visibility: Visibility) -> str:
 
 
 def action_for_visibility(visibility: Visibility) -> str:
-    """Determine what action to take for this entity."""
     if visibility == "VISIBLE":
         return "draw_solid"
     elif visibility == "ESTIMATED":
@@ -187,7 +189,6 @@ def validate_entities(
         name = meta.get("name", entity_id)
         evidence = meta.get("evidence", [])
 
-        # Known visible entities get a confidence boost
         if entity_id in visible_set:
             conf = max(conf, 0.85)
             source = "user_confirmed"
@@ -241,17 +242,32 @@ def validate_entities(
 
 
 # Public API
+
 def validate_furniture_drawing(
     furniture_type: str,
-    entity_confidences: Optional[Dict[str, Dict[str, Any]]] = None,
+    entity_confidences: Optional[Dict[str, Any]] = None,
     known_visible_entities: Optional[List[str]] = None,
 ) -> ValidationResult:
     """
     Main entry point: validate all entities before CAD generation.
-
-    Each entity carries its own confidence, source, and evidence chain.
+    Accepts NEW format: Dict[str, Dict] with confidence/source/evidence.
+    Also accepts OLD format: Dict[str, float] for backward compatibility.
     """
     if not entity_confidences:
         entity_confidences = {}
+
+    # Backward compatibility: if values are floats (old format), convert
+    first_val = next(iter(entity_confidences.values())) if entity_confidences else None
+    if isinstance(first_val, (int, float)):
+        converted = {}
+        for name, conf in entity_confidences.items():
+            converted[name] = {
+                "confidence": float(conf),
+                "source": "ratio_estimated" if float(conf) < 0.7 else "ocr_confirmed",
+                "entity_type": "polygon",
+                "name": name,
+                "evidence": [],
+            }
+        return validate_entities(furniture_type, converted, known_visible_entities)
 
     return validate_entities(furniture_type, entity_confidences, known_visible_entities)

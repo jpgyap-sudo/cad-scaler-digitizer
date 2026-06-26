@@ -1,0 +1,254 @@
+"""
+Drawing Builders — convenience functions to build DrawingModel for each furniture type.
+These were previously in drawing_model.py but were extracted to their own module
+during the accuracy upgrade to keep the model clean. Re-exported for backward compat.
+
+All builder functions accept optional EntityMetadata for confidence tracking.
+"""
+
+import math
+from datetime import datetime
+from typing import List, Optional, Dict
+
+from app.backend.drawing_model import (
+    DrawingModel, View, TitleBlockData, Point,
+    CircleComponent, PolygonComponent, LineComponent,
+    TextComponent, DimensionComponent, LeaderComponent,
+    HatchComponent, EntityMetadata,
+)
+
+
+def build_round_pedestal_model(
+    top_dia_cm: float = 80.0,
+    height_cm: float = 70.0,
+    base_dia_cm: float = 44.0,
+    neck_dia_cm: float = 30.0,
+    top_thick_cm: float = 4.0,
+    collar_dia_cm: float = 50.0,
+    base_thick_cm: float = 1.0,
+    client: str = "",
+    project: str = "Furniture Shop Drawing",
+    material_notes: Optional[List[str]] = None,
+) -> DrawingModel:
+    """Build a complete DrawingModel for a round pedestal table."""
+    now = datetime.now().strftime('%Y-%m-%d')
+    sc = 2.0
+    r_top = top_dia_cm / 2 * sc
+    r_collar = collar_dia_cm / 2 * sc
+    r_neck = neck_dia_cm / 2 * sc
+    r_base = base_dia_cm / 2 * sc
+    thick_top = top_thick_cm * sc
+    thick_base = base_thick_cm * sc
+    remaining_h = max(1.0, height_cm - top_thick_cm - base_thick_cm)
+    collar_h_cm = remaining_h * 0.14
+    ped_h_cm = remaining_h * 0.86
+    collar_h = collar_h_cm * sc
+    ped_h = ped_h_cm * sc
+    h_total = height_cm * sc
+    floor_y = 30.0
+    top_y = floor_y + h_total
+    tab_bot = top_y - thick_top
+    col_top = tab_bot
+    col_bot = col_top - collar_h
+    ped_bot = col_bot - ped_h
+    base_bot = floor_y
+    fx = 160.0
+    lx_start = fx + r_top + 12
+    lx_text = lx_start + 5
+
+    # TOP VIEW
+    top_view = View(name="TOP VIEW")
+    tv_cx, tv_cy = 55.0, top_y - r_top * 0.5
+    tv_r = top_dia_cm / 2 * 0.6
+    top_view.circles.append(CircleComponent(center=Point(tv_cx, tv_cy), radius=tv_r, layer="OBJECT"))
+    for i in range(8):
+        angle = 2 * math.pi * i / 8
+        x1 = tv_cx + tv_r * 0.15 * math.cos(angle)
+        y1 = tv_cy + tv_r * 0.15 * math.sin(angle)
+        x2 = tv_cx + tv_r * math.cos(angle)
+        y2 = tv_cy + tv_r * math.sin(angle)
+        top_view.lines.append(LineComponent(start=Point(x1, y1), end=Point(x2, y2), layer="HATCH"))
+    ext = max(4.0, tv_r * 0.12)
+    top_view.lines.append(LineComponent(start=Point(tv_cx - tv_r - ext, tv_cy), end=Point(tv_cx + tv_r + ext, tv_cy), layer="CENTER"))
+    top_view.lines.append(LineComponent(start=Point(tv_cx, tv_cy - tv_r - ext), end=Point(tv_cx, tv_cy + tv_r + ext), layer="CENTER"))
+    top_view.dimensions.append(DimensionComponent(p1=Point(tv_cx - tv_r, tv_cy + tv_r + ext), p2=Point(tv_cx + tv_r, tv_cy + tv_r + ext), label=f"\u00d8{top_dia_cm:g}", layer="DIMENSION"))
+    top_view.texts.append(TextComponent(content="TOP VIEW", position=Point(tv_cx - 12, tv_cy - tv_r - ext - 3), height=2.5, layer="MTEXT"))
+
+    # FRONT VIEW
+    front_view = View(name="FRONT VIEW")
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], layer="OBJECT", name="tabletop"))
+    front_view.hatches.append(HatchComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], pattern="ANSI31", scale=0.8, angle_deg=45, layer="HATCH"))
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_collar, col_top), Point(fx + r_collar, col_top), Point(fx + r_collar, col_bot), Point(fx - r_collar, col_bot)], layer="OBJECT", name="collar_plate"))
+    neck_h_px = collar_h * 0.3
+    neck_top_y = col_bot
+    neck_bot_y = col_bot - neck_h_px
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_top_y), Point(fx + r_neck, neck_top_y), Point(fx + r_neck, neck_bot_y), Point(fx - r_neck, neck_bot_y)], layer="OBJECT", name="neck_ring"))
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], layer="OBJECT", name="pedestal_body"))
+    front_view.hatches.append(HatchComponent(points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_base, ped_bot), Point(fx + r_base, ped_bot), Point(fx + r_base, base_bot), Point(fx - r_base, base_bot)], layer="OBJECT", name="base_plate"))
+    front_view.lines.append(LineComponent(start=Point(fx, base_bot - 6), end=Point(fx, top_y + 6), layer="CENTER"))
+
+    dim_x_left = fx - r_top - 8
+    front_view.dimensions.append(DimensionComponent(p1=Point(dim_x_left - 10, base_bot), p2=Point(dim_x_left - 10, top_y), label=f"{height_cm:g}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(dim_x_left, tab_bot), p2=Point(dim_x_left, top_y), label=f"{top_thick_cm:g}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(dim_x_left, neck_bot_y), p2=Point(dim_x_left, tab_bot), label=f"{collar_h_cm:.0f}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(dim_x_left, base_bot), p2=Point(dim_x_left, neck_bot_y), label=f"{ped_h_cm:.0f}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(fx - r_top, top_y + 6), p2=Point(fx + r_top, top_y + 6), label=f"{top_dia_cm:g}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(fx - r_collar, col_top - 4), p2=Point(fx + r_collar, col_top - 4), label=f"{collar_dia_cm:g}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(fx - r_neck, neck_bot_y - 4), p2=Point(fx + r_neck, neck_bot_y - 4), label=f"{neck_dia_cm:g}", layer="DIMENSION"))
+    front_view.dimensions.append(DimensionComponent(p1=Point(fx - r_base, ped_bot - 4), p2=Point(fx + r_base, ped_bot - 4), label=f"{base_dia_cm:g}", layer="DIMENSION"))
+
+    ped_mid_y = (neck_bot_y + ped_bot) / 2
+    base_mid_y = (ped_bot + base_bot) / 2
+    raw_callouts = [
+        ((col_top + col_bot) / 2, fx + r_collar, f"Dia {collar_dia_cm:.0f}cm Metal base plate"),
+        (neck_top_y, fx + r_neck, "Matte hairline black steel"),
+        (neck_bot_y, fx + r_neck, f"Dia {base_dia_cm:.0f}cm Metal base plate"),
+        (ped_mid_y, fx + (r_neck + r_base) / 2, "Black hammered textured PU coating"),
+        (base_mid_y, fx + r_base, "Black table base with anti-sliding glides"),
+    ]
+    min_label_gap = 9.0
+    prev_text_y = None
+    for target_y, target_x, text in raw_callouts:
+        text_y = target_y if prev_text_y is None else min(target_y, prev_text_y - min_label_gap)
+        front_view.leaders.append(LeaderComponent(start=Point(lx_text, text_y), end=Point(target_x, target_y), text=text, layer="LEADER"))
+        prev_text_y = text_y
+    front_view.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - r_top, base_bot - 12), height=3, layer="MTEXT"))
+
+    title = TitleBlockData(
+        drawing_title=f"Round Pedestal Table \u00d8{top_dia_cm:.0f} x H{height_cm:.0f}",
+        project=project, client=client, scale="1:2", revision="A",
+        designer="AI CAD Drafter", date=now,
+        material_notes=material_notes or [
+            "WOOD TOP — Solid hardwood, stained finish",
+            "PEDESTAL BASE — Black hammered textured metal, PU coat",
+            "COLLAR PLATE — Matte hairline black steel",
+            "BASE GLIDES — Anti-sliding rubber feet",
+        ],
+        general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED", "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED"],
+    )
+
+    return DrawingModel(
+        furniture_type="round_pedestal_table", views=[top_view, front_view], title_block=title,
+        known_dimensions={"top_diameter_cm": top_dia_cm, "overall_height_cm": height_cm},
+        estimated_components={"pedestal_diameter_cm": base_dia_cm, "neck_diameter_cm": neck_dia_cm, "top_thickness_cm": top_thick_cm},
+    )
+
+
+def build_rectangular_table_model(
+    width_cm: float = 120.0, depth_cm: float = 80.0, height_cm: float = 70.0,
+    leg_thickness_cm: float = 6.0, client: str = "", project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build DrawingModel for a rectangular table."""
+    sc = 0.4; w = width_cm * sc; d = depth_cm * sc; h = height_cm * sc
+    w2, d2 = w / 2, d / 2; ox, y_mid = 100.0, 180.0; lt = leg_thickness_cm * sc
+    fx = 280.0; floor_y = 30.0; top_y = floor_y + h; top_thick = max(lt * 0.8, 2.0)
+    now = datetime.now().strftime('%Y-%m-%d')
+    tv = View(name="TOP VIEW")
+    tv.polygons.append(PolygonComponent(points=[Point(ox - w2, y_mid - d2), Point(ox + w2, y_mid - d2), Point(ox + w2, y_mid + d2), Point(ox - w2, y_mid + d2)], layer="OBJECT", name="tabletop"))
+    for lx, ly in [(ox - w2, y_mid - d2), (ox + w2 - lt, y_mid - d2), (ox - w2, y_mid + d2 - lt), (ox + w2 - lt, y_mid + d2 - lt)]:
+        tv.polygons.append(PolygonComponent(points=[Point(lx, ly), Point(lx + lt, ly), Point(lx + lt, ly + lt), Point(lx, ly + lt)], layer="HIDDEN", linetype="HIDDEN", name="leg_footprint"))
+    tv.lines.append(LineComponent(start=Point(ox - w2 - 5, y_mid), end=Point(ox + w2 + 5, y_mid), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(ox, y_mid - d2 - 5), end=Point(ox, y_mid + d2 + 5), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(ox - w2, y_mid + d2 + 6), p2=Point(ox + w2, y_mid + d2 + 6), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    tv.dimensions.append(DimensionComponent(p1=Point(ox + w2 + 6, y_mid - d2), p2=Point(ox + w2 + 6, y_mid + d2), label=f"D = {depth_cm:g} cm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(ox - 15, y_mid + d2 + 22), height=3, layer="MTEXT"))
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent(points=[Point(fx - w2, top_y - top_thick), Point(fx + w2, top_y - top_thick), Point(fx + w2, top_y), Point(fx - w2, top_y)], layer="OBJECT", name="tabletop"))
+    fv.hatches.append(HatchComponent(points=[Point(fx - w2, top_y - top_thick), Point(fx + w2, top_y - top_thick), Point(fx + w2, top_y), Point(fx - w2, top_y)], pattern="ANSI31", scale=0.5, layer="HATCH"))
+    leg_y_top = top_y - top_thick
+    for lx in [fx - w2, fx + w2 - lt]:
+        fv.polygons.append(PolygonComponent(points=[Point(lx, floor_y), Point(lx + lt, floor_y), Point(lx + lt, leg_y_top), Point(lx, leg_y_top)], layer="OBJECT", name="leg"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+    tb = TitleBlockData(drawing_title=f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=now)
+    return DrawingModel(furniture_type="rectangular_table", views=[tv, fv], title_block=tb,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={"leg_thickness_cm": leg_thickness_cm})
+
+
+def build_cabinet_model(width_cm=100, depth_cm=50, height_cm=180, client="", project="Furniture Shop Drawing"):
+    sc = 0.3; w = width_cm * sc; h = height_cm * sc; fx = (420 - w) / 2; floor_y = 50.0; top_y = floor_y + h; w2 = w / 2; margin = w * 0.05
+    now = datetime.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent(points=[Point(fx, floor_y), Point(fx + w, floor_y), Point(fx + w, top_y), Point(fx, top_y)], layer="OBJECT", name="cabinet_body"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx + margin, floor_y + margin), Point(fx + w2 - 2, floor_y + margin), Point(fx + w2 - 2, top_y - margin), Point(fx + margin, top_y - margin)], layer="OBJECT", name="door_left"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx + w2 + 2, floor_y + margin), Point(fx + w - margin, floor_y + margin), Point(fx + w - margin, top_y - margin), Point(fx + w2 + 2, top_y - margin)], layer="OBJECT", name="door_right"))
+    mid_y = (top_y + floor_y) / 2
+    fv.lines.append(LineComponent(start=Point(fx + w2 - 6, mid_y - 5), end=Point(fx + w2 - 6, mid_y + 5), layer="OBJECT"))
+    fv.lines.append(LineComponent(start=Point(fx + w2 + 6, mid_y - 5), end=Point(fx + w2 + 6, mid_y + 5), layer="OBJECT"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y), label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
+    tb = TitleBlockData(drawing_title=f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now)
+    return DrawingModel(furniture_type="cabinet", views=[fv], title_block=tb,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm})
+
+
+def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project="Furniture Shop Drawing"):
+    sc = 0.3; w = width_cm * sc; h = height_cm * sc; fx = (420 - w) / 2; floor_y = 50.0; top_y = floor_y + h; seat_y = floor_y + h * 0.55; arm_h = h * 0.4
+    now = datetime.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent(points=[Point(fx, floor_y), Point(fx + w, floor_y), Point(fx + w, seat_y), Point(fx, seat_y)], layer="OBJECT", name="seat_base"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx, seat_y), Point(fx + w, seat_y), Point(fx + w, top_y - arm_h), Point(fx, top_y - arm_h)], layer="OBJECT", name="backrest"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx - 5, seat_y - 5), Point(fx + 10, seat_y - 5), Point(fx + 10, top_y), Point(fx - 5, top_y)], layer="OBJECT", name="arm_left"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx + w - 10, seat_y - 5), Point(fx + w + 5, seat_y - 5), Point(fx + w + 5, top_y), Point(fx + w - 10, top_y)], layer="OBJECT", name="arm_right"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y), label=f"H = {height_cm:g} cm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
+    tb = TitleBlockData(drawing_title=f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now)
+    return DrawingModel(furniture_type="sofa", views=[fv], title_block=tb,
+        known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm})
+
+
+def build_coffee_table_model(w=100.0, d=60.0, h=45.0):
+    sc, cx, ym = 0.6, 100.0, 190.0; r = min(w, d) / 2 * sc; n = datetime.now().strftime('%Y-%m-%d')
+    tv = View(name="TOP VIEW")
+    tv.circles.append(CircleComponent(center=Point(cx, ym), radius=r, layer="OBJECT"))
+    tv.lines.append(LineComponent(Point(cx-r-5, ym), Point(cx+r+5, ym), "CENTER"))
+    tv.lines.append(LineComponent(Point(cx, ym-r-5), Point(cx, ym+r+5), "CENTER"))
+    tv.dimensions.append(DimensionComponent(Point(cx-r, ym), Point(cx+r, ym), f"%%c{min(w,d):g} cm", "DIMENSION"))
+    tv.texts.append(TextComponent("TOP VIEW", Point(cx-10, ym+r+10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    return DrawingModel("coffee_table", [tv], tb, {"width_cm": w, "depth_cm": d, "overall_height_cm": h})
+
+
+def build_dining_chair_model(w=45.0, h=90.0):
+    sc, w2 = 0.5, w * 0.5 * 0.5; fx = (420 - w * 0.5) / 2; fy, ty = 50.0, 50.0 + h * 0.5; sy = fy + h * 0.5 * 0.5
+    n = datetime.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent([Point(fx, sy), Point(fx+w*0.5, sy), Point(fx+w*0.5, ty), Point(fx, ty)], "OBJECT", "backrest"))
+    fv.polygons.append(PolygonComponent([Point(fx, fy), Point(fx+w*0.5, fy), Point(fx+w*0.5, sy), Point(fx, sy)], "OBJECT", "seat"))
+    fv.dimensions.append(DimensionComponent(Point(fx+w*0.5+8, fy), Point(fx+w*0.5+8, ty), f"H = {h:g} cm", "DIMENSION"))
+    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, ty+10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Dining Chair {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    return DrawingModel("dining_chair", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+
+
+def build_wardrobe_model(w=120.0, d=60.0, h=200.0):
+    return build_cabinet_model(w, d, h)
+
+
+def build_reception_counter_model(w=180.0, h=110.0):
+    sc = 0.3; fx = (420 - w * sc) / 2; fy, ty = 50.0, 50.0 + h * sc; n = datetime.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent([Point(fx, fy), Point(fx+w*sc, fy), Point(fx+w*sc, ty), Point(fx, ty)], "OBJECT", "counter_body"))
+    fv.dimensions.append(DimensionComponent(Point(fx+w*sc+8, fy), Point(fx+w*sc+8, ty), f"H = {h:g} cm", "DIMENSION"))
+    fv.dimensions.append(DimensionComponent(Point(fx, fy-8), Point(fx+w*sc, fy-8), f"W = {w:g} cm", "DIMENSION"))
+    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, ty+10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Reception Counter {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:3", revision="A", date=n)
+    return DrawingModel("reception_counter", [fv], tb, {"width_cm": w, "overall_height_cm": h})
+
+
+def build_bed_headboard_model(w=180.0, h=60.0, d=5.0, client="", project="Furniture Shop Drawing"):
+    sc = 0.4; w2 = w * sc; h2 = h * sc; fx = (420 - w2) / 2; floor_y = 30.0; top_y = floor_y + h2
+    n = datetime.now().strftime('%Y-%m-%d')
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent([Point(fx, floor_y), Point(fx + w2, floor_y), Point(fx + w2, top_y), Point(fx, top_y)], "OBJECT", "headboard"))
+    fv.dimensions.append(DimensionComponent(Point(fx + w2 + 8, floor_y), Point(fx + w2 + 8, top_y), f"H = {h:g} cm", "DIMENSION"))
+    fv.dimensions.append(DimensionComponent(Point(fx, floor_y - 8), Point(fx + w2, floor_y - 8), f"W = {w:g} cm", "DIMENSION"))
+    fv.texts.append(TextComponent("FRONT VIEW", Point(fx, top_y + 10), 3, "MTEXT"))
+    tb = TitleBlockData(f"Bed Headboard {w:.0f}x{h:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=n)
+    return DrawingModel("bed_headboard", [fv], tb, {"width_cm": w, "overall_height_cm": h})
