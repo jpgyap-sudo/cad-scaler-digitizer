@@ -14,11 +14,10 @@ export default defineConfig({
       },
       // Proxy /py-api requests directly to the Python CAD engine
       '/py-api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
         rewrite: (path) => {
           if (path.includes('/health')) return '/health';
-          if (path.includes('/download')) return path.replace('/py-api', '/api');
           return path.replace('/py-api', '/api');
         },
       },
