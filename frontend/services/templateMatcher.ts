@@ -1,3 +1,17 @@
+/**
+ * Parametric Template Matcher — fills template parameters from OCR data.
+ *
+ * Every filled parameter is labeled with its source:
+ *   'measured_from_pixels'  — directly scanned from the image
+ *   'ocr_confirmed'         — read from OCR dimension label text
+ *   'user_confirmed'        — user typed or corrected value
+ *   'ratio_estimated'       — estimated from standard furniture proportions
+ *   'default_template'      — hardcoded template default (no confidence)
+ *
+ * The UI MUST clearly show each parameter's source so the user can
+ * distinguish "read from drawing" vs. "guess from template defaults."
+ */
+
 import { ParametricTemplate, ParametricMatch, CadPrimitive } from '../types';
 
 export const TEMPLATES: ParametricTemplate[] = [
@@ -125,19 +139,31 @@ export const TEMPLATES: ParametricTemplate[] = [
 ];
 
 /**
- * Evaluate expression strings like "diameter/2" or "-width/2" 
+ * Describe the source of a parameter value for display.
+ */
+export interface ParamSource {
+  name: string;
+  value: number;
+  unit: string;
+  /** One of: 'measured', 'ocr_confirmed', 'user_confirmed', 'ratio_estimated', 'default_template' */
+  source: string;
+  confidence: number;
+  /** Human-readable explanation */
+  note: string;
+}
+
+/**
+ * Evaluate expression strings like "diameter/2" or "-width/2"
  * against a set of parameter values.
  */
 function evalPrimitive(prim: CadPrimitive, params: Record<string, number>): any {
   const evalExpr = (expr: string | number): number => {
     if (typeof expr === 'number') return expr;
-    // Replace parameter names with values
     let s = expr;
     for (const [key, val] of Object.entries(params)) {
       s = s.replace(new RegExp(key, 'g'), `(${val})`);
     }
     try {
-      // Safe evaluation: only basic arithmetic
       return Function(`"use strict"; return (${s})`)();
     } catch {
       return 0;
@@ -174,33 +200,73 @@ function evalPrimitive(prim: CadPrimitive, params: Record<string, number>): any 
 
 /**
  * Match a template by type name and fill parameters from OCR data.
+ * Returns detailed source tracking for each parameter.
  */
 export function matchTemplate(
   templateType: string,
-  ocrParams: Record<string, number>
-): ParametricMatch | null {
+  ocrParams: Record<string, number>,
+  userParams?: Record<string, number>,
+): { match: ParametricMatch | null; sources: ParamSource[] } {
   const template = TEMPLATES.find(t => t.type === templateType);
-  if (!template) return null;
+  if (!template) return { match: null, sources: [] };
 
-  // Fill parameters, using OCR values where available, defaults otherwise
+  // Fill parameters with source tracking
   const filled: Record<string, number> = {};
+  const sources: ParamSource[] = [];
   let matches = 0;
+
   for (const param of template.parameters) {
-    if (ocrParams[param.name] !== undefined) {
-      filled[param.name] = ocrParams[param.name];
-      matches++;
-    } else {
-      filled[param.name] = param.default;
+    let value: number;
+    let source: string;
+    let confidence: number;
+    let note: string;
+
+    // Priority 1: User-confirmed value
+    if (userParams && userParams[param.name] !== undefined) {
+      value = userParams[param.name];
+      source = 'user_confirmed';
+      confidence = 1.0;
+      note = 'Manually entered by user';
     }
+    // Priority 2: OCR-confirmed value
+    else if (ocrParams[param.name] !== undefined) {
+      value = ocrParams[param.name];
+      source = 'ocr_confirmed';
+      confidence = 0.85;
+      note = 'Read from drawing dimension label';
+      matches++;
+    }
+    // Priority 3: Default template value (no confidence)
+    else {
+      value = param.default;
+      source = 'default_template';
+      confidence = 0.15;
+      note = 'Template default — verify against source drawing';
+    }
+
+    filled[param.name] = value;
+    sources.push({
+      name: param.name,
+      value,
+      unit: param.unit,
+      source,
+      confidence,
+      note,
+    });
   }
 
-  const confidence = Math.min(0.5 + (matches / template.parameters.length) * 0.5, 1);
+  // Overall confidence: how many params came from real data vs defaults
+  const ocrMatchRatio = matches / template.parameters.length;
+  const confidence = Math.min(0.3 + ocrMatchRatio * 0.7, 1);
 
   return {
-    templateName: template.name,
-    type: template.type,
-    parameters: filled,
-    confidence,
+    match: {
+      templateName: template.name,
+      type: template.type,
+      parameters: filled,
+      confidence,
+    },
+    sources,
   };
 }
 
@@ -215,4 +281,32 @@ export function generateFromTemplate(match: ParametricMatch): { view: string; pr
     view: v.view,
     primitives: v.primitives.map(prim => evalPrimitive(prim, match.parameters)),
   }));
+}
+
+/**
+ * Get a human-readable label for a parameter source.
+ */
+export function getSourceLabel(source: string): string {
+  const labels: Record<string, string> = {
+    measured: '📏 Measured from pixels',
+    ocr_confirmed: '👁️ Read from drawing',
+    user_confirmed: '✏️ User confirmed',
+    ratio_estimated: '📐 Estimated from proportions',
+    default_template: '⚠️ Template default — verify!',
+  };
+  return labels[source] || `❓ ${source}`;
+}
+
+/**
+ * Get color for source display (CSS hex).
+ */
+export function getSourceColor(source: string): string {
+  const colors: Record<string, string> = {
+    measured: '#22c55e',       // Green
+    ocr_confirmed: '#3b82f6',  // Blue
+    user_confirmed: '#8b5cf6', // Purple
+    ratio_estimated: '#f59e0b',// Amber
+    default_template: '#ef4444',// Red
+  };
+  return colors[source] || '#6b7280';
 }

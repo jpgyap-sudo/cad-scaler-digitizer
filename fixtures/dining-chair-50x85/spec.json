@@ -1,0 +1,85 @@
+{
+  "name": "dining-chair-50x85",
+  "furniture_type": "dining_chair",
+  "source": "homeu.ph",
+  "category": "dining chair",
+  "parameters": {
+    "name": "dining-chair-50x85",
+    "w": 50,
+    "d": 50,
+    "h": 85,
+    "sh": 45,
+    "type": "dining_chair"
+  },
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 50,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 50,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 85,
+      "tolerance_pct": 5
+    },
+    {
+      "tag": "seat_height",
+      "value_cm": 45,
+      "tolerance_pct": 10
+    }
+  ],
+  "sections": [
+    {
+      "name": "front_view",
+      "required": true,
+      "views": [
+        "front"
+      ],
+      "components": [
+        "backrest",
+        "seat",
+        "legs_front"
+      ]
+    },
+    {
+      "name": "side_view",
+      "required": true,
+      "views": [
+        "side"
+      ],
+      "components": [
+        "backrest_profile",
+        "seat_profile",
+        "leg_side"
+      ]
+    },
+    {
+      "name": "detail_view_frame",
+      "required": true,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "joint_detail"
+      ],
+      "scale": "1:1"
+    }
+  ],
+  "shop_drawing_sections": [
+    "front_view",
+    "side_view",
+    "detail_view_frame"
+  ],
+  "materials": [
+    "fabric",
+    "leather",
+    "solid wood",
+    "metal"
+  ],
+  "notes": "Fixture for dining-chair-50x85"
+}

@@ -1,62 +1,98 @@
 """
-Anti-Hallucination Validator — enforce VISIBLE/ESTIMATED/UNKNOWN rules.
+Anti-Hallucination Validator — enforce VISIBLE/ESTIMATED/UNKNOWN rules
+at the PER-ENTITY level (not just per-component).
 
-Rules:
-  VISIBLE   (confidence >= 0.70) → draw SOLID on OBJECT layer
-  ESTIMATED (0.30 <= confidence < 0.70) → draw DASHED/HIDDEN, label as "EST."
-  UNKNOWN   (confidence < 0.30) → DO NOT DRAW
+Upgraded from component-level validation to per-DXF-entity validation:
+  Every DXF entity (line, circle, polygon, text, dimension) carries:
+  - source: "measured_from_pixels | ocr_confirmed | user_confirmed |
+             ratio_estimated | default_template"
+  - confidence: 0.0-1.0
+  - evidence: ["ocr_box_id:12", "line_id:45", "scale_factor:0.5"]
 
-Prevents the CAD generator from inventing furniture parts not present
-in the source image or reference material.
+Visibility rules:
+  VISIBLE   (confidence >= 0.70) -> draw SOLID on OBJECT layer
+  ESTIMATED (0.30 <= confidence < 0.70) -> draw DASHED/HIDDEN, label as "EST."
+  UNKNOWN   (confidence < 0.30) -> DO NOT DRAW
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Any
 
 Visibility = Literal["VISIBLE", "ESTIMATED", "UNKNOWN"]
 
 
 @dataclass
-class ComponentVerdict:
-    """Rendering decision for one furniture component."""
-    name: str
-    confidence: float          # 0.0 - 1.0
+class EntityVerdict:
+    """Rendering decision for a single DXF entity."""
+    entity_id: str
+    entity_type: str               # "line", "circle", "polygon", "text", "dimension"
+    name: str                      # Human-readable component name
+    confidence: float              # 0.0 - 1.0
+    source: str                    # "measured", "ocr_confirmed", "user_confirmed", "ratio", "default"
     visibility: Visibility
-    layer: str                 # DXF layer to use
-    linetype: str              # CONTINUOUS, HIDDEN, DASHED
-    action: str                # "draw_solid", "draw_dashed", "draw_with_note", "skip"
-    note: str = ""             # Annotation if estimated
+    layer: str                     # DXF layer to use
+    linetype: str                  # CONTINUOUS, HIDDEN, DASHED
+    action: str                    # "draw_solid", "draw_dashed", "draw_with_note", "skip"
+    note: str = ""                 # Annotation if estimated
+    evidence: List[str] = field(default_factory=list)  # E.g. ["ocr_box:12", "line:34"]
+
+    def to_dict(self) -> dict:
+        return {
+            "entity_id": self.entity_id,
+            "entity_type": self.entity_type,
+            "name": self.name,
+            "confidence": round(self.confidence, 2),
+            "source": self.source,
+            "visibility": self.visibility,
+            "layer": self.layer,
+            "linetype": self.linetype,
+            "action": self.action,
+            "note": self.note,
+            "evidence": self.evidence[:3],
+        }
 
 
 @dataclass
 class ValidationResult:
-    """Complete validation pass over all components."""
+    """Complete validation pass over all entities in a drawing."""
     furniture_type: str
-    components: Dict[str, ComponentVerdict]
-    rejected: List[str]         # Components skipped (UNKNOWN)
-    estimated: List[str]        # Components drawn dashed (ESTIMATED)
-    visible: List[str]          # Components drawn solid (VISIBLE)
+    entity_verdicts: Dict[str, EntityVerdict]
+    rejected_entities: List[str]      # Entity IDs skipped
+    estimated_entities: List[str]     # Entity IDs drawn dashed
+    visible_entities: List[str]       # Entity IDs drawn solid
     summary: str = ""
 
     def to_dict(self) -> dict:
         return {
             "furniture_type": self.furniture_type,
-            "components": {
-                k: {
-                    "confidence": v.confidence,
-                    "visibility": v.visibility,
-                    "layer": v.layer,
-                    "linetype": v.linetype,
-                    "action": v.action,
-                    "note": v.note,
-                }
-                for k, v in self.components.items()
-            },
-            "rejected": self.rejected,
-            "estimated": self.estimated,
-            "visible": self.visible,
+            "entity_verdicts": {k: v.to_dict() for k, v in self.entity_verdicts.items()},
+            "rejected_entities": self.rejected_entities,
+            "estimated_entities": self.estimated_entities,
+            "visible_entities": self.visible_entities,
+            "rejected_count": len(self.rejected_entities),
+            "estimated_count": len(self.estimated_entities),
+            "visible_count": len(self.visible_entities),
             "summary": self.summary,
         }
+
+    def is_entity_visible(self, entity_id: str) -> bool:
+        """Check if a specific entity should be drawn."""
+        verdict = self.entity_verdicts.get(entity_id)
+        if not verdict:
+            return True  # Default to visible if not validated
+        return verdict.visibility != "UNKNOWN"
+
+    def is_entity_estimated(self, entity_id: str) -> bool:
+        """Check if a specific entity is estimated (dashed)."""
+        verdict = self.entity_verdicts.get(entity_id)
+        if not verdict:
+            return False
+        return verdict.visibility == "ESTIMATED"
+
+    def get_source(self, entity_id: str) -> str:
+        """Get source metadata for a DXF entity."""
+        verdict = self.entity_verdicts.get(entity_id)
+        return verdict.source if verdict else "unknown"
 
 
 # ===== Confidence thresholds =====
@@ -75,28 +111,28 @@ def classify_visibility(confidence: float) -> Visibility:
         return "UNKNOWN"
 
 
-def layer_for_component(component_name: str, visibility: Visibility) -> str:
-    """Choose the correct DXF layer based on component type and visibility."""
+def layer_for_entity(entity_type: str, visibility: Visibility, name: str) -> str:
+    """Choose the correct DXF layer based on entity type and visibility."""
     if visibility == "UNKNOWN":
-        return "HIDDEN"  # won't be drawn anyway
+        return "HIDDEN"
 
-    # Component-specific layer rules
-    component_lower = component_name.lower()
+    name_lower = name.lower()
+    type_lower = entity_type.lower()
 
-    if any(k in component_lower for k in ["dimension", "dia", "width", "height", "depth"]):
+    # Entity-type-based layer assignment
+    if "dimension" in type_lower or "dim" in name_lower:
         return "DIMENSION"
-    if any(k in component_lower for k in ["leader", "material", "callout", "note"]):
+    if "leader" in type_lower or name_lower in ("leader", "callout"):
         return "LEADER"
-    if any(k in component_lower for k in ["center", "axis"]):
+    if "center" in type_lower or "axis" in name_lower:
         return "CENTER"
-    if any(k in component_lower for k in ["hatch", "texture", "fill", "grain"]):
+    if "hatch" in type_lower or "texture" in name_lower:
         return "HATCH"
-    if any(k in component_lower for k in ["text", "label", "mtext"]):
+    if "text" in type_lower or "label" in name_lower:
         return "MTEXT"
-    if any(k in component_lower for k in ["title", "border"]):
+    if "title" in name_lower or "border" in name_lower:
         return "TITLE"
 
-    # Default: main geometry
     return "OBJECT"
 
 
@@ -105,13 +141,13 @@ def linetype_for_visibility(visibility: Visibility) -> str:
     if visibility == "VISIBLE":
         return "CONTINUOUS"
     elif visibility == "ESTIMATED":
-        return "HIDDEN"  # Dashed for estimated/inferred parts
+        return "HIDDEN"
     else:
         return "HIDDEN"
 
 
 def action_for_visibility(visibility: Visibility) -> str:
-    """Determine what action to take for this component."""
+    """Determine what action to take for this entity."""
     if visibility == "VISIBLE":
         return "draw_solid"
     elif visibility == "ESTIMATED":
@@ -120,143 +156,102 @@ def action_for_visibility(visibility: Visibility) -> str:
         return "skip"
 
 
-def validate_components(
+def validate_entities(
     furniture_type: str,
-    component_confidences: Dict[str, float],
-    known_visible_parts: Optional[List[str]] = None,
+    entity_confidences: Dict[str, Dict[str, Any]],
+    known_visible_entities: Optional[List[str]] = None,
 ) -> ValidationResult:
     """
-    Validate all components against anti-hallucination rules.
+    Validate all entities against anti-hallucination rules.
 
     Args:
         furniture_type: canonical type (e.g. 'round_pedestal_table')
-        component_confidences: {component_name: confidence_score}
-        known_visible_parts: list of component names confirmed visible by AI/vision
+        entity_confidences: {entity_id: {"confidence": float, "source": str,
+                                          "entity_type": str, "name": str,
+                                          "evidence": List[str]}}
+        known_visible_entities: list of entity IDs confirmed by user
 
     Returns:
-        ValidationResult with rendering decisions for each component
+        ValidationResult with rendering decisions for each entity
     """
-    visible_set = set(known_visible_parts or [])
-    components: Dict[str, ComponentVerdict] = {}
-    rejected: List[str] = []
-    estimated: List[str] = []
-    visible_list: List[str] = []
+    visible_set = set(known_visible_entities or [])
+    entity_verdicts: Dict[str, EntityVerdict] = {}
+    rejected_entities: List[str] = []
+    estimated_entities: List[str] = []
+    visible_entities: List[str] = []
 
-    for name, conf in component_confidences.items():
-        # Known visible parts get a confidence boost
-        if name in visible_set:
+    for entity_id, meta in entity_confidences.items():
+        conf = meta.get("confidence", 0.0)
+        source = meta.get("source", "unknown")
+        entity_type = meta.get("entity_type", "unknown")
+        name = meta.get("name", entity_id)
+        evidence = meta.get("evidence", [])
+
+        # Known visible entities get a confidence boost
+        if entity_id in visible_set:
             conf = max(conf, 0.85)
+            source = "user_confirmed"
 
         visibility = classify_visibility(conf)
-        layer = layer_for_component(name, visibility)
+        layer = layer_for_entity(entity_type, visibility, name)
         ltype = linetype_for_visibility(visibility)
         action = action_for_visibility(visibility)
 
         note = ""
         if visibility == "ESTIMATED":
-            note = f"EST. from proportions — verify against source"
+            note = f"ESTIMATED ({source}) — verify against source"
         elif visibility == "UNKNOWN":
-            note = f"SKIPPED — not visible in source (confidence {conf:.2f})"
+            note = f"SKIPPED — not in source (confidence {conf:.2f}, source: {source})"
 
-        verdict = ComponentVerdict(
+        verdict = EntityVerdict(
+            entity_id=entity_id,
+            entity_type=entity_type,
             name=name,
             confidence=conf,
+            source=source,
             visibility=visibility,
             layer=layer,
             linetype=ltype,
             action=action,
             note=note,
+            evidence=evidence,
         )
-        components[name] = verdict
+        entity_verdicts[entity_id] = verdict
 
         if visibility == "VISIBLE":
-            visible_list.append(name)
+            visible_entities.append(entity_id)
         elif visibility == "ESTIMATED":
-            estimated.append(name)
+            estimated_entities.append(entity_id)
         else:
-            rejected.append(name)
+            rejected_entities.append(entity_id)
 
     summary = (
-        f"{furniture_type}: {len(visible_list)} visible, "
-        f"{len(estimated)} estimated, {len(rejected)} rejected"
+        f"{furniture_type}: {len(visible_entities)} visible entities, "
+        f"{len(estimated_entities)} estimated, {len(rejected_entities)} rejected"
     )
 
     return ValidationResult(
         furniture_type=furniture_type,
-        components=components,
-        rejected=rejected,
-        estimated=estimated,
-        visible=visible_list,
+        entity_verdicts=entity_verdicts,
+        rejected_entities=rejected_entities,
+        estimated_entities=estimated_entities,
+        visible_entities=visible_entities,
         summary=summary,
     )
-
-
-# ===== Component templates for known furniture types =====
-# These define the standard component names and default confidence
-# scores for each furniture type. Used when no AI/vision data available.
-
-ROUND_PEDESTAL_COMPONENTS = {
-    "tabletop_diameter":       0.98,   # Measured from OCR
-    "overall_height":           0.98,
-    "top_thickness":            0.60,   # Estimated from ratio
-    "pedestal_diameter":        0.72,
-    "neck_diameter":            0.65,
-    "pedestal_height":          0.55,
-    "neck_height":              0.45,
-    "base_foot":                0.35,   # Only if visible in source
-    "metal_ring":               0.30,   # Only if described
-    "wood_grain_texture":       0.85,   # Material note
-    "hammered_texture":         0.60,   # Photographic texture
-    "top_diameter_dimension":   0.98,
-    "base_diameter_dimension":  0.85,
-    "height_dimension":         0.98,
-    "material_leader_top":      0.85,
-    "material_leader_base":     0.75,
-    "centerlines":              0.90,
-    "title_block":              0.98,
-}
-
-RECTANGULAR_TABLE_COMPONENTS = {
-    "top_width":                0.98,
-    "top_depth":                0.85,
-    "overall_height":           0.98,
-    "top_thickness":            0.60,
-    "leg_thickness":            0.65,
-    "leg_count":                0.90,
-    "stretcher":                0.40,
-    "top_width_dimension":      0.98,
-    "top_depth_dimension":      0.85,
-    "height_dimension":         0.98,
-    "title_block":              0.98,
-}
-
-
-def get_default_components(furniture_type: str) -> Dict[str, float]:
-    """Return default component confidence scores for a furniture type."""
-    defaults = {
-        "round_pedestal_table": ROUND_PEDESTAL_COMPONENTS,
-        "rectangular_table": RECTANGULAR_TABLE_COMPONENTS,
-    }
-    return defaults.get(furniture_type, {})
 
 
 # Public API
 def validate_furniture_drawing(
     furniture_type: str,
-    component_confidences: Optional[Dict[str, float]] = None,
-    known_visible_parts: Optional[List[str]] = None,
+    entity_confidences: Optional[Dict[str, Dict[str, Any]]] = None,
+    known_visible_entities: Optional[List[str]] = None,
 ) -> ValidationResult:
     """
-    Main entry point: validate all components before CAD generation.
+    Main entry point: validate all entities before CAD generation.
 
-    Merges visual_ratio_scaler confidence scores with default component
-    templates, then applies anti-hallucination rules.
+    Each entity carries its own confidence, source, and evidence chain.
     """
-    # Start with template defaults
-    confidences = dict(get_default_components(furniture_type))
+    if not entity_confidences:
+        entity_confidences = {}
 
-    # Override with actual ratio scaler confidences if provided
-    if component_confidences:
-        confidences.update(component_confidences)
-
-    return validate_components(furniture_type, confidences, known_visible_parts)
+    return validate_entities(furniture_type, entity_confidences, known_visible_entities)

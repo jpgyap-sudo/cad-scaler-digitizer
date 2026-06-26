@@ -2,17 +2,18 @@ import React, { useState, useRef, useCallback, useEffect, Component, ErrorInfo, 
 import {
   UploadCloud, Download, Loader2, Bot, Cpu, CheckCircle2, AlertCircle,
   Info, Shapes, Ruler, Image, FileText, ChevronDown, RefreshCw,
-  Layers, Crosshair, Eye, Settings, Play
+  Layers, Crosshair, Eye, Settings, Play, Shield
 } from 'lucide-react';
 import TechStackModal from './components/TechStackModal';
 import ChatBox from './components/ChatBox';
 import SliderPanel from './components/SliderPanel';
 import InteractiveSvgPreview from './components/InteractiveSvgPreview';
 import BrainStats from './components/BrainStats';
+import ConfidencePanel, { DimItem } from './components/ConfidencePanel';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
-import { matchTemplate, generateFromTemplate } from './services/templateMatcher';
+import { matchTemplate, generateFromTemplate, getSourceLabel, getSourceColor } from './services/templateMatcher';
 import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import {
@@ -94,6 +95,9 @@ const App: React.FC = () => {
     top_diameter_cm: 80, overall_height_cm: 70, base_diameter_cm: 44,
     neck_diameter_cm: 22.4, top_thickness_cm: 4,
   });
+  // Confidence panel state
+  const [showConfidencePanel, setShowConfidencePanel] = useState(false);
+  const [correctionCount, setCorrectionCount] = useState(0);
   // Component name clicked on the rendered drawing (matches the schema's
   // section names 1:1, see _component_schema in routes.py -- and the
   // data-component attributes svg_exporter.py emits) -- no manual mapping
@@ -324,6 +328,75 @@ const App: React.FC = () => {
       URL.revokeObjectURL(url);
     }
   };
+
+  // Build DimItem[] from cadEngineResult for ConfidencePanel
+  const confidenceDims: DimItem[] = React.useMemo(() => {
+    if (!cadEngineResult?.detected?.dimensions) return [];
+    return cadEngineResult.detected.dimensions.map((d: any, i: number) => ({
+      text: d.raw || d.tag || `dim_${i}`,
+      value_cm: d.value_cm || 0,
+      is_diameter: (d.tag || '').toLowerCase().includes('dia') || (d.raw || '').includes('%'),
+      source: d.source || (cadEngineResult.accuracy_pipeline?.associations?.associations?.[i]?.source || 'ocr_confirmed'),
+      confidence: d.confidence || cadEngineResult.accuracy_pipeline?.associations?.associations?.[i]?.confidence || 0.5,
+      evidence: cadEngineResult.accuracy_pipeline?.associations?.associations?.[i]?.evidence || [],
+    }));
+  }, [cadEngineResult]);
+
+  // Correction handler — sends corrected values to backend
+  const handleCorrectValue = useCallback(async (text: string, newValue: number) => {
+    if (!cadEngineResult?.job_id) return;
+    try {
+      const res = await fetch('/py-api/corrections/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          session_id: cadEngineResult.job_id,
+          dimension_corrections: JSON.stringify([{
+            session_id: cadEngineResult.job_id,
+            ocr_text: text,
+            original_value_cm: confidenceDims.find(d => d.text === text)?.value_cm || 0,
+            corrected_value_cm: newValue,
+            is_locked: true,
+          }]),
+          line_role_corrections: '[]',
+        }),
+      });
+      if (res.ok) {
+        setCorrectionCount(c => c + 1);
+        // Update local dimensions
+        setCurrentDims(prev => ({ ...prev, [text]: newValue }));
+      }
+    } catch (err) {
+      console.error('[Correction] Failed:', err);
+    }
+  }, [cadEngineResult, confidenceDims]);
+
+  // Lock handler
+  const handleLockDimension = useCallback(async (text: string) => {
+    if (!cadEngineResult?.job_id) return;
+    try {
+      const dim = confidenceDims.find(d => d.text === text);
+      if (!dim) return;
+      await fetch('/py-api/corrections/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          session_id: cadEngineResult.job_id,
+          dimension_corrections: JSON.stringify([{
+            session_id: cadEngineResult.job_id,
+            ocr_text: text,
+            original_value_cm: dim.value_cm,
+            corrected_value_cm: dim.value_cm,
+            is_locked: true,
+          }]),
+          line_role_corrections: '[]',
+        }),
+      });
+      setCorrectionCount(c => c + 1);
+    } catch (err) {
+      console.error('[Lock] Failed:', err);
+    }
+  }, [cadEngineResult, confidenceDims]);
 
   const isProcessing = processState === 'processing';
   const allPrimitives = cadDoc?.views?.flatMap(v => v.primitives || []) || [];
@@ -653,20 +726,34 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* OCR Dimensions */}
-                  {dims.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        <Eye className="w-3 h-3 inline mr-1" /> OCR Dimensions
-                      </h3>
-                      <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {dims.map((d, i) => (
-                          <div key={i} className="text-xs bg-slate-50 p-2 rounded-lg flex justify-between">
-                            <span className="font-semibold">{d.raw}</span>
-                            <span className="text-indigo-600">{d.value_cm} cm</span>
-                          </div>
-                        ))}
-                      </div>
+                  {/* Confidence Panel — replaces basic OCR list with full source/confidence display */}
+                  {confidenceDims.length > 0 && (
+                    <div className="border-t border-slate-100 pt-3 mt-3">
+                      <button
+                        onClick={() => setShowConfidencePanel(!showConfidencePanel)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors"
+                      >
+                        <span className="text-xs font-bold text-slate-600 flex items-center">
+                          <Shield className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
+                          Accuracy & Confidence
+                          {correctionCount > 0 && (
+                            <span className="ml-2 text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">
+                              {correctionCount}
+                            </span>
+                          )}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showConfidencePanel ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showConfidencePanel && (
+                        <div className="mt-2 max-h-96 overflow-y-auto">
+                          <ConfidencePanel
+                            dimensions={confidenceDims}
+                            associations={cadEngineResult?.accuracy_pipeline?.associations?.associations}
+                            onCorrectValue={handleCorrectValue}
+                            onLockDimension={handleLockDimension}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -1,0 +1,96 @@
+{
+  "name": "dining-table-160x90x75",
+  "furniture_type": "rectangular_table",
+  "source": "homeu.ph",
+  "category": "rectangular table",
+  "parameters": {
+    "name": "dining-table-160x90x75",
+    "w": 160,
+    "d": 90,
+    "h": 75,
+    "type": "rectangular_table"
+  },
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 160,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 90,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 75,
+      "tolerance_pct": 5
+    },
+    {
+      "tag": "leg_thickness",
+      "value_cm": 6,
+      "tolerance_pct": 15
+    }
+  ],
+  "sections": [
+    {
+      "name": "front_view",
+      "required": true,
+      "views": [
+        "front"
+      ],
+      "components": [
+        "tabletop",
+        "legs_front"
+      ]
+    },
+    {
+      "name": "top_view",
+      "required": true,
+      "views": [
+        "top"
+      ],
+      "components": [
+        "tabletop_plan",
+        "leg_footprints"
+      ]
+    },
+    {
+      "name": "side_view",
+      "required": true,
+      "views": [
+        "side"
+      ],
+      "components": [
+        "leg_side",
+        "stretcher"
+      ]
+    },
+    {
+      "name": "detail_view_leg",
+      "required": true,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "leg_detail"
+      ],
+      "scale": "1:2"
+    }
+  ],
+  "shop_drawing_sections": [
+    "front_view",
+    "top_view",
+    "side_view",
+    "detail_view_leg"
+  ],
+  "materials": [
+    "marble",
+    "solid wood",
+    "fabric",
+    "leather",
+    "glass",
+    "metal"
+  ],
+  "notes": "Fixture for dining-table-160x90x75"
+}

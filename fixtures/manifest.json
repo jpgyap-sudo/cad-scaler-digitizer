@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-06-26T07:31:50.829Z",
+  "total_fixtures": 8,
+  "fixtures": [
+    {
+      "name": "fabric-sofa-105x92x87",
+      "type": "sofa",
+      "path": "fixtures/fabric-sofa-105x92x87/spec.json",
+      "reference_image": "fixtures/fabric-sofa-105x92x87/reference.jpg"
+    },
+    {
+      "name": "dining-table-160x90x75",
+      "type": "rectangular_table",
+      "path": "fixtures/dining-table-160x90x75/spec.json",
+      "reference_image": "fixtures/dining-table-160x90x75/reference.jpg"
+    },
+    {
+      "name": "dining-table-180x90x75",
+      "type": "rectangular_table",
+      "path": "fixtures/dining-table-180x90x75/spec.json",
+      "reference_image": "fixtures/dining-table-180x90x75/reference.jpg"
+    },
+    {
+      "name": "dining-table-200x100x75",
+      "type": "rectangular_table",
+      "path": "fixtures/dining-table-200x100x75/spec.json",
+      "reference_image": "fixtures/dining-table-200x100x75/reference.jpg"
+    },
+    {
+      "name": "center-table-round-100",
+      "type": "round_pedestal_table",
+      "path": "fixtures/center-table-round-100/spec.json",
+      "reference_image": "fixtures/center-table-round-100/reference.jpg"
+    },
+    {
+      "name": "dining-chair-50x85",
+      "type": "dining_chair",
+      "path": "fixtures/dining-chair-50x85/spec.json",
+      "reference_image": "fixtures/dining-chair-50x85/reference.jpg"
+    },
+    {
+      "name": "queen-bed-150x200",
+      "type": "bed_headboard",
+      "path": "fixtures/queen-bed-150x200/spec.json",
+      "reference_image": "fixtures/queen-bed-150x200/reference.jpg"
+    },
+    {
+      "name": "king-bed-180x200",
+      "type": "bed_headboard",
+      "path": "fixtures/king-bed-180x200/spec.json",
+      "reference_image": "fixtures/king-bed-180x200/reference.jpg"
+    }
+  ]
+}

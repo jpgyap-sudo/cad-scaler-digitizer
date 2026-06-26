@@ -1,0 +1,96 @@
+{
+  "name": "fabric-sofa-105x92x87",
+  "furniture_type": "sofa",
+  "source": "homeu.ph",
+  "category": "sofa",
+  "parameters": {
+    "name": "fabric-sofa-105x92x87",
+    "w": 105,
+    "d": 92,
+    "h": 87,
+    "sh": 45,
+    "type": "sofa"
+  },
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 105,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 92,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 87,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "seat_height",
+      "value_cm": 45,
+      "tolerance_pct": 15
+    }
+  ],
+  "sections": [
+    {
+      "name": "front_view",
+      "required": true,
+      "views": [
+        "front"
+      ],
+      "components": [
+        "seat",
+        "backrest",
+        "armrest_left",
+        "armrest_right"
+      ]
+    },
+    {
+      "name": "top_view",
+      "required": true,
+      "views": [
+        "top"
+      ],
+      "components": [
+        "seat_platform"
+      ]
+    },
+    {
+      "name": "section_view",
+      "required": true,
+      "views": [
+        "section"
+      ],
+      "components": [
+        "cushion_profile",
+        "frame"
+      ]
+    },
+    {
+      "name": "detail_view_armrest",
+      "required": true,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "armrest_detail"
+      ],
+      "scale": "1:2"
+    }
+  ],
+  "shop_drawing_sections": [
+    "front_view",
+    "top_view",
+    "section_view",
+    "detail_view_armrest"
+  ],
+  "materials": [
+    "fabric",
+    "leather",
+    "solid wood",
+    "upholstery"
+  ],
+  "notes": "Fixture for fabric-sofa-105x92x87"
+}

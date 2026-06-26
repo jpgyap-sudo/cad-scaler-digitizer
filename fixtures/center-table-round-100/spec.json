@@ -1,0 +1,101 @@
+{
+  "name": "center-table-round-100",
+  "furniture_type": "round_pedestal_table",
+  "source": "homeu.ph",
+  "category": "round pedestal table",
+  "parameters": {
+    "name": "center-table-round-100",
+    "dia": 100,
+    "h": 75,
+    "type": "round_pedestal_table"
+  },
+  "dimensions": [
+    {
+      "tag": "top_dia",
+      "value_cm": 100,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 75,
+      "tolerance_pct": 5
+    },
+    {
+      "tag": "base_dia",
+      "value_cm": 55.00000000000001,
+      "tolerance_pct": 15
+    },
+    {
+      "tag": "neck_dia",
+      "value_cm": 28.000000000000004,
+      "tolerance_pct": 15
+    },
+    {
+      "tag": "top_thickness",
+      "value_cm": 5,
+      "tolerance_pct": 20
+    }
+  ],
+  "sections": [
+    {
+      "name": "front_view",
+      "required": true,
+      "views": [
+        "front"
+      ],
+      "components": [
+        "tabletop",
+        "pedestal_column",
+        "base_foot"
+      ]
+    },
+    {
+      "name": "top_view",
+      "required": true,
+      "views": [
+        "top"
+      ],
+      "components": [
+        "tabletop_plan"
+      ]
+    },
+    {
+      "name": "detail_view_pedestal",
+      "required": true,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "neck_ring",
+        "collar_plate"
+      ],
+      "scale": "1:2"
+    },
+    {
+      "name": "detail_view_base",
+      "required": true,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "base_plate"
+      ],
+      "scale": "1:2"
+    }
+  ],
+  "shop_drawing_sections": [
+    "front_view",
+    "top_view",
+    "detail_view_pedestal",
+    "detail_view_base"
+  ],
+  "materials": [
+    "marble",
+    "glass",
+    "brass",
+    "solid wood",
+    "fabric",
+    "leather"
+  ],
+  "notes": "Fixture for center-table-round-100"
+}

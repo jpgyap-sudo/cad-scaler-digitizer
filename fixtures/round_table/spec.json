@@ -1,6 +1,15 @@
 {
   "type": "round_pedestal_table",
+  "furniture_type": "round_pedestal_table",
   "parameters": {"top_diameter_cm": 80, "height_cm": 70},
+  "dimensions": [
+    {"tag": "top_dia", "value_cm": 80.0, "tolerance_pct": 5.0},
+    {"tag": "height", "value_cm": 70.0, "tolerance_pct": 5.0},
+    {"tag": "base_dia", "value_cm": 44.0, "tolerance_pct": 10.0},
+    {"tag": "neck_dia", "value_cm": 22.4, "tolerance_pct": 10.0},
+    {"tag": "thickness", "value_cm": 4.0, "tolerance_pct": 15.0}
+  ],
   "expected_entities": {"CIRCLE": 1, "LINE": 20, "HATCH": 2, "TEXT": 3, "DIMENSION": 2, "CENTER": 2},
-  "min_file_size_bytes": 1000
+  "min_file_size_bytes": 1000,
+  "notes": "Round pedestal table: 80cm top diameter x 70cm height. Used as primary accuracy benchmark fixture."
 }

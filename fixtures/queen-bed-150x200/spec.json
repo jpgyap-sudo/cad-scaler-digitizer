@@ -1,0 +1,84 @@
+{
+  "name": "queen-bed-150x200",
+  "furniture_type": "bed_headboard",
+  "source": "homeu.ph",
+  "category": "bed headboard",
+  "parameters": {
+    "name": "queen-bed-150x200",
+    "w": 150,
+    "d": 200,
+    "h": 60,
+    "type": "bed_headboard"
+  },
+  "dimensions": [
+    {
+      "tag": "width",
+      "value_cm": 150,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "depth",
+      "value_cm": 200,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "height",
+      "value_cm": 60,
+      "tolerance_pct": 10
+    },
+    {
+      "tag": "thickness",
+      "value_cm": 5,
+      "tolerance_pct": 20
+    }
+  ],
+  "sections": [
+    {
+      "name": "front_view",
+      "required": true,
+      "views": [
+        "front"
+      ],
+      "components": [
+        "headboard_panel",
+        "legs",
+        "top_rail"
+      ]
+    },
+    {
+      "name": "side_view",
+      "required": true,
+      "views": [
+        "side"
+      ],
+      "components": [
+        "headboard_profile",
+        "leg_side"
+      ]
+    },
+    {
+      "name": "detail_view_carving",
+      "required": false,
+      "views": [
+        "detail"
+      ],
+      "components": [
+        "carving_detail"
+      ],
+      "scale": "1:1"
+    }
+  ],
+  "shop_drawing_sections": [
+    "front_view",
+    "side_view",
+    "detail_view_carving"
+  ],
+  "materials": [
+    "solid wood",
+    "fabric",
+    "leather",
+    "oak",
+    "metal"
+  ],
+  "notes": "Fixture for queen-bed-150x200"
+}

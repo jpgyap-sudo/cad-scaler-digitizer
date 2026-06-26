@@ -1,9 +1,39 @@
-import { Point, Polyline } from '../types';
+/**
+ * Local Vision — browser-side geometry detection with confidence tracking.
+ *
+ * Uses canvas pixel scanning for line detection.
+ * Every detected segment includes source/confidence metadata.
+ *
+ * LIMITATIONS: Only scans horizontal and vertical dark pixel runs.
+ * Does NOT detect: curves, circles, arcs, angled lines, arrowheads.
+ * Use the Python backend (OpenCV + ezdxf) for production CAD.
+ * This module is for PREVIEW / MANUAL ASSIST only.
+ *
+ * Source labels for UI display:
+ *   measured: directly scanned from image pixels
+ *   inferred: approximated from nearby features
+ *   user_drawn: manually drawn by user
+ *   template: from parametric template
+ */
 
 export interface LocalDetectionResult {
-  polylines: Polyline[];
+  polylines: PolylineWithMetadata[];
   message: string;
 }
+
+export interface PolylineWithMetadata {
+  id: string;
+  points: Array<{ x: number; y: number }>;
+  /** Source of this geometry: 'measured' | 'inferred' | 'user_drawn' | 'template' */
+  source: string;
+  /** Confidence 0.0-1.0 */
+  confidence: number;
+  /** Evidence summary */
+  evidence?: string;
+}
+
+// Import base types
+import { Polyline } from '../types';
 
 const isDark = (r: number, g: number, b: number) => (r + g + b) / 3 < 175;
 
@@ -28,8 +58,8 @@ function mergeIntervals(intervals: Array<[number, number]>, gap = 8): Array<[num
   return out;
 }
 
-function dedupeSegments(lines: Polyline[], tolerance = 5): Polyline[] {
-  const kept: Polyline[] = [];
+function dedupeSegments(lines: Array<PolylineWithMetadata>, tolerance = 5): Array<PolylineWithMetadata> {
+  const kept: Array<PolylineWithMetadata> = [];
   for (const line of lines) {
     const [a, b] = line.points;
     const duplicate = kept.some(k => {
@@ -45,6 +75,19 @@ function dedupeSegments(lines: Polyline[], tolerance = 5): Polyline[] {
   return kept;
 }
 
+/**
+ * Detect straight horizontal and vertical lines from an image.
+ * Returns segments with source="measured" and confidence based on
+ * pixel darkness and line continuity.
+ *
+ * NOTE: This is a simplified browser-side scanner. It does NOT detect:
+ * - Circles, arcs, curves
+ * - Angled/diagonal lines
+ * - Arrowheads, dimension ticks
+ * - Dashed or centerline patterns
+ * 
+ * For full detection, use the Python backend pipeline.
+ */
 export async function detectLinesFromImage(imageSrc: string): Promise<LocalDetectionResult> {
   const img = await loadImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -56,9 +99,11 @@ export async function detectLinesFromImage(imageSrc: string): Promise<LocalDetec
   const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   const minLen = Math.max(24, Math.round(Math.min(width, height) * 0.05));
-  const lines: Polyline[] = [];
+  const lines: Array<PolylineWithMetadata> = [];
+  let totalDarkRunLength = 0;
+  let runCount = 0;
 
-  // Horizontal scanline extraction.
+  // Horizontal scanline extraction
   for (let y = 0; y < height; y += 2) {
     const intervals: Array<[number, number]> = [];
     let start = -1;
@@ -73,11 +118,20 @@ export async function detectLinesFromImage(imageSrc: string): Promise<LocalDetec
       }
     }
     for (const [x1, x2] of mergeIntervals(intervals)) {
-      lines.push({ id: `auto-h-${y}-${x1}-${Date.now()}`, points: [{ x: x1, y }, { x: x2, y }] });
+      const runLen = x2 - x1;
+      totalDarkRunLength += runLen;
+      runCount++;
+      lines.push({
+        id: `auto-h-${y}-${x1}`,
+        points: [{ x: x1, y }, { x: x2, y }],
+        source: 'measured',
+        confidence: 0.6 + Math.min(runLen / 500, 0.35), // Longer runs = higher confidence
+        evidence: `horizontal scan at y=${y}, length=${runLen}px`,
+      });
     }
   }
 
-  // Vertical scanline extraction.
+  // Vertical scanline extraction
   for (let x = 0; x < width; x += 2) {
     const intervals: Array<[number, number]> = [];
     let start = -1;
@@ -92,10 +146,18 @@ export async function detectLinesFromImage(imageSrc: string): Promise<LocalDetec
       }
     }
     for (const [y1, y2] of mergeIntervals(intervals)) {
-      lines.push({ id: `auto-v-${x}-${y1}-${Date.now()}`, points: [{ x, y: y1 }, { x, y: y2 }] });
+      const runLen = y2 - y1;
+      lines.push({
+        id: `auto-v-${x}-${y1}`,
+        points: [{ x, y: y1 }, { x, y: y2 }],
+        source: 'measured',
+        confidence: 0.6 + Math.min(runLen / 500, 0.35),
+        evidence: `vertical scan at x=${x}, length=${runLen}px`,
+      });
     }
   }
 
+  // Clean up duplicates
   const cleaned = dedupeSegments(lines)
     .filter(l => {
       const [a, b] = l.points;
@@ -103,8 +165,17 @@ export async function detectLinesFromImage(imageSrc: string): Promise<LocalDetec
     })
     .slice(0, 400);
 
+  // Compute average quality
+  const avgConfidence = cleaned.length > 0
+    ? cleaned.reduce((s, l) => s + l.confidence, 0) / cleaned.length
+    : 0;
+
   return {
     polylines: cleaned,
-    message: `Detected ${cleaned.length} straight line segments. Use manual snap drawing for curves, circles and missing edges.`
+    message:
+      `Detected ${cleaned.length} straight line segments ` +
+      `(avg confidence: ${(avgConfidence * 100).toFixed(0)}%). ` +
+      `All marked as "measured" from pixel scan. ` +
+      `Use manual snap drawing for curves, circles, angled leaders, and missing edges.`,
   };
 }
