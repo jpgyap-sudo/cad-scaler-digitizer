@@ -214,6 +214,7 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                                base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
+                               collar_dia_cm=None,
                                _scale_result=None, _validation_result=None):
     """Round pedestal table shop drawing with anti-hallucination rules.
     
@@ -270,6 +271,8 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     base_dia_cm = base_dia_cm or top_dia_cm * 0.55
     neck_dia_cm = neck_dia_cm or top_dia_cm * 0.28
     top_thick_cm = top_thick_cm or 4.0
+    # Matches build_round_pedestal_model's default collar_dia_cm=50 for an 80cm top.
+    collar_dia_cm = collar_dia_cm or top_dia_cm * 0.625
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.5
@@ -314,24 +317,37 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
     thick_px = top_thick_cm * sc
     nr_px = neck_dia_cm * 0.5 * sc
     br_px = base_dia_cm * 0.5 * sc
-    # Proportionally distribute height: top(4cm) + neck(15%) + pedestal(75%) + base(10%)
+    cr_px = collar_dia_cm * 0.5 * sc
+    # Proportionally distribute height: top(4cm) + collar(14%) + neck(15%) + pedestal(70%) + base(15%)
     remaining_h = max(1, height_cm - top_thick_cm)  # height below tabletop
-    neck_h_cm = remaining_h * 0.15
-    ped_h_cm = remaining_h * 0.70
-    base_h_cm = remaining_h * 0.15
+    collar_h_cm = remaining_h * 0.14
+    remaining_after_collar = max(1, remaining_h - collar_h_cm)
+    neck_h_cm = remaining_after_collar * 0.15
+    ped_h_cm = remaining_after_collar * 0.70
+    base_h_cm = remaining_after_collar * 0.15
+    collar_h_px = collar_h_cm * sc
     neck_h_px = neck_h_cm * sc
     ped_h_px = ped_h_cm * sc
     base_h_px = base_h_cm * sc
     top_y = y_mid + h_px / 2
     bot_y = y_mid - h_px / 2
-    neck_top_y = top_y - thick_px
+    collar_top_y = top_y - thick_px
+    collar_bot_y = collar_top_y - collar_h_px
+    neck_top_y = collar_bot_y
     neck_bot_y = neck_top_y - neck_h_px
     ped_bot_y = neck_bot_y - ped_h_px
     base_bot_y = bot_y
 
     # Tabletop
     _add_polyline(msp, [(fx - r_px, top_y), (fx + r_px, top_y),
-                        (fx + r_px, neck_top_y), (fx - r_px, neck_top_y)], True)
+                        (fx + r_px, collar_top_y), (fx - r_px, collar_top_y)], True)
+    # Metal collar plate — sits directly under the tabletop, own diameter/control
+    if _visible("collar_plate"):
+        collar_layer = 'HIDDEN' if _is_estimated("collar_plate") else 'OBJECT'
+        _add_polyline(msp, [(fx - cr_px, collar_top_y), (fx + cr_px, collar_top_y),
+                            (fx + cr_px, collar_bot_y), (fx - cr_px, collar_bot_y)], True, collar_layer)
+        _add_dimension(msp, (fx - cr_px, collar_top_y + 3), (fx + cr_px, collar_top_y + 3),
+                       (fx, collar_top_y + 9), f'%%c{collar_dia_cm:g} cm')
     # Narrow neck — metal ring, skip if unknown
     if _visible("neck_ring"):
         neck_layer = 'HIDDEN' if _is_estimated("neck_ring") else 'OBJECT'

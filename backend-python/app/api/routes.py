@@ -115,7 +115,7 @@ def _component_schema(f_type):
                 {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"},
             ]},
             {"name": "collar_plate", "label": "Collar Plate", "dims": [
-                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 12, "step": 0.5, "unit": "cm"},
+                {"key": "collar_diameter_cm", "label": "Diameter", "min": 20, "max": 100, "step": 1, "unit": "cm"},
             ]},
             {"name": "neck_ring", "label": "Neck", "dims": [
                 {"key": "neck_diameter_cm", "label": "Diameter", "min": 10, "max": 60, "step": 0.5, "unit": "cm"},
@@ -212,6 +212,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                 'base_diameter_cm': round(sr.get('pedestal_diameter_cm', dia * 0.55), 1),
                 'neck_diameter_cm': round(sr.get('neck_diameter_cm', dia * 0.28), 1),
                 'top_thickness_cm': round(sr.get('top_thickness_cm', 4.0), 1),
+                'collar_diameter_cm': round(dia * 0.625, 1),
             }
         except Exception as e:
             print(f"[DISPATCH] resolved_dimensions failed: {e}")
@@ -420,7 +421,14 @@ async def digitize(
             svg_path = OUT / svg_name
             svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
                           if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
-            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
+            # Use the SAME resolved top diameter/height that was actually used to
+            # generate the DXF -- real_w/real_h alone ignore any diameter read from
+            # OCR text or the AI's visual estimate, so the preview could show a
+            # different number than what's really in the downloaded drawing.
+            resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
+            svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
+            svg_height = resolved.get('overall_height_cm', real_h or 70)
+            model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception:
@@ -606,7 +614,14 @@ async def digitize_hybrid(
             svg_path = OUT / svg_name
             svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()
                           if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
-            model = build_round_pedestal_model(float(real_w or 80), float(real_h or 70), **svg_kwargs)
+            # Use the SAME resolved top diameter/height that was actually used to
+            # generate the DXF -- real_w/real_h alone ignore any diameter read from
+            # OCR text or the AI's visual estimate, so the preview could show a
+            # different number than what's really in the downloaded drawing.
+            resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
+            svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
+            svg_height = resolved.get('overall_height_cm', real_h or 70)
+            model = build_round_pedestal_model(float(svg_top_dia), float(svg_height), **svg_kwargs)
             with open(str(svg_path), 'w') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception:
@@ -691,6 +706,7 @@ async def adjust_dimensions(
     overall_height_cm: float = Form(None),
     base_diameter_cm: float = Form(None),
     neck_diameter_cm: float = Form(None),
+    collar_diameter_cm: float = Form(None),
     top_thickness_cm: float = Form(None),
     width_cm: float = Form(None),
     depth_cm: float = Form(None),
@@ -764,6 +780,7 @@ async def adjust_dimensions(
         from app.backend.drawing_model import build_round_pedestal_model
         top_dia, height = 80.0, 70.0
         base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
+        collar_dia = None
         for txt in dim_texts:
             nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
             val = float(nums[0]) if nums else None
@@ -787,6 +804,8 @@ async def adjust_dimensions(
             neck_dia = neck_diameter_cm
         if top_thickness_cm is not None:
             top_thick = top_thickness_cm
+        if collar_diameter_cm is not None:
+            collar_dia = collar_diameter_cm
 
         # Regenerate DXF + SVG with new dimensions
         from app.backend.dxf_exporter import save_round_pedestal_table
@@ -794,7 +813,7 @@ async def adjust_dimensions(
             save_round_pedestal_table(
                 str(dxf_path), top_dia_cm=top_dia, height_cm=height,
                 base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-                top_thick_cm=top_thick,
+                top_thick_cm=top_thick, collar_dia_cm=collar_dia,
             )
         except Exception as e:
             print(f"[Adjust] DXF regen failed: {e}")
@@ -802,7 +821,7 @@ async def adjust_dimensions(
         model = build_round_pedestal_model(
             top_dia_cm=top_dia, height_cm=height,
             base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-            top_thick_cm=top_thick,
+            top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625),
         )
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')
@@ -829,6 +848,7 @@ async def adjust_dimensions(
                 "base_diameter_cm": round(base_dia, 1),
                 "neck_diameter_cm": round(neck_dia, 1),
                 "top_thickness_cm": round(top_thick, 1),
+                "collar_diameter_cm": round(collar_dia or top_dia * 0.625, 1),
             },
         })
     except Exception as e:
