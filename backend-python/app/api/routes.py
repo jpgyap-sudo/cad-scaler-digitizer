@@ -363,7 +363,14 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
                       if k in ('base_dia_cm', 'neck_dia_cm') and v is not None}
         svg_top_dia = resolved.get('top_diameter_cm', real_w or 80)
         svg_height = resolved.get('overall_height_cm', real_h or 70)
+        # collar_dia_cm must be derived from THIS top diameter, not left to
+        # build_round_pedestal_model's hardcoded default of 50.0 - that
+        # default only looks right by coincidence when top_dia is ~80cm
+        # (50/80 ~= the correct 62.5% ratio); for any other top diameter it
+        # silently produces a disproportionate, "pinched" cone shape.
+        svg_collar_dia = resolved.get('collar_diameter_cm', float(svg_top_dia) * 0.625)
         return build_round_pedestal_model(float(svg_top_dia), float(svg_height),
+                                           collar_dia_cm=float(svg_collar_dia),
                                            materials=(dispatch_extra or {}).get('materials'), **svg_kwargs)
 
     # Unrecognized/generic type — trace the actually-detected geometry
