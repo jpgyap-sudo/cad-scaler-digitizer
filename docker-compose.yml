@@ -259,15 +259,14 @@ services:
 # Volumes
 # =============================================================================
 volumes:
+  # Size limits via driver_opts require a quota-capable storage backend
+  # (e.g. XFS with pquota) - the deploy host's filesystem doesn't support
+  # this, and `docker compose up` fails outright with "quota size requested
+  # but no quota support" before any container starts. Disk usage should be
+  # monitored at the host level instead.
   cad_pg_data:
-    driver_opts:
-      size: "20gb"
   cad_redis_data:
-    driver_opts:
-      size: "5gb"
   cad_qdrant_data:
-    driver_opts:
-      size: "10gb"
   cad_temp:
   cad_uploads:
 
