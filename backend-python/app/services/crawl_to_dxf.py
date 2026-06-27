@@ -12,6 +12,7 @@ Single endpoint: POST /api/crawl-to-dxf
 """
 
 import os
+import re
 import logging
 from typing import Optional
 from urllib.parse import urlparse
@@ -216,7 +217,108 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
         except Exception as e:
             logger.warning(f"Failed to fetch product json: {e}")
 
+    # Method 2: Parse JSON-LD from the product page HTML
+    if not result.get("width_cm"):
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+                r = await c.get(page_url, headers={"User-Agent": "Mozilla/5.0"})
+                html = r.text if r.status_code == 200 else ""
+        except Exception:
+            html = ""
+
+        if html:
+            # Extract all JSON-LD blocks
+            for ld_match in re.findall(
+                r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+                html, re.DOTALL | re.I
+            ):
+                try:
+                    data = json.loads(ld_match)
+                    if isinstance(data, dict):
+                        # Handle @graph structure
+                        items = data.get("@graph", [data])
+                        for item in items:
+                            if isinstance(item, dict) and item.get("@type") in ("Product", "product"):
+                                name = item.get("name", "")
+                                desc = item.get("description", "")
+                                all_text = (name or "") + " " + (desc or "")
+                                # Check for dimension patterns in JSON-LD text
+                                _match_dims_in_text(all_text, result)
+                except json.JSONDecodeError:
+                    pass
+
+            # Check meta tags for dimensions
+            for meta in re.findall(
+                r'<meta[^>]+(?:property|name)=["\']product:([^"\']+)["\'][^>]+content=["\']([^"\']+)["\']',
+                html, re.I
+            ):
+                key, val = meta[0].lower(), meta[1]
+                if "width" in key and "width_cm" not in result:
+                    try:
+                        result["width_cm"] = float(re.sub(r'[^\d.]', '', val))
+                    except ValueError:
+                        pass
+                elif "height" in key and "overall_height_cm" not in result:
+                    try:
+                        result["overall_height_cm"] = float(re.sub(r'[^\d.]', '', val))
+                    except ValueError:
+                        pass
+
+            # Generic dimension text patterns in page body (non-Shopify stores)
+            body_match = re.search(
+                r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.I
+            )
+            if body_match:
+                body_text = body_match.group(1)
+                body_text = re.sub(r'<[^>]+>', ' ', body_text)  # strip tags
+                body_text = re.sub(r'&[a-z]+;', ' ', body_text)  # decode entities
+                _match_dims_in_text(body_text, result)
+
+    # Method 3: Generic size patterns from any text source
+    _match_dims_in_text("", result)  # ensures helper is called at least once
+
     return result
+
+
+def _match_dims_in_text(text: str, result: dict) -> None:
+    """Match dimension patterns in text and update result dict in-place."""
+    if not text:
+        return
+
+    # Inch patterns: 36" x 24" x 30" — convert to cm (×2.54)
+    inch_matches = re.findall(r'(\d+\.?\d*)\s*"\s*x\s*(\d+\.?\d*)\s*"\s*(?:x\s*(\d+\.?\d*)\s*")?', text, re.I)
+    for m in inch_matches:
+        vals = [float(v) * 2.54 for v in m if v]
+        if len(vals) >= 2 and "width_cm" not in result:
+            result["width_cm"] = round(vals[0], 1)
+            result["depth_cm"] = round(vals[1], 1)
+            if len(vals) >= 3:
+                result["overall_height_cm"] = round(vals[2], 1)
+
+    # European comma-decimal: 120,5 x 80 x 76
+    euro_matches = re.findall(r'(\d+[.,]\d+)\s*x\s*(\d+[.,]\d+)\s*(?:x\s*(\d+[.,]\d+))?', text)
+    for m in euro_matches:
+        vals = [float(v.replace(",", ".")) for v in m if v]
+        if len(vals) >= 2 and "width_cm" not in result:
+            result["width_cm"] = round(vals[0], 1)
+            result["depth_cm"] = round(vals[1], 1)
+
+    # "measures 120cm wide", "120 cm wide", "W120 x D80 x H76"
+    labeled_patterns = [
+        (r'(?:W|Width)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "width_cm"),
+        (r'(?:H|Height)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "overall_height_cm"),
+        (r'(?:D|Depth)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "depth_cm"),
+        (r'(?:L|Length)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "length_cm"),
+        (r'(\d+\.?\d*)\s*cm\s*(?:wide|width|deep|depth|high|height|tall)', "width_cm"),
+    ]
+    for pattern, key in labeled_patterns:
+        if key not in result:
+            m = re.search(pattern, text, re.I)
+            if m:
+                val = float(m.group(1))
+                if m.group(0).endswith("mm"):
+                    val /= 10
+                result[key] = round(val, 1)
 
 
 async def crawl_and_digitize(
@@ -245,10 +347,15 @@ async def crawl_and_digitize(
         return {**result, "status": "failed", "error": "No product image found on page"}
     result["image_url"] = image_url
 
-    # Step 2: Download the image
+    # Step 2: Download the image (with proper headers for CDN hotlink protection)
     import httpx
+    _headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Referer": f"{urlparse(page_url).scheme}://{urlparse(page_url).netloc}/",
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    }
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(image_url)
+        resp = await client.get(image_url, headers=_headers)
         if resp.status_code != 200:
             return {**result, "status": "failed", "error": f"Failed to download image: HTTP {resp.status_code}"}
         img_bytes = resp.content

@@ -52,9 +52,12 @@ class Verdict:
 class VerificationReport:
     product_id: str
     furniture_type: str
+    summary: str
     verdicts: dict[str, Verdict]
     overall_score: float
-    summary: str
+    confidence_interval: float = 0.05
+    dimensions_checked: int = 0
+    dimensions_with_bounds: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -62,6 +65,9 @@ class VerificationReport:
             "furniture_type": self.furniture_type,
             "verdicts": {k: v.to_dict() for k, v in self.verdicts.items()},
             "overall_score": round(self.overall_score, 3),
+            "confidence_interval": round(self.confidence_interval, 3),
+            "dimensions_checked": self.dimensions_checked,
+            "dimensions_with_bounds": self.dimensions_with_bounds,
             "verified_count": sum(1 for v in self.verdicts.values() if v.verdict == VERIFIED),
             "estimated_count": sum(1 for v in self.verdicts.values() if v.verdict == ESTIMATED),
             "hallucination_count": sum(1 for v in self.verdicts.values() if v.verdict == HALLUCINATION),
@@ -148,6 +154,17 @@ def _get_bounds(furniture_type: str, dim_key: str) -> Optional[tuple[float, floa
 # ---------------------------------------------------------------------------
 # Check 1: Physical possibility — is this dimension even realistic?
 # ---------------------------------------------------------------------------
+def _dimension_has_bounds(furniture_type: str, dim_key: str) -> bool:
+    """Check if bounds are defined for a dimension key in any furniture type."""
+    # Check type-specific bounds
+    if dim_key in PHYSICAL_BOUNDS.get(furniture_type, {}):
+        return True
+    # Check generic furniture bounds
+    if dim_key in PHYSICAL_BOUNDS.get("furniture", {}):
+        return True
+    return False
+
+
 def _check_physical_bounds(
     furniture_type: str, dim_key: str, value_cm: float
 ) -> tuple[bool, Optional[str]]:
@@ -248,13 +265,17 @@ def verify_dimensions(
         scores: list[float] = []
 
         # ---- Check 1: Physical bounds ----
+        bounds_exist = _dimension_has_bounds(furniture_type, dim_key)
         bounds_pass, bounds_reason = _check_physical_bounds(furniture_type, dim_key, value_cm)
-        if bounds_pass:
+        if bounds_pass and bounds_exist:
             evidence.append(f"Within physical bounds for {furniture_type}")
             scores.append(1.0)
             dimensions_with_bounds += 1
-        elif bounds_reason is None:
+        elif not bounds_exist:
             # Dimension key has no known bounds — reduce confidence
+            evidence.append(f"No bounds defined for {dim_key} — confidence reduced")
+            scores.append(0.4)
+        elif bounds_pass and not bounds_exist:
             evidence.append(f"No bounds defined for {dim_key} — confidence reduced")
             scores.append(0.4)
         else:
@@ -385,5 +406,8 @@ def verify_dimensions(
         furniture_type=furniture_type,
         verdicts=verdicts,
         overall_score=overall,
+        confidence_interval=ci,
+        dimensions_checked=dimensions_checked,
+        dimensions_with_bounds=dimensions_with_bounds,
         summary=summary,
     )
