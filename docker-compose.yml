@@ -249,7 +249,12 @@ services:
     networks:
       - cad-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      # qdrant/qdrant's image only has bash/sh - no curl or wget - so the
+      # original wget-based check always failed with "executable not found",
+      # permanently reporting the container unhealthy regardless of whether
+      # the server was actually up. Use bash's /dev/tcp instead, which needs
+      # no external binary.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

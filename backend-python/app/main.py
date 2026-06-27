@@ -74,13 +74,6 @@ async def startup_event():
     except Exception as e:
         print(f"[Startup] Drawing model cache warm failed: {e}")
 
-    # Initialize the AI assistant
-    try:
-        from app.monitoring.assistant_monitor import assistant_monitor
-        assistant_monitor.init()
-    except Exception as e:
-        print(f"[Startup] Assistant monitor init failed: {e}")
-
     # Initialize Qdrant geometry embedding collection for reference library
     try:
         from app.services.embedding_service import init_collection

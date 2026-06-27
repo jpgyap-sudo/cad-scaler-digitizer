@@ -12,7 +12,7 @@ echo "=== Python Worker Entrypoint ==="
 # ---- Wait for Redis using wget (HTTP health not available, use socket check with python) ----
 echo "Waiting for Redis to be ready..."
 for i in $(seq 1 30); do
-  if python -c "import redis as r; r.Redis(host='${REDIS_HOST:-redis}', port=6379, socket_connect_timeout=2).ping()" 2>/dev/null; then
+  if python -c "import redis as r; r.Redis(host='${REDIS_HOST:-redis}', port=6379, password='${REDIS_PASSWORD:-}' or None, socket_connect_timeout=2).ping()" 2>/dev/null; then
     echo "Redis is ready!"
     break
   fi
