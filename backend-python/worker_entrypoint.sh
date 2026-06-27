@@ -9,10 +9,10 @@ set -e
 
 echo "=== Python Worker Entrypoint ==="
 
-# ---- Wait for Redis ----
+# ---- Wait for Redis using wget (HTTP health not available, use socket check with python) ----
 echo "Waiting for Redis to be ready..."
 for i in $(seq 1 30); do
-  if redis-cli -h "${REDIS_HOST:-redis}" ping 2>/dev/null | grep -q PONG; then
+  if python -c "import redis as r; r.Redis(host='${REDIS_HOST:-redis}', port=6379, socket_connect_timeout=2).ping()" 2>/dev/null; then
     echo "Redis is ready!"
     break
   fi
@@ -20,10 +20,10 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# ---- Wait for Postgres ----
+# ---- Wait for Postgres using Python psycopg2 ----
 echo "Waiting for Postgres to be ready..."
 for i in $(seq 1 30); do
-  if pg_isready -h "${PG_HOST:-postgres}" -p "${PG_PORT:-5432}" -U "${PG_USER:-postgres}" 2>/dev/null; then
+  if python -c "import psycopg2; psycopg2.connect(host='${PG_HOST:-postgres}', port=${PG_PORT:-5432}, user='${PG_USER:-postgres}', password='${PG_PASSWORD:-postgres}', dbname='${PG_DATABASE:-cad_reference_library}', connect_timeout=2).close()" 2>/dev/null; then
     echo "Postgres is ready!"
     break
   fi
@@ -49,7 +49,7 @@ echo "  FastAPI: PID $FASTAPI_PID"
 echo "  RQ Worker: PID $WORKER_PID"
 
 # Trap and forward signals
-trap "echo 'Shutting down...'; kill $FASTAPI_PID $WORKER_PID 2>/dev/null; wait $FASTAPI_PID $WORKER_PID; exit 0" SIGTERM SIGINT
+trap "echo 'Shutting down...'; kill $FASTAPI_PID $WORKER_PID 2>/dev/null; wait $FASTAPI_PID $WORKER_PID; exit 0" TERM INT
 
 # Watch both processes — exit if one dies
 while true; do

@@ -67,9 +67,6 @@ crawlRouter.post("/", async (req, res) => {
 crawlRouter.get("/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;
-    const client = createClient({ url: REDIS_URL, password: process.env.REDIS_PASSWORD || undefined });
-    client.on("error", (err) => console.error("[Redis] Error:", err.message));
-    await client.connect();
 
     // Check per-job result key
     const client = createClient({ url: REDIS_URL, password: process.env.REDIS_PASSWORD || undefined });

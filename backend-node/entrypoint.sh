@@ -9,10 +9,10 @@ set -e
 
 echo "=== Node API Entrypoint ==="
 
-# ---- Wait for Postgres ----
+# ---- Wait for Postgres using TCP socket check ----
 echo "Waiting for Postgres to be ready..."
 for i in $(seq 1 30); do
-  if pg_isready -h "${PG_HOST:-postgres}" -p "${PG_PORT:-5432}" -U "${PG_USER:-postgres}" 2>/dev/null; then
+  if node -e "require('net').connect({host:'${PG_HOST:-postgres}',port:${PG_PORT:-5432}}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1)).setTimeout(2000,()=>process.exit(1))" 2>/dev/null; then
     echo "Postgres is ready!"
     break
   fi
@@ -24,7 +24,15 @@ echo "Running database migrations..."
 cd /app/node-api
 
 # Run Prisma migrations (or push on first deploy)
-npx prisma migrate deploy 2>/dev/null || npx prisma db push 2>/dev/null || echo "Note: DB migration skipped (may be first run or no changes needed)"
+# The database might still be initializing - retry a couple times
+for i in 1 2 3; do
+  if npx prisma migrate deploy 2>/dev/null || npx prisma db push 2>/dev/null; then
+    echo "Database schema is up to date."
+    break
+  fi
+  echo "Migration attempt $i failed, retrying in 3s..."
+  sleep 3
+done
 
 echo "Starting servers..."
 
@@ -44,8 +52,8 @@ echo "=== Both servers started ==="
 echo "  Reference Library API: http://localhost:4000"
 echo "  Session Management:    http://localhost:5001"
 
-# Trap and forward signals
-trap "echo 'Shutting down...'; kill $PID1 $PID2 2>/dev/null; wait $PID1 $PID2; exit 0" SIGTERM SIGINT
+# Trap and forward signals (use signal names without SIG prefix for POSIX sh)
+trap "echo 'Shutting down...'; kill $PID1 $PID2 2>/dev/null; wait $PID1 $PID2; exit 0" TERM INT
 
 # Watch both processes — exit if one dies (Docker will restart the container)
 while true; do
