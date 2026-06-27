@@ -7,11 +7,64 @@ export const crawlRouter = Router();
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 /**
- * POST /crawl
- * Creates a crawl job and pushes it to the Redis queue.
- * The crawler-worker picks it up and processes it.
+ * @openapi
+ * /api/crawl:
+ *   post:
+ *     summary: Submit a product URL for crawling
+ *     description: Pushes a crawl job to Redis. The crawler-worker scrapes the page, downloads CAD files and images, uploads to Spaces.
+ *     tags: [Crawler]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [url, manufacturer]
+ *             properties:
+ *               url: { type: string, example: "https://www.jardan.com.au/products/pia-side-table" }
+ *               manufacturer: { type: string, example: "jardan" }
+ *               category: { type: string, example: "table" }
+ *     responses:
+ *       201:
+ *         description: Crawl job queued
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 jobId: { type: string }
+ *                 status: { type: string }
  *
- * Body: { url: string, manufacturer: string, category?: string }
+ *   get:
+ *     summary: Get crawl job status
+ *     tags: [Crawler]
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Job status
+ * /api/crawl/{jobId}:
+ *   get:
+ *     summary: Check crawl job status
+ *     tags: [Crawler]
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Job status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 jobId: { type: string }
+ *                 status: { type: string, enum: [pending, queued, completed, failed] }
  */
 crawlRouter.post("/", async (req, res) => {
   try {

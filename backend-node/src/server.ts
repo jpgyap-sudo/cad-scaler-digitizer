@@ -2,6 +2,8 @@ import express from "express";
 import { config } from "./config.js";
 import { productReferencesRouter } from "./routes/productReferences.js";
 import { crawlRouter } from "./routes/crawl.js";
+import { openapiSpec } from "./swagger.js";
+import swaggerUi from "swagger-ui-express";
 
 const app = express();
 
@@ -49,6 +51,13 @@ app.use((_req, res, next) => {
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "cad-reference-backend", auth: AUTH_TOKEN ? "enabled" : "disabled" });
 });
+
+// API documentation
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openapiSpec, {
+  customSiteTitle: "CAD Reference Library API",
+  customfavIcon: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/favicon-32x32.png",
+}));
+app.get("/api/docs.json", (_req, res) => res.json(openapiSpec));
 
 app.use("/api/product-references", productReferencesRouter);
 app.use("/api/crawl", crawlRouter);

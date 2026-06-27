@@ -1,0 +1,47 @@
+# =============================================================================
+# Production Docker Compose Override
+# =============================================================================
+name: cad-scaler-digitizer
+
+services:
+
+  frontend:
+    ports:
+      - "${FRONTEND_PORT:-443}:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      - SERVER_NAME=${DOMAIN:-cad.example.com}
+
+  node-api:
+    environment:
+      - AUTH_TOKEN=${AUTH_TOKEN:?AUTH_TOKEN is required for production}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required for production}
+      - PG_PASSWORD=${PG_PASSWORD:?PG_PASSWORD is required for production}
+      - NODE_ENV=production
+    restart: always
+
+  python-worker:
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required for production}
+      - PG_PASSWORD=${PG_PASSWORD:?PG_PASSWORD is required for production}
+    restart: always
+
+  crawler-worker:
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required for production}
+    restart: always
+
+  postgres:
+    ports:
+      # Don't expose Postgres to host in production
+      - "${PG_PORT_EXTERNAL:-127.0.0.1:5432}:5432"
+    restart: always
+
+  redis:
+    ports:
+      - "${REDIS_PORT_EXTERNAL:-127.0.0.1:6379}:6379"
+    restart: always
+
+  qdrant:
+    restart: always
