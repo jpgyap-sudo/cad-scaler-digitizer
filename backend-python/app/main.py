@@ -42,3 +42,23 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 @app.get("/health")
 def health():
     return {"ok": True, "engine": "opencv+ocr+ezdxf+v2", "version": "2.0.0", "hybrid": bool(OPENAI_API_KEY)}
+
+@app.get("/api/progress")
+def progress(limit: int = 50):
+    """Get recent progress events buffered in Redis."""
+    try:
+        import redis as redis_lib
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        redis_pass = os.environ.get("REDIS_PASSWORD") or None
+        client = redis_lib.from_url(redis_url, decode_responses=True, password=redis_pass)
+        events = client.lRange("progress:buffer", 0, limit - 1)
+        parsed = []
+        for e in events:
+            try:
+                parsed.append(json.loads(e))
+            except json.JSONDecodeError:
+                parsed.append({"raw": e})
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"events": parsed, "count": len(parsed)})
+    except Exception as e:
+        return JSONResponse({"events": [], "error": str(e)})

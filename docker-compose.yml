@@ -1,77 +1,249 @@
+# =============================================================================
+# CAD Scaler Digitizer — Multi-Container Docker Compose
+# 7 services: frontend, node-api, python-worker, crawler-worker,
+#             postgres, redis, qdrant
+# =============================================================================
+name: cad-scaler-digitizer
+
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: cad-digitizer-api
-    ports:
-      - "8000:8000"
-    env_file:
-      - backend-python/.env
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8000
-      - PG_HOST=host.docker.internal
-      - PG_PORT=5432
-      - PG_DATABASE=cad_digitizer
-      - PG_USER=postgres
-      - PG_PASSWORD=postgres
-    volumes:
-      - cad_temp:/tmp/cad_digitizer_outputs
-      - cad_uploads:/tmp/cad_digitizer_uploads
-    restart: unless-stopped
-    networks:
-      - cad-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
 
-  monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: cad-digitizer-monitor
-    command: python -m app.monitoring.assistant_monitor
-    env_file:
-      - backend-python/.env
-    environment:
-      - PG_HOST=host.docker.internal
-      - PG_PORT=5432
-      - PG_DATABASE=cad_digitizer
-      - PG_USER=postgres
-      - PG_PASSWORD=postgres
-      - MONITOR_POLL_INTERVAL=300
-      - MONITOR_AGGREGATE_INTERVAL=3600
-      - MONITOR_ANALYSIS_INTERVAL=21600
-      - MONITOR_LOG_LEVEL=INFO
-    depends_on:
-      api:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - cad-network
-
+  # --------------------------------------------------------------------------
+  # 1. Frontend — React / Vite (served via Nginx)
+  # --------------------------------------------------------------------------
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: cad-digitizer-frontend
+    container_name: cad-frontend
     ports:
-      - "127.0.0.1:8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
     depends_on:
-      api:
+      node-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # --------------------------------------------------------------------------
+  # 2. Node API — Express + Prisma + Crawlee orchestration
+  #    Handles: product references, uploads, user sessions, job dispatch
+  # --------------------------------------------------------------------------
+  node-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.node-api
+    container_name: cad-node-api
+    ports:
+      - "${NODE_API_PORT:-4000}:4000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - API_BACKEND_PORT=5001
+      - AUTH_TOKEN=${AUTH_TOKEN:-}
+      - DATABASE_URL=postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/${PG_DATABASE:-cad_reference_library}
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_USER=${PG_USER:-postgres}
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - QDRANT_URL=http://qdrant:6333
+      - PYTHON_ENGINE_URL=http://python-worker:8001
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT:-}
+      - SPACES_REGION=${SPACES_REGION:-sgp1}
+      - SPACES_BUCKET=${SPACES_BUCKET:-}
+      - SPACES_KEY=${SPACES_KEY:-}
+      - SPACES_SECRET=${SPACES_SECRET:-}
+      - SPACES_CDN_BASE=${SPACES_CDN_BASE:-}
+    volumes:
+      - cad_uploads:/tmp/cad_uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r => {if(!r.ok)process.exit(1)}).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # --------------------------------------------------------------------------
+  # 3. Python Worker — FastAPI + OpenCV + OCR + ezdxf
+  #    Consumes from Redis queue; handles heavy CAD processing
+  # --------------------------------------------------------------------------
+  python-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.python-worker
+    container_name: cad-python-worker
+    ports:
+      - "${PYTHON_WORKER_PORT:-8001}:8001"
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8001
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_HOST=redis
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DATABASE=${PG_DATABASE:-cad_reference_library}
+      - PG_USER=${PG_USER:-postgres}
+      - PG_PASSWORD=${PG_PASSWORD:-postgres}
+      - QDRANT_URL=http://qdrant:6333
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT:-}
+      - SPACES_REGION=${SPACES_REGION:-sgp1}
+      - SPACES_BUCKET=${SPACES_BUCKET:-}
+      - SPACES_KEY=${SPACES_KEY:-}
+      - SPACES_SECRET=${SPACES_SECRET:-}
+      - SPACES_CDN_BASE=${SPACES_CDN_BASE:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - cad_temp:/tmp/cad_digitizer_outputs
+      - cad_uploads:/tmp/cad_digitizer_uploads
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # --------------------------------------------------------------------------
+  # 4. Crawler Worker — Crawlee + Playwright
+  #    Consumes crawl jobs from Redis; only runs when there are crawl jobs
+  # --------------------------------------------------------------------------
+  crawler-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.crawler-worker
+    container_name: cad-crawler-worker
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - DATABASE_URL=postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/${PG_DATABASE:-cad_reference_library}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT:-}
+      - SPACES_REGION=${SPACES_REGION:-sgp1}
+      - SPACES_BUCKET=${SPACES_BUCKET:-}
+      - SPACES_KEY=${SPACES_KEY:-}
+      - SPACES_SECRET=${SPACES_SECRET:-}
+      - SPACES_CDN_BASE=${SPACES_CDN_BASE:-}
+      - NODE_OPTIONS=--max-old-space-size=2048
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - cad-network
 
+  # --------------------------------------------------------------------------
+  # 5. Postgres — Product metadata, sessions, users
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: cad-postgres
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      # PG_PASSWORD must be explicitly set in .env — no default for production safety.
+      # Use: docker compose --env-file .env up
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?PG_PASSWORD must be set in .env}
+      POSTGRES_DB: ${PG_DATABASE:-cad_reference_library}
+    ports:
+      - "${PG_PORT_EXTERNAL:-5432}:5432"
+    volumes:
+      - cad_pg_data:/var/lib/postgresql/data
+      - ./scripts/db-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE:-cad_reference_library}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --------------------------------------------------------------------------
+  # 6. Redis — Job queue, pub/sub, caching
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: cad-redis
+    command: >
+      redis-server --appendonly yes --loglevel warning
+      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT_EXTERNAL:-127.0.0.1:6379}:6379"
+    volumes:
+      - cad_redis_data:/data
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a \"$REDIS_PASSWORD\"} ping | grep -q PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # --------------------------------------------------------------------------
+  # 7. Qdrant — Vector similarity search for CAD geometry
+  # --------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: cad-qdrant
+    ports:
+      - "${QDRANT_PORT_EXTERNAL:-6333}:6333"
+    volumes:
+      - cad_qdrant_data:/qdrant/storage
+    restart: unless-stopped
+    networks:
+      - cad-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
+  cad_pg_data:
+  cad_redis_data:
+  cad_qdrant_data:
   cad_temp:
   cad_uploads:
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   cad-network:
     driver: bridge

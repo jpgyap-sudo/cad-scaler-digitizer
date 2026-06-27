@@ -1,0 +1,67 @@
+# =============================================================================
+# Node API — Express + Prisma + Crawlee orchestration
+# Combines: existing backend/ + starter backend-node/
+# =============================================================================
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install OpenSSL for Prisma and wget for healthcheck
+RUN apt-get update && apt-get install -y \
+    openssl \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Layer 1: Build the Node API (from starter)
+# ============================================================
+WORKDIR /app/node-api
+
+# Copy package files first for dependency caching
+COPY backend-node/package.json ./
+COPY backend-node/tsconfig.json ./
+RUN npm install
+
+# Copy Prisma schema and generate client
+COPY backend-node/prisma ./prisma
+RUN npx prisma generate
+
+# Copy source code
+COPY backend-node/src ./src
+
+# No TypeScript build needed — uses tsx to run directly
+# (This avoids build failures and keeps the image smaller)
+
+# ============================================================
+# Layer 2: Existing Node backend (session management, upload proxy)
+# ============================================================
+WORKDIR /app/backend
+
+COPY backend/package.json ./
+RUN npm install
+COPY backend/ ./
+
+# ============================================================
+# Layer 3: Combined entrypoint
+# ============================================================
+WORKDIR /app
+
+# Create uploads directory
+RUN mkdir -p /tmp/cad_uploads /app/uploads
+
+# Copy combined server entrypoint
+COPY backend-node/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Environment variables
+ENV PORT=4000
+ENV NODE_ENV=production
+
+EXPOSE 4000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=20s \
+  CMD wget -qO- http://localhost:4000/health || exit 1
+
+CMD ["/app/entrypoint.sh"]

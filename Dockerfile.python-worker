@@ -1,0 +1,53 @@
+# =============================================================================
+# Python Worker — FastAPI + OpenCV + OCR + ezdxf CAD Engine
+# Handles: image processing, dimension detection, DXF generation
+# =============================================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# ============================================================
+# Install system dependencies
+# ============================================================
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-osd \
+    libgl1 \
+    libglib2.0-0t64 \
+    libgomp1 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    wget \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Install Python dependencies
+# ============================================================
+COPY backend-python/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ============================================================
+# Copy application code (includes worker_entrypoint.sh)
+# ============================================================
+COPY backend-python/ /app/
+RUN chmod +x /app/worker_entrypoint.sh
+
+# ============================================================
+# Environment
+# ============================================================
+ENV PYTHONPATH=/app
+ENV PORT=8001
+ENV HOST=0.0.0.0
+
+EXPOSE 8001
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=20s \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
+
+# Default: start both HTTP API + Redis worker consumer
+CMD ["/app/worker_entrypoint.sh"]

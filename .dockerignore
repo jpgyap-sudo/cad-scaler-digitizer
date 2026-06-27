@@ -1,0 +1,66 @@
+# =============================================================================
+# Docker Ignore — speeds up builds by excluding unnecessary files
+# =============================================================================
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Build artifacts
+test-results/
+playwright-report/
+test.png
+*.svg
+*.png
+*.pdf
+*.dxf
+
+# Environment (all .env files in any directory)
+.env
+.env.local
+.env.production
+.env.*.local
+**/.env
+**/.env.*
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Project-specific
+uploads/
+memory/
+fixtures/
+scratch/
+test-results/
+plans/
+skills/
+docs/
+*.conf
+check_site.js
+deploy.sh
+playwright.config.ts
+AUDIT_REPORT.md
+
+# Docker files (prevent duplication)
+Dockerfile*
+docker-compose*
+nginx.conf

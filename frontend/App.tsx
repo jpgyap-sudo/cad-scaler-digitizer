@@ -59,7 +59,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
 }
 
 const MAX_CORRECTION_LOOPS = 3;
-const BRAIN_API = `${import.meta.env.VITE_BRAIN_API_URL || 'http://localhost:5001'}/api/brain`;
+// In Docker/Nginx: VITE_BRAIN_API_URL is empty → use relative /api/brain/ path
+// which Nginx proxies to the session server.
+// In dev: falls back to relative path which Vite proxy handles.
+const BRAIN_API_BASE = import.meta.env.VITE_BRAIN_API_URL || '';
+const BRAIN_API = BRAIN_API_BASE
+  ? `${BRAIN_API_BASE}/api/brain`
+  : '/api/brain';
 
 type EngineMode = 'opencv' | 'ai' | 'hybrid';
 type ProcessState = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';

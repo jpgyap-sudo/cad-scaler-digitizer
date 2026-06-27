@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AssetType {
+  IMAGE
+  DWG
+  DXF
+  PDF
+  SPEC
+  SVG
+  GEOMETRY_JSON
+  THUMBNAIL
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+model ProductReference {
+  id            String   @id @default(cuid())
+  manufacturer  String
+  productName   String
+  slug          String
+  category      String?
+  subcategory   String?
+  sourceUrl     String?
+  licenseStatus String   @default("unknown")
+  widthMm       Float?
+  depthMm       Float?
+  heightMm      Float?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assets          ReferenceAsset[]
+  geometryProfile GeometryProfile?
+}
+
+model ReferenceAsset {
+  id                 String           @id @default(cuid())
+  productReferenceId String
+  assetType          AssetType
+  fileName           String
+  mimeType           String?
+  spaceKey           String
+  cdnUrl             String
+  fileHash           String?
+  processedStatus    ProcessingStatus @default(PENDING)
+  metadata           Json?
+  createdAt          DateTime         @default(now())
+
+  productReference ProductReference @relation(fields: [productReferenceId], references: [id], onDelete: Cascade)
+}
+
+model GeometryProfile {
+  id                 String   @id @default(cuid())
+  productReferenceId String   @unique
+  entityCount         Int      @default(0)
+  lineCount           Int      @default(0)
+  circleCount         Int      @default(0)
+  arcCount            Int      @default(0)
+  bboxWidth           Float?
+  bboxHeight          Float?
+  ratioJson           Json?
+  geometryJsonUrl     String?
+  previewSvgUrl       String?
+  createdAt           DateTime @default(now())
+
+  productReference ProductReference @relation(fields: [productReferenceId], references: [id], onDelete: Cascade)
+}

@@ -11,6 +11,8 @@ __pycache__/
 *.pyo
 uploads/
 backend-python/.env
+backend-node/.env
+crawler-worker/.env
 memory/
 *.svg
 *.png
