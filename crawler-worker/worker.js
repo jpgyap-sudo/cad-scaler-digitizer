@@ -17,7 +17,16 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 const QUEUE_NAME = "crawler:jobs";
 const PROGRESS_CHANNEL = "cad:progress";
-const MAX_CONCURRENT = 2; // Max parallel Playwright instances
+const MAX_CONCURRENT = 1; // One at a time — stealth requires low-and-slow
+const MIN_JOB_DELAY_MS = 8000;
+const MAX_JOB_DELAY_MS = 15000;
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function delay(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 let redisClient;
 
@@ -138,6 +147,10 @@ async function main() {
         console.error("[Crawler Worker] Unhandled job error:", err.message);
       });
       inFlight.add(promise);
+
+      // Low-and-slow: random delay between jobs to avoid detection
+      const jobDelay = rand(MIN_JOB_DELAY_MS, MAX_JOB_DELAY_MS);
+      await delay(jobDelay);
     } catch (err) {
       if (err.message?.includes("connection") || err.code === "ECONNREFUSED") {
         console.error("[Crawler Worker] Redis connection lost, reconnecting in 5s...");
