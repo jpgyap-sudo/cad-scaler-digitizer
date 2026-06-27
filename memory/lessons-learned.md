@@ -3380,3 +3380,117 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: wire all 4 connections — complete training feedback loop
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3f4fa8cd053be0787fa14fb181986bbe1a4e03f8
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 3f4fa8cd053be0787fa14fb181986bbe1a4e03f8
+**Files:** 
+
+**Summary:**
+Commit: fix: wire all 4 connections — complete training feedback loop
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: wire all 4 connections — complete training feedback loop*
+
+#### Lesson Learned
+
+Commit: fix: wire all 4 connections — complete training feedback loop
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: variant dimension unit conversion — mm→cm support for 2-value patterns
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 427233f80d97eb037c7405a16426b55781b5ada5
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 427233f80d97eb037c7405a16426b55781b5ada5
+**Files:** 
+
+**Summary:**
+Commit: fix: variant dimension unit conversion — mm→cm support for 2-value patterns
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: variant dimension unit conversion — mm→cm support for 2-value patterns*
+
+#### Lesson Learned
+
+Commit: fix: variant dimension unit conversion — mm→cm support for 2-value patterns
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] feat: wire 18 template graphs into suggest endpoint + fix path
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 44498470d3b74432ce0dd89320a5769c1f3fa4c2
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 44498470d3b74432ce0dd89320a5769c1f3fa4c2
+**Files:** 
+
+**Summary:**
+Commit: feat: wire 18 template graphs into suggest endpoint + fix path
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: feat: wire 18 template graphs into suggest endpoint + fix path*
+
+#### Lesson Learned
+
+Commit: feat: wire 18 template graphs into suggest endpoint + fix path
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

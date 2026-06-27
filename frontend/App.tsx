@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, Component, ErrorInfo, 
 import {
   UploadCloud, Download, Loader2, Bot, Cpu, CheckCircle2, AlertCircle,
   Info, Shapes, Ruler, Image, FileText, ChevronDown, RefreshCw,
-  Layers, Crosshair, Eye, Settings, Play, Shield
+  Layers, Crosshair, Eye, Settings, Play, Shield, Sparkles
 } from 'lucide-react';
 import TechStackModal from './components/TechStackModal';
 import ChatBox from './components/ChatBox';
@@ -23,7 +23,7 @@ import DXFPreview from './components/DXFPreview';
 import ReviewPanel from './components/ReviewPanel';
 import {
   digitizeWithBackend, digitizeHybrid, downloadDxf, checkEngineHealth,
-  resolveTemplate,
+  resolveTemplate, digitizeUnified,
   getFurnitureLabel, getFurnitureConfidenceLabel, DigitizeResult,
   getPreviewUrl, getPdfUrl, getSvgPreviewUrl
 } from './services/cadEngine';
@@ -70,7 +70,7 @@ const BRAIN_API = BRAIN_API_BASE
   ? `${BRAIN_API_BASE}/api/brain`
   : '/api/brain';
 
-type EngineMode = 'opencv' | 'ai' | 'hybrid' | 'pipeline';
+type EngineMode = 'opencv' | 'ai' | 'hybrid' | 'pipeline' | 'smart';
 type ProcessState = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
 
 const FURNITURE_TYPES = [
@@ -217,14 +217,22 @@ const App: React.FC = () => {
       const h = realHeightCm ? parseFloat(realHeightCm) : undefined;
       const ft = furnitureType || undefined;
       const isHybrid = engineMode === 'hybrid';
-      setStatus(isHybrid ? 'Hybrid: OpenCV geometry + OpenAI Vision...' : 'Running OpenCV detection + OCR + DXF...');
-      const result = isHybrid
-        ? await digitizeHybrid(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft })
-        : await digitizeWithBackend(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft });
+      const isSmart = engineMode === 'smart';
+      setStatus(isSmart ? 'Smart: AI Vision + OpenCV + Templates...' :
+               isHybrid ? 'Hybrid: OpenCV geometry + OpenAI Vision...' :
+               'Running OpenCV detection + OCR + DXF...');
+      let result: any;
+      if (isSmart) {
+        result = await digitizeUnified(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft });
+      } else if (isHybrid) {
+        result = await digitizeHybrid(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft });
+      } else {
+        result = await digitizeWithBackend(file, { realWidthCm: w, realHeightCm: h, furnitureType: ft });
+      }
       setCadEngineResult(result);
       setProcessState('complete');
       setMode('complete');
-      setStatus(isHybrid ? 'Hybrid engine complete.' : 'OpenCV engine complete.');
+      setStatus(isSmart ? 'Smart engine complete.' : isHybrid ? 'Hybrid engine complete.' : 'OpenCV engine complete.');
       if (result.resolved_dimensions) setCurrentDims(result.resolved_dimensions);
       if (result.preview_svg) { setSvgPreviewUrl(result.preview_svg); setPreviewSvgVersion(v => v + 1); }
       const reader = new FileReader();
@@ -444,6 +452,10 @@ const App: React.FC = () => {
             <button onClick={() => setEngineMode('hybrid')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${engineMode === 'hybrid' ? 'bg-white text-purple-600 shadow-sm ring-2 ring-purple-300' : 'text-slate-500 hover:text-slate-700'}`}>
               <Bot className="w-3.5 h-3.5" /><span>Hybrid</span>
+            </button>
+            <button onClick={() => setEngineMode('smart')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${engineMode === 'smart' ? 'bg-white text-emerald-600 shadow-sm ring-2 ring-emerald-300' : 'text-slate-500 hover:text-slate-700'}`}>
+              <Sparkles className="w-3.5 h-3.5" /><span>Smart</span>
             </button>
             <button onClick={() => setEngineMode('ai')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${engineMode === 'ai' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>

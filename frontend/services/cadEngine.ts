@@ -397,3 +397,66 @@ export async function resolveTemplate(
 
   return res.json();
 }
+
+/**
+ * UNIFIED endpoint — ONE call that blends AI Vision + OpenCV/OCR +
+ * cad_intelligence + template graphs into a single confidence-weighted
+ * result with per-field provenance tracking.
+ *
+ * This is the "genius" endpoint: it works for photos, CAD drawings,
+ * and everything in between.
+ */
+export interface UnifiedDimSource {
+  value: number;
+  source: string;
+  confidence: number;
+  note: string;
+}
+
+export interface UnifiedResult {
+  job_id: string;
+  ai_enabled: boolean;
+  product_type: UnifiedDimSource | null;
+  top_shape: UnifiedDimSource | null;
+  support_type: UnifiedDimSource | null;
+  material_top: UnifiedDimSource | null;
+  material_base: UnifiedDimSource | null;
+  dimensions: Record<string, UnifiedDimSource>;
+  entity_count: number;
+  warnings: string[];
+  errors: string[];
+  template?: {
+    template_id: string;
+    template_name: string;
+    resolved_parameters_mm: Record<string, number>;
+    required_views: string[];
+    required_details: string[];
+    drawing_notes: string[];
+  };
+}
+
+export async function digitizeUnified(
+  file: File,
+  opts?: {
+    realWidthCm?: number;
+    realHeightCm?: number;
+    furnitureType?: string;
+  }
+): Promise<UnifiedResult> {
+  const form = new FormData();
+  form.append('file', file);
+  if (opts?.realWidthCm) form.append('real_width_cm', String(opts.realWidthCm));
+  if (opts?.realHeightCm) form.append('real_height_cm', String(opts.realHeightCm));
+  if (opts?.furnitureType) form.append('furniture_type', String(opts.furnitureType));
+
+  const base = getEngineBase();
+  const url = `${base}/digitize/unified`;
+  const res = await fetch(url, { method: 'POST', body: form });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Unified engine failed (${res.status}): ${err}`);
+  }
+
+  return res.json();
+}
