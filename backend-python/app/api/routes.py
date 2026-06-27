@@ -34,6 +34,9 @@ from app.backend.dxf_exporter import (
 from app.resource_engine.template_loader import TemplateGraphLoader
 from app.resource_engine.template_resolver import TemplateResolver
 from app.resource_engine.pipeline_orchestrator import Phase3Pipeline, Phase3PipelineResult
+from app.backend.cad_intelligence.pipeline import run_cad_intelligence_pipeline
+from app.backend.cad_intelligence.export_debug import pipeline_result_to_dict as ci_debug_dict
+from app.backend.cad_intelligence.dxf_exporter import export_entities_to_dxf as ci_export_dxf
 
 router = APIRouter()
 
@@ -1313,6 +1316,20 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         accuracy_results = _run_accuracy_pipeline(img_path, lines, circles, rects, ocr_lines, dims)
 
+        # ===== CAD Intelligence Pipeline (structured entity extraction) =====
+        cad_intel_result = None
+        try:
+            ocr_structured = [{"text": t, "bbox": [0, 0, 0, 0], "confidence": 0.8}
+                              for t in ocr_lines[:50]]
+            ci_result = run_cad_intelligence_pipeline(
+                image_path=str(img_path),
+                ocr_items=ocr_structured,
+                default_unit="mm",
+            )
+            cad_intel_result = ci_debug_dict(ci_result)
+        except Exception as e:
+            print(f"[Hybrid] CAD Intelligence pipeline failed (non-fatal): {e}")
+
         opencv_classifier = classify_furniture(ocr_lines, constrained['circles'], constrained['lines'], constrained.get('rects'))
         opencv_type = opencv_classifier.get('type', 'generic_2d_furniture')
         opencv_conf = opencv_classifier.get('confidence', 0.3)
@@ -1475,6 +1492,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'materials': raw_materials or {},
             'accuracy_pipeline': accuracy_results,
             'phase3': phase3_result.to_api_dict() if phase3_result else None,
+            'cad_intelligence': cad_intel_result,
             'image_quality': image_quality,
             'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
                          + (template_graph_result or {}).get('warnings', [])
@@ -2988,3 +3006,128 @@ async def crawl_to_dxf(payload: dict):
             "error": str(e),
             "trace": traceback.format_exc(),
         }, status_code=500)
+
+
+# =============================================================================
+# Comparison Agent — Image vs DXF accuracy scorer
+# =============================================================================
+
+@router.post("/compare")
+async def compare_digitization(payload: dict):
+    """Compare a source product image against the generated DXF.
+    
+    Runs: edge overlay → entity count check → dimension comparison
+    Returns alignment scores, error regions, and dimension deviations.
+    All results logged to comparison_results table for ML improvement.
+    
+    Body: {
+        job_id: string,
+        product_id: string,
+        image_url: string (downloadable URL to the original image),
+        dxf_path: string (local path to DXF file),
+        page_dimensions: { width_cm, height_cm, ... } (optional),
+        detected_entities: { lines, circles, rectangles } (optional)
+    }
+    
+    Returns: ComparisonResult with scores + errors
+    """
+    from app.services.comparison_agent import compare_digitization, log_comparison_to_db
+    import logging
+    _logger = logging.getLogger("compare")
+
+    job_id = payload.get("job_id", str(uuid.uuid4()))
+    product_id = payload.get("product_id", "unknown")
+    image_url = payload.get("image_url", "")
+    dxf_path = payload.get("dxf_path", "")
+    page_dimensions = payload.get("page_dimensions")
+    detected_entities = payload.get("detected_entities")
+
+    if not image_url or not dxf_path:
+        return JSONResponse({"error": "Missing image_url or dxf_path"}, status_code=400)
+
+    # Download the image
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(image_url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": image_url,
+            })
+            if resp.status_code != 200:
+                return JSONResponse({"error": f"Failed to download image: HTTP {resp.status_code}"}, status_code=400)
+            image_data = resp.content
+    except Exception as e:
+        return JSONResponse({"error": f"Failed to download image: {e}"}, status_code=400)
+
+    # Check DXF exists
+    import os
+    if not os.path.exists(dxf_path):
+        return JSONResponse({"error": f"DXF file not found: {dxf_path}"}, status_code=400)
+
+    try:
+        result = compare_digitization(
+            job_id=job_id,
+            product_id=product_id,
+            image_url=image_url,
+            image_data=image_data,
+            dxf_path=dxf_path,
+            page_dimensions=page_dimensions,
+            detected_entities=detected_entities,
+        )
+
+        # Log to database for ML training
+        db_ok = log_comparison_to_db(result)
+        if not db_ok:
+            _logger.warning(f"Comparison result not persisted to DB (job={job_id})")
+
+        return JSONResponse(result.to_dict())
+
+    except Exception as e:
+        import traceback
+        return JSONResponse({
+            "status": "failed",
+            "error": str(e),
+            "trace": traceback.format_exc(),
+        }, status_code=500)
+
+
+@router.get("/compare/results")
+async def list_comparison_results(limit: int = 20):
+    """List recent comparison results from the database."""
+    try:
+        import psycopg2, json
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT job_id, product_id, overall_score, edge_overlap_score,
+                   entity_match_score, dimension_deviation_pct,
+                   errors_json, dimension_comparisons_json,
+                   created_at
+            FROM comparison_results
+            ORDER BY created_at DESC
+            LIMIT %s
+        """, (limit,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return JSONResponse([
+            {
+                "job_id": r[0],
+                "product_id": r[1],
+                "overall_score": round(r[2], 3) if r[2] else 0,
+                "edge_overlap": round(r[3], 3) if r[3] else 0,
+                "entity_match": round(r[4], 3) if r[4] else 0,
+                "dim_dev_pct": round(r[5], 1) if r[5] else 0,
+                "error_count": len(json.loads(r[6] or "[]")),
+                "created_at": str(r[9]),
+            }
+            for r in rows
+        ])
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
