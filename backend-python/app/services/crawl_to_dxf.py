@@ -11,12 +11,8 @@ Given a product page URL:
 Single endpoint: POST /api/crawl-to-dxf
 """
 
-import io
 import os
-import json
 import logging
-import tempfile
-import shutil
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -179,15 +175,15 @@ async def crawl_and_digitize(
     logger.info(f"[CrawlToDXF] Downloaded {len(img_bytes)} bytes")
 
     # Step 3: Digitize via internal HTTP call
-    import httpx as httpx2
+    API_BASE = os.environ.get("PYTHON_WORKER_URL", "http://localhost:8001")
     files = {"file": ("product.png", img_bytes, "image/png")}
     params = {"furniture_type": furniture_type}
     if real_width_cm:
         params["real_width_cm"] = str(real_width_cm)
 
-    async with httpx2.AsyncClient(timeout=120) as client:
+    async with httpx.AsyncClient(timeout=120) as client:
         digitize_resp = await client.post(
-            "http://localhost:8001/api/digitize",
+            f"{API_BASE}/api/digitize",
             files=files,
             data=params,
         )
