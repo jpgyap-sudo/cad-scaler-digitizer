@@ -489,10 +489,15 @@ async def crawl_and_digitize(
     if page_dims:
         logger.info(f"[CrawlToDXF] Found page dimensions: {page_dims}")
         result["page_dimensions"] = page_dims
-        # Use discovered width for scale if not already provided
+        # Use discovered dimensions for scale
+        real_h = None
         if not real_width_cm and page_dims.get("width_cm"):
             real_width_cm = page_dims["width_cm"]
             logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
+        if page_dims.get("overall_height_cm"):
+            real_h = page_dims["overall_height_cm"]
+        elif page_dims.get("height_cm"):
+            real_h = page_dims["height_cm"]
 
     # Step 4: Digitize via HTTP call (to self, typically localhost:8001)
     # To avoid HTTP overhead, import and call _run_digitize_pipeline from routes.py directly
@@ -501,6 +506,8 @@ async def crawl_and_digitize(
     params = {"furniture_type": furniture_type}
     if real_width_cm:
         params["real_width_cm"] = str(real_width_cm)
+    if real_h:
+        params["real_height_cm"] = str(real_h)
 
     async with httpx.AsyncClient(timeout=120) as client:
         digitize_resp = await client.post(

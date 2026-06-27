@@ -865,8 +865,17 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     else:
-        print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
-        save_generic(str(dxf_path), [], [], [])
+        # Fallback: if unknown type but dimensions available, try rectangular_table
+        fb_w = real_w or _dim(['w', 'width'], 0)
+        fb_h = real_h or _dim(['h', 'height'], 80.0)  # default height for tables
+        if fb_w:
+            fb_d = _dim(['d', 'depth'], fb_w * 0.6)
+            print(f"EXPORTER USED: save_rectangular_table (fallback from {f_type}, w={fb_w})")
+            try: save_rectangular_table(str(dxf_path), width_cm=fb_w, depth_cm=fb_d, height_cm=fb_h)
+            except Exception: save_generic(str(dxf_path), [], [], [])
+        else:
+            print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
+            save_generic(str(dxf_path), [], [], [])
 
     extra['component_schema'] = _component_schema(f_type)
     _save_drawing_model(f_type, dxf_path, real_w or 80.0, real_h or 70.0,
