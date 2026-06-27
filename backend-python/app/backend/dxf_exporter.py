@@ -544,6 +544,80 @@ def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_th
                    (sx + d / 2, floor_y_side - 14), f'D = {depth_cm:g} cm')
     _add_mtext(msp, 'SIDE VIEW', (sx, top_y_side + 10), 3)
 
+    # ===== ISOMETRIC VIEW =====
+    # Place in upper-right area; project W, D, H onto isometric axes
+    iso_origin_x = 260
+    iso_origin_y = 160
+    iso_s = 0.35                     # isometric scale factor
+    iw = width_cm * iso_s
+    id_ = depth_cm * iso_s
+    ih = height_cm * iso_s
+    top_thick_iso = max(lt * 0.8 * 0.6, 1.5)
+    cos30 = 0.866
+    sin30 = 0.5
+
+    # Isometric axes directions
+    # Right axis (depth): (id_ * cos30, id_ * sin30)
+    # Left axis (width):  (-iw * cos30, iw * sin30)
+    # Vertical (height):  (0, -ih)
+
+    def _iso_pt(x, y, z=0):
+        """Convert table coordinates (x=width, y=depth, z=height) to iso screen coords."""
+        px = iso_origin_x + (x - y) * cos30 * iso_s
+        py = iso_origin_y - (ih + top_thick_iso) + (x + y) * sin30 * iso_s + z * iso_s
+        return (px, py)
+
+    # Table dimensions in iso-local coords
+    tw, td = width_cm, depth_cm
+    iso_top = ih + top_thick_iso
+
+    # ---- Table top surface (top face) ----
+    # Four corners of the tabletop
+    t0 = _iso_pt(0, 0, iso_top)       # front-left
+    t1 = _iso_pt(tw, 0, iso_top)      # front-right
+    t2 = _iso_pt(tw, td, iso_top)     # back-right
+    t3 = _iso_pt(0, td, iso_top)      # back-left
+    _add_polyline(msp, [t0, t1, t2, t3], True)
+
+    # ---- Tabletop bottom edge (thickness) ----
+    b0 = _iso_pt(0, 0, iso_top - top_thick_iso)
+    b1 = _iso_pt(tw, 0, iso_top - top_thick_iso)
+    b2 = _iso_pt(tw, td, iso_top - top_thick_iso)
+    b3 = _iso_pt(0, td, iso_top - top_thick_iso)
+    _add_polyline(msp, [b0, b1, b2, b3], True)
+    _add_line(msp, b0, t0)
+    _add_line(msp, b1, t1)
+    _add_line(msp, b2, t2)
+    _add_line(msp, b3, t3)
+
+    # ---- Legs (visible front ones solid, back ones hidden) ----
+    leg_w = lt * iso_s
+    leg_positions = [(0, 0), (tw, 0), (tw, td), (0, td)]  # FL, FR, BR, BL
+    for i, (lx, ly) in enumerate(leg_positions):
+        leg_vis = i < 2  # only front two legs visible
+        if not _visible("legs"):
+            continue
+        fl = _iso_pt(lx, ly, iso_top - top_thick_iso)
+        nw = _iso_pt(lx + lt, ly + 0.1, 0)  # bottom of leg (approximate)
+        f2 = _iso_pt(lx + lt, ly, iso_top - top_thick_iso)
+        f3 = _iso_pt(lx, ly + lt, iso_top - top_thick_iso)
+        fb = _iso_pt(lx + lt * 0.7, ly + lt * 0.7, 0)
+
+        if leg_vis:
+            _add_polyline(msp, [(fl[0], fl[1]), (fl[0] + leg_w, fl[1]),
+                                (fb[0], fb[1]), (fl[0], fl[1])], True)
+            # Vertical lines
+            _add_line(msp, fl, _iso_pt(lx, ly, 0))
+            _add_line(msp, f2, _iso_pt(lx + lt, ly, 0))
+            _add_line(msp, f3, _iso_pt(lx, ly + lt, 0))
+
+    # ---- Stretchers (horizontal braces between legs) ----
+    fl_top = _iso_pt(0, 0, 0)
+    fr_top = _iso_pt(tw, 0, 0)
+    _add_line(msp, fl_top, fr_top, 'HIDDEN')
+
+    _add_mtext(msp, 'ISOMETRIC VIEW', (iso_origin_x - 20, _iso_pt(0, td, iso_top)[1] + 15), 3)
+
     generate_title_block(msp, f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
                          material_notes=[
