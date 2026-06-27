@@ -17,6 +17,7 @@ import { matchTemplate, generateFromTemplate, getSourceLabel, getSourceColor } f
 import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import PipelineUpload, { PipelineJobResult } from './components/PipelineUpload';
+import CrawlInput from './components/CrawlInput';
 import PipelineProgress from './components/PipelineProgress';
 import DXFPreview from './components/DXFPreview';
 import ReviewPanel from './components/ReviewPanel';
@@ -520,6 +521,9 @@ const App: React.FC = () => {
               </div>
             ) : (
               <>
+                <div className="w-full max-w-xl">
+                  <CrawlInput />
+                </div>
                 <div
                   className="w-full max-w-xl p-12 border-2 border-dashed border-indigo-300 rounded-3xl bg-white hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-300 cursor-pointer flex flex-col items-center text-center shadow-xl shadow-indigo-100/20 group"
                   onClick={() => fileInputRef.current?.click()}

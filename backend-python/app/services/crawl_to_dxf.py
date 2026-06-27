@@ -183,6 +183,34 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                     # Parse dimensions from tags (Shopify cf-size convention)
                     all_text = tags + " " + body_html
 
+                    # Parse dimensions from variant options (richest source)
+                    for variant in product.get("variants", []):
+                        for opt_key in ["option1", "option2", "option3"]:
+                            opt_val = variant.get(opt_key, "") or ""
+                            if not opt_val:
+                                continue
+                            # Pattern: "4 seater 80x140(L)x75(H)cm" or "80x140x75 cm"
+                            opts_text = " " + opt_val + " "
+
+                            # Pattern A: {W}x{L}(L)x{H}(H)cm — HomeU format
+                            for m in re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*)\s*(?:\(?H\)?)?\s*(?:cm|mm)?', opts_text, re.I):
+                                w, l, h = float(m[0]), float(m[1]), float(m[2])
+                                if "width_cm" not in result or w > result["width_cm"]:
+                                    result["width_cm"] = w
+                                    result["length_cm"] = l
+                                    result["overall_height_cm"] = h
+                                if "sizes" not in result:
+                                    result["sizes"] = []
+                                result["sizes"].append({"width": w, "length": l, "height": h, "variant": opt_val})
+
+                            # Pattern B: {W}x{D}x{H} cm — standard format
+                            if "width_cm" not in result:
+                                m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:cm|mm)?', opts_text, re.I)
+                                if m:
+                                    result["width_cm"] = float(m.group(1))
+                                    result["depth_cm"] = float(m.group(2))
+                                    result["overall_height_cm"] = float(m.group(3))
+
                     # Pattern 1: cf-size-{seating}{W}x{L}lx{H}hcm
                     for match in re.findall(r'(\d+)x(\d+)lx(\d+)hcm', all_text, re.I):
                         w, l, h = float(match[0]), float(match[1]), float(match[2])

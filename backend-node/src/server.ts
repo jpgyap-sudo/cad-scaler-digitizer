@@ -2,7 +2,7 @@ import express from "express";
 import { config } from "./config.js";
 import { productReferencesRouter } from "./routes/productReferences.js";
 import { crawlRouter } from "./routes/crawl.js";
-import { openapiSpec } from "./swagger.js";
+import { openapiSpec } from "./swagger";
 import swaggerUi from "swagger-ui-express";
 
 const app = express();
