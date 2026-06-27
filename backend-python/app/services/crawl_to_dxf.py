@@ -480,5 +480,46 @@ async def crawl_and_digitize(
         except Exception as e:
             logger.warning(f"[CrawlToDXF] Hallucination check failed: {e}")
 
+    # Step 5: Auto-run comparison agent against source image
+    _dxf_name = digitized.get("dxf_file") if isinstance(digitized, dict) else result.get("dxf_file")
+    _dxf_fullpath = f"/tmp/cad_digitizer_outputs/{_dxf_name}" if _dxf_name else None
+    if _dxf_fullpath and os.path.exists(_dxf_fullpath):
+        try:
+            from app.services.comparison_agent import (
+                compare_digitization, log_comparison_to_db, NumpyEncoder
+            )
+            import httpx
+            _dl_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": page_url,
+            }
+            async with httpx.AsyncClient(timeout=30) as _c:
+                _ir = await _c.get(image_url, headers=_dl_headers)
+                if _ir.status_code == 200:
+                    _image_data = _ir.content
+                    _product_id = urlparse(page_url).path.split("/")[-1] or "unknown"
+                    _comp_result = compare_digitization(
+                        job_id=_product_id,
+                        product_id=_product_id,
+                        image_url=image_url,
+                        image_data=_image_data,
+                        dxf_path=_dxf_fullpath,
+                        page_dimensions=page_dims if page_dims else None,
+                    )
+                    log_comparison_to_db(_comp_result)
+                    result["comparison"] = {
+                        "overall_score": _comp_result.overall_score,
+                        "edge_overlap_score": _comp_result.edge_overlap_score,
+                        "entity_match_score": _comp_result.entity_match_score,
+                        "dimension_deviation_pct": _comp_result.dimension_deviation_pct,
+                        "error_count": len(_comp_result.errors),
+                    }
+                    logger.info(
+                        f"[CrawlToDXF] Auto-comparison: score={_comp_result.overall_score:.3f}, "
+                        f"errors={len(_comp_result.errors)}"
+                    )
+        except Exception as e:
+            logger.warning(f"[CrawlToDXF] Auto-comparison failed (non-fatal): {e}")
+
     result["status"] = "completed"
     return result
