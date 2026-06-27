@@ -53,14 +53,30 @@ def build_round_pedestal_model(
     col_bot = col_top - collar_h
     ped_bot = col_bot - ped_h
     base_bot = floor_y
-    fx = 160.0
+    # fx (FRONT VIEW's horizontal center) used to be a fixed 160 regardless of
+    # top_dia_cm. The TOP VIEW circle (radius tv_r, below) sits to its left;
+    # for any top_dia_cm bigger than the value this constant was tuned for,
+    # FRONT VIEW's own left edge AND its left dimension column (which extends
+    # further left still) collide with the TOP VIEW circle, its centerlines,
+    # and its "TOP VIEW" label - visibly overlapping in the rendered drawing.
+    # 80cm (the most common top diameter, and the schema's lower-middle
+    # default) was exactly the case that triggered this. Compute fx from the
+    # TOP VIEW's actual rightmost extent instead of a guessed constant, so
+    # the two views never overlap regardless of furniture size.
+    tv_cx_planned = 55.0
+    tv_r_planned = top_dia_cm / 2 * 0.6
+    top_view_right_edge = tv_cx_planned + tv_r_planned + max(4.0, tv_r_planned * 0.12) + 15.0
+    # FRONT VIEW's own leftmost extent is its left dimension column, at
+    # fx - r_top - 18 (see dim_x_left below) - solve for fx so that sits
+    # clear of the TOP VIEW's right edge with a margin.
+    fx = max(160.0, top_view_right_edge + r_top + 30.0)
     lx_start = fx + r_top + 12
     lx_text = lx_start + 5
 
     # TOP VIEW
     top_view = View(name="TOP VIEW")
-    tv_cx, tv_cy = 55.0, top_y - r_top * 0.5
-    tv_r = top_dia_cm / 2 * 0.6
+    tv_cx, tv_cy = tv_cx_planned, top_y - r_top * 0.5
+    tv_r = tv_r_planned
     top_view.circles.append(CircleComponent(center=Point(tv_cx, tv_cy), radius=tv_r, layer="OBJECT"))
     for i in range(8):
         angle = 2 * math.pi * i / 8

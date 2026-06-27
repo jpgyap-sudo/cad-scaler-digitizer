@@ -389,10 +389,38 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                 if neck_dia is None: neck_dia = round(dia * neck_ratio, 1)
             except (TypeError, ValueError): pass
 
-        extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'materials': materials or {}}
+        # Collar plate: a separate, wider transition plate just under the
+        # tabletop. It used to ALWAYS be drawn at a hardcoded top_dia*0.625,
+        # regardless of whether the source photo shows one at all - many
+        # simple pedestal tables have the column go straight up to meet the
+        # tabletop with no wider plate in between. Only draw a collar when
+        # the AI actually reports seeing one; otherwise size it to match the
+        # column (no separate plate) instead of inventing a disconnected
+        # fixed-ratio width.
+        collar_dia = None
+        if isinstance(visual_base_estimate, dict) and visual_base_estimate.get('has_collar'):
+            try:
+                def _sane_collar_ratio(raw, fallback, lo=0.30, hi=0.85):
+                    try:
+                        v = float(raw or 0)
+                    except (TypeError, ValueError):
+                        return fallback
+                    return v if lo <= v <= hi else fallback
+                collar_ratio = _sane_collar_ratio(visual_base_estimate.get('collar_ratio'), 0.625)
+                collar_dia = round(dia * collar_ratio, 1)
+            except (TypeError, ValueError): pass
+        if collar_dia is None:
+            # No collar detected/reported - continue the column straight up
+            # (collar width == neck width) rather than flaring out to an
+            # arbitrary, unobserved plate.
+            collar_dia = neck_dia if neck_dia else round(dia * 0.28, 1)
+
+        extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'collar_dia_cm': collar_dia,
+                 'materials': materials or {}}
         try:
             save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height,
-                                       base_dia_cm=base_dia, neck_dia_cm=neck_dia, materials=materials)
+                                       base_dia_cm=base_dia, neck_dia_cm=neck_dia,
+                                       collar_dia_cm=collar_dia, materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_round_pedestal_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -412,7 +440,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                 'base_diameter_cm': round(sr.get('pedestal_diameter_cm', dia * 0.55), 1),
                 'neck_diameter_cm': round(sr.get('neck_diameter_cm', dia * 0.28), 1),
                 'top_thickness_cm': round(sr.get('top_thickness_cm', 4.0), 1),
-                'collar_diameter_cm': round(dia * 0.625, 1),
+                'collar_diameter_cm': round(collar_dia, 1),
             }
         except Exception as e: print(f"[DISPATCH] resolved_dimensions failed: {e}")
 
@@ -757,7 +785,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If the furniture is a round_pedestal_table, ALSO visually MEASURE the pedestal column's width as a FRACTION of the tabletop diameter by comparing pixel widths in the image (the pedestal/neck of a round table is ALWAYS narrower than the tabletop - never the same width, even for a straight, non-tapering cylindrical column; a typical pedestal column is roughly 25%-55% of the tabletop's diameter). Return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": <measured fraction, e.g. 0.35>, \"base_ratio\": <measured fraction, e.g. 0.4>}. If profile is 'cylinder', neck_ratio and base_ratio should be EQUAL to each other but must still reflect the actual measured width relative to the tabletop - NEVER default to 1.0 or any value above 0.6. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If the furniture is a round_pedestal_table, ALSO visually MEASURE the pedestal column's width as a FRACTION of the tabletop diameter by comparing pixel widths in the image (the pedestal/neck of a round table is ALWAYS narrower than the tabletop - never the same width, even for a straight, non-tapering cylindrical column; a typical pedestal column is roughly 25%-55% of the tabletop's diameter). Also determine whether a SEPARATE wider collar/transition plate is visible directly under the tabletop, distinct from the column itself - many simple pedestal tables have NO collar at all (the column goes straight up to meet the tabletop with no wider plate in between). Return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": <measured fraction, e.g. 0.35>, \"base_ratio\": <measured fraction, e.g. 0.4>, \"has_collar\": true_or_false, \"collar_ratio\": <measured fraction if has_collar is true, else omit>}. If profile is 'cylinder', neck_ratio and base_ratio should be EQUAL to each other but must still reflect the actual measured width relative to the tabletop - NEVER default to 1.0 or any value above 0.6. Do NOT invent a collar that isn't visible - has_collar must reflect what's actually drawn. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})

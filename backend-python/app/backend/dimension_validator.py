@@ -117,7 +117,15 @@ def check_round_pedestal_proportions(top_dia_cm: float, components: dict) -> lis
     if not top_dia_cm or top_dia_cm <= 0:
         return warnings
 
+    # A drawing with no separate collar plate legitimately sets
+    # collar_diameter_cm == neck_diameter_cm (the column continues straight
+    # up to the tabletop) - that's correct by construction, not an out-of-
+    # range value, so skip the collar band check in that specific case.
+    no_separate_collar = (components.get('collar_diameter_cm') is not None
+                           and components.get('collar_diameter_cm') == components.get('neck_diameter_cm'))
     for key, (lo, hi) in _PEDESTAL_RATIO_BANDS.items():
+        if key == 'collar_diameter_cm' and no_separate_collar:
+            continue
         val = components.get(key)
         if val is None:
             continue
@@ -131,7 +139,9 @@ def check_round_pedestal_proportions(top_dia_cm: float, components: dict) -> lis
     collar = components.get('collar_diameter_cm')
     neck = components.get('neck_diameter_cm')
     base = components.get('base_diameter_cm') or components.get('pedestal_diameter_cm')
-    if collar is not None and neck is not None and neck >= collar:
+    # Strictly greater, not >=: collar == neck is the legitimate "no separate
+    # collar plate" case (see no_separate_collar above).
+    if collar is not None and neck is not None and neck > collar:
         warnings.append(f"neck diameter ({neck:g}cm) should be smaller than collar diameter ({collar:g}cm)")
     if collar is not None and collar >= top_dia_cm:
         warnings.append(f"collar diameter ({collar:g}cm) should be smaller than top diameter ({top_dia_cm:g}cm)")
