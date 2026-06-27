@@ -516,6 +516,34 @@ def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_th
     _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
     _add_mtext(msp, 'FRONT VIEW', (fx - w2, top_y + 10), 3)
 
+    # ===== SIDE VIEW (RIGHT ELEVATION) =====
+    sx = fx + w2 + 60          # offset right of front view
+    floor_y_side = 30
+    top_y_side = floor_y_side + h
+    top_thick_side = max(d * 0.08, 2.0)
+    d2_side = d / 2            # half-depth for side view
+
+    # Tabletop from side (shows depth)
+    _add_polyline(msp, [(sx, top_y_side - top_thick_side), (sx + d, top_y_side - top_thick_side),
+                         (sx + d, top_y_side), (sx, top_y_side)], True)
+    _add_hatch_polygon(msp, [(sx, top_y_side - top_thick), (sx + d, top_y_side - top_thick),
+                              (sx + d, top_y_side), (sx, top_y_side)], 'ANSI31', 0.5)
+
+    # Legs from side (two legs, front and back)
+    if _visible("legs"):
+        leg_thick_side = lt * 0.8
+        for ly in [sx + leg_thick_side, sx + d - leg_thick_side - lt * 0.3]:
+            _add_polyline(msp, [(ly, floor_y_side), (ly + lt * 0.3, floor_y_side),
+                                (ly + lt * 0.3, top_y_side - top_thick_side),
+                                (ly, top_y_side - top_thick_side)], True)
+
+    # Dimensions
+    _add_dimension(msp, (sx + d + 8, floor_y_side), (sx + d + 8, top_y_side),
+                   (sx + d + 16, (floor_y_side + top_y_side) / 2), f'H = {height_cm:g} cm')
+    _add_dimension(msp, (sx, floor_y_side - 8), (sx + d, floor_y_side - 8),
+                   (sx + d / 2, floor_y_side - 14), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, top_y_side + 10), 3)
+
     generate_title_block(msp, f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
                          material_notes=[
