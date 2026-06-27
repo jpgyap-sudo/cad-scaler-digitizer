@@ -1,0 +1,2 @@
+REQUIRED_VIEWS = ["TOP VIEW", "FRONT ELEVATION", "SIDE ELEVATION"]
+REQUIRED_SHEET_ITEMS = ["titleblock", "bom", "notes"]

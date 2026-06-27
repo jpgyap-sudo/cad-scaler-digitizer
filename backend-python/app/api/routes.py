@@ -1772,6 +1772,10 @@ async def suggest_template(furniture_type: str = "", width_cm: float = 0, height
     from app.resource_engine.matcher import build_scene_graph
     from app.resource_engine.constraint_solver import solve_constraints
     from app.resource_engine.feedback import save_feedback, load_feedback_history, get_feedback_stats
+    from app.services.pipeline_service import PipelineService
+    
+    # Shared pipeline service instance
+    _PIPELINE_SERVICE = PipelineService()
     from app.resource_engine.cloud_vision import make_cloud_vision_client, CloudVisionFeatureSet
     from app.resource_engine.db_persistence import init_db, save_feedback_db, save_scene_db, update_pattern, get_feedback_stats_db, get_patterns_db, load_recent_feedback_db, load_recent_scenes_db
     
@@ -2049,6 +2053,24 @@ async def list_learned_users():
                        "last_updated": model.last_updated}
     return JSONResponse({"users": result, "total": len(users)})
 
+@router.post("/pipeline/validate")
+async def pipeline_validate(furniture_type: str = Form("dining_table"),
+                             template_id: str = Form("table.dual_cylindrical_pedestal.v1"),
+                             length_mm: float = Form(1800), depth_mm: float = Form(900),
+                             height_mm: float = Form(750), top_thickness_mm: float = Form(30)):
+    """Run the validation gate on a set of parameters WITHOUT generating DXF.
+    
+    Pre-validates dimensions, structural integrity, joinery, hardware clearance.
+    Returns a UnifiedValidationManifest with score, issues, and suggested action.
+    """
+    from app.resource_engine.validation_gate import ValidationGate
+    params = {"length_mm": length_mm, "depth_mm": depth_mm, "height_mm": height_mm,
+              "top_thickness_mm": top_thickness_mm}
+    gate = ValidationGate()
+    manifest = gate.run_full_gate(params, furniture_type, template_id)
+    return JSONResponse(manifest.to_dict())
+
+
 @router.post("/scene/feedback")
 async def scene_feedback(product_type: str = Form(...), approved: bool = Form(...),
                           comment: str = Form(""), user_id: str = Form("default"),
@@ -2176,6 +2198,59 @@ async def scene_generate(furniture_type: str = "asymmetric_pedestal_table",
         "warnings": scene.warnings,
         "db_id": scene_db_id,
     })
+
+
+@router.post("/pipeline/run")
+async def pipeline_run(file: UploadFile = File(...), furniture_type: str = Form("")):
+    """Run the full end-to-end pipeline from photo to DXF.
+    
+    Orchestrates: Cloud Vision → Parameter Pack → Production → Manufacturing
+    → Fusion → Template Graph → CAD Kernel → Quality → Closed Loop
+    
+    Returns job_id for status polling and DXF download URL.
+    """
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    job_id = str(uuid.uuid4())
+    img_path = UPLOAD / f"{job_id}_{uuid.uuid4().hex[:8]}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    
+    try:
+        job = _PIPELINE_SERVICE.run_photo_pipeline(str(img_path), furniture_type)
+        dxf_url = ""
+        dxf_path = job.outputs.get("dxf", "")
+        if dxf_path:
+            safe_name = f"{job_id}_output.dxf"
+            import shutil as sh
+            sh.copy2(dxf_path, str(OUT / safe_name))
+            dxf_url = f"/api/download/{safe_name}"
+        
+        return JSONResponse({
+            "job_id": job.job_id,
+            "status": job.status,
+            "steps": len(job.steps),
+            "errors": job.errors,
+            "outputs": {
+                "dxf_url": dxf_url,
+                "quality_score": job.outputs.get("quality_score", ""),
+                "scene_graph": job.outputs.get("scene_graph", ""),
+            },
+            "job": job.to_dict(),
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+    finally:
+        try: os.remove(str(img_path))
+        except: pass
+
+
+@router.get("/pipeline/status/{job_id}")
+async def pipeline_status(job_id: str):
+    """Get the status of a pipeline job."""
+    job = _PIPELINE_SERVICE.get_job(job_id)
+    if not job:
+        return JSONResponse({"error": "Job not found"}, status_code=404)
+    return JSONResponse(job.to_dict())
 
 
 @router.post("/learn/apply")

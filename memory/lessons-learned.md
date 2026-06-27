@@ -3152,3 +3152,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: rectangular table drawing had disconnected fixed-position constants and missing notes
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 15831184736fb31d6c5559a8a973a0996054694c
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 15831184736fb31d6c5559a8a973a0996054694c
+**Files:** 
+
+**Summary:**
+Commit: fix: rectangular table drawing had disconnected fixed-position constants and missing notes
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: rectangular table drawing had disconnected fixed-position constants and missing notes*
+
+#### Lesson Learned
+
+Commit: fix: rectangular table drawing had disconnected fixed-position constants and missing notes
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

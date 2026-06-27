@@ -324,6 +324,47 @@ export async function genericProductCrawler(input) {
       }
     });
 
+    // Deep search for hidden CAD download links (accentuate.io, Shopify CDN)
+    const hiddenCadUrls = await page.evaluate(() => {
+      const found = [];
+      // Check ALL URLs in the page (including inline scripts, data attributes, JSON-LD)
+      const html = document.documentElement.outerHTML;
+
+      // Find accentuate.io URLs with DXF/DWG/PDF extensions
+      const accentuateMatches = html.match(/https?:\/\/[^"'\s]*(?:accentuate)[^"'\s]*\.(dxf|dwg|pdf|step|stp|iges|igs)[^"'\s]*/gi);
+      if (accentuateMatches) found.push(...accentuateMatches.map(u => u.replace(/&amp;/g, '&')));
+
+      // Find Shopify CDN URLs with DXF/DWG extensions
+      const shopifyCad = html.match(/https?:\/\/cdn\.shopify[^"'\s]*\.(dxf|dwg|step|stp)[^"'\s]*/gi);
+      if (shopifyCad) found.push(...shopifyCad.map(u => u.replace(/&amp;/g, '&')));
+
+      // Check JSON-LD for CAD references
+      document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
+        if (s.textContent.match(/dxf|cad|dwg|drawing/i)) {
+          const jsonUrls = s.textContent.match(/https?:\/\/[^"'\s]*(?:dxf|dwg|cad)[^"'\s]*/gi);
+          if (jsonUrls) found.push(...jsonUrls);
+        }
+      });
+
+      // Check all meta tags
+      document.querySelectorAll('meta[content]').forEach(m => {
+        if (m.content.match(/\.(dxf|dwg)$/i)) found.push(m.content);
+      });
+
+      return [...new Set(found)];
+    });
+
+    console.log(`[Stealth] Hidden CAD URLs found: ${hiddenCadUrls.length}`);
+    hiddenCadUrls.forEach(u => console.log(`  HIDDEN CAD: ${u}`));
+
+    // Add hidden CAD URLs to the downloadable list
+    for (const url of hiddenCadUrls) {
+      if (!seen.has(url)) {
+        seen.add(url);
+        urls.push(url);
+      }
+    }
+
     // Filter downloadable assets
     const downloadable = urls
       .map((u) => ({ url: normalizeUrl(u, url), type: inferAssetType(u) }))
