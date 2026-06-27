@@ -430,7 +430,8 @@ async def crawl_and_digitize(
             real_width_cm = page_dims["width_cm"]
             logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
 
-    # Step 4: Digitize via internal HTTP call
+    # Step 4: Digitize via HTTP call (to self, typically localhost:8001)
+    # To avoid HTTP overhead, import and call _run_digitize_pipeline from routes.py directly
     API_BASE = os.environ.get("PYTHON_WORKER_URL", "http://localhost:8001")
     files = {"file": ("product.png", img_bytes, "image/png")}
     params = {"furniture_type": furniture_type}

@@ -536,21 +536,29 @@ def compare_digitization(
                     source="dimension",
                 )))
 
-    # Compute overall weighted score
-    edge_weight = 0.4
-    entity_weight = 0.3
-    dim_weight = 0.3
+    # Compute overall weighted score with smart weighting
+    # Edge overlap (Canny) is unreliable for e-commerce photos — de-emphasize
+    # Dimension comparison is the most reliable signal when page dims are available
+    has_page_dims = bool(page_dimensions and (page_dimensions.get("width_cm") or page_dimensions.get("overall_height_cm")))
+    has_dxf_edge = dxf_raster is not None
 
-    # Reduce entity weight if we couldn't compare
-    if dxf_raster is None:
+    if has_page_dims:
+        edge_weight = 0.1
+        entity_weight = 0.2
+        dim_weight = 0.7
+    elif has_dxf_edge:
+        edge_weight = 0.4
+        entity_weight = 0.4
+        dim_weight = 0.2
+    else:
         edge_weight = 0.0
-        entity_weight = 0.5
-        dim_weight = 0.5
+        entity_weight = 0.6
+        dim_weight = 0.4
 
     overall = (
         result.edge_overlap_score * edge_weight
         + result.entity_match_score * entity_weight
-        + (1.0 - result.dimension_deviation_pct / 100) * dim_weight
+        + (1.0 - min(result.dimension_deviation_pct, 100) / 100) * dim_weight
     )
 
     # Apply error penalties

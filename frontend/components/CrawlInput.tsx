@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, Loader2, Download, CheckCircle2, AlertCircle, ExternalLink, Ruler } from "lucide-react";
+import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
@@ -74,7 +74,7 @@ export default function CrawlInput() {
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://store.com/products/..."
+          placeholder="https://homeu.ph/products/tangerie-dining-table"
           className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           onKeyDown={(e) => e.key === "Enter" && handleCrawl()}
         />
@@ -99,6 +99,28 @@ export default function CrawlInput() {
           )}
         </button>
       </div>
+
+      {/* Examples / help */}
+      <details className="mt-2">
+        <summary className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer flex items-center gap-1">
+          <Lightbulb size={12} /> Try with example URLs
+        </summary>
+        <div className="mt-1.5 space-y-1">
+          <button onClick={() => setUrl("https://homeu.ph/products/tangerie-dining-table")}
+            className="block w-full text-left text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded">
+            HomeU — Tangerie Dining Table
+          </button>
+          <button onClick={() => setUrl("https://homeu.ph/products/glenn-modern-sofa")}
+            className="block w-full text-left text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded">
+            HomeU — Glenn Modern Sofa
+          </button>
+          <button onClick={() => setUrl("https://homeu.ph/products/evon-modern-bed")}
+            className="block w-full text-left text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded">
+            HomeU — Evon Modern Bed
+          </button>
+        </div>
+      </details>
+    </div>
 
       {/* Error */}
       {result?.status === "failed" && (

@@ -528,7 +528,22 @@ def main():
                 last_aggregate = now
             except Exception as e:
                 log(f"Metric aggregation failed: {e}", "ERROR")
-
+        
+        # Check if error rate > threshold and send webhook alert
+        try:
+            import urllib.request
+            import json as alert_json
+            webhook_url = os.environ.get("ALERT_WEBHOOK_URL", "")
+            if webhook_url:
+                alert_data = aggregate_daily_metrics()
+                if alert_data and alert_data.get("error_rate", 0) > 10:
+                    payload = alert_json.dumps({
+                        "text": f"⚠️ CAD Digitizer Alert — Error rate at {alert_data['error_rate']:.0f}%"
+                    }).encode()
+                    urllib.request.urlopen(webhook_url, data=payload, timeout=5)
+        except Exception:
+            pass
+        
         # Full analysis (every 6 hours)
         if now - last_analysis >= ANALYSIS_INTERVAL_SECONDS:
             run_analysis_cycle()
