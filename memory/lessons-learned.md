@@ -3494,3 +3494,193 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: check ALL product options for dimensions (not just variants[].option1)
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 8a0baa1f318b2044e6f1d43d24d4dbf4e3bd2433
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 8a0baa1f318b2044e6f1d43d24d4dbf4e3bd2433
+**Files:** 
+
+**Summary:**
+Commit: fix: check ALL product options for dimensions (not just variants[].option1)
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: check ALL product options for dimensions (not just variants[].option1)*
+
+#### Lesson Learned
+
+Commit: fix: check ALL product options for dimensions (not just variants[].option1)
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 7 high-impact gaps — digitizer config, resource limits, DB names, crawl tuning
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit fcb0031d02ff5e628799b09d5f3671aefae6f9c8
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** fcb0031d02ff5e628799b09d5f3671aefae6f9c8
+**Files:** 
+
+**Summary:**
+Commit: fix: 7 high-impact gaps — digitizer config, resource limits, DB names, crawl tuning
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 7 high-impact gaps — digitizer config, resource limits, DB names, crawl tuning*
+
+#### Lesson Learned
+
+Commit: fix: 7 high-impact gaps — digitizer config, resource limits, DB names, crawl tuning
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 6 medium gaps — frontend onboarding, smart weighting, alerts, API tests
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5cf016efbce93c61635c933568e0153879aca6d9
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 5cf016efbce93c61635c933568e0153879aca6d9
+**Files:** 
+
+**Summary:**
+Commit: fix: 6 medium gaps — frontend onboarding, smart weighting, alerts, API tests
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 6 medium gaps — frontend onboarding, smart weighting, alerts, API tests*
+
+#### Lesson Learned
+
+Commit: fix: 6 medium gaps — frontend onboarding, smart weighting, alerts, API tests
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: Tangerie Table iteration — 92.2% comparison score via smart dim weighting
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3a5e726eb09eae0e08748a4a5820c28f44531a2a
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 3a5e726eb09eae0e08748a4a5820c28f44531a2a
+**Files:** 
+
+**Summary:**
+Commit: fix: Tangerie Table iteration — 92.2% comparison score via smart dim weighting
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Tangerie Table iteration — 92.2% comparison score via smart dim weighting*
+
+#### Lesson Learned
+
+Commit: fix: Tangerie Table iteration — 92.2% comparison score via smart dim weighting
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: expanded dimension extraction — 5 new patterns, all 10 tables pass
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 909704ab76dfd800d4bdc234ff3f29968569a7e1
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 909704ab76dfd800d4bdc234ff3f29968569a7e1
+**Files:** 
+
+**Summary:**
+Commit: fix: expanded dimension extraction — 5 new patterns, all 10 tables pass
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: expanded dimension extraction — 5 new patterns, all 10 tables pass*
+
+#### Lesson Learned
+
+Commit: fix: expanded dimension extraction — 5 new patterns, all 10 tables pass
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -120,7 +120,6 @@ export default function CrawlInput() {
           </button>
         </div>
       </details>
-    </div>
 
       {/* Error */}
       {result?.status === "failed" && (
