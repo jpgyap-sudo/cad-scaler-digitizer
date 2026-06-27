@@ -83,7 +83,7 @@ productReferencesRouter.post("/:id/process-dxf", async (req, res) => {
   const dxf = product.assets.find((a) => a.assetType === "DXF");
   if (!dxf) return res.status(400).json({ error: "No DXF asset found" });
 
-  const response = await axios.post(`${config.pythonWorkerUrl}/process-dxf`, {
+  const response = await axios.post(`${config.pythonWorkerUrl}/api/process-dxf`, {
     productId: product.id,
     manufacturer: product.manufacturer,
     productSlug: product.slug,

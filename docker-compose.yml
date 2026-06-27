@@ -56,6 +56,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - QDRANT_URL=http://qdrant:6333
       - PYTHON_ENGINE_URL=http://python-worker:8001
+      - PYTHON_WORKER_URL=http://python-worker:8001
       - SPACES_ENDPOINT=${SPACES_ENDPOINT:-}
       - SPACES_REGION=${SPACES_REGION:-sgp1}
       - SPACES_BUCKET=${SPACES_BUCKET:-}

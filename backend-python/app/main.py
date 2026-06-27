@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Load .env
 _env_path = Path(__file__).parent.parent / '.env'
@@ -58,7 +59,40 @@ def progress(limit: int = 50):
                 parsed.append(json.loads(e))
             except json.JSONDecodeError:
                 parsed.append({"raw": e})
-        from fastapi.responses import JSONResponse
         return JSONResponse({"events": parsed, "count": len(parsed)})
     except Exception as e:
         return JSONResponse({"events": [], "error": str(e)})
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
+    # Pre-warm the drawing model cache
+    try:
+        from app.backend.drawing_builders import build_round_pedestal_model
+        build_round_pedestal_model()
+    except Exception as e:
+        print(f"[Startup] Drawing model cache warm failed: {e}")
+
+    # Initialize the AI assistant
+    try:
+        from app.monitoring.assistant_monitor import assistant_monitor
+        assistant_monitor.init()
+    except Exception as e:
+        print(f"[Startup] Assistant monitor init failed: {e}")
+
+    # Initialize Qdrant geometry embedding collection for reference library
+    try:
+        from app.services.embedding_service import init_collection
+        init_collection()
+        print("[Startup] Qdrant CAD geometry collection initialized")
+    except Exception as e:
+        print(f"[Startup] Qdrant init failed (non-fatal): {e}")
+
+    # Initialize Resource Engine database (SQLite/Postgres for feedback + scenes)
+    try:
+        from app.resource_engine.db_persistence import init_db
+        init_db()
+        print("[Startup] Resource Engine database initialized")
+    except Exception as e:
+        print(f"[Startup] Resource Engine DB init failed (non-fatal): {e}")

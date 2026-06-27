@@ -21,10 +21,15 @@ from app.backend.furniture_component_segmenter import segment_furniture
 from app.backend.correction_api import submit_corrections, get_corrections, reset_corrections
 from app.backend.accuracy_benchmark import run_accuracy_benchmark, load_fixtures
 from app.backend.section_predictor import predict_drawing_sections
+from app.backend.reference_ratio_solver import solve_missing_dimensions, get_reference_ratios
+from app.backend.reference_confidence_scorer import score_dimension_confidence, get_overall_confidence
+from app.backend.reference_geometry_matcher import match_detected_to_reference
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
     save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
-    save_wardrobe, save_reception_counter, save_bed_headboard
+    save_wardrobe, save_reception_counter, save_bed_headboard,
+    save_asymmetric_pedestal_table, save_oval_pedestal_table,
+    save_console_table, save_office_desk,
 )
 
 router = APIRouter()
@@ -57,7 +62,8 @@ CLASSIFIER_CONFIRM_THRESHOLD = 0.55
 VISION_SYSTEM_PROMPT = (
     "Analyze furniture drawing. Identify the SPECIFIC furniture type from this "
     "list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, "
-    "dining_chair, wardrobe, reception_counter, bed_headboard. "
+    "dining_chair, wardrobe, reception_counter, bed_headboard, asymmetric_pedestal_table, "
+    "oval_pedestal_table, console_table, office_desk. "
     "First extract the overall size (length/width/diameter, depth, height) from "
     "any text labels in the image - these are the anchor dimensions everything "
     "else is measured relative to. For each dimension label, use nearby text to "
@@ -397,6 +403,24 @@ def _component_schema(f_type):
                 {"key": "base_height_cm", "label": "Base Height", "min": 4, "max": 15, "step": 0.5, "unit": "cm"}],
              "material": {"key": "base", "default": "Brushed stainless steel"}},
         ]
+    if f_type == 'asymmetric_pedestal_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "length_cm", "label": "Length", "min": 100, "max": 300, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 60, "max": 150, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 1.5, "max": 5, "step": 0.1, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Marble / engineered stone"}},
+            {"name": "large_pedestal", "label": "Large Pedestal (P1)", "dims": [
+                {"key": "large_ped_dia_cm", "label": "Diameter", "min": 30, "max": 50, "step": 1, "unit": "cm"},
+                {"key": "left_ped_x_cm", "label": "Offset from center", "min": 10, "max": 60, "step": 1, "unit": "cm"}],
+             "material": {"key": "large_pedestal", "default": "Brushed stainless steel"}},
+            {"name": "small_pedestal", "label": "Small Pedestal (P2)", "dims": [
+                {"key": "small_ped_dia_cm", "label": "Diameter", "min": 15, "max": 30, "step": 1, "unit": "cm"},
+                {"key": "right_ped_x_cm", "label": "Offset from center", "min": -60, "max": -10, "step": 1, "unit": "cm"}],
+             "material": {"key": "small_pedestal", "default": "Brushed stainless steel"}},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
+        ]
     return None
 
 
@@ -431,6 +455,10 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
             'bed_headboard': ['width_cm', 'overall_height_cm'],
             'coffee_table': ['width_cm', 'depth_cm', 'overall_height_cm'],
             'reception_counter': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'asymmetric_pedestal_table': ['length_cm', 'depth_cm', 'overall_height_cm'],
+            'oval_pedestal_table': ['length_cm', 'depth_cm', 'overall_height_cm'],
+            'console_table': ['length_cm', 'depth_cm', 'overall_height_cm'],
+            'office_desk': ['length_cm', 'depth_cm', 'overall_height_cm'],
         }
         critical_keys = critical_overrides.get(f_type, list(schema_keys)[:3])
 
@@ -487,6 +515,69 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         return default
 
     extra = {}
+
+    # ===== Reference pipeline: fill missing dimensions from reference ratios =====
+    try:
+        ref_dims = {}
+        for d in corrected_dims:
+            tag = d.get('tag', '').lower().strip()
+            val = d.get('value_cm')
+            if val:
+                if tag in ('top_dia', 'dia', 'diameter'):
+                    ref_dims['top_diameter_cm'] = float(val)
+                    ref_dims['width_cm'] = float(val)
+                    ref_dims['length_cm'] = float(val)
+                elif tag in ('h', 'height', 'overall_height', 'total_height'):
+                    ref_dims['overall_height_cm'] = float(val)
+                    ref_dims['height_cm'] = float(val)
+                elif tag in ('w', 'width', 'length', 'overall_width'):
+                    ref_dims['width_cm'] = float(val)
+                    ref_dims['length_cm'] = float(val)
+                elif tag in ('d', 'depth', 'overall_depth'):
+                    ref_dims['depth_cm'] = float(val)
+        if real_w and real_w > 0:
+            if 'width_cm' not in ref_dims: ref_dims['width_cm'] = real_w
+            if 'length_cm' not in ref_dims: ref_dims['length_cm'] = real_w
+            if 'top_diameter_cm' not in ref_dims: ref_dims['top_diameter_cm'] = real_w
+        if real_h and real_h > 0:
+            if 'overall_height_cm' not in ref_dims: ref_dims['overall_height_cm'] = real_h
+
+        if ref_dims:
+            solved = solve_missing_dimensions(f_type, ref_dims)
+            if solved:
+                extra['reference_solved_dims'] = solved
+                # Log what was filled
+                filled = {k: v for k, v in solved.items() if k not in ref_dims}
+                if filled:
+                    print(f"[REF-PIPELINE] Filled dimensions from reference ratios: {filled}")
+
+            # Confidence scoring on detected dimensions
+            conf_scores = score_dimension_confidence(f_type, ref_dims)
+            if conf_scores:
+                extra['reference_confidence_scores'] = conf_scores
+                extra['reference_overall_confidence'] = get_overall_confidence(conf_scores)
+    except Exception as e:
+        print(f"[REF-PIPELINE] Failed: {e}")
+    # ===== End reference pipeline =====
+
+    # ===== Scene Graph pipeline =====
+    try:
+        _LIBRARY = getattr(_dispatch_furniture, '_library', None)
+        if _LIBRARY is None:
+            _LIBRARY = ResourceLibrary().load()
+            _dispatch_furniture._library = _LIBRARY
+        # Build scene graph from resolved dimensions
+        scene_dims = extra.get('resolved_dimensions') or {}
+        scene = build_scene_graph(f_type, scene_dims, materials=materials, library=_LIBRARY)
+        scene = solve_constraints(scene)
+        extra['scene_graph'] = json.loads(scene.model_dump_json())
+        extra['scene_warnings'] = scene.warnings
+        if scene.warnings:
+            print(f"[SCENE-GRAPH] Warnings: {scene.warnings}")
+    except Exception as e:
+        print(f"[SCENE-GRAPH] Build failed (non-fatal): {e}")
+    # ===== End Scene Graph pipeline =====
+
     if f_type == 'round_pedestal_table':
         print("EXPORTER USED: save_round_pedestal_table")
         labeled_top, base_dia, neck_dia = _extract_pedestal_dims(corrected_dims)
@@ -633,6 +724,74 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         h = real_h or _dim(['h', 'height'], 200.0)
         try: save_wardrobe(str(dxf_path), width_cm=w, height_cm=h)
         except Exception: save_generic(str(dxf_path), [], [], [])
+    elif f_type == 'asymmetric_pedestal_table':
+        l = real_w or _dim(['l', 'length', 'len', 'w', 'width'], 180.0)
+        h_val = real_h or _dim(['h', 'height'], 75.0)
+        d = _dim(['d', 'depth'], 90.0)
+        lp = _dim(['large_ped_dia', 'ped1_dia', 'ped1'], 40.0)
+        sp = _dim(['small_ped_dia', 'ped2_dia', 'ped2'], 22.0)
+        lpx = _dim(['left_ped_x', 'ped1_x', 'ped1_off'], 30.0)
+        rpx = _dim(['right_ped_x', 'ped2_x', 'ped2_off'], -25.0)
+        oh = _dim(['overhang'], 20.0)
+        try:
+            save_asymmetric_pedestal_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val,
+                                            large_ped_dia_cm=lp, small_ped_dia_cm=sp,
+                                            left_ped_x_cm=lpx, right_ped_x_cm=rpx, overhang_cm=oh,
+                                            materials=extra.get('materials'))
+        except Exception as e:
+            print(f"[DISPATCH] save_asymmetric_pedestal_table FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h_val, 1),
+            'large_ped_dia_cm': round(lp, 1), 'small_ped_dia_cm': round(sp, 1),
+            'left_ped_x_cm': round(lpx, 1), 'right_ped_x_cm': round(rpx, 1),
+        }
+    elif f_type == 'oval_pedestal_table':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 180.0)
+        h_val = real_h or _dim(['h', 'height'], 75.0)
+        d = _dim(['d', 'depth'], 100.0)
+        pd = _dim(['pedestal_dia', 'ped_dia'], 40.0)
+        try:
+            save_oval_pedestal_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, pedestal_dia_cm=pd)
+        except Exception as e:
+            print(f"[DISPATCH] save_oval_pedestal_table FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h_val, 1), 'pedestal_dia_cm': round(pd, 1),
+        }
+    elif f_type == 'console_table':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 120.0)
+        h_val = real_h or _dim(['h', 'height'], 75.0)
+        d = _dim(['d', 'depth'], 40.0)
+        lt = _dim(['leg', 'thickness', 'leg_thick'], 4.0)
+        try:
+            save_console_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, leg_thick_cm=lt)
+        except Exception as e:
+            print(f"[DISPATCH] save_console_table FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h_val, 1), 'leg_thick_cm': round(lt, 1),
+        }
+    elif f_type == 'office_desk':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 140.0)
+        h_val = real_h or _dim(['h', 'height'], 75.0)
+        d = _dim(['d', 'depth'], 60.0)
+        lt = _dim(['leg', 'thickness', 'leg_thick'], 4.0)
+        mph = _dim(['modesty', 'panel'], 15.0)
+        try:
+            save_office_desk(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val,
+                              leg_thick_cm=lt, modesty_panel_h_cm=mph)
+        except Exception as e:
+            print(f"[DISPATCH] save_office_desk FAILED: {e}")
+            save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h_val, 1),
+            'leg_thick_cm': round(lt, 1), 'modesty_panel_h_cm': round(mph, 1),
+        }
     elif f_type == 'reception_counter':
         w = real_w or _dim(['w', 'width'], 180.0)
         h = real_h or _dim(['h', 'height'], 110.0)
@@ -663,6 +822,22 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         record_drawing(dxf_path.stem, f_type, dxf_path.name, dimensions_used=resolved)
     except Exception as e: print(f"[DISPATCH] brain_sync recording failed: {e}")
 
+    # Auto-index generated DXF to Qdrant for future similarity search
+    try:
+        from app.services.embedding_service import generate_and_index_embedding
+        import ezdxf
+        doc = ezdxf.readfile(str(dxf_path))
+        from app.cad.dxf_parser import parse_dxf
+        geometry = parse_dxf(str(dxf_path))
+        idx_result = generate_and_index_embedding(
+            geometry=geometry,
+            product_id=f"generated_{dxf_path.stem}",
+        )
+        if idx_result.get('status') == 'indexed':
+            print(f"[QDrant] Indexed generated DXF: {dxf_path.name}")
+    except Exception as e:
+        print(f"[QDrant] Auto-index failed (non-fatal): {e}")
+
     return extra
 
 
@@ -678,6 +853,8 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         build_cabinet_model, build_sofa_model, build_coffee_table_model,
         build_dining_chair_model, build_wardrobe_model,
         build_reception_counter_model, build_bed_headboard_model,
+        build_asymmetric_pedestal_model, build_oval_pedestal_model,
+        build_console_table_model, build_office_desk_model,
         build_generic_model,
     )
 
@@ -711,6 +888,84 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         d = resolved.get('depth_cm', 60)
         h = resolved.get('overall_height_cm', real_h or 200)
         return build_wardrobe_model(float(w), float(d), float(h))
+    if f_type == 'oval_pedestal_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "length_cm", "label": "Length", "min": 120, "max": 300, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 60, "max": 150, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 5, "step": 0.1, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Marble / engineered stone"}},
+            {"name": "pedestal", "label": "Pedestal", "dims": [
+                {"key": "pedestal_dia_cm", "label": "Diameter", "min": 25, "max": 55, "step": 1, "unit": "cm"}],
+             "material": {"key": "pedestal", "default": "Brushed stainless steel"}},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'console_table':
+        return [
+            {"name": "tabletop", "label": "Tabletop", "dims": [
+                {"key": "length_cm", "label": "Length", "min": 80, "max": 200, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 25, "max": 55, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 1.5, "max": 4, "step": 0.1, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "Solid wood / MDF"}},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_thick_cm", "label": "Leg Thickness", "min": 2, "max": 6, "step": 0.5, "unit": "cm"},
+                {"key": "leg_inset_cm", "label": "Inset", "min": 1, "max": 5, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Solid wood, matching top"}},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'office_desk':
+        return [
+            {"name": "tabletop", "label": "Desk Top", "dims": [
+                {"key": "length_cm", "label": "Length", "min": 90, "max": 200, "step": 1, "unit": "cm"},
+                {"key": "depth_cm", "label": "Depth", "min": 50, "max": 80, "step": 1, "unit": "cm"},
+                {"key": "top_thickness_cm", "label": "Thickness", "min": 1.5, "max": 4, "step": 0.1, "unit": "cm"}],
+             "material": {"key": "tabletop", "default": "MDF with melamine finish"}},
+            {"name": "legs", "label": "Legs", "dims": [
+                {"key": "leg_thick_cm", "label": "Leg Thickness", "min": 3, "max": 6, "step": 0.5, "unit": "cm"}],
+             "material": {"key": "legs", "default": "Powder-coated steel"}},
+            {"name": "modesty_panel", "label": "Modesty Panel", "dims": [
+                {"key": "modesty_panel_h_cm", "label": "Panel Height", "min": 10, "max": 30, "step": 1, "unit": "cm"}],
+             "material": {"key": "modesty_panel", "default": "MDF, matching top"}},
+            {"name": "overall", "label": "Overall", "dims": [
+                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
+        ]
+    if f_type == 'oval_pedestal_table':
+        l = resolved.get('length_cm', real_w or 180)
+        d = resolved.get('depth_cm', 100)
+        h = resolved.get('overall_height_cm', real_h or 75)
+        pd = resolved.get('pedestal_dia_cm', 40)
+        return build_oval_pedestal_model(length_cm=float(l), depth_cm=float(d), height_cm=float(h), pedestal_dia_cm=float(pd))
+    if f_type == 'console_table':
+        l = resolved.get('length_cm', real_w or 120)
+        d = resolved.get('depth_cm', 40)
+        h = resolved.get('overall_height_cm', real_h or 75)
+        lt = resolved.get('leg_thick_cm', 4)
+        return build_console_table_model(length_cm=float(l), depth_cm=float(d), height_cm=float(h), leg_thick_cm=float(lt))
+    if f_type == 'office_desk':
+        l = resolved.get('length_cm', real_w or 140)
+        d = resolved.get('depth_cm', 60)
+        h = resolved.get('overall_height_cm', real_h or 75)
+        lt = resolved.get('leg_thick_cm', 4)
+        mph = resolved.get('modesty_panel_h_cm', 15)
+        return build_office_desk_model(length_cm=float(l), depth_cm=float(d), height_cm=float(h), leg_thick_cm=float(lt), modesty_panel_h_cm=float(mph))
+    if f_type == 'asymmetric_pedestal_table':
+        l = resolved.get('length_cm', real_w or 180)
+        d = resolved.get('depth_cm', 90)
+        h = resolved.get('overall_height_cm', real_h or 75)
+        lp = resolved.get('large_ped_dia_cm', 40)
+        sp = resolved.get('small_ped_dia_cm', 22)
+        lpx = resolved.get('left_ped_x_cm', 30)
+        rpx = resolved.get('right_ped_x_cm', -25)
+        oh = resolved.get('overhang_cm', 20)
+        mats = (dispatch_extra or {}).get('materials') if dispatch_extra else None
+        return build_asymmetric_pedestal_model(
+            length_cm=float(l), depth_cm=float(d), height_cm=float(h),
+            large_ped_dia_cm=float(lp), small_ped_dia_cm=float(sp),
+            left_ped_x_cm=float(lpx), right_ped_x_cm=float(rpx),
+            overhang_cm=float(oh), materials=mats,
+        )
     if f_type == 'reception_counter':
         w = resolved.get('width_cm', real_w or 180)
         h = resolved.get('overall_height_cm', real_h or 110)
@@ -1503,6 +1758,60 @@ async def ml_retrain():
     return JSONResponse(retrain_models())
 
 
+# ===== TEMPLATE SUGGEST ENDPOINT =====
+
+@router.get("/templates/suggest")
+async def suggest_template(furniture_type: str = "", width_cm: float = 0, height_cm: float = 0, depth_cm: float = 0):
+    """Suggest which template/ratios to use for detected dimensions.
+    
+    Uses the reference ratio solver to fill missing dimensions and
+    returns the recommended template parameters.
+    """
+    from app.backend.reference_ratio_solver import solve_missing_dimensions, get_reference_ratios
+    from app.resource_engine.library import ResourceLibrary
+    from app.resource_engine.matcher import build_scene_graph
+    from app.resource_engine.constraint_solver import solve_constraints
+    from app.resource_engine.feedback import save_feedback, load_feedback_history, get_feedback_stats
+    from app.resource_engine.db_persistence import init_db, save_feedback_db, save_scene_db, update_pattern, get_feedback_stats_db, get_patterns_db, load_recent_feedback_db, load_recent_scenes_db
+    
+    if not furniture_type:
+        return JSONResponse({"error": "furniture_type required"}, status_code=400)
+    
+    detected = {}
+    if width_cm > 0:
+        detected['width_cm'] = width_cm
+        detected['length_cm'] = width_cm
+        if furniture_type in ('round_pedestal_table',):
+            detected['top_diameter_cm'] = width_cm
+    if height_cm > 0:
+        detected['overall_height_cm'] = height_cm
+        detected['height_cm'] = height_cm
+    if depth_cm > 0:
+        detected['depth_cm'] = depth_cm
+    
+    if not detected:
+        # Return default ratios so the frontend can show what's available
+        ratios = get_reference_ratios(furniture_type)
+        return JSONResponse({
+            "furniture_type": furniture_type,
+            "detected_dimensions": detected,
+            "default_ratios": ratios,
+            "note": "No dimensions provided — showing default ratios",
+        })
+    
+    solved = solve_missing_dimensions(furniture_type, detected)
+    from app.backend.reference_confidence_scorer import score_dimension_confidence, get_overall_confidence
+    conf_scores = score_dimension_confidence(furniture_type, detected)
+    
+    return JSONResponse({
+        "furniture_type": furniture_type,
+        "detected_dimensions": detected,
+        "solved_dimensions": solved,
+        "confidence_scores": conf_scores,
+        "overall_confidence": get_overall_confidence(conf_scores),
+    })
+
+
 # ===== CENTRAL BRAIN ENDPOINTS =====
 
 @router.get("/brain/report")
@@ -1739,6 +2048,110 @@ async def list_learned_users():
                        "last_updated": model.last_updated}
     return JSONResponse({"users": result, "total": len(users)})
 
+@router.post("/scene/feedback")
+async def scene_feedback(product_type: str = Form(...), approved: bool = Form(...),
+                          comment: str = Form(""), user_id: str = Form("default"),
+                          scene_json: str = Form("{}")):
+    """Submit user feedback on a scene graph generation.
+    
+    Approved scenes reinforce the library matching.
+    Rejected scenes help identify where the matcher or constraint solver fails.
+    Persisted to SQLite/Postgres for durable learning.
+    """
+    row_id = save_feedback_db(
+        product_type=product_type, approved=approved,
+        comment=comment, user_id=user_id, scene_json=scene_json,
+    )
+    return JSONResponse({"saved": True, "id": row_id})
+
+
+@router.get("/scene/feedback/stats")
+async def scene_feedback_stats():
+    """Get aggregated feedback statistics from database."""
+    return JSONResponse(get_feedback_stats_db())
+
+
+@router.get("/scene/feedback/history")
+async def scene_feedback_history(limit: int = 20):
+    """Get recent feedback entries."""
+    entries = load_recent_feedback_db(limit)
+    # Convert sqlite3.Row to serializable dicts
+    result = []
+    for e in entries:
+        d = dict(e)
+        if 'created_at' in d: d['created_at'] = str(d['created_at'])
+        result.append(d)
+    return JSONResponse({"entries": result, "count": len(result)})
+
+
+@router.get("/scene/patterns")
+async def scene_patterns(product_type: str = ""):
+    """Get learned dimension patterns from feedback."""
+    patterns = get_patterns_db(product_type if product_type else None)
+    return JSONResponse({"patterns": patterns, "count": len(patterns)})
+
+
+@router.get("/scene/scenes")
+async def scene_scenes(limit: int = 20):
+    """Get recent scene graph snapshots."""
+    scenes = load_recent_scenes_db(limit)
+    result = []
+    for s in scenes:
+        d = dict(s)
+        if 'created_at' in d: d['created_at'] = str(d['created_at'])
+        result.append(d)
+    return JSONResponse({"scenes": result, "count": len(result)})
+
+
+@router.get("/scene/library")
+async def scene_library_summary():
+    """Get library resource summary."""
+    lib = ResourceLibrary().load()
+    data = {}
+    for rid, res in lib.resources.items():
+        cat = res.get("category", "other")
+        if cat not in data:
+            data[cat] = []
+        data[cat].append({
+            "id": rid,
+            "name": res.get("name", rid),
+            "features": res.get("features", []),
+        })
+    return JSONResponse({
+        "total": lib.count,
+        "categories": lib.summary(),
+        "resources": data,
+    })
+
+
+@router.get("/scene/generate")
+async def scene_generate(furniture_type: str = "asymmetric_pedestal_table",
+                          length_cm: float = 180, depth_cm: float = 90, height_cm: float = 75):
+    """Generate a scene graph for a furniture type with dimensions.
+    
+    Returns the constraint-solved scene graph with evidence and warnings.
+    Persists the scene to the database for future pattern learning.
+    """
+    from app.resource_engine import library as relib
+    lib = ResourceLibrary().load()
+    dims = {"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm}
+    scene = build_scene_graph(furniture_type, dims, library=lib)
+    scene = solve_constraints(scene)
+    
+    # Persist scene to database
+    try:
+        scene_db_id = save_scene_db(scene, label="api_generated")
+    except Exception as e:
+        scene_db_id = None
+        print(f"[Scene] DB persist failed (non-fatal): {e}")
+    
+    return JSONResponse({
+        "scene": json.loads(scene.model_dump_json()),
+        "warnings": scene.warnings,
+        "db_id": scene_db_id,
+    })
+
+
 @router.post("/learn/apply")
 async def apply_learned_preferences(user_id: str = Form("default"), session_id: str = Form(None)):
     from app.backend.feedback_learner import apply_preferences, load_preferences, get_adjustment_hints
@@ -1826,3 +2239,65 @@ async def monitor_stats():
         "recommendations": dashboard.get("recommendations", {}),
         "top_tools": dashboard.get("top_tools", [])[:5],
     })
+
+
+@router.post("/process-dxf")
+async def process_dxf(payload: dict):
+    """Process a reference DXF file: parse, generate preview, index in Qdrant.
+    
+    Called by the Node API after a DXF asset is uploaded to Spaces.
+    Body: { productId, manufacturer, productSlug, dxfUrl }
+    """
+    import tempfile, httpx, os
+    from app.cad.dxf_parser import parse_dxf
+    from app.cad.preview_svg import generate_preview_svg
+    from app.services.embedding_service import index_geometry
+
+    product_id = payload.get("productId")
+    manufacturer = payload.get("manufacturer", "unknown")
+    dxf_url = payload.get("dxfUrl")
+
+    if not dxf_url:
+        return JSONResponse({"error": "Missing dxfUrl"}, status_code=400)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        local_path = os.path.join(tmp, "source.dxf")
+
+        try:
+            # Download DXF from CDN
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.get(dxf_url)
+                resp.raise_for_status()
+                with open(local_path, "wb") as f:
+                    f.write(resp.content)
+
+            # Parse DXF geometry
+            geometry = parse_dxf(local_path)
+            entity_count = geometry.get("counts", {}).get("entityCount", 0)
+
+            # Generate SVG preview
+            preview_path = os.path.join(tmp, "preview.svg")
+            generate_preview_svg(geometry, preview_path)
+            with open(preview_path) as f:
+                preview_svg = f.read()
+
+            # Index in Qdrant
+            index_result = index_geometry(
+                geometry=geometry,
+                product_id=product_id or "unknown",
+                metadata={"manufacturer": manufacturer, "dxf_url": dxf_url},
+            )
+
+            return JSONResponse({
+                "status": "ok",
+                "product_id": product_id,
+                "entity_count": entity_count,
+                "bbox": geometry.get("bbox"),
+                "qdrant": index_result,
+            })
+
+        except Exception as e:
+            return JSONResponse({
+                "status": "failed",
+                "error": str(e),
+            }, status_code=500)

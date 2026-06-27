@@ -112,10 +112,14 @@ def extract_geometry_features(geometry: dict[str, Any]) -> list[float]:
     return features
 
 
+import uuid as uuid_lib
+
 def geometry_hash(geometry: dict[str, Any]) -> str:
-    """Create a content-based hash for deduplication."""
+    """Create a deterministic UUID from geometry content for deduplication."""
     raw = json.dumps(geometry, sort_keys=True, default=str)
-    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+    digest = hashlib.sha256(raw.encode()).hexdigest()[:32]
+    # UUID v5 from content hash — valid UUID format Qdrant accepts
+    return str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, digest))
 
 
 # ---------------------------------------------------------------------------
