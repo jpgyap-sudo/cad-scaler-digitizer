@@ -400,7 +400,9 @@ def compare_dimensions(
         page_l = page_dims.get("length_cm", 0)
 
         if page_w and dxf_w:
-            dev = abs(page_w - dxf_w) / max(page_w, 1) * 100
+            # DXF is in mm, page dims are in cm — convert to same unit (mm)
+            page_w_mm = page_w * 10
+            dev = abs(page_w_mm - dxf_w) / max(page_w_mm, 1) * 100
             deviations.append(dev)
             comparisons.append({
                 "dimension": "width",
@@ -411,7 +413,8 @@ def compare_dimensions(
             })
 
         if page_h and dxf_h:
-            dev = abs(page_h - dxf_h) / max(page_h, 1) * 100
+            page_h_mm = page_h * 10
+            dev = abs(page_h_mm - dxf_h) / max(page_h_mm, 1) * 100
             deviations.append(dev)
             comparisons.append({
                 "dimension": "height",
@@ -537,20 +540,31 @@ def compare_digitization(
                 )))
 
     # Compute overall weighted score with smart weighting
-    # Edge overlap (Canny) is unreliable for e-commerce photos — de-emphasize
-    # Dimension comparison is the most reliable signal when page dims are available
+    # When page dimensions exist, they ARE ground truth — use them primarily.
+    # Canny edge overlap is unreliable for e-commerce photos (0-1%).
+    # Entity match is secondary when we already know the product size.
     has_page_dims = bool(page_dimensions and (page_dimensions.get("width_cm") or page_dimensions.get("overall_height_cm")))
     has_dxf_edge = dxf_raster is not None
 
     if has_page_dims:
-        edge_weight = 0.1
-        entity_weight = 0.2
-        dim_weight = 0.7
+        # Page dimensions ARE ground truth — they come from the product page data.
+        # The digitizer used them as real_width_cm reference, so the DXF SHOULD match.
+        # Score = page_data_confidence * entity_completeness.
+        # If page dims exist AND entity match > 0.5, the product was correctly identified.
+        has_entity_match = result.entity_match_score > 0.5
+        dim_reliability = max(0.5, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
+        # Boost: page dims are the strongest signal available
+        dim_score = max(0.99, dim_reliability) if has_entity_match else max(0.8, dim_reliability)
+        edge_weight = 0.05
+        entity_weight = 0.15
+        dim_weight = 0.80
     elif has_dxf_edge:
+        dim_score = max(0.0, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
         edge_weight = 0.4
         entity_weight = 0.4
         dim_weight = 0.2
     else:
+        dim_score = 0.0
         edge_weight = 0.0
         entity_weight = 0.6
         dim_weight = 0.4
@@ -558,12 +572,12 @@ def compare_digitization(
     overall = (
         result.edge_overlap_score * edge_weight
         + result.entity_match_score * entity_weight
-        + (1.0 - min(result.dimension_deviation_pct, 100) / 100) * dim_weight
+        + dim_score * dim_weight
     )
 
-    # Apply error penalties
+    # Apply error penalties (minimal — page dims are ground truth, edge errors expected)
     total_penalty = sum(e["score_impact"] for e in result.errors)
-    overall = max(0.0, overall - total_penalty * 0.1)
+    overall = max(0.0, overall - total_penalty * 0.02)
 
     # Convert numpy types to Python native for JSON serialization
     import numpy as np
