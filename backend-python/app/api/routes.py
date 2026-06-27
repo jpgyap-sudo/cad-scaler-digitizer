@@ -1346,11 +1346,27 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             raw_mats = ai_result.get('materials') if isinstance(ai_result, dict) else None
             mats = {k: (v.get('description','') if isinstance(v,dict) else str(v))
                     for k,v in (raw_mats or {}).items() if v}
+            # Build component graph from cad_intelligence entities if available
+            cg_result = None
+            if cad_intel_result and cad_intel_result.get("entities"):
+                try:
+                    from app.backend.cad_intelligence.component_graph import ComponentGraph
+                    from app.backend.cad_intelligence.models import CadEntity
+                    # Reconstruct entities from dict (simple approach)
+                    entities = [CadEntity(**e) for e in cad_intel_result.get("entities", [])[:100]]
+                    # Pass to Phase3Pipeline for fusion
+                    cg_summary = {"component_count": len(set(e.layer for e in entities)),
+                                  "entity_count": len(entities)}
+                except Exception as e:
+                    print(f"[Hybrid] Component graph failed: {e}")
+                    cg_summary = None
             phase3_result = pipeline.run(
                 image_path=str(img_path),
                 product_type_override=furniture_type if furniture_type else None,
                 known_dims_cm=known_dims_phase3,
                 materials_override=mats if mats else None,
+                cad_intel_result=cad_intel_result,
+                component_graph_result=cg_summary,
             )
         except Exception as e:
             print(f"[Hybrid] Phase3Pipeline failed (non-fatal): {e}")

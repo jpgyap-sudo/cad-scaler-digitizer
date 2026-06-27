@@ -119,6 +119,8 @@ class Phase3Pipeline:
         product_type_override: Optional[str] = None,
         known_dims_cm: Optional[Dict[str, float]] = None,
         materials_override: Optional[Dict[str, str]] = None,
+        cad_intel_result: Optional[Dict[str, Any]] = None,
+        component_graph_result: Optional[Dict[str, Any]] = None,
     ) -> Phase3PipelineResult:
         """Run the full Phase 3a-b pipeline on a single image.
 
@@ -192,8 +194,10 @@ class Phase3Pipeline:
         # ===== Phase 3c: Fusion Pipeline =====
         try:
             agent_outputs = self._build_agent_outputs(
-                cloud_features, scene_graph, template_result
-                if 'template_result' in dir() else {}
+                cloud_features, scene_graph,
+                template_result if 'template_result' in dir() else {},
+                cad_intel_result=cad_intel_result,
+                component_graph=component_graph_result,
             )
             template_id = (
                 template_result.get("template", {}).get("id", "unknown")
@@ -286,6 +290,8 @@ class Phase3Pipeline:
         cloud_features: CloudVisionFeatureSet,
         scene_graph: ParametricSceneGraph,
         template_result: Dict[str, Any],
+        cad_intel_result: Optional[Dict[str, Any]] = None,
+        component_graph: Optional[Dict[str, Any]] = None,
     ) -> List[AgentOutput]:
         """Build AgentOutput list for the fusion pipeline."""
         outputs: List[AgentOutput] = []
@@ -328,6 +334,39 @@ class Phase3Pipeline:
                 values=template_result.get("resolved_parameters", {}),
                 confidence=0.85,
                 priority=40,
+            ))
+
+        # ===== CAD Intelligence entity agent (pixel-detected geometry) =====
+        if cad_intel_result:
+            ent_count = len(cad_intel_result.get("entities", []))
+            assoc_count = len(cad_intel_result.get("associations", []))
+            scale_info = cad_intel_result.get("scale", {})
+            conf_summ = cad_intel_result.get("debug", {}).get("confidence_summary", {})
+            outputs.append(AgentOutput(
+                source="cad_intelligence",
+                category="geometry",
+                values={
+                    "entity_count": ent_count,
+                    "association_count": assoc_count,
+                    "scale_mm_per_px": scale_info.get("mm_per_px"),
+                    "scale_confidence": scale_info.get("confidence", 0),
+                    "confidence_summary": conf_summ,
+                    "dimension_count": cad_intel_result.get("dimension_count", 0),
+                    "line_count": cad_intel_result.get("line_count", 0),
+                },
+                confidence=scale_info.get("confidence", 0.5),
+                priority=25,  # Slightly below vision (30), above defaults
+                warnings=[] if scale_info.get("mm_per_px") else ["Scale could not be solved from OCR data"],
+            ))
+
+        # ===== Component Graph agent (spatial grouping of entities) =====
+        if component_graph:
+            outputs.append(AgentOutput(
+                source="component_graph",
+                category="structure",
+                values=component_graph,
+                confidence=0.55,  # Lower — heuristic-based grouping
+                priority=20,
             ))
 
         return outputs
