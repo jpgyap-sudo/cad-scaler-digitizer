@@ -37,6 +37,9 @@ from app.resource_engine.pipeline_orchestrator import Phase3Pipeline, Phase3Pipe
 from app.backend.cad_intelligence.pipeline import run_cad_intelligence_pipeline
 from app.backend.cad_intelligence.export_debug import pipeline_result_to_dict as ci_debug_dict
 from app.backend.cad_intelligence.dxf_exporter import export_entities_to_dxf as ci_export_dxf
+from app.backend.cad_intelligence.unified_router import (
+    run_unified_pipeline, UnifiedResult, ProvenanceValue
+)
 
 router = APIRouter()
 
@@ -1571,6 +1574,110 @@ async def digitize_resolve(furniture_type: str = Form(...),
         return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=400)
 
 
+@router.post("/digitize/unified")
+async def digitize_unified(file: UploadFile = File(...),
+                            furniture_type: str = Form(None),
+                            real_width_cm: str = Form(None),
+                            real_height_cm: str = Form(None)):
+    """UNIFIED intelligence endpoint — runs AI Vision + OpenCV/OCR +
+    cad_intelligence + template graphs in parallel and returns a
+    confidence-blended result with per-field provenance tracking.
+
+    This ONE endpoint replaces /digitize, /digitize/hybrid, and
+    /export/cad_intel by intelligently blending all 3 approaches.
+    """
+    job_id = str(uuid.uuid4())
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    safe = f"{job_id}_{uuid.uuid4().hex[:8]}"
+    img_path = UPLOAD / f"{safe}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    try:
+        # Run AI Vision if API key available
+        ai_result = None
+        if OPENAI_API_KEY:
+            try:
+                import httpx, base64
+                with open(img_path, 'rb') as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                async with httpx.AsyncClient(timeout=60) as client:
+                    r = await client.post("https://api.openai.com/v1/chat/completions",
+                        headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
+                        json={"model": "gpt-4o", "messages": [
+                            {"role": "system", "content": VISION_SYSTEM_PROMPT},
+                            {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}}]}
+                        ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
+                    if r.status_code == 200:
+                        raw = r.json()['choices'][0]['message']['content']
+                        try: ai_result = json.loads(raw)
+                        except: pass
+            except Exception as e:
+                print(f"[Unified] AI Vision failed (non-fatal): {e}")
+
+        # User-provided dimensions
+        user_dims = {}
+        rw = _parse_float(real_width_cm)
+        rh = _parse_float(real_height_cm)
+        if rw: user_dims['width_cm'] = rw
+        if rh: user_dims['overall_height_cm'] = rh
+
+        # Run unified pipeline
+        unified = run_unified_pipeline(
+            image_path=str(img_path),
+            furniture_type_override=furniture_type,
+            user_dimensions_cm=user_dims,
+            ai_vision_result=ai_result,
+        )
+
+        try: os.remove(str(img_path))
+        except: pass
+
+        # Generate DXF from dispatch if template was resolved
+        dxf_name = None
+        download_path = None
+        preview_svg = None
+        if unified.template_graph and unified.template_graph.get("template", {}).get("id"):
+            try:
+                # Export DXF using the existing save_* dispatch
+                ftype = unified.product_type.value if unified.product_type else "generic"
+                dxf_name = f"{job_id}_unified.dxf"
+                dxf_path = OUT / dxf_name
+                dispatch_extra = _dispatch_furniture(ftype, dxf_path,
+                    [{"tag": k, "value_cm": v.value} for k, v in unified.dimensions.items()],
+                    None, None)
+                download_path = f"/api/download/{dxf_name}"
+                
+                # Generate SVG preview
+                try:
+                    from app.backend.svg_exporter import drawing_to_svg
+                    svg_name = f"{job_id}_unified.svg"
+                    svg_path = OUT / svg_name
+                    resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
+                    model = _build_svg_model(ftype, resolved, None, None, dispatch_extra)
+                    with open(str(svg_path), 'w', encoding='utf-8') as f2:
+                        f2.write(drawing_to_svg(model))
+                    preview_svg = f"/api/preview/svg/{dxf_name}"
+                except Exception as e:
+                    print(f"[Unified] SVG failed: {e}")
+            except Exception as e:
+                print(f"[Unified] DXF/SVG generation failed: {e}")
+
+        response = unified.to_api_dict()
+        response["job_id"] = job_id
+        response["dxf_file"] = dxf_name
+        response["download"] = download_path
+        response["preview_svg"] = preview_svg
+        response["ai_enabled"] = OPENAI_API_KEY is not None and len(OPENAI_API_KEY) > 0
+        return JSONResponse(response)
+
+    except Exception as e:
+        try: os.remove(str(img_path))
+        except: pass
+        return JSONResponse({"error": f"Unified failed: {e}", "trace": traceback.format_exc()}, status_code=500)
+
+
 # ===== CORRECTION ENDPOINTS =====
 
 @router.post("/corrections/submit")
@@ -2159,20 +2266,20 @@ async def list_templates(family: str = "", product_type: str = ""):
 async def suggest_template(furniture_type: str = "", width_cm: float = 0, height_cm: float = 0, depth_cm: float = 0):
     """Suggest which template/ratios to use for detected dimensions.
     
-    Uses the reference ratio solver to fill missing dimensions and
-    returns the recommended template parameters.
+    Uses the reference ratio solver to fill missing dimensions AND the
+    template graph system to recommend the best engineering template.
+    
+    Returns:
+        - Detected and solved dimensions (from ratio solver)
+        - Recommended template graph (from template loader)
+        - Resolved template parameters in mm
+        - Confidence scores
     """
     from app.backend.reference_ratio_solver import solve_missing_dimensions, get_reference_ratios
-    from app.resource_engine.library import ResourceLibrary
-    from app.resource_engine.matcher import build_scene_graph
-    from app.resource_engine.constraint_solver import solve_constraints
-    from app.resource_engine.feedback import save_feedback, load_feedback_history, get_feedback_stats
-    from app.services.pipeline_service import PipelineService
-    
-    # Shared pipeline service instance
-    _PIPELINE_SERVICE = PipelineService()
-    from app.resource_engine.cloud_vision import make_cloud_vision_client, CloudVisionFeatureSet
-    from app.resource_engine.db_persistence import init_db, save_feedback_db, save_scene_db, update_pattern, get_feedback_stats_db, get_patterns_db, load_recent_feedback_db, load_recent_scenes_db
+    from app.backend.reference_confidence_scorer import score_dimension_confidence, get_overall_confidence
+    from app.resource_engine.template_loader import TemplateGraphLoader
+    from app.resource_engine.template_resolver import (TemplateResolver, PRODUCT_TYPE_MAP, TemplateResolutionError)
+    import os
     
     if not furniture_type:
         return JSONResponse({"error": "furniture_type required"}, status_code=400)
@@ -2189,24 +2296,65 @@ async def suggest_template(furniture_type: str = "", width_cm: float = 0, height
     if depth_cm > 0:
         detected['depth_cm'] = depth_cm
     
+    # Load template graph system
+    loader = TemplateGraphLoader().load()
+    resolver = TemplateResolver(loader)
+    
+    # Try to resolve a template for this furniture type
+    template_result = None
+    template_match_product_type = PRODUCT_TYPE_MAP.get(furniture_type)
+    if not template_match_product_type:
+        # Try fallback to direct family lookup
+        fallback = {
+            "table": "rectangular_table",
+            "sofa": "sofa",
+            "chair": "dining_chair",
+            "bed": "bed",
+            "cabinet": "sideboard",
+            "rug": None,
+            "lighting": None,
+            "homewares": None,
+            "furniture": None,
+        }.get(furniture_type)
+        template_match_product_type = fallback
+    
+    if template_match_product_type:
+        try:
+            template_result = resolver.resolve(
+                furniture_type=template_match_product_type,
+                detected_dims_cm=detected,
+            )
+            # Extract just the key info for the response
+            template_result = {
+                "id": template_result.get("template", {}).get("id", ""),
+                "name": template_result.get("template", {}).get("name", ""),
+                "resolved_parameters_mm": template_result.get("resolved_parameters", {}),
+                "constraints": template_result.get("constraints", []),
+                "required_views": template_result.get("component_views", []),
+                "warnings": template_result.get("warnings", []),
+            }
+        except (TemplateResolutionError, Exception) as e:
+            template_result = {"error": str(e)[:100]}
+    
     if not detected:
-        # Return default ratios so the frontend can show what's available
         ratios = get_reference_ratios(furniture_type)
-        return JSONResponse({
+        result = {
             "furniture_type": furniture_type,
             "detected_dimensions": detected,
+            "template_graph": template_result,
             "default_ratios": ratios,
             "note": "No dimensions provided — showing default ratios",
-        })
+        }
+        return JSONResponse(result)
     
     solved = solve_missing_dimensions(furniture_type, detected)
-    from app.backend.reference_confidence_scorer import score_dimension_confidence, get_overall_confidence
     conf_scores = score_dimension_confidence(furniture_type, detected)
     
     return JSONResponse({
         "furniture_type": furniture_type,
         "detected_dimensions": detected,
         "solved_dimensions": solved,
+        "template_graph": template_result,
         "confidence_scores": conf_scores,
         "overall_confidence": get_overall_confidence(conf_scores),
     })
