@@ -202,9 +202,25 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                         # Pattern: "4 seater 80x140(L)x75(H)cm" or "80x140x75 cm"
                         opts_text = " " + opt_val + " "
 
-                        # Pattern A: {W}x{L}(L)x{H}(H)cm — HomeU format
-                        for m in re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*)\s*(?:\(?H\)?)?\s*(cm|mm)?', opts_text, re.I):
-                            w, l, h = float(m[0]), float(m[1]), float(m[2])
+                        # Helper: parse a number, handling range values (140-200 → 200)
+                        def _parse_val(s):
+                            s = str(s).strip()
+                            if "-" in s:
+                                # Range like "140-200" — take the max
+                                parts = s.split("-")
+                                return max(float(p) for p in parts if p.strip())
+                            return float(s)
+
+                        # Helper: convert mm to cm, detect unit
+                        def _convert(v, raw):
+                            raw = raw.strip().lower()
+                            if raw.endswith("mm"):
+                                return v / 10
+                            return v
+
+                        # Pattern A: {W}x{L}(L)x{H}(H)cm — HomeU format (compact)
+                        for m in re.findall(r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\(?H\)?)?\s*(cm|mm)?', opts_text, re.I):
+                            w, l, h = _parse_val(m[0]), _parse_val(m[1]), _parse_val(m[2])
                             unit = m[3] if len(m) > 3 and m[3] else "cm"
                             if unit == "mm":
                                 w, l, h = w / 10, l / 10, h / 10
@@ -215,6 +231,35 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             if "sizes" not in result:
                                 result["sizes"] = []
                             result["sizes"].append({"width": w, "length": l, "height": h, "variant": opt_val})
+
+                        # Pattern A2: {value}cm(W) x {value}cm(L) x {value}cm(H) — cm BEFORE label
+                        if "width_cm" not in result:
+                            m2 = re.search(r'(\d+\.?\d*)\s*cm\s*\(W\)\s*x\s*(\d+\.?\d*)\s*cm\s*\(L\)\s*x\s*(\d+\.?\d*)\s*cm\s*\(H\)', opts_text, re.I)
+                            if m2:
+                                result["width_cm"] = float(m2.group(1))
+                                result["length_cm"] = float(m2.group(2))
+                                result["overall_height_cm"] = float(m2.group(3))
+
+                        # Pattern A3: {value}mm(L) x {value}mm(W) x {value}mm(H) — length first, mm
+                        if "width_cm" not in result:
+                            m3 = re.search(r'(\d+\.?\d*)\s*mm\s*\(L\)\s*x\s*(\d+\.?\d*)\s*mm\s*\(W\)\s*x\s*(\d+\.?\d*)\s*mm\s*\(H\)', opts_text, re.I)
+                            if m3:
+                                result["width_cm"] = float(m3.group(2)) / 10
+                                result["length_cm"] = float(m3.group(1)) / 10
+                                result["overall_height_cm"] = float(m3.group(3)) / 10
+
+                        # Pattern A4: {value}(D) x {value}(H) — diameter x height (round tables)
+                        if "width_cm" not in result:
+                            m4 = re.search(r'(\d+\.?\d*)\s*\(D\)\s*x\s*(\d+\.?\d*)\s*\(H\)\s*(mm|cm)?', opts_text, re.I)
+                            if m4:
+                                d = float(m4.group(1))
+                                h = float(m4.group(2))
+                                unit = m4.group(3) if m4.lastindex >= 3 and m4.group(3) else "cm"
+                                if unit == "mm":
+                                    d, h = d / 10, h / 10
+                                result["width_cm"] = d
+                                result["depth_cm"] = d
+                                result["overall_height_cm"] = h
 
                         # Pattern B: {W}x{D}x{H} cm — standard format (3 values)
                         if "width_cm" not in result:
@@ -241,6 +286,25 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                                     w, d = w / 10, d / 10
                                 result["width_cm"] = w
                                 result["depth_cm"] = d
+
+                        # Pattern C2: {value}cm(W) — single explicit width
+                        if "width_cm" not in result:
+                            m = re.search(r'(\d+\.?\d*)\s*cm\s*\(W\)', opts_text, re.I)
+                            if m:
+                                result["width_cm"] = float(m.group(1))
+                        # Pattern C3: {value}(W) — single explicit width (any unit)
+                        if "width_cm" not in result:
+                            m = re.search(r'(\d+\.?\d*)\s*\(W\)', opts_text, re.I)
+                            if m:
+                                result["width_cm"] = float(m.group(1))
+                        if "overall_height_cm" not in result:
+                            m = re.search(r'(\d+\.?\d*)\s*cm\s*\(H\)', opts_text, re.I)
+                            if m:
+                                result["overall_height_cm"] = float(m.group(1))
+                        if "depth_cm" not in result:
+                            m = re.search(r'(\d+\.?\d*)\s*cm\s*\(D\)', opts_text, re.I)
+                            if m:
+                                result["depth_cm"] = float(m.group(1))
 
                     # Pattern 1: cf-size-{seating}{W}x{L}lx{H}hcm
                     for match in re.findall(r'(\d+)x(\d+)lx(\d+)hcm', all_text, re.I):
