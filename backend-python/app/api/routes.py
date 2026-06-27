@@ -1,6 +1,6 @@
 """API routes for CAD digitizer with accuracy core pipeline."""
 
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import FileResponse, JSONResponse, Response, HTMLResponse
 from typing import List, Optional
 from pathlib import Path
@@ -1091,7 +1091,8 @@ def _run_accuracy_pipeline(img_path: str, lines, circles, rects, ocr_lines, dims
 
 @router.post("/digitize")
 async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None),
-                    real_height_cm: str = Form(None), furniture_type: str = Form(None)):
+                    real_height_cm: str = Form(None), furniture_type: str = Form(None),
+                    background_tasks: BackgroundTasks = None):
     try:
         ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
         job_id = str(uuid.uuid4())
@@ -1159,6 +1160,37 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
 
         try: os.remove(str(img_path))
         except: pass
+
+        # Enqueue async validation job to Redis queue
+        if background_tasks:
+            import json, os
+            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+            redis_pass = os.environ.get("REDIS_PASSWORD") or None
+
+            async def enqueue_validation():
+                try:
+                    import redis as redis_lib
+                    client = redis_lib.from_url(redis_url, password=redis_pass)
+                    job_data = json.dumps({
+                        "type": "digitize",
+                        "data": {
+                            "job_id": job_id,
+                            "furniture_type": furniture_type or "unknown",
+                            "detected_dims": {
+                                k: v for k, v in [
+                                    ("width_cm", real_w),
+                                    ("overall_height_cm", real_h),
+                                ] if v
+                            },
+                        }
+                    })
+                    client.lPush("cad-processing", job_data)
+                    client.expire("cad-processing", 86400)
+                    client.connection_pool.disconnect()
+                except Exception as e:
+                    print(f"[Digitize] Queue push failed (non-fatal): {e}")
+
+            background_tasks.add_task(enqueue_validation)
 
         return JSONResponse({
             'job_id': job_id, 'dxf_file': dxf_name,
@@ -1420,6 +1452,56 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         })
     except Exception as e:
         return JSONResponse({"error": f"Hybrid failed: {e}", "trace": traceback.format_exc()}, status_code=500)
+
+
+@router.post("/digitize/resolve")
+async def digitize_resolve(furniture_type: str = Form(...),
+                            length_cm: float = Form(0), depth_cm: float = Form(0),
+                            height_cm: float = Form(0), width_cm: float = Form(0),
+                            top_thickness_cm: float = Form(0),
+                            seat_height_cm: float = Form(0),
+                            furniture_family: str = Form("")):
+    """Pre-digitize template resolution — given furniture_type and optional dimensions,
+    return the matching template graph with resolved parameters (in mm) and constraints.
+    Useful for the frontend to show parameter sliders BEFORE running digitize.
+    """
+    try:
+        resolver = _get_template_resolver()
+        dims = {}
+        if length_cm > 0: dims['length_cm'] = length_cm
+        if depth_cm > 0: dims['depth_cm'] = depth_cm
+        if height_cm > 0: dims['overall_height_cm'] = height_cm
+        if width_cm > 0:
+            dims['width_cm'] = width_cm
+            dims['top_diameter_cm'] = width_cm
+        if top_thickness_cm > 0: dims['top_thickness_cm'] = top_thickness_cm
+        if seat_height_cm > 0: dims['seat_height_cm'] = seat_height_cm
+
+        ftype = normalize_furniture_type(furniture_type)
+        result = resolver.resolve(ftype, dims)
+
+        tpl = result.get("template", {})
+        response = {
+            "template_id": tpl.get("id"),
+            "template_name": tpl.get("name"),
+            "product_type": tpl.get("product_type"),
+            "family": tpl.get("family"),
+            "resolved_parameters_mm": result.get("resolved_parameters"),
+            "parameters_schema": [
+                {"name": p["name"], "default": p["default"],
+                 "min_value": p["min_value"], "max_value": p["max_value"],
+                 "description": p.get("description", "")}
+                for p in tpl.get("parameters", [])
+            ],
+            "required_views": result.get("component_views"),
+            "required_details": result.get("required_details"),
+            "drawing_notes": result.get("drawing_notes"),
+            "constraints": result.get("constraints"),
+            "warnings": result.get("warnings"),
+        }
+        return JSONResponse(response)
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=400)
 
 
 # ===== CORRECTION ENDPOINTS =====

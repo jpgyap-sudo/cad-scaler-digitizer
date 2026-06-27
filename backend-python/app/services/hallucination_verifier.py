@@ -270,7 +270,31 @@ def verify_dimensions(
                 contradictions.append(sw)
                 scores.append(0.4)
 
-        # ---- Check 4: Entity confidence from anti-hallucination validator ----
+        # ---- Check 4: Reference geometry match (if DXF provided) ----
+        if reference_geometry:
+            ref_bbox = reference_geometry.get("bbox") or {}
+            ref_w = ref_bbox.get("width")
+            ref_h = ref_bbox.get("height")
+            if dim_key == "width_cm" and ref_w:
+                dev = abs(value_cm - ref_w) / max(ref_w, 1) * 100
+                if dev <= 15:
+                    evidence.append(f"DXF reference width {ref_w}cm — deviation {dev:.1f}%")
+                    scores.append(1.0 - dev / 100)
+                else:
+                    contradictions.append(f"Width {value_cm}cm deviates {dev:.1f}% from DXF reference {ref_w}cm")
+                    scores.append(0.3)
+                sources.append("dxf_reference")
+            elif dim_key in ("overall_height_cm", "height_cm") and ref_h:
+                dev = abs(value_cm - ref_h) / max(ref_h, 1) * 100
+                if dev <= 15:
+                    evidence.append(f"DXF reference height {ref_h}cm — deviation {dev:.1f}%")
+                    scores.append(1.0 - dev / 100)
+                else:
+                    contradictions.append(f"Height {value_cm}cm deviates {dev:.1f}% from DXF reference {ref_h}cm")
+                    scores.append(0.3)
+                sources.append("dxf_reference")
+
+        # ---- Check 5: Entity confidence from anti-hallucination validator ----
         if entity_confidences and dim_key in entity_confidences:
             meta = entity_confidences[dim_key]
             ec = meta.get("confidence", 0.5)

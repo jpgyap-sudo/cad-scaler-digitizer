@@ -147,12 +147,6 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - DATABASE_URL=postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/${PG_DATABASE:-cad_reference_library}
       - SPACES_ENDPOINT=${SPACES_ENDPOINT:-}
-      - SPACES_REGION=${SPACES_REGION:-sgp1}
-      - SPACES_BUCKET=${SPACES_BUCKET:-}
-      - SPACES_KEY=${SPACES_KEY:-}
-      - SPACES_SECRET=${SPACES_SECRET:-}
-      - SPACES_CDN_BASE=${SPACES_CDN_BASE:-}
-      - NODE_OPTIONS=--max-old-space-size=2048
     depends_on:
       redis:
         condition: service_started
@@ -161,6 +155,12 @@ services:
     restart: unless-stopped
     networks:
       - cad-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # --------------------------------------------------------------------------
   # 5. Postgres — Product metadata, sessions, users

@@ -37,13 +37,55 @@ redis_conn = redis_lib.from_url(
 
 def handle_digitize_job(job_data: dict[str, Any]) -> dict[str, Any]:
     """Process a digitize job: image → DXF generation.
-    This wraps the existing digitize pipeline for async execution.
+    Called asynchronously after HTTP digitize completes.
+    Runs: validation → hallucination check → training record export.
     """
-    logger.info(f"[Queue] Processing digitize job: {job_data.get('job_id', 'unknown')}")
-    # The actual processing happens via the /api/digitize endpoint.
-    # The queue primarily serves as a dispatch/fanout mechanism.
-    # Actual logic is in app.api.routes.digitize()
-    return {"status": "dispatched", "job_id": job_data.get("job_id")}
+    job_id = job_data.get("job_id", "unknown")
+    logger.info(f"[Queue] Processing digitize job: {job_id}")
+
+    detected_dims = job_data.get("detected_dims", {})
+    furniture_type = job_data.get("furniture_type", "furniture")
+    reference_geometry = job_data.get("reference_geometry")
+
+    if not detected_dims:
+        logger.warning(f"[Queue] No dimensions in digitize job {job_id}")
+        return {"status": "skipped", "reason": "no dimensions"}
+
+    try:
+        # Run hallucination check on the detected dims
+        from app.services.hallucination_verifier import verify_dimensions
+        report = verify_dimensions(
+            product_id=job_data.get("product_id", job_id),
+            furniture_type=furniture_type,
+            detected_dims=detected_dims,
+            reference_geometry=reference_geometry,
+        )
+        logger.info(f"[Queue] {job_id} hallucination score: {report.overall_score}")
+
+        # If validated against a reference, create training record
+        if reference_geometry and report.overall_score >= 0.7:
+            from app.services.validation_service import build_training_record
+            record = build_training_record(
+                product_id=job_id,
+                furniture_type=furniture_type,
+                image_url=job_data.get("image_url", ""),
+                dxf_url=job_data.get("dxf_url", ""),
+                detected_dims=detected_dims,
+                reference_geometry=reference_geometry,
+                validation=report,
+            )
+            logger.info(f"[Queue] Training record created for {job_id}: score={report.overall_score}")
+
+        return {
+            "status": "completed",
+            "job_id": job_id,
+            "hallucination_score": report.overall_score,
+            "verified": report.overall_score >= 0.7,
+        }
+
+    except Exception as e:
+        logger.error(f"[Queue] Digitize job {job_id} failed: {e}")
+        return {"status": "failed", "error": str(e)}
 
 
 def handle_embedding_job(job_data: dict[str, Any]) -> dict[str, Any]:
