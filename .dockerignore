@@ -55,12 +55,12 @@ plans/
 skills/
 docs/
 *.conf
+!nginx.conf
 check_site.js
 deploy.sh
 playwright.config.ts
 AUDIT_REPORT.md
 
-# Docker files (prevent duplication)
+# Docker files (prevent duplication — nginx.conf is needed by Dockerfiles)
 Dockerfile*
 docker-compose*
-nginx.conf
