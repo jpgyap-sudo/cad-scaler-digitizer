@@ -20,6 +20,8 @@ export function sha256(buffer: Buffer): string {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
+const PROJECT_PREFIX = "cad-reference-library/";
+
 export async function uploadBuffer(params: {
   key: string;
   buffer: Buffer;
@@ -29,10 +31,12 @@ export async function uploadBuffer(params: {
     params.contentType ||
     (mime.lookup(params.key) || "application/octet-stream").toString();
 
+  const prefixedKey = PROJECT_PREFIX + params.key;
+
   await s3.send(
     new PutObjectCommand({
       Bucket: config.spaces.bucket,
-      Key: params.key,
+      Key: prefixedKey,
       Body: params.buffer,
       ACL: "public-read",
       ContentType: contentType
@@ -40,7 +44,7 @@ export async function uploadBuffer(params: {
   );
 
   return {
-    spaceKey: params.key,
+    spaceKey: prefixedKey,
     cdnUrl: buildCdnUrl(params.key),
     fileHash: sha256(params.buffer),
     mimeType: contentType

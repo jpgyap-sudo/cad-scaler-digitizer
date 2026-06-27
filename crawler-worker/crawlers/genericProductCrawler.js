@@ -81,17 +81,21 @@ async function downloadFile(url) {
   };
 }
 
+const PROJECT_PREFIX = "cad-reference-library/";
+
 async function uploadBuffer({ key, buffer, contentType }) {
   const s3 = getS3();
+  const prefixedKey = PROJECT_PREFIX + key;
+
   if (!s3) {
     // Local fallback
     const fs = await import("fs");
-    const dir = path.dirname(key);
+    const dir = path.dirname(prefixedKey);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(key, buffer);
+    fs.writeFileSync(prefixedKey, buffer);
     return {
-      spaceKey: key,
-      cdnUrl: `/local/${key}`,
+      spaceKey: prefixedKey,
+      cdnUrl: `/local/${prefixedKey}`,
       fileHash: crypto.createHash("sha256").update(buffer).digest("hex"),
       mimeType: contentType || "application/octet-stream",
     };
@@ -101,7 +105,7 @@ async function uploadBuffer({ key, buffer, contentType }) {
   await s3.send(
     new PutObjectCommand({
       Bucket: SPACES_BUCKET,
-      Key: key,
+      Key: prefixedKey,
       Body: buffer,
       ACL: "public-read",
       ContentType: mime,
@@ -109,7 +113,7 @@ async function uploadBuffer({ key, buffer, contentType }) {
   );
 
   return {
-    spaceKey: key,
+    spaceKey: prefixedKey,
     cdnUrl: getCdnUrl(key),
     fileHash: crypto.createHash("sha256").update(buffer).digest("hex"),
     mimeType: mime,
