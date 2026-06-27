@@ -166,11 +166,22 @@ def build_round_pedestal_model(
 def build_rectangular_table_model(
     width_cm: float = 120.0, depth_cm: float = 80.0, height_cm: float = 70.0,
     leg_thickness_cm: float = 6.0, client: str = "", project: str = "Furniture Shop Drawing",
+    material_notes: Optional[List[str]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for a rectangular table."""
     sc = 0.4; w = width_cm * sc; d = depth_cm * sc; h = height_cm * sc
-    w2, d2 = w / 2, d / 2; ox, y_mid = 100.0, 180.0; lt = leg_thickness_cm * sc
-    fx = 280.0; floor_y = 30.0; top_y = floor_y + h; top_thick = max(lt * 0.8, 2.0)
+    w2, d2 = w / 2, d / 2; ox = 100.0; lt = leg_thickness_cm * sc
+    floor_y = 30.0; top_y = floor_y + h; top_thick = max(lt * 0.8, 2.0)
+    # TOP VIEW used to sit at a fixed y_mid=180 and FRONT VIEW's horizontal
+    # position (fx) at a fixed 280, both completely disconnected from the
+    # table's actual size. For a small table this left two tiny views
+    # stranded far apart with a huge, disproportionate gap of empty canvas
+    # between them (exactly what was reported). Position both relative to
+    # the OTHER view's actual extent instead, with a fixed, modest gap just
+    # large enough for that view's own label/dimension text.
+    y_mid = top_y + d2 + 40.0
+    top_view_right_edge = ox + w2 + 12.0
+    fx = top_view_right_edge + w2 + 20.0
     now = datetime.now().strftime('%Y-%m-%d')
     tv = View(name="TOP VIEW")
     tv.polygons.append(PolygonComponent(points=[Point(ox - w2, y_mid - d2), Point(ox + w2, y_mid - d2), Point(ox + w2, y_mid + d2), Point(ox - w2, y_mid + d2)], layer="OBJECT", name="tabletop"))
@@ -191,7 +202,13 @@ def build_rectangular_table_model(
     fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
     fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(drawing_title=f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=now)
+    tb = TitleBlockData(drawing_title=f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=now,
+        material_notes=material_notes or [
+            "TABLETOP — Solid hardwood, stained finish",
+            "LEGS — Solid wood, matching finish",
+        ],
+        general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED", "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED"],
+    )
     return DrawingModel(furniture_type="rectangular_table", views=[tv, fv], title_block=tb,
         known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
         estimated_components={"leg_thickness_cm": leg_thickness_cm})

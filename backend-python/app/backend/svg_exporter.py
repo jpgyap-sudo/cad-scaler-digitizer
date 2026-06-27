@@ -35,6 +35,11 @@ LAYER_COLORS = {
     "BORDER": "#1a1a1a",
 }
 
+# Fixed footer-block width, shared between the canvas-width floor calculation
+# (render_svg) and the actual title block drawing further down - kept as one
+# constant so they can't drift apart and reintroduce the overlap bug.
+TITLE_BLOCK_W = 210
+
 
 def _color(layer: str, linetype: str = "CONTINUOUS") -> str:
     if linetype == "HIDDEN":
@@ -241,6 +246,18 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     content_h = max(1.0, max_y - min_y)
 
     VW = content_w + margin * 2
+    # The title block (drawn at a fixed width further down, TITLE_BLOCK_W) and
+    # the material/general notes (drawn from the left margin) sit side by
+    # side along the bottom of the sheet. For a small drawing, auto-fitting
+    # VW to just the geometry's own bbox can make the canvas narrower than
+    # both blocks need combined - the title block then gets positioned with
+    # little/no room on its left, overlapping the notes text directly
+    # (this is what was happening on a small rectangular table's drawing:
+    # "MATERIAL/FINISH NOTES" visibly overlapping "PROJECT:"/"CLIENT:").
+    # Floor VW so there's always enough width for both, regardless of how
+    # small the actual geometry is.
+    min_footer_w = 8 + 180 + 16 + TITLE_BLOCK_W + 8
+    VW = max(VW, min_footer_w)
     # PH (used by the Y-flip below) is independent of VH: choose it so the
     # tallest point of the drawing (max_y, the tabletop) lands `margin` from
     # the top of the canvas, then size VH to fit the flipped content plus
@@ -271,7 +288,7 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
 
     # === TITLE BLOCK (Bottom-Right, safely within VW/VH) ===
     tb = model.title_block
-    tb_w, tb_h = 210, 70
+    tb_w, tb_h = TITLE_BLOCK_W, 70
     ox, oy = VW - tb_w - 8, VH - tb_h - 8
     svg_parts.append(_svg_rect(ox, oy, tb_w, tb_h, stroke=LAYER_COLORS["TITLE"], sw=1.0))
     row_h = tb_h / 5
