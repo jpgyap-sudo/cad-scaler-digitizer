@@ -1163,14 +1163,14 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
 
         # Enqueue async validation job to Redis queue
         if background_tasks:
-            import json, os
-            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
-            redis_pass = os.environ.get("REDIS_PASSWORD") or None
+            _redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+            _redis_pass = os.environ.get("REDIS_PASSWORD") or None
 
             async def enqueue_validation():
                 try:
                     import redis as redis_lib
-                    client = redis_lib.from_url(redis_url, password=redis_pass)
+                    import json
+                    client = redis_lib.from_url(_redis_url, password=_redis_pass)
                     job_data = json.dumps({
                         "type": "digitize",
                         "data": {
@@ -2841,3 +2841,59 @@ async def group_products_into_families(payload: dict):
         "families_found": len(family_list),
         "families": family_list[:50],  # first 50 for preview
     })
+
+
+# =============================================================================
+# Crawl → Digitize → Validate Pipeline
+# Single endpoint: URL → photo → DXF → validation score
+# =============================================================================
+
+@router.post("/crawl-to-dxf")
+async def crawl_to_dxf(payload: dict):
+    """Crawl a product page, digitize the best image, validate the result.
+
+    Single endpoint that chains together:
+      1. Stealth crawl of the product URL → find best hero image
+      2. Download image → digitize (OpenCV + OCR + AI)
+      3. Run hallucination/validation checks against reference geometry
+      4. Return DXF path + validation score
+
+    Body: {
+        url: string (required) — Product page URL
+        manufacturer: string (optional)
+        category: string (optional) — 'sofa', 'table', 'chair', 'lighting', etc.
+        real_width_cm: number (optional) — Known width for scale reference
+        reference_geometry: { ... } (optional) — Parsed DXF geometry for validation
+    }
+
+    Returns: {
+        status, image_url, dxf_file, preview_svg, download_url,
+        detected_dimensions: { ... },
+        validation: { overall_score, verdicts, hallucination_count, verified_count },
+        hallucination_check: { overall_score, verdicts } (if no reference provided)
+    }
+    """
+    url = payload.get("url")
+    if not url:
+        return JSONResponse({"error": "Missing url"}, status_code=400)
+
+    furniture_type = payload.get("category") or payload.get("furniture_type") or "furniture"
+    real_width_cm = payload.get("real_width_cm")
+    reference_geometry = payload.get("reference_geometry")
+
+    try:
+        from app.services.crawl_to_dxf import crawl_and_digitize
+        result = await crawl_and_digitize(
+            page_url=url,
+            furniture_type=furniture_type,
+            real_width_cm=real_width_cm,
+            reference_geometry=reference_geometry,
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        import traceback
+        return JSONResponse({
+            "status": "failed",
+            "error": str(e),
+            "trace": traceback.format_exc(),
+        }, status_code=500)
