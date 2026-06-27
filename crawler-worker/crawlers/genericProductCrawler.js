@@ -205,7 +205,8 @@ export async function genericProductCrawler(input) {
             item.type === "PDF" ? "specs" :
             "assets";
 
-          const key = `raw/${manufacturer}/${productSlug}/${folder}/${fileName}`;
+          const cat = input.category || "uncategorised";
+          const key = `raw/${manufacturer}/${cat}/${productSlug}/${folder}/${fileName}`;
           const uploaded = await uploadBuffer({
             key,
             buffer: downloaded.buffer,

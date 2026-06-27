@@ -17,6 +17,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 const QUEUE_NAME = "crawler:jobs";
 const PROGRESS_CHANNEL = "cad:progress";
+const MAX_CONCURRENT = 2; // Max parallel Playwright instances
 
 let redisClient;
 
@@ -98,13 +99,25 @@ async function processJob(job) {
 async function main() {
   await connectRedis();
 
-  console.log(`[Crawler Worker] Listening on queue: ${QUEUE_NAME}`);
+  console.log(`[Crawler Worker] Listening on queue: ${QUEUE_NAME} (max ${MAX_CONCURRENT} concurrent)`);
 
   // Start health endpoint
   startHealthServer();
 
+  // Track in-flight jobs
+  const inFlight = new Set();
+
   // Main loop: block on BRPOP for new jobs
   while (true) {
+    // Wait if at capacity
+    while (inFlight.size >= MAX_CONCURRENT) {
+      await new Promise((r) => setTimeout(r, 1000));
+      // Clean up finished jobs
+      for (const p of inFlight) {
+        if (p.finished) inFlight.delete(p);
+      }
+    }
+
     try {
       const result = await redisClient.brPop(QUEUE_NAME, 5); // timeout 5s
       if (!result) continue;
@@ -118,10 +131,13 @@ async function main() {
         continue;
       }
 
-      // Process without awaiting — allow parallel crawling if multiple jobs arrive
-      processJob(job).catch((err) => {
+      // Track and process with concurrency limit
+      const promise = processJob(job);
+      promise.finished = false;
+      promise.finally(() => { promise.finished = true; }).catch((err) => {
         console.error("[Crawler Worker] Unhandled job error:", err.message);
       });
+      inFlight.add(promise);
     } catch (err) {
       if (err.message?.includes("connection") || err.code === "ECONNREFUSED") {
         console.error("[Crawler Worker] Redis connection lost, reconnecting in 5s...");

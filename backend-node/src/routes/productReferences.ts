@@ -111,7 +111,8 @@ productReferencesRouter.post("/:id/assets", upload.single("file"), async (req, r
     assetType === "PDF" ? "specs" :
     "assets";
 
-  const key = `raw/${product.manufacturer}/${product.slug}/${folder}/${req.file.originalname}`;
+  const cat = product.category || "uncategorised";
+  const key = `raw/${product.manufacturer}/${cat}/${product.slug}/${folder}/${req.file.originalname}`;
   const uploaded = await uploadBuffer({
     key,
     buffer: req.file.buffer,
