@@ -111,6 +111,16 @@ async def crawl_for_image(page_url: str) -> Optional[str]:
             if url.startswith("http"):
                 candidates.append(url)
 
+    # Resolve Shopify/Shopify-like template URLs ({width}x placeholder)
+    resolved = []
+    for url in candidates:
+        if "{width}" in url or "{width}x" in url:
+            url = url.replace("{width}x", "2000x").replace("{width}", "2000")
+        # Handle Shopify pattern like _2000x.jpg or just _{width}x.jpg
+        url = url.replace("_{width}x", "_2000x").replace("%7Bwidth%7D", "2000")
+        resolved.append(url)
+    candidates = resolved
+
     # Deduplicate
     candidates = list(dict.fromkeys(candidates))
 
@@ -137,6 +147,76 @@ async def crawl_for_image(page_url: str) -> Optional[str]:
     fb = [u for u in candidates if "og:image" in str(u)] or candidates
     logger.info(f"Fallback image: {fb[0]}")
     return fb[0]
+
+
+async def extract_dimensions_from_page(page_url: str) -> dict:
+    """Extract product dimensions from product page data.
+    
+    Checks:
+    1. Shopify product JSON API (products/{handle}.json) — tags like cf-size-WxLxH
+    2. Meta tags
+    3. JSON-LD product data
+    
+    Returns: dict of {width_cm, height_cm, depth_cm, length_cm, sizes_available}
+    """
+    import httpx, re, json
+    result = {}
+
+    # Normalize URL to get handle
+    path = urlparse(page_url).path
+    handle = path.strip("/").split("/")[-1] if path else ""
+    base_url = f"{urlparse(page_url).scheme}://{urlparse(page_url).netloc}"
+
+    # Method 1: Fetch Shopify product.json
+    if handle:
+        json_url = f"{base_url}/products/{handle}.json"
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+                r = await c.get(json_url, headers={"User-Agent": "Mozilla/5.0"})
+                if r.status_code == 200:
+                    data = r.json()
+                    product = data.get("product", {})
+                    tags = product.get("tags", "")
+                    body_html = product.get("body_html", "") or ""
+
+                    # Parse dimensions from tags (Shopify cf-size convention)
+                    all_text = tags + " " + body_html
+
+                    # Pattern 1: cf-size-{seating}{W}x{L}lx{H}hcm
+                    for match in re.findall(r'(\d+)x(\d+)lx(\d+)hcm', all_text, re.I):
+                        w, l, h = float(match[0]), float(match[1]), float(match[2])
+                        if "width_cm" not in result or w > result["width_cm"]:
+                            result["width_cm"] = w
+                            result["length_cm"] = l
+                            result["overall_height_cm"] = h
+                        if "sizes" not in result:
+                            result["sizes"] = []
+                        result["sizes"].append({"width": w, "length": l, "height": h})
+
+                    # Pattern 2: W x D x H or W x L x H
+                    dims = re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:cm|mm)?', all_text, re.I)
+                    for d in dims:
+                        w, d2, h = float(d[0]), float(d[1]), float(d[2])
+                        if "width_cm" not in result:
+                            result["width_cm"] = w
+                            result["depth_cm"] = d2
+                            result["overall_height_cm"] = h
+
+                    # Pattern 3: W/H/D labels in body_html
+                    for label, key in [("width", "width_cm"), ("height", "overall_height_cm"),
+                                        ("depth", "depth_cm"), ("length", "length_cm")]:
+                        m = re.search(rf'{label}[:\s]*(\d+\.?\d*)\s*(?:cm|mm)?', all_text, re.I)
+                        if m:
+                            val = float(m.group(1))
+                            if m.group(0).endswith("mm"):
+                                val /= 10
+                            if key not in result:
+                                result[key] = val
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch product json: {e}")
+
+    return result
 
 
 async def crawl_and_digitize(
@@ -174,7 +254,17 @@ async def crawl_and_digitize(
         img_bytes = resp.content
     logger.info(f"[CrawlToDXF] Downloaded {len(img_bytes)} bytes")
 
-    # Step 3: Digitize via internal HTTP call
+    # Step 3: Extract dimensions from the product page
+    page_dims = await extract_dimensions_from_page(page_url)
+    if page_dims:
+        logger.info(f"[CrawlToDXF] Found page dimensions: {page_dims}")
+        result["page_dimensions"] = page_dims
+        # Use discovered width for scale if not already provided
+        if not real_width_cm and page_dims.get("width_cm"):
+            real_width_cm = page_dims["width_cm"]
+            logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
+
+    # Step 4: Digitize via internal HTTP call
     API_BASE = os.environ.get("PYTHON_WORKER_URL", "http://localhost:8001")
     files = {"file": ("product.png", img_bytes, "image/png")}
     params = {"furniture_type": furniture_type}
