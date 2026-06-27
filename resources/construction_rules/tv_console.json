@@ -1,0 +1,17 @@
+{
+  "id": "rules.tv_console.v1",
+  "name": "tv_console drafting rule",
+  "category": "construction_rule",
+  "features": [
+    "tv_console",
+    "shopdrawing",
+    "dimension",
+    "rules"
+  ],
+  "required_views": [
+    "top",
+    "front",
+    "side"
+  ],
+  "shop_note": "Use standard tv_console drawing views, overall dimensions, material notes, and construction notes."
+}

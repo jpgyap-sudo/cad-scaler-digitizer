@@ -42,7 +42,26 @@ def normalize_furniture_type(ftype: str) -> str:
         "coffee_table_round": "coffee_table",
         "reception_counter": "reception_counter",
         "counter": "reception_counter",
-        "desk": "reception_counter",
+        "oval_pedestal_table": "oval_pedestal_table",
+        "oval_table": "oval_pedestal_table",
+        "elliptical_table": "oval_pedestal_table",
+        "oval_dining_table": "oval_pedestal_table",
+        "console_table": "console_table",
+        "sofa_table": "console_table",
+        "console": "console_table",
+        "hall_table": "console_table",
+        "office_desk": "office_desk",
+        "desk": "office_desk",
+        "computer_desk": "office_desk",
+        "writing_desk": "office_desk",
+        "workstation": "office_desk",
+        "asymmetric_pedestal_table": "asymmetric_pedestal_table",
+        "asymmetric_table": "asymmetric_pedestal_table",
+        "dual_pedestal_table": "asymmetric_pedestal_table",
+        "offset_pedestal_table": "asymmetric_pedestal_table",
+        "pedestal_dining_table": "asymmetric_pedestal_table",
+        "two_pedestal_table": "asymmetric_pedestal_table",
+        "rectangular_pedestal_table": "asymmetric_pedestal_table",
         "table": "generic_2d_furniture",  # Fallback: "table" alone is too generic
     }
     return aliases.get(s, s)
@@ -76,6 +95,10 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     has_dia = any("dia" in t.lower() or "diameter" in t.lower() or "%%c" in t or "\u00d8" in t for t in ocr_lines)
     has_round = any(s in text for s in ["round", "circular", "pedestal", "\u00d8"])
     has_pedestal = "pedestal" in text  # very strong round-pedestal-table signal
+    has_asymmetric = any(s in text for s in ["asymmetric", "dual", "offset", "two pedestal"])
+    has_oval = any(s in text for s in ["oval", "elliptical", "ellipse"])
+    has_console = any(s in text for s in ["console", "sofa table", "hall table"])
+    has_desk = any(s in text for s in ["desk", "workstation", "computer"])
     has_table = "table" in text
     has_rect = any(s in text for s in ["rect", "square"])
     has_sofa = any(s in text for s in ["sofa", "couch", "loveseat", "settee"])
@@ -96,6 +119,19 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
             h = max(ys) - min(ys)
             if h > 0:
                 aspect_ratio = w / h
+
+    # Priority 0a: Oval pedestal table
+    if (has_oval and has_table) or (has_oval and has_pedestal) or (has_table and "oval" in text):
+        ftype, confidence = "oval_pedestal_table", 0.80
+    # Priority 0b: Console table
+    elif has_console and has_table:
+        ftype, confidence = "console_table", 0.80
+    # Priority 0c: Office desk
+    elif has_desk:
+        ftype, confidence = "office_desk", 0.80
+    # Priority 0d: Asymmetric pedestal table — two offset pedestals of different sizes
+    elif (has_asymmetric and has_table) or (has_pedestal and has_table and "rect" in text and "pedestal" in text):
+        ftype, confidence = "asymmetric_pedestal_table", 0.80
 
     # Priority 0: an explicit "pedestal" label is decisive for a round
     # pedestal table — a drawing that says "TEXTURED PEDESTAL BASE" with a

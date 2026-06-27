@@ -1,0 +1,7 @@
+{
+  "id": "materials.metal.brushed.v1",
+  "name": "Brushed metal pedestal",
+  "category": "material",
+  "features": ["brushed", "metal", "champagne", "stainless", "brass_tone"],
+  "shopdrawing_note": "BASE: BRUSHED METAL CYLINDRICAL PEDESTALS"
+}

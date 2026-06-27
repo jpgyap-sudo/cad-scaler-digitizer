@@ -1,0 +1,25 @@
+{
+  "id": "geometry.casework.body.cloud.v1",
+  "name": "Rectangular cabinet body",
+  "category": "geometry",
+  "features": [
+    "case",
+    "casework",
+    "cabinet",
+    "sideboard",
+    "tv_console",
+    "nightstand",
+    "rectangular"
+  ],
+  "parameters": {
+    "length_mm": {
+      "default": 1800
+    },
+    "depth_mm": {
+      "default": 450
+    },
+    "height_mm": {
+      "default": 800
+    }
+  }
+}

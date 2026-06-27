@@ -1,0 +1,7 @@
+{
+  "id": "materials.stone.calacatta.v1",
+  "name": "Calacatta marble / sintered stone",
+  "category": "material",
+  "features": ["white", "marble", "stone", "polished", "veined"],
+  "shopdrawing_note": "TABLE TOP: 30MM CALACATTA MARBLE / SINTERED STONE"
+}

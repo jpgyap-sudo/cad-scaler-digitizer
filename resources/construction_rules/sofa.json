@@ -1,0 +1,17 @@
+{
+  "id": "rules.sofa.v1",
+  "name": "sofa drafting rule",
+  "category": "construction_rule",
+  "features": [
+    "sofa",
+    "shopdrawing",
+    "dimension",
+    "rules"
+  ],
+  "required_views": [
+    "top",
+    "front",
+    "side"
+  ],
+  "shop_note": "Use standard sofa drawing views, overall dimensions, material notes, and construction notes."
+}

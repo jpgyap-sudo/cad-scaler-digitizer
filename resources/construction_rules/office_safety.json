@@ -1,0 +1,13 @@
+{
+  "id": "rules.office_desk.v1",
+  "name": "Office desk safety and ergonomic rules",
+  "category": "construction_rule",
+  "features": ["desk", "office", "ergonomic"],
+  "rules": [
+    "Desk height must be between 720mm and 760mm for standard use.",
+    "Minimum desk depth 500mm for computer monitor clearance.",
+    "Modesty panel must not obstruct knee clearance (min 650mm width, 250mm depth).",
+    "Leg thickness minimum 30mm for stability.",
+    "All edges radius minimum 1mm for safety."
+  ]
+}

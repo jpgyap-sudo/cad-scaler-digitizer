@@ -63,6 +63,34 @@ DEFAULT_RATIOS: dict[str, dict[str, float]] = {
         "depth_to_width": 0.25,
         "height_to_width": 0.61,
     },
+    "oval_pedestal_table": {
+        "depth_to_length": 0.56,
+        "height_to_length": 0.42,
+        "pedestal_dia_to_length": 0.22,
+        "top_thickness_to_height": 0.04,
+    },
+    "console_table": {
+        "depth_to_length": 0.33,
+        "height_to_length": 0.62,
+        "leg_thick_to_length": 0.033,
+        "leg_inset_to_length": 0.017,
+    },
+    "office_desk": {
+        "depth_to_length": 0.43,
+        "height_to_length": 0.54,
+        "leg_thick_to_length": 0.029,
+        "modesty_panel_h_to_height": 0.20,
+    },
+    "asymmetric_pedestal_table": {
+        "depth_to_length": 0.50,
+        "height_to_length": 0.42,
+        "large_ped_to_length": 0.22,
+        "small_ped_to_length": 0.12,
+        "large_ped_offset_to_length": 0.17,
+        "small_ped_offset_to_length": 0.14,
+        "top_thickness_to_height": 0.04,
+        "overhang_to_length": 0.10,
+    },
 }
 
 
@@ -153,6 +181,61 @@ def solve_missing_dimensions(
         if w:
             if "overall_height_cm" not in result:
                 result["overall_height_cm"] = round(w * ratios.get("height_to_width", 0.38), 1)
+
+    elif furniture_type == "oval_pedestal_table":
+        l = detected_dims.get("length_cm")
+        if l:
+            if "depth_cm" not in result: result["depth_cm"] = round(l * ratios.get("depth_to_length", 0.56), 1)
+            if "overall_height_cm" not in result: result["overall_height_cm"] = round(l * ratios.get("height_to_length", 0.42), 1)
+            if "pedestal_dia_cm" not in result: result["pedestal_dia_cm"] = round(l * ratios.get("pedestal_dia_to_length", 0.22), 1)
+        else:
+            h = detected_dims.get("overall_height_cm")
+            if h and "length_cm" not in result:
+                result["length_cm"] = round(h / ratios.get("height_to_length", 0.42), 1)
+
+    elif furniture_type == "console_table":
+        l = detected_dims.get("length_cm")
+        if l:
+            if "depth_cm" not in result: result["depth_cm"] = round(l * ratios.get("depth_to_length", 0.33), 1)
+            if "overall_height_cm" not in result: result["overall_height_cm"] = round(l * ratios.get("height_to_length", 0.62), 1)
+            if "leg_thick_cm" not in result: result["leg_thick_cm"] = round(max(l * ratios.get("leg_thick_to_length", 0.033), 3.0), 1)
+
+    elif furniture_type == "office_desk":
+        l = detected_dims.get("length_cm")
+        if l:
+            if "depth_cm" not in result: result["depth_cm"] = round(l * ratios.get("depth_to_length", 0.43), 1)
+            if "overall_height_cm" not in result: result["overall_height_cm"] = round(l * ratios.get("height_to_length", 0.54), 1)
+            if "leg_thick_cm" not in result: result["leg_thick_cm"] = round(max(l * ratios.get("leg_thick_to_length", 0.029), 3.0), 1)
+        else:
+            h = detected_dims.get("overall_height_cm")
+            if h and "length_cm" not in result:
+                result["length_cm"] = round(h / ratios.get("height_to_length", 0.54), 1)
+        if "modesty_panel_h_cm" not in result:
+            h = result.get("overall_height_cm", detected_dims.get("overall_height_cm", 75))
+            result["modesty_panel_h_cm"] = round(h * ratios.get("modesty_panel_h_to_height", 0.20), 1)
+
+    elif furniture_type == "asymmetric_pedestal_table":
+        l = detected_dims.get("length_cm")
+        if l:
+            if "depth_cm" not in result:
+                result["depth_cm"] = round(l * ratios.get("depth_to_length", 0.50), 1)
+            if "overall_height_cm" not in result:
+                result["overall_height_cm"] = round(l * ratios.get("height_to_length", 0.42), 1)
+            if "large_ped_dia_cm" not in result:
+                result["large_ped_dia_cm"] = round(l * ratios.get("large_ped_to_length", 0.22), 1)
+            if "small_ped_dia_cm" not in result:
+                result["small_ped_dia_cm"] = round(l * ratios.get("small_ped_to_length", 0.12), 1)
+            if "left_ped_x_cm" not in result:
+                result["left_ped_x_cm"] = round(l * ratios.get("large_ped_offset_to_length", 0.17), 1)
+            if "right_ped_x_cm" not in result:
+                result["right_ped_x_cm"] = round(-l * ratios.get("small_ped_offset_to_length", 0.14), 1)
+            if "top_thickness_cm" not in result:
+                h = result.get("overall_height_cm", 75.0)
+                result["top_thickness_cm"] = round(h * ratios.get("top_thickness_to_height", 0.04), 1)
+        else:
+            h = detected_dims.get("overall_height_cm")
+            if h and "length_cm" not in result:
+                result["length_cm"] = round(h / ratios.get("height_to_length", 0.42), 1)
 
     elif furniture_type == "reception_counter":
         w = detected_dims.get("width_cm")

@@ -1,0 +1,17 @@
+{
+  "id": "geometry.case.door_fronts.v2",
+  "name": "Door front pattern",
+  "category": "geometry",
+  "features": [
+    "doors",
+    "door_fronts",
+    "sideboard",
+    "cabinet",
+    "casework"
+  ],
+  "parameters": {
+    "door_count": {
+      "default": 4
+    }
+  }
+}

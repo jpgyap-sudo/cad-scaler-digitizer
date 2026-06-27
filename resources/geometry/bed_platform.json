@@ -1,0 +1,19 @@
+{
+  "id": "geometry.bed.platform.cloud.v1",
+  "name": "Bed mattress platform",
+  "category": "geometry",
+  "features": [
+    "bed",
+    "platform",
+    "mattress_zone",
+    "rectangular"
+  ],
+  "parameters": {
+    "length_mm": {
+      "default": 2030
+    },
+    "depth_mm": {
+      "default": 1830
+    }
+  }
+}

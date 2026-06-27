@@ -1,0 +1,22 @@
+{
+  "id": "support.table.four_leg.cloud.v1",
+  "name": "Four leg base",
+  "category": "support",
+  "features": [
+    "support",
+    "base",
+    "four_leg",
+    "legs",
+    "table",
+    "wood",
+    "metal"
+  ],
+  "parameters": {
+    "height_mm": {
+      "default": 720
+    },
+    "leg_size_mm": {
+      "default": 60
+    }
+  }
+}

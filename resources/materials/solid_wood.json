@@ -1,0 +1,7 @@
+{
+  "id": "materials.wood.solid.v1",
+  "name": "Solid wood with clear coat",
+  "category": "material",
+  "features": ["wood", "solid", "clear_coat", "natural_grain"],
+  "shopdrawing_note": "TOP: SOLID WOOD WITH CLEAR COAT FINISH"
+}

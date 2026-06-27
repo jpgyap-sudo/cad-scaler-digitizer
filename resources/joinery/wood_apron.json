@@ -1,0 +1,12 @@
+{
+  "id": "joinery.wood_apron.v1",
+  "name": "Wood apron frame",
+  "category": "joinery",
+  "features": ["wood", "apron", "frame", "four_leg"],
+  "parameters": {
+    "apron_height_mm": {"default": 80, "min": 40, "max": 150},
+    "apron_thickness_mm": {"default": 18, "min": 12, "max": 30}
+  },
+  "compatible_with": ["geometry.rectangular_top.v1", "supports.four_leg.v1"],
+  "notes": ["Standard wood apron connects legs for stability.", "Used for rectangular and console tables."]
+}

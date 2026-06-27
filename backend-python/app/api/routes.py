@@ -1772,6 +1772,7 @@ async def suggest_template(furniture_type: str = "", width_cm: float = 0, height
     from app.resource_engine.matcher import build_scene_graph
     from app.resource_engine.constraint_solver import solve_constraints
     from app.resource_engine.feedback import save_feedback, load_feedback_history, get_feedback_stats
+    from app.resource_engine.cloud_vision import make_cloud_vision_client, CloudVisionFeatureSet
     from app.resource_engine.db_persistence import init_db, save_feedback_db, save_scene_db, update_pattern, get_feedback_stats_db, get_patterns_db, load_recent_feedback_db, load_recent_scenes_db
     
     if not furniture_type:
@@ -2122,6 +2123,31 @@ async def scene_library_summary():
         "categories": lib.summary(),
         "resources": data,
     })
+
+
+@router.post("/cloud-vision")
+async def cloud_vision_endpoint(file: UploadFile = File(...)):
+    """Extract furniture features from a photo using Cloud Vision API (OpenAI/Gemini).
+    
+    Returns structured CloudVisionFeatureSet with product type, dimensions,
+    materials, visible parts, and confidence.
+    Requires AI_PROVIDER and corresponding API key in environment.
+    """
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    job_id = str(uuid.uuid4())
+    img_path = UPLOAD / f"{job_id}_{uuid.uuid4().hex[:8]}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    
+    try:
+        client = make_cloud_vision_client()
+        features = client.extract_furniture_features(str(img_path))
+        return JSONResponse(json.loads(features.model_dump_json()))
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+    finally:
+        try: os.remove(str(img_path))
+        except: pass
 
 
 @router.get("/scene/generate")

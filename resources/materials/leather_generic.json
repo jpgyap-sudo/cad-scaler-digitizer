@@ -1,0 +1,13 @@
+{
+  "id": "materials.upholstery.leather.v2",
+  "name": "Generic leather upholstery",
+  "category": "material",
+  "features": [
+    "material",
+    "leather",
+    "upholstery",
+    "sofa",
+    "chair"
+  ],
+  "shop_note": "UPHOLSTERY: LEATHER AS SELECTED BY CLIENT."
+}

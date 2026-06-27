@@ -1,0 +1,16 @@
+{
+  "id": "joinery.table.hidden_steel_frame.v2",
+  "name": "Hidden steel subframe for stone table",
+  "category": "joinery",
+  "features": [
+    "joinery",
+    "hidden",
+    "steel",
+    "frame",
+    "stone",
+    "table",
+    "bolted",
+    "plate"
+  ],
+  "shop_note": "Hidden steel frame under stone top with welded pedestal plates."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "supports.single_pedestal.v1",
+  "name": "Single pedestal base",
+  "category": "support",
+  "features": ["single", "pedestal", "round", "center"],
+  "parameters": {
+    "diameter_mm": {"default": 400, "min": 200, "max": 600},
+    "height_mm": {"default": 720, "min": 450, "max": 760},
+    "base_plate_diameter_mm": {"default": 500, "min": 300, "max": 700}
+  },
+  "compatible_with": ["geometry.round_top.v1", "geometry.oval_top.v1", "joinery.hidden_steel_frame.v1"],
+  "cad_rules": {"top_view": "CIRCLE", "front_elevation": "RECTANGLE", "layer": "OBJECT"}
+}

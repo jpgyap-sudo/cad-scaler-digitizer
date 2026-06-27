@@ -1,0 +1,24 @@
+{
+  "id": "geometry.seating.upholstered_seat.v2",
+  "name": "Upholstered seat block",
+  "category": "geometry",
+  "features": [
+    "seat",
+    "upholstered",
+    "sofa",
+    "chair",
+    "fabric",
+    "cushion"
+  ],
+  "parameters": {
+    "length_mm": {
+      "default": 1800
+    },
+    "depth_mm": {
+      "default": 900
+    },
+    "seat_height_mm": {
+      "default": 420
+    }
+  }
+}

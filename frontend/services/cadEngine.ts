@@ -91,6 +91,10 @@ export type FurnitureType =
   | 'cabinet'
   | 'bed_headboard'
   | 'chair'
+  | 'asymmetric_pedestal_table'
+  | 'oval_pedestal_table'
+  | 'console_table'
+  | 'office_desk'
   | 'generic_2d_furniture'
   | '';
 
@@ -101,6 +105,10 @@ const FURNITURE_LABELS: Record<string, string> = {
   cabinet: 'Cabinet / Wardrobe',
   bed_headboard: 'Bed / Headboard',
   chair: 'Chair',
+  asymmetric_pedestal_table: 'Asymmetric Pedestal Table',
+  oval_pedestal_table: 'Oval Pedestal Table',
+  console_table: 'Console / Sofa Table',
+  office_desk: 'Office Desk',
   generic_2d_furniture: 'Generic Furniture',
 };
 

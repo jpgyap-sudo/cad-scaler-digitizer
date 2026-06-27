@@ -1,0 +1,11 @@
+{
+  "id": "supports.single_cylindrical_pedestal.v1",
+  "name": "Single cylindrical pedestal support",
+  "category": "support",
+  "features": ["one_pedestal", "cylindrical", "centered", "metal_base"],
+  "parameters": {
+    "diameter_mm": {"default": 400, "min": 200, "max": 600},
+    "height_mm": {"default": 720, "min": 450, "max": 760}
+  },
+  "cad_rules": {"top_view": "CIRCLE", "layer": "OBJECT", "front_elevation": "RECTANGLE"}
+}

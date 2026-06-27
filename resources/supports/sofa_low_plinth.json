@@ -1,0 +1,17 @@
+{
+  "id": "supports.seating.low_plinth.v2",
+  "name": "Low sofa plinth base",
+  "category": "support",
+  "features": [
+    "base",
+    "sofa_base",
+    "low",
+    "plinth",
+    "seating"
+  ],
+  "parameters": {
+    "height_mm": {
+      "default": 80
+    }
+  }
+}

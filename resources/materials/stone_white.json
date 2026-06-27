@@ -1,0 +1,15 @@
+{
+  "id": "materials.stone.white.v2",
+  "name": "White marble / sintered stone",
+  "category": "material",
+  "features": [
+    "material",
+    "white_stone",
+    "stone",
+    "marble",
+    "sintered",
+    "luxury",
+    "top_material"
+  ],
+  "shop_note": "TOP: WHITE MARBLE / SINTERED STONE."
+}

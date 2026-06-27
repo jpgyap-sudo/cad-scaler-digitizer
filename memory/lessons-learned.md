@@ -2468,3 +2468,687 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: backward compat for anti_hallucination_validator + restore builder functions in drawing_builders.py
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit faf7a14f85d88a4de10a6ca14be05b919b01b116
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** faf7a14f85d88a4de10a6ca14be05b919b01b116
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/anti_hallucination_validator.py,backend-python/app/backend/drawing_builders.py
+
+**Summary:**
+Commit: fix: backward compat for anti_hallucination_validator + restore builder functions in drawing_builders.py
+Files: backend-python/app/api/routes.py,backend-python/app/backend/anti_hallucination_validator.py,backend-python/app/backend/drawing_builders.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: backward compat for anti_hallucination_validator + restore builder functions in drawing_builders.py*
+
+#### Lesson Learned
+
+Commit: fix: backward compat for anti_hallucination_validator + restore builder functions in drawing_builders.py
+Files: backend-python/app/api/routes.py,backend-python/app/backend/anti_hallucination_validator.py,backend-python/app/backend/drawing_builders.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: comprehensive audit fixes — 21 issues resolved across backend + frontend
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 48e5ca4740875be2206697c8758bdc2e9671fb10
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 48e5ca4740875be2206697c8758bdc2e9671fb10
+**Files:** 
+
+**Summary:**
+Commit: fix: comprehensive audit fixes — 21 issues resolved across backend + frontend
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: comprehensive audit fixes — 21 issues resolved across backend + frontend*
+
+#### Lesson Learned
+
+Commit: fix: comprehensive audit fixes — 21 issues resolved across backend + frontend
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: re-add build_round_pedestal_model and build_rectangular_table_model to drawing_model.py
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c673a84d0385bf48f1aac6fdb4b5b2ed7b5245a6
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** c673a84d0385bf48f1aac6fdb4b5b2ed7b5245a6
+**Files:** 
+
+**Summary:**
+Commit: fix: re-add build_round_pedestal_model and build_rectangular_table_model to drawing_model.py
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: re-add build_round_pedestal_model and build_rectangular_table_model to drawing_model.py*
+
+#### Lesson Learned
+
+Commit: fix: re-add build_round_pedestal_model and build_rectangular_table_model to drawing_model.py
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: furniture classifier — filter annotation circles, improve heuristics
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 46db1d7f4ad04f609e049b764cac5d65faff8a16
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 46db1d7f4ad04f609e049b764cac5d65faff8a16
+**Files:** 
+
+**Summary:**
+Commit: fix: furniture classifier — filter annotation circles, improve heuristics
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: furniture classifier — filter annotation circles, improve heuristics*
+
+#### Lesson Learned
+
+Commit: fix: furniture classifier — filter annotation circles, improve heuristics
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: vite proxy target port 8000->5001 to match local backend
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 126dcd8f7a830c5783cc159a103b124642be1858
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 126dcd8f7a830c5783cc159a103b124642be1858
+**Files:** frontend/vite.config.ts
+
+**Summary:**
+Commit: fix: vite proxy target port 8000->5001 to match local backend
+Files: frontend/vite.config.ts
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: vite proxy target port 8000->5001 to match local backend*
+
+#### Lesson Learned
+
+Commit: fix: vite proxy target port 8000->5001 to match local backend
+Files: frontend/vite.config.ts
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: make Tailwind CDN script async to prevent blank page when CDN unreachable
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 56338d038a63005f9cd7e2222a7549f08bb797e2
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 56338d038a63005f9cd7e2222a7549f08bb797e2
+**Files:** frontend/index.html
+
+**Summary:**
+Commit: fix: make Tailwind CDN script async to prevent blank page when CDN unreachable
+Files: frontend/index.html
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: make Tailwind CDN script async to prevent blank page when CDN unreachable*
+
+#### Lesson Learned
+
+Commit: fix: make Tailwind CDN script async to prevent blank page when CDN unreachable
+Files: frontend/index.html
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add inline fallback CSS for critical Tailwind classes when CDN unreachable
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 22f1ad5eaad8f092eebf3bfd0122faa6fa627c3d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 22f1ad5eaad8f092eebf3bfd0122faa6fa627c3d
+**Files:** frontend/index.html
+
+**Summary:**
+Commit: fix: add inline fallback CSS for critical Tailwind classes when CDN unreachable
+Files: frontend/index.html
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add inline fallback CSS for critical Tailwind classes when CDN unreachable*
+
+#### Lesson Learned
+
+Commit: fix: add inline fallback CSS for critical Tailwind classes when CDN unreachable
+Files: frontend/index.html
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: blank CAD preview output + broken local dev proxy
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 38b797430b17761bdb5667fea3a29ac92fbad121
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 38b797430b17761bdb5667fea3a29ac92fbad121
+**Files:** 
+
+**Summary:**
+Commit: fix: blank CAD preview output + broken local dev proxy
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: blank CAD preview output + broken local dev proxy*
+
+#### Lesson Learned
+
+Commit: fix: blank CAD preview output + broken local dev proxy
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: dimension consistency checks + material prediction/editing
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a7d7190aadbd5ec61afdfb23c8320615f035ef4a
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** a7d7190aadbd5ec61afdfb23c8320615f035ef4a
+**Files:** 
+
+**Summary:**
+Commit: fix: dimension consistency checks + material prediction/editing
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: dimension consistency checks + material prediction/editing*
+
+#### Lesson Learned
+
+Commit: fix: dimension consistency checks + material prediction/editing
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: SVG preview collar diameter ignored actual top diameter
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 62aba89f62969906d56b1a66f6e5430c1c6360d6
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 62aba89f62969906d56b1a66f6e5430c1c6360d6
+**Files:** 
+
+**Summary:**
+Commit: fix: SVG preview collar diameter ignored actual top diameter
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: SVG preview collar diameter ignored actual top diameter*
+
+#### Lesson Learned
+
+Commit: fix: SVG preview collar diameter ignored actual top diameter
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: round-trip OCR misread root cause + add material text UI
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 2c0b50054acf1721d0fd007da0efaf059cb7a15d
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 2c0b50054acf1721d0fd007da0efaf059cb7a15d
+**Files:** 
+
+**Summary:**
+Commit: fix: round-trip OCR misread root cause + add material text UI
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: round-trip OCR misread root cause + add material text UI*
+
+#### Lesson Learned
+
+Commit: fix: round-trip OCR misread root cause + add material text UI
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: surface editing controls + material fields; one-call apply; stale-tab banner
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 9515d3d2dba44d965bcfaa8f0416ff2b5b1353a6
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 9515d3d2dba44d965bcfaa8f0416ff2b5b1353a6
+**Files:** 
+
+**Summary:**
+Commit: fix: surface editing controls + material fields; one-call apply; stale-tab banner
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: surface editing controls + material fields; one-call apply; stale-tab banner*
+
+#### Lesson Learned
+
+Commit: fix: surface editing controls + material fields; one-call apply; stale-tab banner
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: OpenAI vision OCR was always failing (timeout in body) -> 80 read as 60
+
+Date: 2026-06-26
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 08804333bb2785f4fad52fbfb4c1f78575443c1c
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 08804333bb2785f4fad52fbfb4c1f78575443c1c
+**Files:** 
+
+**Summary:**
+Commit: fix: OpenAI vision OCR was always failing (timeout in body) -> 80 read as 60
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: OpenAI vision OCR was always failing (timeout in body) -> 80 read as 60*
+
+#### Lesson Learned
+
+Commit: fix: OpenAI vision OCR was always failing (timeout in body) -> 80 read as 60
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: AI base/neck ratio defaulting to 1.0 (pedestal same width as tabletop)
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 844dfdc7a4c90743732c25656cab5e2196e4031e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 844dfdc7a4c90743732c25656cab5e2196e4031e
+**Files:** 
+
+**Summary:**
+Commit: fix: AI base/neck ratio defaulting to 1.0 (pedestal same width as tabletop)
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: AI base/neck ratio defaulting to 1.0 (pedestal same width as tabletop)*
+
+#### Lesson Learned
+
+Commit: fix: AI base/neck ratio defaulting to 1.0 (pedestal same width as tabletop)
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: fabricated collar plate + TOP/FRONT view overlap on round pedestal tables
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 6e0c9ac3f4ba44e217e469de83c9bff2550f14f8
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 6e0c9ac3f4ba44e217e469de83c9bff2550f14f8
+**Files:** 
+
+**Summary:**
+Commit: fix: fabricated collar plate + TOP/FRONT view overlap on round pedestal tables
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: fabricated collar plate + TOP/FRONT view overlap on round pedestal tables*
+
+#### Lesson Learned
+
+Commit: fix: fabricated collar plate + TOP/FRONT view overlap on round pedestal tables
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: pedestal body rendered as a cone for every profile, even straight columns
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bdbb6a5f879c3fa8b64ebb51d8596a38e724e43f
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** bdbb6a5f879c3fa8b64ebb51d8596a38e724e43f
+**Files:** 
+
+**Summary:**
+Commit: fix: pedestal body rendered as a cone for every profile, even straight columns
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: pedestal body rendered as a cone for every profile, even straight columns*
+
+#### Lesson Learned
+
+Commit: fix: pedestal body rendered as a cone for every profile, even straight columns
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: audit fixes — nginx routing, Redis healthcheck, queue pipeline, auth CORS, secrets
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a66a94857eb52bd2d060cbc06b018e40eec9b22f
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** a66a94857eb52bd2d060cbc06b018e40eec9b22f
+**Files:** 
+
+**Summary:**
+Commit: fix: audit fixes — nginx routing, Redis healthcheck, queue pipeline, auth CORS, secrets
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: audit fixes — nginx routing, Redis healthcheck, queue pipeline, auth CORS, secrets*
+
+#### Lesson Learned
+
+Commit: fix: audit fixes — nginx routing, Redis healthcheck, queue pipeline, auth CORS, secrets
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: entrypoint scripts — use Posix signal names, non-blocking TCP checks, fix duplicate client var
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 166160bf6ec1689a61cb1e44e1d78aa93d3a8e77
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 166160bf6ec1689a61cb1e44e1d78aa93d3a8e77
+**Files:** 
+
+**Summary:**
+Commit: fix: entrypoint scripts — use Posix signal names, non-blocking TCP checks, fix duplicate client var
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: entrypoint scripts — use Posix signal names, non-blocking TCP checks, fix duplicate client var*
+
+#### Lesson Learned
+
+Commit: fix: entrypoint scripts — use Posix signal names, non-blocking TCP checks, fix duplicate client var
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

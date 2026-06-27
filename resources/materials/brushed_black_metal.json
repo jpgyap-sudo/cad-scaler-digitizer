@@ -1,0 +1,13 @@
+{
+  "id": "materials.metal.brushed_black.v1",
+  "name": "Brushed black metal",
+  "category": "material",
+  "features": [
+    "brushed_metal",
+    "black",
+    "metal",
+    "matte",
+    "pedestal"
+  ],
+  "shop_note": "BASE: BRUSHED / MATTE BLACK METAL"
+}

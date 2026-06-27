@@ -1,0 +1,12 @@
+{
+  "id": "geometry.oval_top.v1",
+  "name": "Oval/elliptical tabletop",
+  "category": "geometry",
+  "features": ["oval", "elliptical", "curved_edges", "flat_top"],
+  "parameters": {
+    "length_mm": {"default": 1800, "min": 800, "max": 3600},
+    "depth_mm": {"default": 1000, "min": 500, "max": 1500},
+    "thickness_mm": {"default": 30, "min": 12, "max": 60}
+  },
+  "cad_rules": {"entity": "LWPOLYLINE_36_SEG", "closed": true, "layer": "OUTLINE"}
+}

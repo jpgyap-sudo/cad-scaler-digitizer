@@ -1,0 +1,17 @@
+{
+  "id": "supports.case.recessed_plinth.v2",
+  "name": "Recessed cabinet plinth",
+  "category": "support",
+  "features": [
+    "base",
+    "cabinet_base",
+    "casework",
+    "recessed",
+    "plinth"
+  ],
+  "parameters": {
+    "height_mm": {
+      "default": 80
+    }
+  }
+}

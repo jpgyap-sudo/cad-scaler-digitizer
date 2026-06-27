@@ -1,0 +1,13 @@
+{
+  "id": "manufacturer.home_u.v1",
+  "name": "HomeU Furniture",
+  "category": "manufacturer",
+  "features": ["modern", "asian_standard", "residential", "marble_tables"],
+  "preferred_geometry": ["geometry.rectangular_top.v1", "geometry.oval_top.v1"],
+  "preferred_supports": ["supports.dual_cylindrical_pedestal.v1", "supports.single_cylindrical_pedestal.v1"],
+  "default_materials": {
+    "top": "materials.stone.calacatta.v1",
+    "base": "materials.metal.brushed.v1"
+  },
+  "default_joinery": "joinery.hidden_steel_frame.v1"
+}

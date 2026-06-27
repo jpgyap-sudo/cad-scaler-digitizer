@@ -1,0 +1,13 @@
+{
+  "id": "material.fabric.cloud.v1",
+  "name": "Upholstery fabric",
+  "category": "material",
+  "features": [
+    "material",
+    "fabric",
+    "upholstery",
+    "sofa",
+    "chair"
+  ],
+  "shop_note": "UPHOLSTERY: FABRIC AS SELECTED."
+}

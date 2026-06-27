@@ -1,0 +1,46 @@
+{
+  "name": "asymmetric-pedestal-table-180x90x75",
+  "furniture_type": "asymmetric_pedestal_table",
+  "source": "dwgshare reference",
+  "category": "asymmetric pedestal table",
+  "parameters": {
+    "name": "asymmetric-pedestal-table-180x90x75",
+    "l": 180,
+    "d": 90,
+    "h": 75,
+    "type": "asymmetric_pedestal_table",
+    "top_thickness_cm": 3,
+    "large_ped_dia_cm": 40,
+    "small_ped_dia_cm": 22,
+    "left_ped_x_cm": 30,
+    "right_ped_x_cm": -25,
+    "overhang_cm": 18
+  },
+  "dimensions": [
+    {"tag": "length", "value_cm": 180, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 90, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 75, "tolerance_pct": 3},
+    {"tag": "top_thickness", "value_cm": 3, "tolerance_pct": 15},
+    {"tag": "large_ped_dia", "value_cm": 40, "tolerance_pct": 10},
+    {"tag": "small_ped_dia", "value_cm": 22, "tolerance_pct": 10}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["tabletop_plan", "pedestal_footprints"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["tabletop", "large_pedestal", "small_pedestal"]},
+    {"name": "side_elevation", "required": true, "views": ["side"], "components": ["tabletop", "pedestal_side"]},
+    {"name": "title_block", "required": true, "views": ["layout"], "components": ["title", "material_notes"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation",
+    "side_elevation",
+    "title_block"
+  ],
+  "materials": [
+    "marble",
+    "engineered stone",
+    "brushed stainless steel",
+    "brushed metal"
+  ],
+  "notes": "Fixture for asymmetric-pedestal-table-180x90x75 — marble top with two offset cylindrical pedestals"
+}

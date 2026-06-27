@@ -1,0 +1,17 @@
+{
+  "id": "geometry.seating.arms.v2",
+  "name": "Sofa or chair arms",
+  "category": "geometry",
+  "features": [
+    "arms",
+    "armrest",
+    "sofa",
+    "chair",
+    "upholstered"
+  ],
+  "parameters": {
+    "arm_width_mm": {
+      "default": 120
+    }
+  }
+}

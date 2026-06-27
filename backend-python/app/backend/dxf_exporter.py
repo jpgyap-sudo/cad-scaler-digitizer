@@ -786,6 +786,447 @@ def save_bed_headboard(path, width_cm=160, height_cm=120, _validation_result=Non
     return _save(doc, path)
 
 
+def save_oval_pedestal_table(path, length_cm=180, depth_cm=100, height_cm=75,
+                              top_thick_cm=3, pedestal_dia_cm=40, base_plate_cm=5,
+                              materials=None):
+    """Oval/elliptical pedestal table — TOP VIEW + FRONT ELEVATION.
+    
+    Oval tabletop with single central cylindrical pedestal.
+    Oval is approximated as a 36-segment LWPOLYLINE for true ellipse look.
+    """
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.35
+    w = length_cm * sc
+    d = depth_cm * sc
+    h = height_cm * sc
+    tt = top_thick_cm * sc
+    pd_r = pedestal_dia_cm / 2 * sc
+    bp = base_plate_cm * sc
+    w2, d2 = w / 2, d / 2
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    tx, ty = 100, y_mid
+    # Oval as 36-segment LWPOLYLINE
+    oval_pts = []
+    for i in range(36):
+        a = 2 * math.pi * i / 36
+        px = tx + w2 * math.cos(a)
+        py = ty + d2 * math.sin(a)
+        oval_pts.append((px, py))
+    _add_polyline(msp, oval_pts, True)
+    # Pedestal footprint circle at center
+    try:
+        msp.add_circle((tx, ty), pd_r, dxfattribs={'layer': 'HIDDEN'})
+    except Exception:
+        cpts = []
+        for i in range(36):
+            a = 2 * math.pi * i / 36
+            cpts.append((tx + pd_r * math.cos(a), ty + pd_r * math.sin(a)))
+        _add_polyline(msp, cpts, True, 'HIDDEN')
+    # Stone hatch
+    _add_hatch_polygon(msp, oval_pts, 'ANSI31', 0.3, 45)
+    # Centerlines
+    ext = max(5, w2 * 0.1)
+    _add_centerline(msp, (tx - w2 - ext, ty), (tx + w2 + ext, ty))
+    _add_centerline(msp, (tx, ty - d2 - ext), (tx, ty + d2 + ext))
+    # Dimensions
+    _add_dimension(msp, (tx - w2, ty + d2 + 6), (tx + w2, ty + d2 + 6),
+                   (tx, ty + d2 + 12), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (tx + w2 + 6, ty - d2), (tx + w2 + 6, ty + d2),
+                   (tx + w2 + 14, ty), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'TOP VIEW', (tx - 15, ty + d2 + 22), 3)
+
+    # ===== FRONT ELEVATION =====
+    fx = 290
+    floor_y = 40
+    top_y = floor_y + h
+    tab_bot = top_y - tt
+    ped_bot = floor_y + bp
+    ped_height = tab_bot - ped_bot
+
+    # Tabletop
+    _add_polyline(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                        (fx + w2, top_y), (fx - w2, top_y)], True)
+    _add_hatch_polygon(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                              (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5, 45)
+    # Central pedestal
+    _add_polyline(msp, [(fx - pd_r, ped_bot), (fx + pd_r, ped_bot),
+                        (fx + pd_r, tab_bot), (fx - pd_r, tab_bot)], True)
+    _add_hatch_polygon(msp, [(fx - pd_r, ped_bot), (fx + pd_r, ped_bot),
+                              (fx + pd_r, tab_bot), (fx - pd_r, tab_bot)], 'ANSI37', 0.3)
+    # Centerline
+    _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
+    # Dimensions
+    _add_dimension(msp, (fx + w2 + 8, floor_y), (fx + w2 + 8, top_y),
+                   (fx + w2 + 16, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
+                   (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (fx - pd_r, ped_bot - 5), (fx + pd_r, ped_bot - 5),
+                   (fx, ped_bot - 11), f'Ø{pedestal_dia_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2 - 10, tab_bot), (fx - w2 - 10, top_y),
+                   (fx - w2 - 18, (tab_bot + top_y) / 2), f'T = {top_thick_cm * 10:g} mm')
+    # Material leader
+    _add_leader(msp, mats.get('tabletop', 'STONE/MARBLE TOP'),
+                (fx + w2 + 15, (tab_bot + top_y) / 2), (fx + w2, (tab_bot + top_y) / 2))
+    _add_leader(msp, mats.get('pedestal', 'BRUSHED METAL PEDESTAL'),
+                (fx + pd_r + 15, (ped_bot + tab_bot) / 2), (fx + pd_r, (ped_bot + tab_bot) / 2))
+    _add_mtext(msp, 'FRONT ELEVATION', (fx - w2, top_y + 10), 3)
+
+    material_notes = [
+        f"TABLE TOP — {mats.get('tabletop', 'Marble / engineered stone')}",
+        f"PEDESTAL — {mats.get('pedestal', f'Brushed stainless steel, Ø{pedestal_dia_cm * 10:.0f} mm')}",
+    ]
+    generate_title_block(msp,
+        f"Oval Pedestal Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project="Furniture Shop Drawing", scale="1:5", revision="A",
+        material_notes=material_notes)
+    return _save(doc, path)
+
+
+def save_console_table(path, length_cm=120, depth_cm=40, height_cm=75,
+                        top_thick_cm=2.5, leg_thick_cm=4, leg_inset_cm=2,
+                        materials=None):
+    """Console / sofa table — TOP/FRONT/SIDE views.
+    
+    Narrow long table with four simple legs at corners.
+    """
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.4
+    w = length_cm * sc
+    d = depth_cm * sc
+    h = height_cm * sc
+    tt = top_thick_cm * sc
+    lt = leg_thick_cm * sc
+    li = leg_inset_cm * sc
+    w2, d2, lt2 = w / 2, d / 2, lt / 2
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    tx, ty = 100, y_mid
+    _add_polyline(msp, [(tx - w2, ty - d2), (tx + w2, ty - d2),
+                        (tx + w2, ty + d2), (tx - w2, ty + d2)], True)
+    # Leg footprints at corners (inset)
+    for lx, ly in [(tx - w2 + li, ty - d2 + li), (tx + w2 - li - lt, ty - d2 + li),
+                   (tx - w2 + li, ty + d2 - li - lt), (tx + w2 - li - lt, ty + d2 - li - lt)]:
+        _add_polyline(msp, [(lx, ly), (lx + lt, ly), (lx + lt, ly + lt), (lx, ly + lt)], True, 'HIDDEN')
+    _add_centerline(msp, (tx - w2 - 5, ty), (tx + w2 + 5, ty))
+    _add_centerline(msp, (tx, ty - d2 - 5), (tx, ty + d2 + 5))
+    _add_dimension(msp, (tx - w2, ty + d2 + 6), (tx + w2, ty + d2 + 6),
+                   (tx, ty + d2 + 12), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (tx + w2 + 6, ty - d2), (tx + w2 + 6, ty + d2),
+                   (tx + w2 + 14, ty), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'TOP VIEW', (tx - 15, ty + d2 + 22), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = 40
+    top_y = floor_y + h
+    tab_bot = top_y - tt
+    _add_polyline(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                        (fx + w2, top_y), (fx - w2, top_y)], True)
+    _add_hatch_polygon(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                              (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5)
+    # Front legs
+    for lx in [fx - w2 + li, fx + w2 - li - lt]:
+        _add_polyline(msp, [(lx, floor_y), (lx + lt, floor_y),
+                            (lx + lt, tab_bot), (lx, tab_bot)], True)
+    # Back legs hidden
+    for lx in [fx - w2 + li + lt * 0.5, fx + w2 - li - lt - lt * 0.5]:
+        _add_line(msp, (lx, floor_y), (lx, tab_bot), 'HIDDEN')
+        _add_line(msp, (lx + lt * 0.3, floor_y), (lx + lt * 0.3, tab_bot), 'HIDDEN')
+    _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
+    _add_dimension(msp, (fx + w2 + 8, floor_y), (fx + w2 + 8, top_y),
+                   (fx + w2 + 16, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
+                   (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
+    _add_mtext(msp, 'FRONT VIEW', (fx - w2, top_y + 10), 3)
+
+    # ===== SIDE VIEW =====
+    sx = 365
+    _add_polyline(msp, [(sx - d2, tab_bot), (sx + d2, tab_bot),
+                        (sx + d2, top_y), (sx - d2, top_y)], True)
+    # Single leg visible from side (front leg)
+    ly_l = sx - d2 + li
+    _add_polyline(msp, [(ly_l, floor_y), (ly_l + lt, floor_y),
+                        (ly_l + lt, tab_bot), (ly_l, tab_bot)], True)
+    _add_centerline(msp, (sx, floor_y - 5), (sx, top_y + 5))
+    _add_dimension(msp, (sx + d2 + 6, floor_y), (sx + d2 + 6, top_y),
+                   (sx + d2 + 14, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (sx - d2, floor_y - 8), (sx + d2, floor_y - 8),
+                   (sx, floor_y - 14), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'SIDE VIEW', (sx - d2, top_y + 10), 3)
+
+    generate_title_block(msp,
+        f"Console Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project="Furniture Shop Drawing", scale="1:3", revision="A")
+    return _save(doc, path)
+
+
+def save_office_desk(path, length_cm=140, depth_cm=60, height_cm=75,
+                     top_thick_cm=2.5, leg_thick_cm=4, modesty_panel_h_cm=15,
+                     leg_inset_cm=2, materials=None):
+    """Office desk with modesty panel — TOP/FRONT/SIDE views."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.35
+    w = length_cm * sc
+    d = depth_cm * sc
+    h = height_cm * sc
+    tt = top_thick_cm * sc
+    lt = leg_thick_cm * sc
+    mh = modesty_panel_h_cm * sc
+    li = leg_inset_cm * sc
+    w2, d2 = w / 2, d / 2
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    tx, ty = 100, y_mid
+    _add_polyline(msp, [(tx - w2, ty - d2), (tx + w2, ty - d2),
+                        (tx + w2, ty + d2), (tx - w2, ty + d2)], True)
+    for lx, ly in [(tx - w2 + li, ty - d2 + li), (tx + w2 - li - lt, ty - d2 + li),
+                   (tx - w2 + li, ty + d2 - li - lt), (tx + w2 - li - lt, ty + d2 - li - lt)]:
+        _add_polyline(msp, [(lx, ly), (lx + lt, ly), (lx + lt, ly + lt), (lx, ly + lt)], True, 'HIDDEN')
+    _add_centerline(msp, (tx - w2 - 5, ty), (tx + w2 + 5, ty))
+    _add_centerline(msp, (tx, ty - d2 - 5), (tx, ty + d2 + 5))
+    _add_dimension(msp, (tx - w2, ty + d2 + 6), (tx + w2, ty + d2 + 6),
+                   (tx, ty + d2 + 12), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (tx + w2 + 6, ty - d2), (tx + w2 + 6, ty + d2),
+                   (tx + w2 + 14, ty), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'TOP VIEW', (tx - 15, ty + d2 + 22), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = 40
+    top_y = floor_y + h
+    tab_bot = top_y - tt
+    _add_polyline(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                        (fx + w2, top_y), (fx - w2, top_y)], True)
+    _add_hatch_polygon(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                              (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5)
+    # Modesty panel (between legs, below tabletop)
+    mp_top = tab_bot
+    mp_bot = mp_top - mh
+    panel_l = fx - w2 + li + lt
+    panel_r = fx + w2 - li - lt
+    _add_polyline(msp, [(panel_l, mp_bot), (panel_r, mp_bot),
+                        (panel_r, mp_top), (panel_l, mp_top)], True)
+    _add_hatch_polygon(msp, [(panel_l, mp_bot), (panel_r, mp_bot),
+                              (panel_r, mp_top), (panel_l, mp_top)], 'ANSI31', 0.4)
+    # Legs
+    for lx in [fx - w2 + li, fx + w2 - li - lt]:
+        _add_polyline(msp, [(lx, floor_y), (lx + lt, floor_y),
+                            (lx + lt, tab_bot), (lx, tab_bot)], True)
+    _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
+    _add_dimension(msp, (fx + w2 + 8, floor_y), (fx + w2 + 8, top_y),
+                   (fx + w2 + 16, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
+                   (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (panel_l, mp_bot - 5), (panel_r, mp_bot - 5),
+                   ((panel_l + panel_r) / 2, mp_bot - 11), f'MH = {modesty_panel_h_cm * 10:g} mm')
+    _add_mtext(msp, 'FRONT VIEW', (fx - w2, top_y + 10), 3)
+
+    # ===== SIDE VIEW =====
+    sx = 365
+    _add_polyline(msp, [(sx - d2, tab_bot), (sx + d2, tab_bot),
+                        (sx + d2, top_y), (sx - d2, top_y)], True)
+    # Leg from side
+    sl = sx - d2 + li
+    _add_polyline(msp, [(sl, floor_y), (sl + lt, floor_y),
+                        (sl + lt, tab_bot), (sl, tab_bot)], True)
+    # Modesty panel from side (thin profile)
+    _add_line(msp, (sx - d2 + li + lt + 1, mp_bot), (sx + d2 - 2, mp_bot), 'OBJECT')
+    _add_line(msp, (sx - d2 + li + lt + 1, mp_top), (sx + d2 - 2, mp_top), 'OBJECT')
+    _add_centerline(msp, (sx, floor_y - 5), (sx, top_y + 5))
+    _add_dimension(msp, (sx + d2 + 6, floor_y), (sx + d2 + 6, top_y),
+                   (sx + d2 + 14, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (sx - d2, floor_y - 8), (sx + d2, floor_y - 8),
+                   (sx, floor_y - 14), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'SIDE VIEW', (sx - d2, top_y + 10), 3)
+
+    generate_title_block(msp,
+        f"Office Desk {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project="Furniture Shop Drawing", scale="1:3", revision="A")
+    return _save(doc, path)
+
+
+def save_asymmetric_pedestal_table(path, length_cm=180, depth_cm=90, height_cm=75,
+                                    top_thick_cm=3, large_ped_dia_cm=40, small_ped_dia_cm=22,
+                                    left_ped_x_cm=30, right_ped_x_cm=-25, overhang_cm=20,
+                                    base_plate_cm=5, materials=None):
+    """Asymmetric cylindrical pedestal dining table — TOP/FRONT/SIDE views.
+    
+    Rectangular tabletop with two offset cylindrical pedestals of different
+    diameters. Generates three views: top view with pedestal footprints,
+    front elevation showing both pedestals, and side elevation from the
+    right showing the asymmetrical depth offset.
+    All dimensions in cm internally (converted from mm in the caller).
+    """
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.35
+    w = length_cm * sc       # tabletop width in drawing units
+    d = depth_cm * sc        # tabletop depth in drawing units
+    h = height_cm * sc       # total height
+    tt = top_thick_cm * sc   # top thickness
+    lp_r = large_ped_dia_cm / 2 * sc  # large pedestal radius
+    sp_r = small_ped_dia_cm / 2 * sc  # small pedestal radius
+    lpx = left_ped_x_cm * sc          # large pedestal x offset
+    rpx = right_ped_x_cm * sc         # small pedestal x offset
+    bp = base_plate_cm * sc           # base plate height
+    w2, d2 = w / 2, d / 2
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    tx, ty = 100, y_mid
+    _add_polyline(msp, [(tx - w2, ty - d2), (tx + w2, ty - d2),
+                        (tx + w2, ty + d2), (tx - w2, ty + d2)], True)
+    # Stone hatch on tabletop
+    _add_hatch_polygon(msp, [(tx - w2, ty - d2), (tx + w2, ty - d2),
+                              (tx + w2, ty + d2), (tx - w2, ty + d2)], 'ANSI31', 0.3, 45)
+    # Pedestal footprints (circles)
+    try:
+        msp.add_circle((tx + lpx, ty), lp_r, dxfattribs={'layer': 'HIDDEN'})
+        msp.add_circle((tx + rpx, ty), sp_r, dxfattribs={'layer': 'HIDDEN'})
+    except Exception:
+        for cx, r in [(tx + lpx, lp_r), (tx + rpx, sp_r)]:
+            pts = []
+            for i in range(36):
+                a = 2 * math.pi * i / 36
+                pts.append((cx + r * math.cos(a), ty + r * math.sin(a)))
+            _add_polyline(msp, pts, True, 'HIDDEN')
+    # Centerlines
+    ext = max(5, w2 * 0.1)
+    _add_centerline(msp, (tx - w2 - ext, ty), (tx + w2 + ext, ty))
+    _add_centerline(msp, (tx, ty - d2 - ext), (tx, ty + d2 + ext))
+    # Dimensions
+    _add_dimension(msp, (tx - w2, ty + d2 + 6), (tx + w2, ty + d2 + 6),
+                   (tx, ty + d2 + 12), f'W = {length_cm * 10:g} mm')
+    _add_dimension(msp, (tx + w2 + 6, ty - d2), (tx + w2 + 6, ty + d2),
+                   (tx + w2 + 14, ty), f'D = {depth_cm * 10:g} mm')
+    # Pedestal footprint diameter callouts
+    _add_text(msp, f'P1 Ø{large_ped_dia_cm * 10:g} mm', (tx + lpx - 12, ty - lp_r - 8), 2, 'DIMENSIONS')
+    _add_text(msp, f'P2 Ø{small_ped_dia_cm * 10:g} mm', (tx + rpx - 12, ty + sp_r + 8), 2, 'DIMENSIONS')
+    _add_mtext(msp, 'TOP VIEW', (tx - 15, ty + d2 + 22), 3)
+
+    # ===== FRONT ELEVATION =====
+    fx = 290
+    floor_y = 40
+    top_y = floor_y + h
+    tab_bot = top_y - tt
+    ped_height = tab_bot - floor_y - bp
+
+    # Tabletop
+    _add_polyline(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                        (fx + w2, top_y), (fx - w2, top_y)], True)
+    _add_hatch_polygon(msp, [(fx - w2, tab_bot), (fx + w2, tab_bot),
+                              (fx + w2, top_y), (fx - w2, top_y)], 'ANSI31', 0.5, 45)
+    # Large pedestal (right side)
+    lp_l = fx + lpx - lp_r
+    lp_r_x = fx + lpx + lp_r
+    ped_bot = floor_y + bp
+    _add_polyline(msp, [(lp_l, ped_bot), (lp_r_x, ped_bot),
+                        (lp_r_x, tab_bot), (lp_l, tab_bot)], True)
+    # Small pedestal (left side)
+    sp_l = fx + rpx - sp_r
+    sp_r_x = fx + rpx + sp_r
+    _add_polyline(msp, [(sp_l, ped_bot), (sp_r_x, ped_bot),
+                        (sp_r_x, tab_bot), (sp_l, tab_bot)], True)
+    # Metal hatch on pedestals
+    _add_hatch_polygon(msp, [(lp_l, ped_bot), (lp_r_x, ped_bot),
+                              (lp_r_x, tab_bot), (lp_l, tab_bot)], 'ANSI37', 0.3)
+    _add_hatch_polygon(msp, [(sp_l, ped_bot), (sp_r_x, ped_bot),
+                              (sp_r_x, tab_bot), (sp_l, tab_bot)], 'ANSI37', 0.3)
+    # Centerline through overall center
+    _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
+    # Dimensions
+    _add_dimension(msp, (fx + w2 + 8, floor_y), (fx + w2 + 8, top_y),
+                   (fx + w2 + 16, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
+                   (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
+    # Top thickness
+    _add_dimension(msp, (fx - w2 - 10, tab_bot), (fx - w2 - 10, top_y),
+                   (fx - w2 - 18, (tab_bot + top_y) / 2), f'T = {top_thick_cm * 10:g} mm')
+    # Pedestal diameters
+    _add_dimension(msp, (lp_l, ped_bot - 6), (lp_r_x, ped_bot - 6),
+                   (fx + lpx, ped_bot - 12), f'Ø{large_ped_dia_cm * 10:g} mm')
+    _add_dimension(msp, (sp_l, ped_bot - 6), (sp_r_x, ped_bot - 6),
+                   (fx + rpx, ped_bot - 12), f'Ø{small_ped_dia_cm * 10:g} mm')
+    # Overhang dimensions
+    _add_dimension(msp, (fx + lpx, tab_bot + 4), (fx + w2, tab_bot + 4),
+                   ((fx + lpx + fx + w2) / 2, tab_bot + 10), f'OH = {overhang_cm * 10:g} mm')
+    _add_dimension(msp, (fx - w2, tab_bot + 4), (fx + rpx, tab_bot + 4),
+                   ((fx - w2 + fx + rpx) / 2, tab_bot + 10), f'OH = {overhang_cm * 10:g} mm')
+    # Material leaders
+    _add_leader(msp, mats.get('tabletop', 'STONE/MARBLE TOP'),
+                (fx + w2 + 15, (tab_bot + top_y) / 2),
+                (fx + w2, (tab_bot + top_y) / 2))
+    _add_leader(msp, mats.get('large_pedestal', 'BRUSHED METAL LARGE BASE'),
+                (lp_r_x + 15, (ped_bot + tab_bot) / 2),
+                (lp_r_x, (ped_bot + tab_bot) / 2))
+    _add_leader(msp, mats.get('small_pedestal', 'BRUSHED METAL SMALL BASE'),
+                (sp_l - 15, (ped_bot + tab_bot) / 2),
+                (sp_l, (ped_bot + tab_bot) / 2))
+    _add_mtext(msp, 'FRONT ELEVATION', (fx - w2, top_y + 10), 3)
+
+    # ===== SIDE ELEVATION =====
+    sx = 365
+    # Tabletop side profile
+    _add_polyline(msp, [(sx - d2, tab_bot), (sx + d2, tab_bot),
+                        (sx + d2, top_y), (sx - d2, top_y)], True)
+    _add_hatch_polygon(msp, [(sx - d2, tab_bot), (sx + d2, tab_bot),
+                              (sx + d2, top_y), (sx - d2, top_y)], 'ANSI31', 0.5, 45)
+    # Determine which pedestal is closer in side view
+    # From side (right side of table): the large pedestal (offset +right) appears further back
+    # The small pedestal (offset left from center) appears closer
+    # So the small pedestal is drawn solid, large pedestal is hidden/dashed
+    ped_w_from_side = max(sp_r * 2, 4.0)  # width visible from side = pedestal dia projected
+    # Closer pedestal (small, offset to left → appears on right in side view)
+    _add_polyline(msp, [(sx - ped_w_from_side / 2, ped_bot),
+                        (sx + ped_w_from_side / 2, ped_bot),
+                        (sx + ped_w_from_side / 2, tab_bot),
+                        (sx - ped_w_from_side / 2, tab_bot)], True)
+    # Further pedestal (large, offset to right → appears on left in side view, hidden)
+    far_ped_w = max(lp_r * 2, 4.0)
+    _add_polyline(msp, [(sx - d2 * 0.3 - far_ped_w / 2, ped_bot),
+                        (sx - d2 * 0.3 + far_ped_w / 2, ped_bot),
+                        (sx - d2 * 0.3 + far_ped_w / 2, tab_bot),
+                        (sx - d2 * 0.3 - far_ped_w / 2, tab_bot)], True, 'HIDDEN')
+    # Centerline
+    _add_centerline(msp, (sx, floor_y - 5), (sx, top_y + 5))
+    # Dimensions
+    _add_dimension(msp, (sx + d2 + 6, floor_y), (sx + d2 + 6, top_y),
+                   (sx + d2 + 14, (floor_y + top_y) / 2), f'H = {height_cm * 10:g} mm')
+    _add_dimension(msp, (sx - d2, floor_y - 8), (sx + d2, floor_y - 8),
+                   (sx, floor_y - 14), f'D = {depth_cm * 10:g} mm')
+    _add_mtext(msp, 'SIDE ELEVATION', (sx - d2, top_y + 10), 3)
+
+    # Title block — pre-compute defaults to avoid nested f-string evaluation bugs
+    _lp_default = f"Brushed stainless steel, Ø{large_ped_dia_cm * 10:.0f} mm"
+    _sp_default = f"Brushed stainless steel, Ø{small_ped_dia_cm * 10:.0f} mm"
+    material_notes = [
+        f"TABLE TOP — {mats.get('tabletop', 'Marble / engineered stone')}",
+        f"LARGE PEDESTAL (P1) — {mats.get('large_pedestal', _lp_default)}",
+        f"SMALL PEDESTAL (P2) — {mats.get('small_pedestal', _sp_default)}",
+        f"BASE PLATES — {mats.get('base_plate', 'Anti-sliding rubber pads')}",
+    ]
+    generate_title_block(msp,
+        f"Asymmetric Pedestal Dining Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project="Furniture Shop Drawing",
+        client="",
+        scale="1:5",
+        revision="A",
+        material_notes=material_notes,
+    )
+    return _save(doc, path)
+
+
 def save_generic(path, lines, circles, rects=None):
     """Generic fallback — draws raw detected geometry on standard layers."""
     doc = setup_doc()

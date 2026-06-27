@@ -1,0 +1,17 @@
+{
+  "id": "supports.chair.four_leg.v2",
+  "name": "Chair four leg base",
+  "category": "support",
+  "features": [
+    "base",
+    "chair",
+    "four_leg",
+    "wood",
+    "metal"
+  ],
+  "parameters": {
+    "height_mm": {
+      "default": 450
+    }
+  }
+}

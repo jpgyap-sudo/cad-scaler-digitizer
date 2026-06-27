@@ -1,0 +1,26 @@
+{
+  "id": "support.table.dual_cylindrical_pedestal.cloud.v1",
+  "name": "Dual cylindrical pedestal base",
+  "category": "support",
+  "features": [
+    "support",
+    "base",
+    "dual_cylindrical_pedestal",
+    "two",
+    "cylindrical",
+    "pedestal",
+    "metal",
+    "asymmetric"
+  ],
+  "parameters": {
+    "large_diameter_mm": {
+      "default": 420
+    },
+    "small_diameter_mm": {
+      "default": 220
+    },
+    "height_mm": {
+      "default": 720
+    }
+  }
+}

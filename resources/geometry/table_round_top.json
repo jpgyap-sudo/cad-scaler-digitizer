@@ -1,0 +1,20 @@
+{
+  "id": "geometry.table.round_top.v2",
+  "name": "Round table top",
+  "category": "geometry",
+  "features": [
+    "round",
+    "circle",
+    "tabletop",
+    "dining_table",
+    "coffee_table"
+  ],
+  "parameters": {
+    "diameter_mm": {
+      "default": 1200
+    },
+    "thickness_mm": {
+      "default": 30
+    }
+  }
+}

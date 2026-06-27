@@ -1,0 +1,14 @@
+{
+  "id": "materials.wood.walnut.v2",
+  "name": "Walnut veneer / solid walnut",
+  "category": "material",
+  "features": [
+    "material",
+    "walnut",
+    "wood",
+    "veneer",
+    "solid",
+    "top_material"
+  ],
+  "shop_note": "WOOD: WALNUT VENEER OR SOLID WALNUT AS SPECIFIED."
+}

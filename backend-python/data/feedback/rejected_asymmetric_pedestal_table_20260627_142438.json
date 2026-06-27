@@ -1,0 +1,13 @@
+{
+  "timestamp": "20260627_142438",
+  "product_type": "asymmetric_pedestal_table",
+  "approved": false,
+  "comment": "Edge case",
+  "user_id": "default",
+  "component_count": 3,
+  "material_count": 2,
+  "warnings": [
+    "Support height adjusted to 740mm for 750mm total.",
+    "Stone top thickness increased to 30mm for 3000mm span."
+  ]
+}

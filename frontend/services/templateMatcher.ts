@@ -136,6 +136,142 @@ export const TEMPLATES: ParametricTemplate[] = [
       },
     ],
   },
+  {
+    name: 'Oval Pedestal Table',
+    type: 'oval_pedestal_table',
+    parameters: [
+      { name: 'length_cm', default: 180, unit: 'cm', description: 'Table length (1800 mm standard)' },
+      { name: 'depth_cm', default: 100, unit: 'cm', description: 'Table depth (1000 mm standard)' },
+      { name: 'overall_height_cm', default: 75, unit: 'cm', description: 'Overall height (750 mm dining standard)' },
+      { name: 'top_thickness_cm', default: 3, unit: 'cm', description: 'Marble/stone top thickness' },
+      { name: 'pedestal_dia_cm', default: 40, unit: 'cm', description: 'Pedestal diameter (Ø300-500 mm)' },
+    ],
+    views: [
+      {
+        view: 'top',
+        primitives: [
+          { type: 'circle', center: { x: 0, y: 0 }, radius: 'length_cm/2', layer: 'OUTLINE' } as any,
+          { type: 'circle', center: { x: 0, y: 0 }, radius: 'pedestal_dia_cm/2', layer: 'HIDDEN' } as any,
+          { type: 'centerline', p1: { x: '-length_cm/2', y: 0 }, p2: { x: 'length_cm/2', y: 0 } } as any,
+          { type: 'centerline', p1: { x: 0, y: '-depth_cm/2' }, p2: { x: 0, y: 'depth_cm/2' } } as any,
+        ],
+      },
+      {
+        view: 'front',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'length_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+          { type: 'rectangle', p1: { x: '-pedestal_dia_cm/2', y: 5 }, p2: { x: 'pedestal_dia_cm/2', y: 'overall_height_cm - top_thickness_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Console / Sofa Table',
+    type: 'console_table',
+    parameters: [
+      { name: 'length_cm', default: 120, unit: 'cm', description: 'Table length' },
+      { name: 'depth_cm', default: 40, unit: 'cm', description: 'Table depth (300-500 mm)' },
+      { name: 'overall_height_cm', default: 75, unit: 'cm', description: 'Overall height' },
+      { name: 'top_thickness_cm', default: 2.5, unit: 'cm', description: 'Top thickness' },
+      { name: 'leg_thick_cm', default: 4, unit: 'cm', description: 'Leg thickness' },
+    ],
+    views: [
+      {
+        view: 'top',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: '-depth_cm/2' }, p2: { x: 'length_cm/2', y: 'depth_cm/2' }, layer: 'OUTLINE' } as any,
+          { type: 'centerline', p1: { x: '-length_cm/2', y: 0 }, p2: { x: 'length_cm/2', y: 0 } } as any,
+          { type: 'centerline', p1: { x: 0, y: '-depth_cm/2' }, p2: { x: 0, y: 'depth_cm/2' } } as any,
+        ],
+      },
+      {
+        view: 'front',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'length_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+      {
+        view: 'side',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-depth_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'depth_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Office Desk with Modesty Panel',
+    type: 'office_desk',
+    parameters: [
+      { name: 'length_cm', default: 140, unit: 'cm', description: 'Desk width' },
+      { name: 'depth_cm', default: 60, unit: 'cm', description: 'Desk depth' },
+      { name: 'overall_height_cm', default: 75, unit: 'cm', description: 'Desk height' },
+      { name: 'leg_thick_cm', default: 4, unit: 'cm', description: 'Leg thickness' },
+      { name: 'modesty_panel_h_cm', default: 15, unit: 'cm', description: 'Modesty panel height' },
+    ],
+    views: [
+      {
+        view: 'top',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: '-depth_cm/2' }, p2: { x: 'length_cm/2', y: 'depth_cm/2' }, layer: 'OUTLINE' } as any,
+          { type: 'centerline', p1: { x: '-length_cm/2', y: 0 }, p2: { x: 'length_cm/2', y: 0 } } as any,
+          { type: 'centerline', p1: { x: 0, y: '-depth_cm/2' }, p2: { x: 0, y: 'depth_cm/2' } } as any,
+        ],
+      },
+      {
+        view: 'front',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'length_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+      {
+        view: 'side',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-depth_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'depth_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Asymmetric Pedestal Dining Table',
+    type: 'asymmetric_pedestal_table',
+    parameters: [
+      { name: 'length_cm', default: 180, unit: 'cm', description: 'Table length (1800 mm standard)' },
+      { name: 'depth_cm', default: 90, unit: 'cm', description: 'Table depth (900 mm standard)' },
+      { name: 'overall_height_cm', default: 75, unit: 'cm', description: 'Overall height (750 mm dining standard)' },
+      { name: 'top_thickness_cm', default: 3, unit: 'cm', description: 'Marble/stone top thickness (25-40 mm)' },
+      { name: 'large_ped_dia_cm', default: 40, unit: 'cm', description: 'Large pedestal diameter (Ø350-450 mm)' },
+      { name: 'small_ped_dia_cm', default: 22, unit: 'cm', description: 'Small pedestal diameter (Ø180-250 mm)' },
+      { name: 'left_ped_x_cm', default: 30, unit: 'cm', description: 'Large pedestal offset right of center' },
+      { name: 'right_ped_x_cm', default: -25, unit: 'cm', description: 'Small pedestal offset left of center' },
+      { name: 'overhang_cm', default: 18, unit: 'cm', description: 'Top overhang from pedestal center to edge' },
+    ],
+    views: [
+      {
+        view: 'top',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: '-depth_cm/2' }, p2: { x: 'length_cm/2', y: 'depth_cm/2' }, layer: 'OUTLINE' } as any,
+          { type: 'circle', center: { x: 'left_ped_x_cm', y: 0 }, radius: 'large_ped_dia_cm/2', layer: 'HIDDEN' } as any,
+          { type: 'circle', center: { x: 'right_ped_x_cm', y: 0 }, radius: 'small_ped_dia_cm/2', layer: 'HIDDEN' } as any,
+          { type: 'centerline', p1: { x: '-length_cm/2 - 5', y: 0 }, p2: { x: 'length_cm/2 + 5', y: 0 } } as any,
+          { type: 'centerline', p1: { x: 0, y: '-depth_cm/2 - 5' }, p2: { x: 0, y: 'depth_cm/2 + 5' } } as any,
+        ],
+      },
+      {
+        view: 'front',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-length_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'length_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+          { type: 'rectangle', p1: { x: 'left_ped_x_cm - large_ped_dia_cm/2', y: 'base_plate_cm' }, p2: { x: 'left_ped_x_cm + large_ped_dia_cm/2', y: 'overall_height_cm - top_thickness_cm' }, layer: 'OUTLINE' } as any,
+          { type: 'rectangle', p1: { x: 'right_ped_x_cm - small_ped_dia_cm/2', y: 'base_plate_cm' }, p2: { x: 'right_ped_x_cm + small_ped_dia_cm/2', y: 'overall_height_cm - top_thickness_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+      {
+        view: 'side',
+        primitives: [
+          { type: 'rectangle', p1: { x: '-depth_cm/2', y: 'overall_height_cm - top_thickness_cm' }, p2: { x: 'depth_cm/2', y: 'overall_height_cm' }, layer: 'OUTLINE' } as any,
+        ],
+      },
+    ],
+  },
 ];
 
 /**

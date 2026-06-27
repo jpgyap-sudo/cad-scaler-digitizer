@@ -1,0 +1,18 @@
+{
+  "id": "geometry.seating.upholstered_back.v2",
+  "name": "Upholstered backrest",
+  "category": "geometry",
+  "features": [
+    "back",
+    "backrest",
+    "upholstered",
+    "sofa",
+    "chair",
+    "fabric"
+  ],
+  "parameters": {
+    "height_mm": {
+      "default": 780
+    }
+  }
+}

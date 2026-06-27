@@ -1,0 +1,16 @@
+{
+  "id": "geometry.case.drawer_fronts.v2",
+  "name": "Drawer front pattern",
+  "category": "geometry",
+  "features": [
+    "drawers",
+    "drawer_fronts",
+    "nightstand",
+    "casework"
+  ],
+  "parameters": {
+    "drawer_count": {
+      "default": 2
+    }
+  }
+}

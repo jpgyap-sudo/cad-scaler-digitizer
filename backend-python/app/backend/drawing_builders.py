@@ -261,6 +261,303 @@ def build_wardrobe_model(w=120.0, d=60.0, h=200.0):
     return build_cabinet_model(w, d, h)
 
 
+def build_oval_pedestal_model(
+    length_cm: float = 180.0, depth_cm: float = 100.0, height_cm: float = 75.0,
+    top_thick_cm: float = 3.0, pedestal_dia_cm: float = 40.0,
+    client: str = "", project: str = "Furniture Shop Drawing",
+    materials: Optional[Dict[str, str]] = None,
+) -> DrawingModel:
+    """Build DrawingModel for an oval/elliptical pedestal table."""
+    import math
+    now = datetime.now().strftime('%Y-%m-%d')
+    sc = 0.35; w = length_cm * sc; d = depth_cm * sc; h = height_cm * sc
+    tt = top_thick_cm * sc; pd_r = pedestal_dia_cm / 2 * sc
+    w2, d2 = w / 2, d / 2; y_mid = 180.0
+    mats = materials or {}
+    tx, ty = 100.0, y_mid
+    # TOP VIEW
+    tv = View(name="TOP VIEW")
+    oval_pts = []
+    for i in range(36):
+        a = 2 * math.pi * i / 36
+        oval_pts.append(Point(tx + w2 * math.cos(a), ty + d2 * math.sin(a)))
+    tv.polygons.append(PolygonComponent(points=oval_pts, layer="OBJECT", name="tabletop"))
+    tv.circles.append(CircleComponent(center=Point(tx, ty), radius=pd_r, layer="HIDDEN"))
+    ext = max(5.0, w2 * 0.1)
+    tv.lines.append(LineComponent(start=Point(tx - w2 - ext, ty), end=Point(tx + w2 + ext, ty), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(tx, ty - d2 - ext), end=Point(tx, ty + d2 + ext), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx - w2, ty + d2 + 6), p2=Point(tx + w2, ty + d2 + 6),
+                                             label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx + w2 + 6, ty - d2), p2=Point(tx + w2 + 6, ty + d2),
+                                             label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(tx - 15, ty + d2 + 22), height=3, layer="MTEXT"))
+    # FRONT VIEW
+    fv = View(name="FRONT ELEVATION")
+    fx, floor_y = 290.0, 40.0; top_y = floor_y + h; tab_bot = top_y - tt; ped_bot = floor_y + 5.0
+    fv.polygons.append(PolygonComponent(points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot), Point(fx + w2, top_y), Point(fx - w2, top_y)], layer="OBJECT", name="tabletop"))
+    fv.hatches.append(HatchComponent(points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot), Point(fx + w2, top_y), Point(fx - w2, top_y)], pattern="ANSI31", scale=0.5, angle_deg=45, layer="HATCH"))
+    fv.polygons.append(PolygonComponent(points=[Point(fx - pd_r, ped_bot), Point(fx + pd_r, ped_bot), Point(fx + pd_r, tab_bot), Point(fx - pd_r, tab_bot)], layer="OBJECT", name="pedestal"))
+    fv.hatches.append(HatchComponent(points=[Point(fx - pd_r, ped_bot), Point(fx + pd_r, ped_bot), Point(fx + pd_r, tab_bot), Point(fx - pd_r, tab_bot)], pattern="ANSI37", scale=0.3, layer="HATCH"))
+    fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - pd_r, ped_bot - 5), p2=Point(fx + pd_r, ped_bot - 5), label=f"Ø{pedestal_dia_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT ELEVATION", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+    title = TitleBlockData(drawing_title=f"Oval Pedestal Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project=project, client=client, scale="1:5", revision="A", date=now,
+        material_notes=[f"TABLE TOP — {mats.get('tabletop', 'Marble / engineered stone')}",
+                        f"PEDESTAL — {mats.get('pedestal', 'Brushed stainless steel')}"])
+    return DrawingModel(furniture_type="oval_pedestal_table", views=[tv, fv], title_block=title,
+        known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={"pedestal_diameter_cm": pedestal_dia_cm, "top_thickness_cm": top_thick_cm})
+
+
+def build_console_table_model(
+    length_cm: float = 120.0, depth_cm: float = 40.0, height_cm: float = 75.0,
+    top_thick_cm: float = 2.5, leg_thick_cm: float = 4.0, leg_inset_cm: float = 2.0,
+    client: str = "", project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build DrawingModel for a console/sofa table — 3 views."""
+    now = datetime.now().strftime('%Y-%m-%d')
+    sc = 0.4; w = length_cm * sc; d = depth_cm * sc; h = height_cm * sc
+    tt = top_thick_cm * sc; lt = leg_thick_cm * sc; li = leg_inset_cm * sc
+    w2, d2 = w / 2, d / 2; y_mid = 180.0; mats = {}
+    tx, ty = 100.0, y_mid
+    tv = View(name="TOP VIEW")
+    tv.polygons.append(PolygonComponent(points=[Point(tx - w2, ty - d2), Point(tx + w2, ty - d2), Point(tx + w2, ty + d2), Point(tx - w2, ty + d2)], layer="OBJECT", name="tabletop"))
+    for lx, ly in [(tx - w2 + li, ty - d2 + li), (tx + w2 - li - lt, ty - d2 + li), (tx - w2 + li, ty + d2 - li - lt), (tx + w2 - li - lt, ty + d2 - li - lt)]:
+        tv.polygons.append(PolygonComponent(points=[Point(lx, ly), Point(lx + lt, ly), Point(lx + lt, ly + lt), Point(lx, ly + lt)], layer="HIDDEN", linetype="HIDDEN", name="leg"))
+    tv.lines.append(LineComponent(start=Point(tx - w2 - 5, ty), end=Point(tx + w2 + 5, ty), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(tx, ty - d2 - 5), end=Point(tx, ty + d2 + 5), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx - w2, ty + d2 + 6), p2=Point(tx + w2, ty + d2 + 6), label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx + w2 + 6, ty - d2), p2=Point(tx + w2 + 6, ty + d2), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(tx - 15, ty + d2 + 22), height=3, layer="MTEXT"))
+    fv = View(name="FRONT VIEW")
+    fx, floor_y = 280.0, 40.0; top_y = floor_y + h; tab_bot = top_y - tt
+    fv.polygons.append(PolygonComponent(points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot), Point(fx + w2, top_y), Point(fx - w2, top_y)], layer="OBJECT", name="tabletop"))
+    for lx in [fx - w2 + li, fx + w2 - li - lt]:
+        fv.polygons.append(PolygonComponent(points=[Point(lx, floor_y), Point(lx + lt, floor_y), Point(lx + lt, tab_bot), Point(lx, tab_bot)], layer="OBJECT", name="leg"))
+    fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+    sv = View(name="SIDE VIEW")
+    sx = 365.0
+    sv.polygons.append(PolygonComponent(points=[Point(sx - d2, tab_bot), Point(sx + d2, tab_bot), Point(sx + d2, top_y), Point(sx - d2, top_y)], layer="OBJECT", name="tabletop"))
+    ly_l = sx - d2 + li
+    sv.polygons.append(PolygonComponent(points=[Point(ly_l, floor_y), Point(ly_l + lt, floor_y), Point(ly_l + lt, tab_bot), Point(ly_l, tab_bot)], layer="OBJECT", name="leg"))
+    sv.lines.append(LineComponent(start=Point(sx, floor_y - 5), end=Point(sx, top_y + 5), layer="CENTER"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx + d2 + 6, floor_y), p2=Point(sx + d2 + 6, top_y), label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx - d2, floor_y - 8), p2=Point(sx + d2, floor_y - 8), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.texts.append(TextComponent(content="SIDE VIEW", position=Point(sx - d2, top_y + 10), height=3, layer="MTEXT"))
+    tb = TitleBlockData(drawing_title=f"Console Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project=project, client=client, scale="1:2.5", revision="A", date=now)
+    return DrawingModel(furniture_type="console_table", views=[tv, fv, sv], title_block=tb,
+        known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={"leg_thickness_cm": leg_thick_cm, "top_thickness_cm": top_thick_cm})
+
+
+def build_office_desk_model(
+    length_cm: float = 140.0, depth_cm: float = 60.0, height_cm: float = 75.0,
+    top_thick_cm: float = 2.5, leg_thick_cm: float = 4.0, modesty_panel_h_cm: float = 15.0,
+    leg_inset_cm: float = 2.0, client: str = "", project: str = "Furniture Shop Drawing",
+) -> DrawingModel:
+    """Build DrawingModel for an office desk with modesty panel — 3 views."""
+    now = datetime.now().strftime('%Y-%m-%d')
+    sc = 0.35; w = length_cm * sc; d = depth_cm * sc; h = height_cm * sc
+    tt = top_thick_cm * sc; lt = leg_thick_cm * sc; mh = modesty_panel_h_cm * sc; li = leg_inset_cm * sc
+    w2, d2 = w / 2, d / 2; y_mid = 180.0
+    tx, ty = 100.0, y_mid
+    tv = View(name="TOP VIEW")
+    tv.polygons.append(PolygonComponent(points=[Point(tx - w2, ty - d2), Point(tx + w2, ty - d2), Point(tx + w2, ty + d2), Point(tx - w2, ty + d2)], layer="OBJECT", name="tabletop"))
+    for lx, ly in [(tx - w2 + li, ty - d2 + li), (tx + w2 - li - lt, ty - d2 + li), (tx - w2 + li, ty + d2 - li - lt), (tx + w2 - li - lt, ty + d2 - li - lt)]:
+        tv.polygons.append(PolygonComponent(points=[Point(lx, ly), Point(lx + lt, ly), Point(lx + lt, ly + lt), Point(lx, ly + lt)], layer="HIDDEN", name="leg"))
+    tv.lines.append(LineComponent(start=Point(tx - w2 - 5, ty), end=Point(tx + w2 + 5, ty), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(tx, ty - d2 - 5), end=Point(tx, ty + d2 + 5), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx - w2, ty + d2 + 6), p2=Point(tx + w2, ty + d2 + 6), label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tx + w2 + 6, ty - d2), p2=Point(tx + w2 + 6, ty + d2), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(tx - 15, ty + d2 + 22), height=3, layer="MTEXT"))
+    fv = View(name="FRONT VIEW")
+    fx, floor_y = 280.0, 40.0; top_y = floor_y + h; tab_bot = top_y - tt
+    mp_top = tab_bot; mp_bot = mp_top - mh; panel_l = fx - w2 + li + lt; panel_r = fx + w2 - li - lt
+    fv.polygons.append(PolygonComponent(points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot), Point(fx + w2, top_y), Point(fx - w2, top_y)], layer="OBJECT", name="tabletop"))
+    fv.hatches.append(HatchComponent(points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot), Point(fx + w2, top_y), Point(fx - w2, top_y)], pattern="ANSI31", scale=0.5, layer="HATCH"))
+    fv.polygons.append(PolygonComponent(points=[Point(panel_l, mp_bot), Point(panel_r, mp_bot), Point(panel_r, mp_top), Point(panel_l, mp_top)], layer="OBJECT", name="modesty_panel"))
+    fv.hatches.append(HatchComponent(points=[Point(panel_l, mp_bot), Point(panel_r, mp_bot), Point(panel_r, mp_top), Point(panel_l, mp_top)], pattern="ANSI31", scale=0.4, layer="HATCH"))
+    for lx in [fx - w2 + li, fx + w2 - li - lt]:
+        fv.polygons.append(PolygonComponent(points=[Point(lx, floor_y), Point(lx + lt, floor_y), Point(lx + lt, tab_bot), Point(lx, tab_bot)], layer="OBJECT", name="leg"))
+    fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(panel_l, mp_bot - 5), p2=Point(panel_r, mp_bot - 5), label=f"MH = {modesty_panel_h_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+    sv = View(name="SIDE VIEW")
+    sx = 365.0
+    sv.polygons.append(PolygonComponent(points=[Point(sx - d2, tab_bot), Point(sx + d2, tab_bot), Point(sx + d2, top_y), Point(sx - d2, top_y)], layer="OBJECT", name="tabletop"))
+    sl = sx - d2 + li
+    sv.polygons.append(PolygonComponent(points=[Point(sl, floor_y), Point(sl + lt, floor_y), Point(sl + lt, tab_bot), Point(sl, tab_bot)], layer="OBJECT", name="leg"))
+    sv.lines.append(LineComponent(start=Point(sx - d2 + li + lt + 1, mp_bot), end=Point(sx + d2 - 2, mp_bot), layer="OBJECT"))
+    sv.lines.append(LineComponent(start=Point(sx - d2 + li + lt + 1, mp_top), end=Point(sx + d2 - 2, mp_top), layer="OBJECT"))
+    sv.lines.append(LineComponent(start=Point(sx, floor_y - 5), end=Point(sx, top_y + 5), layer="CENTER"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx + d2 + 6, floor_y), p2=Point(sx + d2 + 6, top_y), label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx - d2, floor_y - 8), p2=Point(sx + d2, floor_y - 8), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.texts.append(TextComponent(content="SIDE VIEW", position=Point(sx - d2, top_y + 10), height=3, layer="MTEXT"))
+    tb = TitleBlockData(drawing_title=f"Office Desk {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project=project, client=client, scale="1:3", revision="A", date=now)
+    return DrawingModel(furniture_type="office_desk", views=[tv, fv, sv], title_block=tb,
+        known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={"leg_thickness_cm": leg_thick_cm, "modesty_panel_h_cm": modesty_panel_h_cm})
+
+
+def build_asymmetric_pedestal_model(
+    length_cm: float = 180.0, depth_cm: float = 90.0, height_cm: float = 75.0,
+    top_thick_cm: float = 3.0, large_ped_dia_cm: float = 40.0, small_ped_dia_cm: float = 22.0,
+    left_ped_x_cm: float = 30.0, right_ped_x_cm: float = -25.0, overhang_cm: float = 20.0,
+    base_plate_cm: float = 5.0, client: str = "", project: str = "Furniture Shop Drawing",
+    materials: Optional[Dict[str, str]] = None,
+) -> DrawingModel:
+    """Build DrawingModel for an asymmetric cylindrical pedestal dining table.
+    
+    Rectangular tabletop with two offset cylindrical pedestals of different
+    diameters. Generates TOP VIEW, FRONT ELEVATION, and SIDE ELEVATION.
+    All dimensions in cm.
+    """
+    now = datetime.now().strftime('%Y-%m-%d')
+    sc = 0.35
+    w = length_cm * sc
+    d = depth_cm * sc
+    h = height_cm * sc
+    tt = top_thick_cm * sc
+    lp_r = large_ped_dia_cm / 2 * sc
+    sp_r = small_ped_dia_cm / 2 * sc
+    lpx = left_ped_x_cm * sc
+    rpx = right_ped_x_cm * sc
+    bp = base_plate_cm * sc
+    w2, d2 = w / 2, d / 2
+    y_mid = 180.0
+    mats = materials or {}
+
+    # TOP VIEW
+    tv = View(name="TOP VIEW")
+    tv_cx, tv_cy = 100.0, y_mid
+    tv.polygons.append(PolygonComponent(
+        points=[Point(tv_cx - w2, tv_cy - d2), Point(tv_cx + w2, tv_cy - d2),
+                Point(tv_cx + w2, tv_cy + d2), Point(tv_cx - w2, tv_cy + d2)],
+        layer="OBJECT", name="tabletop"))
+    tv.circles.append(CircleComponent(center=Point(tv_cx + lpx, tv_cy), radius=lp_r, layer="HIDDEN"))
+    tv.circles.append(CircleComponent(center=Point(tv_cx + rpx, tv_cy), radius=sp_r, layer="HIDDEN"))
+    ext = max(5.0, w2 * 0.1)
+    tv.lines.append(LineComponent(start=Point(tv_cx - w2 - ext, tv_cy), end=Point(tv_cx + w2 + ext, tv_cy), layer="CENTER"))
+    tv.lines.append(LineComponent(start=Point(tv_cx, tv_cy - d2 - ext), end=Point(tv_cx, tv_cy + d2 + ext), layer="CENTER"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tv_cx - w2, tv_cy + d2 + 6), p2=Point(tv_cx + w2, tv_cy + d2 + 6),
+                                             label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.dimensions.append(DimensionComponent(p1=Point(tv_cx + w2 + 6, tv_cy - d2), p2=Point(tv_cx + w2 + 6, tv_cy + d2),
+                                             label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    tv.texts.append(TextComponent(content=f"P1 Ø{large_ped_dia_cm * 10:.0f}", position=Point(tv_cx + lpx - 10, tv_cy - lp_r - 6), height=2, layer="DIMENSION"))
+    tv.texts.append(TextComponent(content=f"P2 Ø{small_ped_dia_cm * 10:.0f}", position=Point(tv_cx + rpx - 10, tv_cy + sp_r + 8), height=2, layer="DIMENSION"))
+    tv.texts.append(TextComponent(content="TOP VIEW", position=Point(tv_cx - 15, tv_cy + d2 + 22), height=3, layer="MTEXT"))
+
+    # FRONT ELEVATION
+    fv = View(name="FRONT ELEVATION")
+    fx = 290.0
+    floor_y = 40.0
+    top_y = floor_y + h
+    tab_bot = top_y - tt
+    ped_height = tab_bot - floor_y - bp
+    ped_bot = floor_y + bp
+
+    fv.polygons.append(PolygonComponent(
+        points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot),
+                Point(fx + w2, top_y), Point(fx - w2, top_y)],
+        layer="OBJECT", name="tabletop"))
+    fv.hatches.append(HatchComponent(
+        points=[Point(fx - w2, tab_bot), Point(fx + w2, tab_bot),
+                Point(fx + w2, top_y), Point(fx - w2, top_y)],
+        pattern="ANSI31", scale=0.5, angle_deg=45, layer="HATCH"))
+    # Large pedestal
+    fv.polygons.append(PolygonComponent(
+        points=[Point(fx + lpx - lp_r, ped_bot), Point(fx + lpx + lp_r, ped_bot),
+                Point(fx + lpx + lp_r, tab_bot), Point(fx + lpx - lp_r, tab_bot)],
+        layer="OBJECT", name="large_pedestal"))
+    # Small pedestal
+    fv.polygons.append(PolygonComponent(
+        points=[Point(fx + rpx - sp_r, ped_bot), Point(fx + rpx + sp_r, ped_bot),
+                Point(fx + rpx + sp_r, tab_bot), Point(fx + rpx - sp_r, tab_bot)],
+        layer="OBJECT", name="small_pedestal"))
+    # Hatches
+    fv.hatches.append(HatchComponent(
+        points=[Point(fx + lpx - lp_r, ped_bot), Point(fx + lpx + lp_r, ped_bot),
+                Point(fx + lpx + lp_r, tab_bot), Point(fx + lpx - lp_r, tab_bot)],
+        pattern="ANSI37", scale=0.3, layer="HATCH"))
+    fv.hatches.append(HatchComponent(
+        points=[Point(fx + rpx - sp_r, ped_bot), Point(fx + rpx + sp_r, ped_bot),
+                Point(fx + rpx + sp_r, tab_bot), Point(fx + rpx - sp_r, tab_bot)],
+        pattern="ANSI37", scale=0.3, layer="HATCH"))
+    fv.lines.append(LineComponent(start=Point(fx, floor_y - 5), end=Point(fx, top_y + 5), layer="CENTER"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y),
+                                             label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx - w2, floor_y - 8), p2=Point(fx + w2, floor_y - 8),
+                                             label=f"W = {length_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + lpx - lp_r, ped_bot - 6), p2=Point(fx + lpx + lp_r, ped_bot - 6),
+                                             label=f"Ø{large_ped_dia_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx + rpx - sp_r, ped_bot - 6), p2=Point(fx + rpx + sp_r, ped_bot - 6),
+                                             label=f"Ø{small_ped_dia_cm * 10:.0f} mm", layer="DIMENSION"))
+    fv.texts.append(TextComponent(content="FRONT ELEVATION", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
+
+    # SIDE ELEVATION
+    sv = View(name="SIDE ELEVATION")
+    sx = 365.0
+    sv.polygons.append(PolygonComponent(
+        points=[Point(sx - d2, tab_bot), Point(sx + d2, tab_bot),
+                Point(sx + d2, top_y), Point(sx - d2, top_y)],
+        layer="OBJECT", name="tabletop"))
+    sv.hatches.append(HatchComponent(
+        points=[Point(sx - d2, tab_bot), Point(sx + d2, tab_bot),
+                Point(sx + d2, top_y), Point(sx - d2, top_y)],
+        pattern="ANSI31", scale=0.5, angle_deg=45, layer="HATCH"))
+    # Closer pedestal (small, solid)
+    ped_w = max(sp_r * 2, 4.0)
+    sv.polygons.append(PolygonComponent(
+        points=[Point(sx - ped_w / 2, ped_bot), Point(sx + ped_w / 2, ped_bot),
+                Point(sx + ped_w / 2, tab_bot), Point(sx - ped_w / 2, tab_bot)],
+        layer="OBJECT", name="pedestal_closer"))
+    # Further pedestal (large, hidden)
+    far_w = max(lp_r * 2, 4.0)
+    sv.polygons.append(PolygonComponent(
+        points=[Point(sx - d2 * 0.3 - far_w / 2, ped_bot), Point(sx - d2 * 0.3 + far_w / 2, ped_bot),
+                Point(sx - d2 * 0.3 + far_w / 2, tab_bot), Point(sx - d2 * 0.3 - far_w / 2, tab_bot)],
+        layer="HIDDEN", linetype="HIDDEN", name="pedestal_further"))
+    sv.lines.append(LineComponent(start=Point(sx, floor_y - 5), end=Point(sx, top_y + 5), layer="CENTER"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx + d2 + 6, floor_y), p2=Point(sx + d2 + 6, top_y),
+                                             label=f"H = {height_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.dimensions.append(DimensionComponent(p1=Point(sx - d2, floor_y - 8), p2=Point(sx + d2, floor_y - 8),
+                                             label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
+    sv.texts.append(TextComponent(content="SIDE ELEVATION", position=Point(sx - d2, top_y + 10), height=3, layer="MTEXT"))
+
+    title = TitleBlockData(
+        drawing_title=f"Asymmetric Pedestal Dining Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
+        project=project, client=client, scale="1:5", revision="A",
+        designer="AI CAD Drafter", date=now,
+        material_notes=[
+            f"TABLE TOP — {mats.get('tabletop', 'Marble / engineered stone')}",
+            f"LARGE PEDESTAL (P1) — {mats.get('large_pedestal', 'Brushed stainless steel')}",
+            f"SMALL PEDESTAL (P2) — {mats.get('small_pedestal', 'Brushed stainless steel')}",
+            f"BASE PLATES — {mats.get('base_plate', 'Anti-sliding rubber pads')}",
+        ],
+        general_notes=["ALL DIMENSIONS IN MILLIMETERS (MM) UNLESS NOTED", "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED"],
+    )
+
+    return DrawingModel(
+        furniture_type="asymmetric_pedestal_table", views=[tv, fv, sv], title_block=title,
+        known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
+        estimated_components={
+            "large_pedestal_diameter_cm": large_ped_dia_cm,
+            "small_pedestal_diameter_cm": small_ped_dia_cm,
+            "top_thickness_cm": top_thick_cm,
+        },
+    )
+
+
 def build_generic_model(lines=None, circles=None, rects=None, client="", project="Furniture Shop Drawing"):
     """Build a DrawingModel straight from raw detected pixel-space geometry,
     for furniture types with no dedicated template. Normalizes/scales the

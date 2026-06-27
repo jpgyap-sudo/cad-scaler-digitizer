@@ -1,0 +1,13 @@
+{
+  "id": "joinery.seating.internal_wood_frame.v2",
+  "name": "Internal sofa wood frame",
+  "category": "joinery",
+  "features": [
+    "joinery",
+    "sofa",
+    "internal_frame",
+    "wood",
+    "upholstery"
+  ],
+  "shop_note": "Internal kiln-dried hardwood frame with foam and upholstery build-up."
+}

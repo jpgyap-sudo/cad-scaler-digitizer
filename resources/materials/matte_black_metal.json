@@ -1,0 +1,14 @@
+{
+  "id": "material.matte_black_metal.cloud.v1",
+  "name": "Matte black metal",
+  "category": "material",
+  "features": [
+    "material",
+    "matte_black_metal",
+    "brushed_metal",
+    "black",
+    "metal",
+    "base_material"
+  ],
+  "shop_note": "BASE: MATTE BLACK / BRUSHED METAL."
+}

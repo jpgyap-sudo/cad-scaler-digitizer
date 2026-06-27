@@ -1,0 +1,16 @@
+{
+  "id": "joinery.hidden_steel_frame.cloud.v1",
+  "name": "Hidden steel frame",
+  "category": "joinery",
+  "features": [
+    "hidden",
+    "steel",
+    "frame",
+    "joinery",
+    "stone",
+    "table",
+    "bolted",
+    "plate"
+  ],
+  "shop_note": "Hidden steel frame under stone top with bolted mounting plates."
+}

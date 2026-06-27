@@ -1,0 +1,17 @@
+{
+  "id": "rules.dining_chair.v1",
+  "name": "dining_chair drafting rule",
+  "category": "construction_rule",
+  "features": [
+    "dining_chair",
+    "shopdrawing",
+    "dimension",
+    "rules"
+  ],
+  "required_views": [
+    "top",
+    "front",
+    "side"
+  ],
+  "shop_note": "Use standard dining_chair drawing views, overall dimensions, material notes, and construction notes."
+}

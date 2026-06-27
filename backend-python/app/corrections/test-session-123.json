@@ -1,0 +1,24 @@
+{
+  "session_id": "test-session-123",
+  "dimension_corrections": [
+    {
+      "session_id": "test-session-123",
+      "ocr_text": "test",
+      "original_value_cm": 80,
+      "corrected_value_cm": 100,
+      "assigned_to_entity_id": null,
+      "assigned_to_entity_type": null,
+      "is_locked": true,
+      "note": ""
+    }
+  ],
+  "line_role_corrections": [
+    {
+      "session_id": "test-session-123",
+      "line_id": "line_0",
+      "original_role": "UNKNOWN",
+      "corrected_role": "OBJECT_EDGE",
+      "is_locked": false
+    }
+  ]
+}
