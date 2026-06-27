@@ -108,6 +108,29 @@ def test_resolver(loader):
     views = r7.get("component_views", [])
     check("sofa has required views", len(views) >= 3)
 
+    # Verify entity count from cad_intelligence reference
+    from app.backend.cad_intelligence.reference_ratio_solver import solve_missing_dimensions
+    r_ref = solve_missing_dimensions("round_pedestal_table", {"top_diameter_cm": 100})
+    check("reference ratio pedestal diameter", abs(r_ref.get("pedestal_diameter_cm", 0) - 33.3) < 0.1)
+
+
+def test_template_per_assertions(loader):
+    """Per-template assertions: components exist, parameters valid, views non-empty."""
+    for tpl in loader.list_all():
+        tid = tpl["id"]
+        check(f"{tid}: has components", len(tpl.get("components", [])) >= 1)
+        check(f"{tid}: has parameters", len(tpl.get("parameters", [])) >= 1)
+        check(f"{tid}: has required_views", len(tpl.get("required_views", [])) >= 1)
+        # Verify every component has required fields
+        for comp in tpl.get("components", []):
+            check(f"{tid}.{comp['id']}: has role", bool(comp.get("role")))
+            check(f"{tid}.{comp['id']}: has shape", bool(comp.get("shape")))
+            check(f"{tid}.{comp['id']}: has material_role", bool(comp.get("material_role")))
+        # Verify parameter ranges are valid
+        for param in tpl.get("parameters", []):
+            if "min_value" in param and "max_value" in param:
+                check(f"{tid}.{param['name']}: min<max", param["min_value"] <= param["max_value"])
+
 
 def test_product_type_mapping():
     # Every template product_type should have an entry in PRODUCT_TYPE_MAP
@@ -150,6 +173,7 @@ if __name__ == "__main__":
     loader = test_loader()
     test_resolver(loader)
     test_product_type_mapping()
+    test_template_per_assertions(loader)
 
     print(f"\n{'=' * 60}")
     print(f"Results: {PASS}/{TOTAL} passed, {FAIL} failed")

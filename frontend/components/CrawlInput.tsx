@@ -143,8 +143,8 @@ export default function CrawlInput() {
                     {result.page_dimensions.width_cm && (
                       <p>Width: {result.page_dimensions.width_cm}cm</p>
                     )}
-                    {result.page_dimensions.overall_height_cm && (
-                      <p>Height: {result.page_dimensions.overall_height_cm}cm</p>
+                    {(result.page_dimensions as any).overall_height_cm && (
+                      <p>Height: {(result.page_dimensions as any).overall_height_cm}cm</p>
                     )}
                     {result.page_dimensions.depth_cm && (
                       <p>Depth: {result.page_dimensions.depth_cm}cm</p>

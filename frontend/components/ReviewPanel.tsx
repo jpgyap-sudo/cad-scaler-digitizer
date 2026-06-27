@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, Edit3, MessageSquare, Send, Loader2, AlertTriangle, Eye, Layers } from 'lucide-react';
+import { CheckCircle2, XCircle, Edit3, MessageSquare, Send, Loader2, AlertTriangle, Eye, Layers, ShieldCheck } from 'lucide-react';
 import type { PipelineJobResult } from './PipelineUpload';
 import type { Phase3Result } from '../services/cadEngine';
+import { CadConfidenceLegend } from './CadConfidenceLegend';
 
 interface ReviewPanelProps {
   result: PipelineJobResult;
@@ -181,6 +182,11 @@ const ReviewPanel: React.FC<ReviewPanelProps> = ({ result, onReviewComplete, cla
             </div>
           )}
         </div>
+      )}
+
+      {/* Confidence Legend when phase3 is present */}
+      {phase3 && (
+        <CadConfidenceLegend />
       )}
 
       {/* Comment */}
