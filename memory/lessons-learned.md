@@ -3684,3 +3684,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: DXF scaling — table now outputs real dimensions (100cm width)
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 85b25f53352c005f8bbafebb7cabf2a2bf37a71f
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 85b25f53352c005f8bbafebb7cabf2a2bf37a71f
+**Files:** 
+
+**Summary:**
+Commit: fix: DXF scaling — table now outputs real dimensions (100cm width)
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: DXF scaling — table now outputs real dimensions (100cm width)*
+
+#### Lesson Learned
+
+Commit: fix: DXF scaling — table now outputs real dimensions (100cm width)
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
