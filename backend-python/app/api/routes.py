@@ -2327,3 +2327,168 @@ async def process_dxf(payload: dict):
                 "status": "failed",
                 "error": str(e),
             }, status_code=500)
+
+
+# =============================================================================
+# Validation API — Photo ↔ CAD consistency checker for ML training data
+# =============================================================================
+
+@router.post("/validate/product")
+async def validate_product(payload: dict):
+    """Validate a product's photo-detected dimensions against its CAD geometry.
+    
+    Body: {
+        product_id: string,
+        furniture_type: string,
+        detected_dims: { key: cm, ... },
+        reference_geometry: { ... parsed DXF ... },
+        image_url: string (optional),
+        dxf_url: string (optional)
+    }
+    
+    Returns validation score and per-dimension comparisons.
+    Products scoring >= 0.7 pass and can be used as ML training data.
+    """
+    from app.services.validation_service import validate_product_family
+
+    product_id = payload.get("product_id", "unknown")
+    detected_dims = payload.get("detected_dims", {})
+    reference_geometry = payload.get("reference_geometry", {})
+    furniture_type = payload.get("furniture_type", "unknown")
+
+    if not detected_dims:
+        return JSONResponse({"error": "Missing detected_dims"}, status_code=400)
+    if not reference_geometry:
+        return JSONResponse({"error": "Missing reference_geometry"}, status_code=400)
+
+    result = validate_product_family(
+        product_id=product_id,
+        detected_dims=detected_dims,
+        reference_geometry=reference_geometry,
+        furniture_type=furniture_type,
+    )
+
+    return JSONResponse({
+        "product_id": product_id,
+        "overall_score": result.overall_score,
+        "passed": result.passed,
+        "dimensions": result.dimensions,
+        "errors": result.errors,
+    })
+
+
+@router.post("/validate/batch")
+async def validate_batch(payload: dict):
+    """Batch-validate all product families where photo + CAD both exist.
+    
+    Body: { families: [ { product_id, furniture_type, detected_dims,
+                          reference_geometry, image_url, dxf_url }, ... ] }
+    
+    Returns passed/failed counts and paths for training data export.
+    """
+    from app.services.validation_service import (
+        validate_all_product_families,
+        export_training_data,
+    )
+
+    families = payload.get("families", [])
+    if not families:
+        return JSONResponse({"error": "Missing families"}, status_code=400)
+
+    validated = validate_all_product_families(families)
+    min_score = payload.get("min_score", 0.7)
+
+    export_path = payload.get("export_path", "/tmp/training-data.jsonl")
+    summary = export_training_data(validated, export_path, min_score)
+
+    return JSONResponse({
+        "summary": summary,
+        "samples": validated[:5],  # first 5 for inspection
+    })
+
+
+@router.get("/validate/training-data")
+async def get_training_data():
+    """Check if training data export exists and return summary."""
+    import os
+    path = "/tmp/training-data.jsonl"
+    if os.path.exists(path):
+        with open(path) as f:
+            lines = f.readlines()
+        return JSONResponse({
+            "available": True,
+            "records": len(lines),
+            "path": path,
+        })
+    return JSONResponse({
+        "available": False,
+        "message": "No training data exported yet. POST /api/validate/batch first.",
+    })
+
+
+@router.post("/validate/product-units")
+async def group_products_into_families(payload: dict):
+    """Group crawled photos with CAD imports into product families.
+    
+    This is the bridge between:
+      - Crawled product pages (which have photos → raw/jardan/images/...)
+      - Imported CAD files (raw/jardan/cad/...)
+    
+    Groups are formed by matching manufacturer + product code in the file paths.
+    Returns families ready for /validate/batch.
+    """
+    import os
+    import re
+
+    photo_dir = payload.get("photo_dir", "/tmp/crawler-storage")
+    cad_dir = payload.get("cad_dir", "/tmp/cad-imports")
+    manufacturer = payload.get("manufacturer", "jardan")
+
+    # Scan for photos and CAD files
+    families = {}
+    product_code_re = re.compile(r"(?:raw/)?\w*?/([a-z]+\d+[a-z]*|[a-z]+-\w+)")
+
+    def scan_dir(directory, asset_type):
+        if not os.path.isdir(directory):
+            logger.warning(f"Directory not found: {directory}")
+            return
+        for root, _dirs, files in os.walk(directory):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                # Extract product code from filename directory
+                m = product_code_re.search(fpath)
+                if m:
+                    code = m.group(1)
+                    if code not in families:
+                        families[code] = {"product_id": code, "assets": []}
+                    families[code]["assets"].append({
+                        "type": asset_type,
+                        "path": fpath,
+                        "filename": fname,
+                    })
+
+    scan_dir(photo_dir, "image")
+    scan_dir(cad_dir, "cad")
+
+    # Build family list — only products that have BOTH photo AND CAD
+    family_list = []
+    for code, family in families.items():
+        has_photo = any(a["type"] == "image" for a in family["assets"])
+        has_cad = any(a["type"] == "cad" for a in family["assets"])
+        if has_photo and has_cad:
+            family_list.append({
+                "product_id": f"{manufacturer}-{code}",
+                "furniture_type": payload.get("default_type", "furniture"),
+                "image_url": next(
+                    (a["path"] for a in family["assets"] if a["type"] == "image"), ""
+                ),
+                "cad_path": next(
+                    (a["path"] for a in family["assets"] if a["type"] == "cad"), ""
+                ),
+            })
+
+    return JSONResponse({
+        "manufacturer": manufacturer,
+        "families_found": len(family_list),
+        "families": family_list[:50],  # first 50 for preview
+    })

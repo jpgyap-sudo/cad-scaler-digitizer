@@ -63,6 +63,46 @@ CREATE TABLE IF NOT EXISTS drawing_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Validation results (photo ↔ CAD consistency for ML training)
+CREATE TABLE IF NOT EXISTS validation_results (
+    id SERIAL PRIMARY KEY,
+    product_id TEXT NOT NULL,
+    furniture_type TEXT,
+    overall_score FLOAT NOT NULL DEFAULT 0.0,
+    passed BOOLEAN NOT NULL DEFAULT FALSE,
+    dimension_comparisons JSONB DEFAULT '[]',
+    image_url TEXT,
+    dxf_url TEXT,
+    errors JSONB DEFAULT '[]',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (product_id)
+);
+
+-- ML training data export log
+CREATE TABLE IF NOT EXISTS training_exports (
+    id SERIAL PRIMARY KEY,
+    export_path TEXT NOT NULL,
+    total_products INT NOT NULL DEFAULT 0,
+    passed_count INT NOT NULL DEFAULT 0,
+    failed_count INT NOT NULL DEFAULT 0,
+    min_score FLOAT NOT NULL DEFAULT 0.7,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Product families (groups photos + CAD for the same product)
+CREATE TABLE IF NOT EXISTS product_families (
+    id SERIAL PRIMARY KEY,
+    product_id TEXT UNIQUE NOT NULL,
+    manufacturer TEXT,
+    furniture_type TEXT,
+    image_urls JSONB DEFAULT '[]',
+    cad_urls JSONB DEFAULT '[]',
+    validated BOOLEAN DEFAULT FALSE,
+    validation_score FLOAT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Chat sessions (persistent storage)
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id SERIAL PRIMARY KEY,
@@ -76,4 +116,8 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 CREATE INDEX IF NOT EXISTS idx_digitizer_sessions_session_id ON digitizer_sessions(session_id);
 CREATE INDEX IF NOT EXISTS idx_digitizer_results_session_id ON digitizer_results(session_id);
 CREATE INDEX IF NOT EXISTS idx_proportion_ledger_furniture ON proportion_ledger(furniture_type);
+CREATE INDEX IF NOT EXISTS idx_validation_results_product_id ON validation_results(product_id);
+CREATE INDEX IF NOT EXISTS idx_validation_results_passed ON validation_results(passed);
+CREATE INDEX IF NOT EXISTS idx_product_families_manufacturer ON product_families(manufacturer);
+CREATE INDEX IF NOT EXISTS idx_product_families_validated ON product_families(validated);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_key ON chat_sessions(session_key);
