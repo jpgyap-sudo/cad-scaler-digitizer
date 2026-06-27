@@ -2019,6 +2019,70 @@ def preview_pdf(filename: str):
     return FileResponse(pdf_path, filename=pdf_name, media_type="application/pdf")
 
 
+@router.post("/export/cad_intel")
+async def export_cad_intel(file: UploadFile = File(...)):
+    """Run the CAD Intelligence pipeline on an uploaded image and
+    return a confidence-weighted DXF with entity layer assignment.
+    """
+    job_id = str(uuid.uuid4())
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    img_path = UPLOAD / f"{job_id}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    try:
+        from app.backend.cad_intelligence.pipeline import run_cad_intelligence_pipeline
+        from app.backend.cad_intelligence.dxf_exporter import export_entities_to_dxf
+        from app.backend.cad_intelligence.export_debug import pipeline_result_to_dict
+
+        ocr_lines, dims = [], []
+        try:
+            from app.backend.ocr import ocr_dimensions
+            ocr_lines, dims = ocr_dimensions(str(img_path))
+        except Exception:
+            pass
+
+        ocr_structured = [{"text": t, "bbox": [0, 0, 0, 0], "confidence": 0.8}
+                          for t in ocr_lines[:50]]
+        result = run_cad_intelligence_pipeline(
+            image_path=str(img_path),
+            ocr_items=ocr_structured,
+            default_unit="mm",
+        )
+
+        dxf_name = f"{job_id}_cad_intel.dxf"
+        dxf_path = OUT / dxf_name
+        export_entities_to_dxf(
+            result.entities,
+            output_path=str(dxf_path),
+            title=f"CAD Intelligence Pipeline — {job_id[:8]}",
+        )
+
+        debug = pipeline_result_to_dict(result)
+        try: os.remove(str(img_path))
+        except: pass
+
+        return JSONResponse({
+            "job_id": job_id,
+            "dxf_file": dxf_name,
+            "download": f"/api/download/{dxf_name}",
+            "summary": {
+                "lines": len(result.lines),
+                "circles": len(result.circles),
+                "dimensions": len(result.dimensions),
+                "associations": len(result.associations),
+                "scale_mm_per_px": result.scale.mm_per_px,
+                "scale_confidence": round(result.scale.confidence, 3),
+                "entities": len(result.entities),
+            },
+            "debug": debug.get("debug", {}),
+        })
+    except Exception as e:
+        try: os.remove(str(img_path))
+        except: pass
+        return JSONResponse({"error": f"CAD Intel failed: {e}"}, status_code=500)
+
+
 @router.post("/export/freecad")
 async def export_freecad(file: UploadFile = File(...)):
     job_id = str(uuid.uuid4())

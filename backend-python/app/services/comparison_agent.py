@@ -23,6 +23,19 @@ from datetime import datetime
 from typing import Any, Optional
 from dataclasses import dataclass, field, asdict
 
+
+class NumpyEncoder(json.JSONEncoder):
+    """JSON encoder that converts numpy types to Python native types."""
+    def default(self, obj):
+        import numpy as np
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        return super().default(obj)
+
 logger = logging.getLogger("comparison_agent")
 
 # ---------------------------------------------------------------------------
@@ -542,7 +555,12 @@ def compare_digitization(
     total_penalty = sum(e["score_impact"] for e in result.errors)
     overall = max(0.0, overall - total_penalty * 0.1)
 
-    result.overall_score = overall
+    # Convert numpy types to Python native for JSON serialization
+    import numpy as np
+    result.overall_score = float(overall) if isinstance(overall, np.floating) else overall
+    result.edge_overlap_score = float(result.edge_overlap_score) if isinstance(result.edge_overlap_score, np.floating) else result.edge_overlap_score
+    result.entity_match_score = float(result.entity_match_score) if isinstance(result.entity_match_score, np.floating) else result.entity_match_score
+    result.dimension_deviation_pct = float(result.dimension_deviation_pct) if isinstance(result.dimension_deviation_pct, np.floating) else result.dimension_deviation_pct
 
     logger.info(
         f"[ComparisonAgent] {product_id}: score={overall:.3f} "
@@ -588,8 +606,8 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
             result.edge_overlap_score,
             result.entity_match_score,
             result.dimension_deviation_pct,
-            json.dumps(result.errors[:50]),
-            json.dumps(result.dimension_comparisons),
+            json.dumps(result.errors[:50], cls=NumpyEncoder),
+            json.dumps(result.dimension_comparisons, cls=NumpyEncoder),
             result.image_width,
             result.image_height,
             result.dxf_width_mm,
@@ -601,5 +619,6 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
         conn.close()
         return True
     except Exception as e:
-        logger.warning(f"Failed to log comparison to DB: {e}")
+        import traceback
+        logger.warning(f"Failed to log comparison to DB: {e}\n{traceback.format_exc()}")
         return False
