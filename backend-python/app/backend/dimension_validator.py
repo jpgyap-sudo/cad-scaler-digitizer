@@ -135,7 +135,11 @@ def check_round_pedestal_proportions(top_dia_cm: float, components: dict) -> lis
         warnings.append(f"neck diameter ({neck:g}cm) should be smaller than collar diameter ({collar:g}cm)")
     if collar is not None and collar >= top_dia_cm:
         warnings.append(f"collar diameter ({collar:g}cm) should be smaller than top diameter ({top_dia_cm:g}cm)")
-    if base is not None and neck is not None and neck >= base:
+    # Strictly greater, not >=: a non-tapering cylindrical column legitimately
+    # has neck == base (same width top-to-bottom) - that's correct, not a
+    # warning-worthy mismatch. Only flag the column actually flaring outward
+    # going up (neck wider than the base below it), which is physically odd.
+    if base is not None and neck is not None and neck > base:
         warnings.append(f"neck diameter ({neck:g}cm) should be smaller than base diameter ({base:g}cm)")
 
     return warnings

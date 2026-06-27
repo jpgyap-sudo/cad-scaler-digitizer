@@ -366,10 +366,27 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
 
         if (base_dia is None or neck_dia is None) and isinstance(visual_base_estimate, dict):
             try:
-                base_ratio = float(visual_base_estimate.get('base_ratio') or 0) or None
-                neck_ratio = float(visual_base_estimate.get('neck_ratio') or 0) or None
-                if base_dia is None and base_ratio: base_dia = round(dia * base_ratio, 1)
-                if neck_dia is None and neck_ratio: neck_dia = round(dia * neck_ratio, 1)
+                # Sanity-clamp the AI's visual ratio before trusting it: a
+                # pedestal column is never as wide as the tabletop, even a
+                # straight (non-tapering) one - but the model has been
+                # observed defaulting to ratio=1.0 ("same width") for
+                # 'cylinder' profiles instead of actually measuring it,
+                # which silently produced a base/neck equal to the top
+                # diameter. Reject implausible ratios and fall back to the
+                # standard proportion instead of rendering a clearly wrong
+                # shape (the same plausible-range used by
+                # check_round_pedestal_proportions's warning bands).
+                def _sane_ratio(raw, fallback, lo=0.15, hi=0.75):
+                    try:
+                        v = float(raw or 0)
+                    except (TypeError, ValueError):
+                        return fallback
+                    return v if lo <= v <= hi else fallback
+
+                base_ratio = _sane_ratio(visual_base_estimate.get('base_ratio'), 0.55)
+                neck_ratio = _sane_ratio(visual_base_estimate.get('neck_ratio'), 0.28)
+                if base_dia is None: base_dia = round(dia * base_ratio, 1)
+                if neck_dia is None: neck_dia = round(dia * neck_ratio, 1)
             except (TypeError, ValueError): pass
 
         extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'materials': materials or {}}
@@ -740,7 +757,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If a pedestal/leg base is the SAME width top-to-bottom (a straight cylinder/column, not visibly tapering), set base_dia and neck_dia to the SAME value. If the furniture is a round_pedestal_table, ALSO visually inspect the pedestal's actual silhouette and return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": ..., \"base_ratio\": ...}. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
+                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If the furniture is a round_pedestal_table, ALSO visually MEASURE the pedestal column's width as a FRACTION of the tabletop diameter by comparing pixel widths in the image (the pedestal/neck of a round table is ALWAYS narrower than the tabletop - never the same width, even for a straight, non-tapering cylindrical column; a typical pedestal column is roughly 25%-55% of the tabletop's diameter). Return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": <measured fraction, e.g. 0.35>, \"base_ratio\": <measured fraction, e.g. 0.4>}. If profile is 'cylinder', neck_ratio and base_ratio should be EQUAL to each other but must still reflect the actual measured width relative to the tabletop - NEVER default to 1.0 or any value above 0.6. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
