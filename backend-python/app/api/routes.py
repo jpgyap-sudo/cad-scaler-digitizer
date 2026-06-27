@@ -31,8 +31,22 @@ from app.backend.dxf_exporter import (
     save_asymmetric_pedestal_table, save_oval_pedestal_table,
     save_console_table, save_office_desk,
 )
+from app.resource_engine.template_loader import TemplateGraphLoader
+from app.resource_engine.template_resolver import TemplateResolver
 
 router = APIRouter()
+
+# Lazy-loaded template resolver singleton
+_TEMPLATE_LOADER: TemplateGraphLoader | None = None
+_TEMPLATE_RESOLVER: TemplateResolver | None = None
+
+
+def _get_template_resolver() -> TemplateResolver:
+    global _TEMPLATE_LOADER, _TEMPLATE_RESOLVER
+    if _TEMPLATE_RESOLVER is None:
+        _TEMPLATE_LOADER = TemplateGraphLoader().load()
+        _TEMPLATE_RESOLVER = TemplateResolver(_TEMPLATE_LOADER)
+    return _TEMPLATE_RESOLVER
 
 OUT = Path(tempfile.gettempdir()) / "cad_digitizer_outputs"
 OUT.mkdir(exist_ok=True)
@@ -1235,7 +1249,10 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         raw_ai_type = (ai_result.get('furniture_type', '') or '').strip()
         KNOWN_TYPES = {'round_pedestal_table', 'rectangular_table', 'cabinet', 'sofa',
                        'coffee_table', 'dining_chair', 'chair', 'wardrobe',
-                       'reception_counter', 'bed_headboard'}
+                       'reception_counter', 'bed_headboard', 'oval_pedestal_table',
+                       'console_table', 'office_desk', 'side_table', 'lounge_chair',
+                       'nightstand', 'bed', 'asymmetric_pedestal_table', 'sideboard',
+                       'tv_console'}
         if furniture_type: ftype = normalize_furniture_type(furniture_type)
         elif raw_ai_type:
             ftype = normalize_furniture_type(raw_ai_type)
@@ -1243,6 +1260,46 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 opencv_ftype = normalize_furniture_type(opencv_type)
                 if opencv_ftype in KNOWN_TYPES: ftype = opencv_ftype
         else: ftype = normalize_furniture_type(opencv_type)
+
+        # ===== Template Graph Resolution =====
+        template_graph_result = None
+        try:
+            # Build detected_dims dict from all available sources
+            detected_dims_cm = {}
+            if real_w and real_w > 0:
+                detected_dims_cm['width_cm'] = real_w
+            if real_h and real_h > 0:
+                detected_dims_cm['overall_height_cm'] = real_h
+            for d in merged_dims:
+                tag = d.get('tag', '').lower().strip()
+                val = float(d.get('value_cm', 0))
+                if val > 0:
+                    if tag in ('top_dia', 'dia', 'diameter'):
+                        detected_dims_cm['top_diameter_cm'] = val
+                        detected_dims_cm['width_cm'] = val
+                    elif any(k in tag for k in ['h', 'height']):
+                        detected_dims_cm['overall_height_cm'] = val
+                    elif any(k in tag for k in ['w', 'width', 'length']):
+                        detected_dims_cm['width_cm'] = val
+                        detected_dims_cm['length_cm'] = val
+                    elif any(k in tag for k in ['d', 'depth']):
+                        detected_dims_cm['depth_cm'] = val
+                    elif 'leg' in tag or 'thickness' in tag:
+                        detected_dims_cm['leg_thickness_cm'] = val
+                    elif 'seat_height' in tag:
+                        detected_dims_cm['seat_height_cm'] = val
+                    elif 'modesty' in tag or 'panel' in tag:
+                        detected_dims_cm['modesty_panel_h_cm'] = val
+                    elif 'ped' in tag:
+                        detected_dims_cm['pedestal_dia_cm'] = val
+
+            resolver = _get_template_resolver()
+            template_graph_result = resolver.resolve(
+                ftype, detected_dims_cm, materials=materials if materials else None
+            )
+        except Exception as e:
+            print(f"[Hybrid] Template resolution failed (non-fatal): {e}")
+        # ===== End Template Graph Resolution =====
 
         try: conf = max(float(ai_result.get('confidence', 0) or 0), opencv_conf)
         except: conf = 0.5
@@ -1288,12 +1345,31 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
 
+        # Build template_graph response block
+        template_response = None
+        if template_graph_result:
+            # Strip the full template dict to avoid sending the entire JSON in every response
+            tpl = template_graph_result.get("template", {})
+            template_response = {
+                "template_id": tpl.get("id"),
+                "template_name": tpl.get("name"),
+                "product_type": tpl.get("product_type"),
+                "family": tpl.get("family"),
+                "resolved_parameters_mm": template_graph_result.get("resolved_parameters"),
+                "constraints": template_graph_result.get("constraints"),
+                "required_views": template_graph_result.get("component_views"),
+                "required_details": template_graph_result.get("required_details"),
+                "drawing_notes": template_graph_result.get("drawing_notes"),
+            }
+
         return JSONResponse({
             'job_id': job_id, 'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
             'preview_svg': f'/api/preview/svg/{dxf_name}' if svg_name else None,
             'resolved_dimensions': (dispatch_extra or {}).get('resolved_dimensions'),
             'component_schema': (dispatch_extra or {}).get('component_schema'),
+            'template_graph': template_response,
+            'template_warnings': (template_graph_result or {}).get('warnings', []),
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True,
                           'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD,
                           'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h)},
@@ -1305,6 +1381,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'accuracy_pipeline': accuracy_results,
             'image_quality': image_quality,
             'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
+                         + (template_graph_result or {}).get('warnings', [])
                          + ([f"Source image looked blurry (sharpness {image_quality['blur_score']:.0f}, "
                              f"threshold {image_quality['threshold']:.0f}) - dimension text was read from an "
                              f"auto-sharpened copy; please double-check the numbers above against the photo."]
@@ -1759,6 +1836,22 @@ async def ml_retrain():
 
 
 # ===== TEMPLATE SUGGEST ENDPOINT =====
+
+@router.get("/templates")
+async def list_templates(family: str = "", product_type: str = ""):
+    """List all available template graphs, optionally filtered by family or product_type."""
+    resolver = _get_template_resolver()
+    all_templates = resolver.resolve_all()
+    if family:
+        all_templates = [t for t in all_templates if t.get("family") == family]
+    if product_type:
+        all_templates = [t for t in all_templates if t.get("product_type") == product_type]
+    return JSONResponse({
+        "templates": all_templates,
+        "count": len(all_templates),
+        "families": sorted(set(t.get("family", "") for t in resolver.resolve_all())),
+    })
+
 
 @router.get("/templates/suggest")
 async def suggest_template(furniture_type: str = "", width_cm: float = 0, height_cm: float = 0, depth_cm: float = 0):
@@ -2402,6 +2495,53 @@ async def process_dxf(payload: dict):
                 "status": "failed",
                 "error": str(e),
             }, status_code=500)
+
+
+# =============================================================================
+# Hallucination Verifier API — run ALL validators and produce report
+# =============================================================================
+
+@router.post("/verify")
+async def verify_detection(payload: dict):
+    """Run the full hallucination verifier on detected dimensions.
+    
+    Combines:
+      1. Physical bounds check — is the dimension possible for this furniture type?
+      2. Aspect ratio check — are width/height proportions realistic?
+      3. Scale consistency check — are related dimensions mutually consistent?
+      4. Anti-hallucination entity validator — per-entity confidence (VISIBLE/ESTIMATED/UNKNOWN)
+      5. Reference geometry check (if reference_geometry provided)
+    
+    Body: {
+        product_id: string,
+        furniture_type: string,
+        detected_dims: { key: value_cm, ... },
+        reference_geometry: { ... } (optional),
+        entity_confidences: { key: { confidence: 0.0-1.0, source: string, ... } } (optional)
+    }
+    
+    Returns per-dimension verdicts: VERIFIED | ESTIMATED | HALLUCINATION
+    """
+    from app.services.hallucination_verifier import verify_dimensions
+
+    product_id = payload.get("product_id", "unknown")
+    furniture_type = payload.get("furniture_type", "furniture")
+    detected_dims = payload.get("detected_dims", {})
+    reference_geometry = payload.get("reference_geometry")
+    entity_confidences = payload.get("entity_confidences")
+
+    if not detected_dims:
+        return JSONResponse({"error": "Missing detected_dims"}, status_code=400)
+
+    report = verify_dimensions(
+        product_id=product_id,
+        furniture_type=furniture_type,
+        detected_dims=detected_dims,
+        reference_geometry=reference_geometry,
+        entity_confidences=entity_confidences,
+    )
+
+    return JSONResponse(report.to_dict())
 
 
 # =============================================================================
