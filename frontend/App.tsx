@@ -10,6 +10,10 @@ import SliderPanel from './components/SliderPanel';
 import InteractiveSvgPreview from './components/InteractiveSvgPreview';
 import BrainStats from './components/BrainStats';
 import ConfidencePanel, { DimItem } from './components/ConfidencePanel';
+import NavBar, { Tab } from './components/NavBar';
+import WorkflowGuide from './components/WorkflowGuide';
+import TemplatesPage from './components/TemplatesPage';
+import CalibrationPage from './components/CalibrationPage';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -95,6 +99,7 @@ const App: React.FC = () => {
   const [verification, setVerification] = useState<VerificationResult | null>(null);
   const [braintStatus, setBrainStatus] = useState<string>('');
   const [isTechModalOpen, setIsTechModalOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState<Tab>('upload');
   const [engineMode, setEngineMode] = useState<EngineMode>('hybrid');
   const [engineHealthy, setEngineHealthy] = useState<boolean | null>(null);
   const [processState, setProcessState] = useState<ProcessState>('idle');
@@ -478,9 +483,31 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {/* NAV */}
+      <NavBar activeTab={currentTab} onTabChange={setCurrentTab} />
+
       {/* MAIN */}
       <main className="flex-1 flex overflow-hidden">
-        {processState === 'idle' ? (
+        {currentTab === 'templates' ? (
+          <TemplatesPage />
+        ) : currentTab === 'calibration' ? (
+          <CalibrationPage />
+        ) : currentTab === 'workflow' ? (
+          <div className="flex-1 overflow-y-auto">
+            <WorkflowGuide />
+          </div>
+        ) : currentTab === 'crawl' ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto">
+            <div className="w-full max-w-xl mb-4">
+              <CrawlInput />
+            </div>
+            <div className="w-full max-w-xl mt-2 p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
+              <p className="text-xs text-slate-400 text-center">
+                Or use the <strong>Upload Drawing</strong> tab to upload a photo directly.
+              </p>
+            </div>
+          </div>
+        ) : processState === 'idle' ? (
           // === UPLOAD SCREEN ===
           <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto">
             <div className="max-w-2xl text-center mb-8">
@@ -533,9 +560,6 @@ const App: React.FC = () => {
               </div>
             ) : (
               <>
-                <div className="w-full max-w-xl">
-                  <CrawlInput />
-                </div>
                 <div
                   className="w-full max-w-xl p-12 border-2 border-dashed border-indigo-300 rounded-3xl bg-white hover:border-indigo-500 hover:bg-indigo-50/50 transition-all duration-300 cursor-pointer flex flex-col items-center text-center shadow-xl shadow-indigo-100/20 group"
                   onClick={() => fileInputRef.current?.click()}
