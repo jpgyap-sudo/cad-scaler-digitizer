@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse, Response, HTMLResponse
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 import shutil, uuid, os, tempfile, json, traceback
 
@@ -39,6 +39,133 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 # UI should ask the user to confirm/correct the furniture type rather than
 # silently rendering a possibly-wrong template.
 CLASSIFIER_CONFIRM_THRESHOLD = 0.55
+
+# Structured visual proportion measurement (the "ledger" skill).
+#
+# Vision LLMs are reliably good at one thing and reliably bad at another:
+# - GOOD: pointing/localizing ("where is the left edge of X in this image")
+# - BAD: mental arithmetic on two separate measurements ("what fraction is
+#        X's width of Y's width") - confirmed by direct testing, where the
+#        same model returned ratios of 0.16/0.20/0.28/0.35/1.0 for the exact
+#        same photo across separate calls, and once classified an obviously
+#        flared pedestal as a plain cylinder.
+#
+# So instead of asking for a ratio, ask for edge COORDINATES (normalized 0-1
+# fractions of image width) at each section's representative row, and have
+# OUR code do the division. This plays to the model's strength and removes
+# its weakest step from the critical path entirely.
+VISION_SYSTEM_PROMPT = (
+    "Analyze furniture drawing. Identify the SPECIFIC furniture type from this "
+    "list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, "
+    "dining_chair, wardrobe, reception_counter, bed_headboard. "
+    "First extract the overall size (length/width/diameter, depth, height) from "
+    "any text labels in the image - these are the anchor dimensions everything "
+    "else is measured relative to. For each dimension label, use nearby text to "
+    "tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / "
+    "pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), "
+    "'collar_dia' (metal collar plate just under the top), 'height', 'width', "
+    "'depth', 'thickness'. "
+    "\n\nIf the furniture is a round_pedestal_table, ALSO describe the pedestal "
+    "as a SEQUENCE OF SECTIONS from the tabletop down to the floor - however "
+    "many sections actually exist in THIS photo, not a fixed list. A simple "
+    "table might have just one section (a single straight or tapering column); "
+    "a complex one might have a collar plate, a narrow neck, and a flared base "
+    "as separate sections. For EACH section, report its name/role and its LEFT "
+    "and RIGHT edge as a fraction of the image width (0.0 = left edge of image, "
+    "1.0 = right edge of image), measured at that section's widest/most "
+    "representative point - do NOT report a width percentage or ratio yourself, "
+    "report the raw edge positions and let the edges speak for themselves. Also "
+    "report the tabletop's own left/right edge fractions the same way, as the "
+    "reference every section is measured against. "
+    "CRITICAL: preserve the proportions exactly as they appear in THIS image - "
+    "do not round toward 'typical' table conventions or a remembered default; "
+    "measure what is actually drawn, even if it looks unusual. "
+    "Return a 'visual_base_estimate' object: {\"profile\": \"cylinder|tapered|"
+    "flared|unknown\", \"tabletop_edges\": [left_frac, right_frac], "
+    "\"sections\": [{\"name\": \"collar_plate|neck_ring|pedestal_body|base_plate"
+    "|column\", \"edges\": [left_frac, right_frac]}], "
+    "\"self_check\": \"one sentence confirming the edges you reported are "
+    "consistent with the profile you chose\"}. "
+    "\n\nALSO inspect each visible component (tabletop, collar/base plate, "
+    "neck/column, base/feet) for its material and finish. If a material is "
+    "explicitly written/labeled in the image, use that exact text. If NOT "
+    "labeled, infer the most likely material from visual cues - color, sheen/"
+    "reflectivity, grain/texture, edge profile (e.g. glossy dark surface with "
+    "visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid "
+    "wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte "
+    "lacquer'). Always provide a best-guess material per component, never "
+    "leave it blank, but mark inferred ones. Return a 'materials' object: "
+    "{\"component_name\": {\"description\": \"material text\", \"inferred\": "
+    "true_or_false}}. "
+    "Return JSON with furniture_type, confidence (0-1), dimensions array "
+    "[{tag, value_cm}], visual_base_estimate, materials."
+)
+
+
+def _edge_width(edges) -> Optional[float]:
+    """Width of a [left_frac, right_frac] edge pair, or None if malformed."""
+    try:
+        left, right = float(edges[0]), float(edges[1])
+        w = right - left
+        return w if w > 0 else None
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def _ratios_from_sections(visual_base_estimate: dict) -> dict:
+    """Compute each section's width as a fraction of the tabletop's width from
+    reported edge coordinates - this is the deterministic math step the model
+    itself is unreliable at. Returns {} if edges are missing/malformed (the
+    caller falls back to the direct-ratio sanity-clamp path).
+
+    Our renderer always needs BOTH a neck (top of the column) and a base
+    (bottom of the column) width to draw the trapezoid - but the model often
+    only reports ONE section for a simple table (e.g. just "pedestal_body"),
+    since that's genuinely all there is. Tested directly: leaving the other
+    ratio unset made it silently fall back to an unrelated generic default
+    (e.g. base measured at 75% but neck defaulting to 28%, an inconsistent
+    shape with no connection to what was actually measured). When only one
+    of neck/base is reported, mirror it to the other - a single uniform-
+    width section means the column doesn't taper, so neck == base is the
+    correct interpretation, not "the other one is unknown."
+    """
+    if not isinstance(visual_base_estimate, dict):
+        return {}
+    top_w = _edge_width(visual_base_estimate.get('tabletop_edges'))
+    sections = visual_base_estimate.get('sections')
+    if not top_w or not isinstance(sections, list):
+        return {}
+
+    ratios = {}
+    # Map the model's free-form section names onto our fixed render slots.
+    name_map = {
+        'collar_plate': 'collar_ratio', 'collar': 'collar_ratio',
+        'neck_ring': 'neck_ratio', 'neck': 'neck_ratio',
+        'pedestal_body': 'base_ratio', 'base_plate': 'base_ratio', 'base': 'base_ratio',
+        'column': 'base_ratio',  # see mirroring below if it's the only section
+    }
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        key = name_map.get(str(section.get('name', '')).lower())
+        w = _edge_width(section.get('edges'))
+        if key and w:
+            ratios[key] = w / top_w
+
+    if 'neck_ratio' not in ratios:
+        # The neck is the structural continuation directly below the collar
+        # (if any), so it should approximate the collar's width, not the
+        # base's - a collar+body-only report (no separate neck) most likely
+        # means the column continues at roughly the collar's width before
+        # whatever the body does lower down. Only fall back to mirroring the
+        # base when there's no collar either (a single uniform section).
+        if 'collar_ratio' in ratios:
+            ratios['neck_ratio'] = ratios['collar_ratio']
+        elif 'base_ratio' in ratios:
+            ratios['neck_ratio'] = ratios['base_ratio']
+    if 'base_ratio' not in ratios and 'neck_ratio' in ratios:
+        ratios['base_ratio'] = ratios['neck_ratio']
+    return ratios
 
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
@@ -364,56 +491,73 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         dia = real_w or labeled_top or _dim(['dia', 'diameter', 'w', 'width'], 80.0)
         height = real_h or _dim(['h', 'height'], 70.0)
 
-        if (base_dia is None or neck_dia is None) and isinstance(visual_base_estimate, dict):
+        def _sane_ratio(raw, fallback, lo=0.15, hi=0.75):
             try:
-                # Sanity-clamp the AI's visual ratio before trusting it: a
-                # pedestal column is never as wide as the tabletop, even a
-                # straight (non-tapering) one - but the model has been
-                # observed defaulting to ratio=1.0 ("same width") for
-                # 'cylinder' profiles instead of actually measuring it,
-                # which silently produced a base/neck equal to the top
-                # diameter. Reject implausible ratios and fall back to the
-                # standard proportion instead of rendering a clearly wrong
-                # shape (the same plausible-range used by
-                # check_round_pedestal_proportions's warning bands).
-                def _sane_ratio(raw, fallback, lo=0.15, hi=0.75):
-                    try:
-                        v = float(raw or 0)
-                    except (TypeError, ValueError):
-                        return fallback
-                    return v if lo <= v <= hi else fallback
+                v = float(raw or 0)
+            except (TypeError, ValueError):
+                return fallback
+            return v if lo <= v <= hi else fallback
 
-                base_ratio = _sane_ratio(visual_base_estimate.get('base_ratio'), 0.55)
-                neck_ratio = _sane_ratio(visual_base_estimate.get('neck_ratio'), 0.28)
-                if base_dia is None: base_dia = round(dia * base_ratio, 1)
-                if neck_dia is None: neck_dia = round(dia * neck_ratio, 1)
-            except (TypeError, ValueError): pass
+        def _ledger_blend(component: str, measured_ratio: Optional[float], fallback: float) -> float:
+            """Blend a single photo's measured ratio against the accumulated
+            ledger (component_proportions) for this furniture type/component -
+            the "ledger" cross-check. More historical samples -> more weight
+            on the ledger; a brand-new component with no history -> trust the
+            current photo's measurement. Never raises if Postgres is down."""
+            try:
+                from app.backend.brain_sync import get_proportion_estimate
+                est = get_proportion_estimate('round_pedestal_table', 'top_diameter_cm', dia, component)
+            except Exception:
+                est = None
+            if measured_ratio is None:
+                return (est['ratio'] if est else fallback)
+            if not est or not est.get('sample_count'):
+                return measured_ratio
+            # Weight capped at 5 historical samples' worth of influence, so a
+            # single new photo never gets fully overridden by old data either.
+            n = min(est['sample_count'], 5)
+            return (measured_ratio * 1 + est['ratio'] * n) / (n + 1)
+
+        # 1) Primary signal: edge-coordinate measurement, computed by US from
+        #    reported pixel positions rather than the model's own ratio math.
+        section_ratios = _ratios_from_sections(visual_base_estimate)
+        # 2) Fallback signal: the model's direct ratio guess, sanity-clamped.
+        vbe = visual_base_estimate if isinstance(visual_base_estimate, dict) else {}
+        base_ratio_guess = section_ratios.get('base_ratio', _sane_ratio(vbe.get('base_ratio'), 0.55))
+        neck_ratio_guess = section_ratios.get('neck_ratio', _sane_ratio(vbe.get('neck_ratio'), 0.28))
+        collar_ratio_guess = section_ratios.get('collar_ratio') or (
+            _sane_ratio(vbe.get('collar_ratio'), None, lo=0.30, hi=0.85) if vbe.get('has_collar') else None)
+
+        # 3) Cross-check/blend each against the ledger before committing.
+        if base_dia is None:
+            base_dia = round(dia * _ledger_blend('pedestal_diameter_cm', base_ratio_guess, 0.55), 1)
+        if neck_dia is None:
+            neck_dia = round(dia * _ledger_blend('neck_diameter_cm', neck_ratio_guess, 0.28), 1)
 
         # Collar plate: a separate, wider transition plate just under the
         # tabletop. It used to ALWAYS be drawn at a hardcoded top_dia*0.625,
         # regardless of whether the source photo shows one at all - many
         # simple pedestal tables have the column go straight up to meet the
-        # tabletop with no wider plate in between. Only draw a collar when
-        # the AI actually reports seeing one; otherwise size it to match the
-        # column (no separate plate) instead of inventing a disconnected
-        # fixed-ratio width.
-        collar_dia = None
-        if isinstance(visual_base_estimate, dict) and visual_base_estimate.get('has_collar'):
-            try:
-                def _sane_collar_ratio(raw, fallback, lo=0.30, hi=0.85):
-                    try:
-                        v = float(raw or 0)
-                    except (TypeError, ValueError):
-                        return fallback
-                    return v if lo <= v <= hi else fallback
-                collar_ratio = _sane_collar_ratio(visual_base_estimate.get('collar_ratio'), 0.625)
-                collar_dia = round(dia * collar_ratio, 1)
-            except (TypeError, ValueError): pass
-        if collar_dia is None:
-            # No collar detected/reported - continue the column straight up
-            # (collar width == neck width) rather than flaring out to an
-            # arbitrary, unobserved plate.
+        # tabletop with no wider plate in between. Only draw a collar when a
+        # collar section was actually measured/reported; otherwise size it to
+        # match the column (no separate plate) instead of inventing a
+        # disconnected fixed-ratio width.
+        if collar_ratio_guess is not None:
+            collar_dia = round(dia * _ledger_blend('collar_diameter_cm', collar_ratio_guess, 0.625), 1)
+        else:
             collar_dia = neck_dia if neck_dia else round(dia * 0.28, 1)
+
+        # Record this observation into the ledger so the next photo of a
+        # similar table benefits from it too - closes the loop the other
+        # direction (read happens above via _ledger_blend).
+        try:
+            from app.backend.brain_sync import record_proportion
+            record_proportion('round_pedestal_table', 'top_diameter_cm', dia, 'pedestal_diameter_cm', base_dia)
+            record_proportion('round_pedestal_table', 'top_diameter_cm', dia, 'neck_diameter_cm', neck_dia)
+            if collar_ratio_guess is not None:
+                record_proportion('round_pedestal_table', 'top_diameter_cm', dia, 'collar_diameter_cm', collar_dia)
+        except Exception as e:
+            print(f"[DISPATCH] ledger record failed: {e}")
 
         extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'collar_dia_cm': collar_dia,
                  'materials': materials or {}}
@@ -507,15 +651,13 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                          leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'),
                          materials=extra.get('materials'))
     try:
-        from app.backend.brain_sync import record_drawing, record_proportion
+        # Proportion ledger recording for round_pedestal_table already
+        # happened above, right where base_dia/neck_dia/collar_dia were
+        # computed - only record_drawing (unrelated: a per-job history log,
+        # not the proportion ledger) belongs here.
+        from app.backend.brain_sync import record_drawing
         resolved = extra.get('resolved_dimensions') or {}
         record_drawing(dxf_path.stem, f_type, dxf_path.name, dimensions_used=resolved)
-        if f_type == 'round_pedestal_table':
-            top_dia = resolved.get('top_diameter_cm')
-            if top_dia and extra.get('base_dia_cm') is not None:
-                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'pedestal_diameter_cm', extra['base_dia_cm'])
-            if top_dia and extra.get('neck_dia_cm') is not None:
-                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'neck_diameter_cm', extra['neck_dia_cm'])
     except Exception as e: print(f"[DISPATCH] brain_sync recording failed: {e}")
 
     return extra
@@ -785,7 +927,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 r = await client.post("https://api.openai.com/v1/chat/completions",
                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
                     json={"model": "gpt-4o", "messages": [
-                        {"role": "system", "content": "Analyze furniture drawing. Identify the SPECIFIC furniture type from this list: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard. For each dimension label, use nearby text to tag it precisely: 'top_dia' (tabletop diameter), 'base_dia' (base plate / pedestal foot / glide diameter), 'neck_dia' (narrowest point of pedestal), 'collar_dia' (metal collar plate just under the top), 'height', 'width', 'depth', 'thickness'. If the furniture is a round_pedestal_table, ALSO visually MEASURE the pedestal column's width as a FRACTION of the tabletop diameter by comparing pixel widths in the image (the pedestal/neck of a round table is ALWAYS narrower than the tabletop - never the same width, even for a straight, non-tapering cylindrical column; a typical pedestal column is roughly 25%-55% of the tabletop's diameter). Also determine whether a SEPARATE wider collar/transition plate is visible directly under the tabletop, distinct from the column itself - many simple pedestal tables have NO collar at all (the column goes straight up to meet the tabletop with no wider plate in between). Return a 'visual_base_estimate' object: {\"profile\":\"cylinder|tapered|flared|unknown\", \"neck_ratio\": <measured fraction, e.g. 0.35>, \"base_ratio\": <measured fraction, e.g. 0.4>, \"has_collar\": true_or_false, \"collar_ratio\": <measured fraction if has_collar is true, else omit>}. If profile is 'cylinder', neck_ratio and base_ratio should be EQUAL to each other but must still reflect the actual measured width relative to the tabletop - NEVER default to 1.0 or any value above 0.6. Do NOT invent a collar that isn't visible - has_collar must reflect what's actually drawn. ALSO inspect each visible component (tabletop, collar/base plate, neck/column, base/feet) for its material and finish. If a material is explicitly written/labeled in the image, use that exact text. If NOT labeled, infer the most likely material from visual cues - color, sheen/reflectivity, grain/texture, edge profile (e.g. glossy dark surface with visible weld seams -> 'powder-coated steel'; visible wood grain -> 'solid wood, [color] stain'; matte uniform color -> 'painted MDF' or 'matte lacquer'). Always provide a best-guess material per component, never leave it blank, but mark inferred ones. Return a 'materials' object: {\"component_name\": {\"description\": \"material text\", \"inferred\": true_or_false}}. Return JSON with furniture_type, confidence (0-1), dimensions array [{tag, value_cm}], visual_base_estimate, materials."},
+                        {"role": "system", "content": VISION_SYSTEM_PROMPT},
                         {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
                     ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
@@ -1121,13 +1263,17 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         svg_path = OUT / safe.replace('.dxf', '.svg')
         with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
 
+        final_collar_dia = round(collar_dia or top_dia * 0.625, 1)
         try:
+            # A manual /adjust is a real human correction - write it back into
+            # the ledger so the next photo of similar furniture benefits too
+            # (this is the other half of the read in _ledger_blend above).
             from app.backend.brain_sync import record_proportion
             record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'pedestal_diameter_cm', base_dia)
             record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'neck_diameter_cm', neck_dia)
+            if collar_dia is not None:
+                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'collar_diameter_cm', final_collar_dia)
         except Exception as e: print(f"[Adjust] brain_sync recording failed: {e}")
-
-        final_collar_dia = round(collar_dia or top_dia * 0.625, 1)
         from app.backend.dimension_validator import check_round_pedestal_proportions
         proportion_warnings = check_round_pedestal_proportions(top_dia, {
             'collar_diameter_cm': final_collar_dia,
