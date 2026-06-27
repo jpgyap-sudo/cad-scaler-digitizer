@@ -14,6 +14,9 @@ import NavBar, { Tab } from './components/NavBar';
 import WorkflowGuide from './components/WorkflowGuide';
 import TemplatesPage from './components/TemplatesPage';
 import CalibrationPage from './components/CalibrationPage';
+import ResourcesPage from './components/ResourcesPage';
+import AnalyticsPage from './components/AnalyticsPage';
+import ImprovementsPage from './components/ImprovementsPage';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -492,6 +495,18 @@ const App: React.FC = () => {
           <TemplatesPage />
         ) : currentTab === 'calibration' ? (
           <CalibrationPage />
+        ) : currentTab === 'analytics' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <AnalyticsPage />
+          </div>
+        ) : currentTab === 'improvements' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <ImprovementsPage />
+          </div>
+        ) : currentTab === 'resources' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <ResourcesPage />
+          </div>
         ) : currentTab === 'workflow' ? (
           <div className="flex-1 overflow-y-auto">
             <WorkflowGuide />
