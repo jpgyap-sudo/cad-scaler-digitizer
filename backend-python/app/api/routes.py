@@ -3131,3 +3131,56 @@ async def list_comparison_results(limit: int = 20):
         ])
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# =============================================================================
+# Training Feedback — auto-adjust digitizer from comparison errors
+# =============================================================================
+
+@router.get("/calibration/report")
+async def calibration_report():
+    """Generate calibration report from accumulated comparison errors.
+    
+    Aggregates comparison data, detects systematic biases, and
+    generates correction hints for digitizer parameters.
+    
+    Returns:
+        current_parameters, comparison_stats, systematic_biases,
+        correction_hints, correction_history, recommended_action
+    """
+    from app.services.training_feedback import get_calibration_report
+    report = get_calibration_report()
+    return JSONResponse(report)
+
+
+@router.post("/calibration/apply")
+async def apply_calibration():
+    """Auto-apply high-confidence corrections from comparison feedback.
+    
+    Applies parameter adjustments and scale corrections, saves new
+    parameter state to DB, and returns what was changed.
+    """
+    from app.services.training_feedback import apply_calibration
+    result = apply_calibration()
+    return JSONResponse(result)
+
+
+@router.get("/calibration/parameters")
+async def get_parameters():
+    """Get current digitizer parameter state."""
+    from app.services.training_feedback import load_parameter_state
+    load_parameter_state()
+    from app.services.training_feedback import _parameter_state
+    params = {k: v for k, v in _parameter_state.items() if k != "correction_history"}
+    return JSONResponse(params)
+
+
+@router.get("/calibration/errors")
+async def get_error_aggregation(days_back: int = 7, limit: int = 100):
+    """Get aggregated comparison errors for analysis.
+    
+    Query params: days_back (default 7), limit (default 100)
+    """
+    from app.services.training_feedback import aggregate_comparison_errors
+    result = aggregate_comparison_errors(days_back=days_back, limit=limit)
+    return JSONResponse(result)

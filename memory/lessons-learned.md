@@ -3304,3 +3304,79 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] Phase3 template system: 18 template graphs, TemplateGraphLoader, TemplateResolver, Phase3Pipeline orchestrator, gap fixe
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7bf1665d44689ae17b26f03c44fb7cb75c278cff
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7bf1665d44689ae17b26f03c44fb7cb75c278cff
+**Files:** Dockerfile.api,backend-node/src/routes/crawl.ts,backend-python/app/api/routes.py,backend-python/app/backend/chat_agent.py,backend-python/app/backend/drawing_builders.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py,backend-python/app/resource_engine/pipeline_orchestrator.py,backend-python/app/resource_engine/template_loader.py,backend-python/app/resource_engine/template_resolver.py,backend-python/app/services/hallucination_verifier.py,backend-python/requirements.txt,backend-python/resources/furniture_template_graphs/bed.headboard.v1.json,backend-python/resources/furniture_template_graphs/bed.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.nightstand.v1.json,backend-python/resources/furniture_template_graphs/cabinet.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.tv_console.v1.json,backend-python/resources/furniture_template_graphs/chair.lounge.v1.json,backend-python/resources/furniture_template_graphs/chair.standard.v1.json,backend-python/resources/furniture_template_graphs/desk.standard.v1.json,backend-python/resources/furniture_template_graphs/reception_counter.standard.v1.json,backend-python/resources/furniture_template_graphs/sofa.standard.v1.json,backend-python/resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,backend-python/resources/furniture_template_graphs/table.coffee_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.console_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.side_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_round.v1.json,backend-python/resources/furniture_template_graphs/wardrobe.standard.v1.json,backend-python/scripts/e2e_pipeline.py,backend-python/scripts/generate_template_graphs.py,backend-python/scripts/productionization/demo_direct_pipeline.py,backend-python/scripts/test_templates.py,backend-python/tests/test_templates.py,crawler-worker/worker.js,docs/gap-log.md,frontend/App.tsx,frontend/components/ChatBox.tsx,frontend/components/DXFPreview.tsx,frontend/components/PipelineProgress.tsx,frontend/components/PipelineUpload.tsx,frontend/components/ReviewPanel.tsx,frontend/services/cadEngine.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,resources/furniture_template_graphs/bed.headboard.v1.json,resources/furniture_template_graphs/bed.standard.v1.json,resources/furniture_template_graphs/cabinet.nightstand.v1.json,resources/furniture_template_graphs/cabinet.standard.v1.json,resources/furniture_template_graphs/cabinet.tv_console.v1.json,resources/furniture_template_graphs/casework_rectangular.json,resources/furniture_template_graphs/chair.lounge.v1.json,resources/furniture_template_graphs/chair.standard.v1.json,resources/furniture_template_graphs/desk.standard.v1.json,resources/furniture_template_graphs/reception_counter.standard.v1.json,resources/furniture_template_graphs/sofa.standard.v1.json,resources/furniture_template_graphs/sofa_three_seater.json,resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,resources/furniture_template_graphs/table.coffee_rectangular.v1.json,resources/furniture_template_graphs/table.console_four_leg.v1.json,resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,resources/furniture_template_graphs/table.side_rectangular.v1.json,resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,resources/furniture_template_graphs/table.single_pedestal_round.v1.json,resources/furniture_template_graphs/table_dual_cylindrical_pedestal.json,resources/furniture_template_graphs/wardrobe.standard.v1.json,scripts/audit-syntax.py,scripts/db-backup.sh,scripts/search-for-cad-text.mjs
+
+**Summary:**
+Commit: Phase3 template system: 18 template graphs, TemplateGraphLoader, TemplateResolver, Phase3Pipeline orchestrator, gap fixes (materials+visibility+adjust dispatch+chat vocab+type re-dispatch), 610/610 tests pass
+Files: Dockerfile.api,backend-node/src/routes/crawl.ts,backend-python/app/api/routes.py,backend-python/app/backend/chat_agent.py,backend-python/app/backend/drawing_builders.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py,backend-python/app/resource_engine/pipeline_orchestrator.py,backend-python/app/resource_engine/template_loader.py,backend-python/app/resource_engine/template_resolver.py,backend-python/app/services/hallucination_verifier.py,backend-python/requirements.txt,backend-python/resources/furniture_template_graphs/bed.headboard.v1.json,backend-python/resources/furniture_template_graphs/bed.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.nightstand.v1.json,backend-python/resources/furniture_template_graphs/cabinet.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.tv_console.v1.json,backend-python/resources/furniture_template_graphs/chair.lounge.v1.json,backend-python/resources/furniture_template_graphs/chair.standard.v1.json,backend-python/resources/furniture_template_graphs/desk.standard.v1.json,backend-python/resources/furniture_template_graphs/reception_counter.standard.v1.json,backend-python/resources/furniture_template_graphs/sofa.standard.v1.json,backend-python/resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,backend-python/resources/furniture_template_graphs/table.coffee_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.console_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.side_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_round.v1.json,backend-python/resources/furniture_template_graphs/wardrobe.standard.v1.json,backend-python/scripts/e2e_pipeline.py,backend-python/scripts/generate_template_graphs.py,backend-python/scripts/productionization/demo_direct_pipeline.py,backend-python/scripts/test_templates.py,backend-python/tests/test_templates.py,crawler-worker/worker.js,docs/gap-log.md,frontend/App.tsx,frontend/components/ChatBox.tsx,frontend/components/DXFPreview.tsx,frontend/components/PipelineProgress.tsx,frontend/components/PipelineUpload.tsx,frontend/components/ReviewPanel.tsx,frontend/services/cadEngine.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,resources/furniture_template_graphs/bed.headboard.v1.json,resources/furniture_template_graphs/bed.standard.v1.json,resources/furniture_template_graphs/cabinet.nightstand.v1.json,resources/furniture_template_graphs/cabinet.standard.v1.json,resources/furniture_template_graphs/cabinet.tv_console.v1.json,resources/furniture_template_graphs/casework_rectangular.json,resources/furniture_template_graphs/chair.lounge.v1.json,resources/furniture_template_graphs/chair.standard.v1.json,resources/furniture_template_graphs/desk.standard.v1.json,resources/furniture_template_graphs/reception_counter.standard.v1.json,resources/furniture_template_graphs/sofa.standard.v1.json,resources/furniture_template_graphs/sofa_three_seater.json,resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,resources/furniture_template_graphs/table.coffee_rectangular.v1.json,resources/furniture_template_graphs/table.console_four_leg.v1.json,resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,resources/furniture_template_graphs/table.side_rectangular.v1.json,resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,resources/furniture_template_graphs/table.single_pedestal_round.v1.json,resources/furniture_template_graphs/table_dual_cylindrical_pedestal.json,resources/furniture_template_graphs/wardrobe.standard.v1.json,scripts/audit-syntax.py,scripts/db-backup.sh,scripts/search-for-cad-text.mjs
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: Phase3 template system: 18 template graphs, TemplateGraphLoader, TemplateResolver, Phase3Pipeline orchestrator, gap fixes (materials+visibility+adjust dispatch+chat vocab+type re-dispatch), 610/610 tests pass*
+
+#### Lesson Learned
+
+Commit: Phase3 template system: 18 template graphs, TemplateGraphLoader, TemplateResolver, Phase3Pipeline orchestrator, gap fixes (materials+visibility+adjust dispatch+chat vocab+type re-dispatch), 610/610 tests pass
+Files: Dockerfile.api,backend-node/src/routes/crawl.ts,backend-python/app/api/routes.py,backend-python/app/backend/chat_agent.py,backend-python/app/backend/drawing_builders.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py,backend-python/app/resource_engine/pipeline_orchestrator.py,backend-python/app/resource_engine/template_loader.py,backend-python/app/resource_engine/template_resolver.py,backend-python/app/services/hallucination_verifier.py,backend-python/requirements.txt,backend-python/resources/furniture_template_graphs/bed.headboard.v1.json,backend-python/resources/furniture_template_graphs/bed.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.nightstand.v1.json,backend-python/resources/furniture_template_graphs/cabinet.standard.v1.json,backend-python/resources/furniture_template_graphs/cabinet.tv_console.v1.json,backend-python/resources/furniture_template_graphs/chair.lounge.v1.json,backend-python/resources/furniture_template_graphs/chair.standard.v1.json,backend-python/resources/furniture_template_graphs/desk.standard.v1.json,backend-python/resources/furniture_template_graphs/reception_counter.standard.v1.json,backend-python/resources/furniture_template_graphs/sofa.standard.v1.json,backend-python/resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,backend-python/resources/furniture_template_graphs/table.coffee_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.console_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,backend-python/resources/furniture_template_graphs/table.side_rectangular.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,backend-python/resources/furniture_template_graphs/table.single_pedestal_round.v1.json,backend-python/resources/furniture_template_graphs/wardrobe.standard.v1.json,backend-python/scripts/e2e_pipeline.py,backend-python/scripts/generate_template_graphs.py,backend-python/scripts/productionization/demo_direct_pipeline.py,backend-python/scripts/test_templates.py,backend-python/tests/test_templates.py,crawler-worker/worker.js,docs/gap-log.md,frontend/App.tsx,frontend/components/ChatBox.tsx,frontend/components/DXFPreview.tsx,frontend/components/PipelineProgress.tsx,frontend/components/PipelineUpload.tsx,frontend/components/ReviewPanel.tsx,frontend/services/cadEngine.ts,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,resources/furniture_template_graphs/bed.headboard.v1.json,resources/furniture_template_graphs/bed.standard.v1.json,resources/furniture_template_graphs/cabinet.nightstand.v1.json,resources/furniture_template_graphs/cabinet.standard.v1.json,resources/furniture_template_graphs/cabinet.tv_console.v1.json,resources/furniture_template_graphs/casework_rectangular.json,resources/furniture_template_graphs/chair.lounge.v1.json,resources/furniture_template_graphs/chair.standard.v1.json,resources/furniture_template_graphs/desk.standard.v1.json,resources/furniture_template_graphs/reception_counter.standard.v1.json,resources/furniture_template_graphs/sofa.standard.v1.json,resources/furniture_template_graphs/sofa_three_seater.json,resources/furniture_template_graphs/table.asymmetric_pedestal.v1.json,resources/furniture_template_graphs/table.coffee_rectangular.v1.json,resources/furniture_template_graphs/table.console_four_leg.v1.json,resources/furniture_template_graphs/table.rectangular_four_leg.v1.json,resources/furniture_template_graphs/table.side_rectangular.v1.json,resources/furniture_template_graphs/table.single_pedestal_oval.v1.json,resources/furniture_template_graphs/table.single_pedestal_round.v1.json,resources/furniture_template_graphs/table_dual_cylindrical_pedestal.json,resources/furniture_template_graphs/wardrobe.standard.v1.json,scripts/audit-syntax.py,scripts/db-backup.sh,scripts/search-for-cad-text.mjs
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 10 gap fixes — honest scores, backup, crawl timeout, dimension extraction
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f1673022210d54a7e51b1ba91a6cd5b476322629
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** f1673022210d54a7e51b1ba91a6cd5b476322629
+**Files:** 
+
+**Summary:**
+Commit: fix: 10 gap fixes — honest scores, backup, crawl timeout, dimension extraction
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 10 gap fixes — honest scores, backup, crawl timeout, dimension extraction*
+
+#### Lesson Learned
+
+Commit: fix: 10 gap fixes — honest scores, backup, crawl timeout, dimension extraction
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
