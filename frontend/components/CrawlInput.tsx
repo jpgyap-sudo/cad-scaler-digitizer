@@ -6,14 +6,10 @@ const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 interface PageDimensions {
   width_cm?: number;
   height_cm?: number;
+  overall_height_cm?: number;
   depth_cm?: number;
   length_cm?: number;
   sizes?: Array<{ width: number; length: number; height: number }>;
-}
-
-interface HallucinationVerdict {
-  verdict: string;
-  confidence: number;
 }
 
 interface CrawlResult {
@@ -25,9 +21,11 @@ interface CrawlResult {
   preview_svg?: string;
   page_dimensions?: PageDimensions;
   detected_dimensions?: Record<string, number>;
-  hallucination_check?: {
+  comparison?: {
     overall_score: number;
-    verdicts: Record<string, HallucinationVerdict>;
+    edge_overlap_score: number;
+    entity_match_score: number;
+    error_count: number;
   };
   error?: string;
 }
@@ -48,7 +46,7 @@ export default function CrawlInput() {
     setResult(null);
 
     try {
-      const res = await fetch(`${ENGINE_BASE}/api/crawl-to-dxf`, {
+      const res = await fetch(`${ENGINE_BASE}/crawl-to-dxf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: url.trim(), category }),
@@ -146,9 +144,9 @@ export default function CrawlInput() {
               />
               <div className="flex-1 min-w-0">
                 {/* DXF Download */}
-                {result.dxf_file && (
+                {result.dxf_file && result.download_url && (
                   <a
-                    href={`${ENGINE_BASE}${result.download_url}`}
+                    href={result.download_url.startsWith("/") ? result.download_url : `${ENGINE_BASE}${result.download_url}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-sm rounded-lg hover:bg-blue-100 mb-1"
                   >
                     <Download size={14} />
@@ -164,8 +162,8 @@ export default function CrawlInput() {
                     {result.page_dimensions.width_cm && (
                       <p>Width: {result.page_dimensions.width_cm}cm</p>
                     )}
-                    {(result.page_dimensions as any).overall_height_cm && (
-                      <p>Height: {(result.page_dimensions as any).overall_height_cm}cm</p>
+                    {result.page_dimensions.overall_height_cm && (
+                      <p>Height: {result.page_dimensions.overall_height_cm}cm</p>
                     )}
                     {result.page_dimensions.depth_cm && (
                       <p>Depth: {result.page_dimensions.depth_cm}cm</p>
@@ -193,20 +191,37 @@ export default function CrawlInput() {
             </div>
           )}
 
-          {/* Hallucination check */}
-          {result.hallucination_check && (
+          {/* Comparison score */}
+          {result.comparison && (
             <div className="p-2 bg-gray-50 rounded-lg text-xs">
-              <p className="font-medium text-gray-700 mb-1">Detection Quality</p>
+              <p className="font-medium text-gray-700 mb-1">Validation Score</p>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  (result.hallucination_check.overall_score || 0) >= 0.7
-                    ? "bg-green-500" : (result.hallucination_check.overall_score || 0) >= 0.4
+                  (result.comparison.overall_score || 0) >= 0.9
+                    ? "bg-green-500" : (result.comparison.overall_score || 0) >= 0.7
                     ? "bg-yellow-500" : "bg-red-500"
                 }`} />
                 <span className="text-gray-600">
-                  Score: {(result.hallucination_check.overall_score * 100).toFixed(0)}%
+                  Score: {(result.comparison.overall_score * 100).toFixed(0)}%
                 </span>
               </div>
+              {result.comparison.error_count > 0 && (
+                <p className="text-gray-400 mt-0.5">{result.comparison.error_count} issues detected</p>
+              )}
+            </div>
+          )}
+
+          {/* SVG Preview */}
+          {result.preview_svg && (
+            <div>
+              <p className="text-xs font-medium text-gray-700 mb-1">CAD Preview</p>
+              <img
+                src={result.preview_svg.startsWith("/") ? result.preview_svg : ENGINE_BASE + result.preview_svg}
+                alt="CAD Preview"
+                className="w-full border border-gray-200 rounded-lg bg-white"
+                style={{ maxHeight: "200px", objectFit: "contain" } as React.CSSProperties}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
             </div>
           )}
 
