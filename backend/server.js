@@ -24,7 +24,7 @@ const upload = multer({ dest: uploadDir, limits: { fileSize: 50 * 1024 * 1024 } 
 const pool = new pg.Pool({
   host: process.env.PG_HOST || 'localhost',
   port: parseInt(process.env.PG_PORT || '5432'),
-  database: process.env.PG_DATABASE || 'cad_digitizer',
+  database: process.env.PG_DATABASE || 'cad_reference_library',
   user: process.env.PG_USER || 'postgres',
   password: process.env.PG_PASSWORD || 'postgres',
   max: 5,

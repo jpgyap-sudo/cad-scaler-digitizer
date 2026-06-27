@@ -33,12 +33,14 @@ from app.backend.dxf_exporter import (
 )
 from app.resource_engine.template_loader import TemplateGraphLoader
 from app.resource_engine.template_resolver import TemplateResolver
+from app.resource_engine.pipeline_orchestrator import Phase3Pipeline, Phase3PipelineResult
 
 router = APIRouter()
 
 # Lazy-loaded template resolver singleton
 _TEMPLATE_LOADER: TemplateGraphLoader | None = None
 _TEMPLATE_RESOLVER: TemplateResolver | None = None
+_PHASE3_PIPELINE: Phase3Pipeline | None = None
 
 
 def _get_template_resolver() -> TemplateResolver:
@@ -47,6 +49,13 @@ def _get_template_resolver() -> TemplateResolver:
         _TEMPLATE_LOADER = TemplateGraphLoader().load()
         _TEMPLATE_RESOLVER = TemplateResolver(_TEMPLATE_LOADER)
     return _TEMPLATE_RESOLVER
+
+
+def _get_phase3_pipeline() -> Phase3Pipeline:
+    global _PHASE3_PIPELINE
+    if _PHASE3_PIPELINE is None:
+        _PHASE3_PIPELINE = Phase3Pipeline()
+    return _PHASE3_PIPELINE
 
 OUT = Path(tempfile.gettempdir()) / "cad_digitizer_outputs"
 OUT.mkdir(exist_ok=True)
@@ -1243,6 +1252,27 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         opencv_type = opencv_classifier.get('type', 'generic_2d_furniture')
         opencv_conf = opencv_classifier.get('confidence', 0.3)
 
+        # ===== Phase 3a-b: Cloud Vision + Resource Engine Pipeline (parallel track) =====
+        phase3_result = None
+        try:
+            pipeline = _get_phase3_pipeline()
+            known_dims_phase3 = {}
+            if _parse_float(real_width_cm):
+                known_dims_phase3['width_cm'] = _parse_float(real_width_cm)
+            if _parse_float(real_height_cm):
+                known_dims_phase3['overall_height_cm'] = _parse_float(real_height_cm)
+            raw_mats = ai_result.get('materials') if isinstance(ai_result, dict) else None
+            mats = {k: (v.get('description','') if isinstance(v,dict) else str(v))
+                    for k,v in (raw_mats or {}).items() if v}
+            phase3_result = pipeline.run(
+                image_path=str(img_path),
+                product_type_override=furniture_type if furniture_type else None,
+                known_dims_cm=known_dims_phase3,
+                materials_override=mats if mats else None,
+            )
+        except Exception as e:
+            print(f"[Hybrid] Phase3Pipeline failed (non-fatal): {e}")
+
         try: os.remove(str(img_path))
         except: pass
 
@@ -1263,6 +1293,11 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         # ===== Template Graph Resolution =====
         template_graph_result = None
+        # Assemble merged dimensions from OCR + AI before using them
+        ai_dims = ai_result.get('dimensions', []) or [] if isinstance(ai_result, dict) else []
+        merged_dims = corrected_dims + [
+            {'tag': d.get('tag', ''), 'value_cm': float(d.get('value_cm', 0)), 'raw': str(d)}
+            for d in ai_dims if isinstance(d, dict)]
         try:
             # Build detected_dims dict from all available sources
             detected_dims_cm = {}
@@ -1303,11 +1338,6 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         try: conf = max(float(ai_result.get('confidence', 0) or 0), opencv_conf)
         except: conf = 0.5
-
-        ai_dims = ai_result.get('dimensions', []) or []
-        merged_dims = corrected_dims + [
-            {'tag': d.get('tag', ''), 'value_cm': float(d.get('value_cm', 0)), 'raw': str(d)}
-            for d in ai_dims if isinstance(d, dict)]
 
         annotation_result = classify_drawing_annotations(ocr_lines, merged_dims)
 
@@ -1379,6 +1409,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'ai_analysis': ai_result,
             'materials': raw_materials or {},
             'accuracy_pipeline': accuracy_results,
+            'phase3': phase3_result.to_api_dict() if phase3_result else None,
             'image_quality': image_quality,
             'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
                          + (template_graph_result or {}).get('warnings', [])
@@ -2691,15 +2722,36 @@ async def group_products_into_families(payload: dict):
         has_photo = any(a["type"] == "image" for a in family["assets"])
         has_cad = any(a["type"] == "cad" for a in family["assets"])
         if has_photo and has_cad:
+            cad_path = next(
+                (a["path"] for a in family["assets"] if a["type"] == "cad"), ""
+            )
+            # Try to parse the CAD file for reference geometry
+            ref_geo = None
+            try:
+                from app.cad.dxf_parser import parse_dxf
+                ref_geo = parse_dxf(cad_path)
+            except Exception:
+                try:
+                    # Could be on Spaces CDN — download first
+                    import httpx, tempfile, os
+                    resp = httpx.get(cad_path, timeout=30)
+                    if resp.status_code == 200:
+                        tmp = os.path.join(tempfile.gettempdir(), f"tmp_{code}.dxf")
+                        with open(tmp, "wb") as f:
+                            f.write(resp.content)
+                        ref_geo = parse_dxf(tmp)
+                except Exception:
+                    pass
+
             family_list.append({
                 "product_id": f"{manufacturer}-{code}",
                 "furniture_type": payload.get("default_type", "furniture"),
+                "detected_dims": {},  # populated by digitizer separately
+                "reference_geometry": ref_geo or {},
                 "image_url": next(
                     (a["path"] for a in family["assets"] if a["type"] == "image"), ""
                 ),
-                "cad_path": next(
-                    (a["path"] for a in family["assets"] if a["type"] == "cad"), ""
-                ),
+                "dxf_url": cad_path,
             })
 
     return JSONResponse({

@@ -358,11 +358,9 @@ export async function genericProductCrawler(input) {
     hiddenCadUrls.forEach(u => console.log(`  HIDDEN CAD: ${u}`));
 
     // Add hidden CAD URLs to the downloadable list
+    const seen = new Set();
     for (const url of hiddenCadUrls) {
-      if (!seen.has(url)) {
-        seen.add(url);
-        urls.push(url);
-      }
+      urls.push(url);
     }
 
     // Filter downloadable assets
@@ -370,7 +368,6 @@ export async function genericProductCrawler(input) {
       .map((u) => ({ url: normalizeUrl(u, url), type: inferAssetType(u) }))
       .filter((x) => x.url && x.type !== null);
 
-    const seen = new Set();
     let assetCount = 0;
 
     for (const item of downloadable.slice(0, 30)) {

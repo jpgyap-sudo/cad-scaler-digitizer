@@ -32,6 +32,8 @@
     "@types/node": "^20.14.5",
     "prisma": "^5.15.0",
     "tsx": "^4.15.5",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.7"
   }
 }
