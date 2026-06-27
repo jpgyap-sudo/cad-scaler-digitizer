@@ -30,6 +30,7 @@ def build_round_pedestal_model(
     project: str = "Furniture Shop Drawing",
     material_notes: Optional[List[str]] = None,
     materials: Optional[Dict[str, str]] = None,
+    profile: str = "cylinder",
 ) -> DrawingModel:
     """Build a complete DrawingModel for a round pedestal table."""
     now = datetime.now().strftime('%Y-%m-%d')
@@ -100,8 +101,16 @@ def build_round_pedestal_model(
     neck_top_y = col_bot
     neck_bot_y = col_bot - neck_h_px
     front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_top_y), Point(fx + r_neck, neck_top_y), Point(fx + r_neck, neck_bot_y), Point(fx - r_neck, neck_bot_y)], layer="OBJECT", name="neck_ring"))
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], layer="OBJECT", name="pedestal_body"))
-    front_view.hatches.append(HatchComponent(points=[Point(fx - r_neck, neck_bot_y), Point(fx + r_neck, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
+    # The body's TOP edge only tapers down to the neck's width for a genuine
+    # tapered/flared profile (a smooth cone). For 'cylinder' (the common
+    # case - a narrow neck/collar ring sitting on top of a SEPARATE, wider,
+    # perfectly straight column with a sharp STEP between them, not a
+    # gradual widening) the body is a straight rectangle at its own width
+    # the whole way down. Forcing every profile through the same tapering
+    # trapezoid is what made a stepped pedestal render as a smooth cone.
+    body_top_r = r_neck if profile in ("tapered", "flared") else r_base
+    front_view.polygons.append(PolygonComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], layer="OBJECT", name="pedestal_body"))
+    front_view.hatches.append(HatchComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
     front_view.polygons.append(PolygonComponent(points=[Point(fx - r_base, ped_bot), Point(fx + r_base, ped_bot), Point(fx + r_base, base_bot), Point(fx - r_base, base_bot)], layer="OBJECT", name="base_plate"))
     front_view.lines.append(LineComponent(start=Point(fx, base_bot - 6), end=Point(fx, top_y + 6), layer="CENTER"))
 

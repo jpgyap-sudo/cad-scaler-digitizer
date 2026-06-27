@@ -234,7 +234,7 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                                base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
-                               collar_dia_cm=None, materials=None,
+                               collar_dia_cm=None, materials=None, profile="cylinder",
                                _scale_result=None, _validation_result=None):
     """Round pedestal table shop drawing with anti-hallucination rules.
     
@@ -374,8 +374,15 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
         neck_layer = 'HIDDEN' if _is_estimated("neck_ring") else 'OBJECT'
         _add_polyline(msp, [(fx - nr_px, neck_top_y), (fx + nr_px, neck_top_y),
                             (fx + nr_px, neck_bot_y), (fx - nr_px, neck_bot_y)], True, neck_layer)
-    # Textured column (pedestal body)
-    _add_polyline(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
+    # Textured column (pedestal body). Only taper the body's top edge down to
+    # the neck's width for a genuine tapered/flared profile (a smooth cone).
+    # For 'cylinder' - a narrow neck/collar ring sitting on a SEPARATE,
+    # wider, perfectly straight column with a sharp STEP between them, not a
+    # gradual widening - the body is a straight rectangle at its own width.
+    # Forcing every profile through the same tapering trapezoid is what made
+    # a stepped pedestal render as a smooth cone.
+    body_top_px = nr_px if profile in ("tapered", "flared") else br_px
+    _add_polyline(msp, [(fx - body_top_px, neck_bot_y), (fx + body_top_px, neck_bot_y),
                         (fx + br_px, ped_bot_y), (fx - br_px, ped_bot_y)], True)
     # Wide base — draw dashed if estimated, skip if unknown
     if _visible("base_foot"):
@@ -385,7 +392,7 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
         if _is_estimated("base_foot"):
             _add_text(msp, "(EST.)", (fx - br_px - 15, (ped_bot_y + base_bot_y) / 2), 2, 'MTEXT')
     # Hatch column — textured pedestal body
-    _add_hatch_polygon(msp, [(fx - nr_px, neck_bot_y), (fx + nr_px, neck_bot_y),
+    _add_hatch_polygon(msp, [(fx - body_top_px, neck_bot_y), (fx + body_top_px, neck_bot_y),
                               (fx + br_px, ped_bot_y), (fx - br_px, ped_bot_y)], 'ANSI37', 0.3)
     # Dimensions
     _add_dimension(msp, (fx - br_px, base_bot_y - 5), (fx + br_px, base_bot_y - 5),

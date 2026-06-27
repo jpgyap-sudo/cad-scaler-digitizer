@@ -169,7 +169,7 @@ def _ratios_from_sections(visual_base_estimate: dict) -> dict:
 
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
-                        depth_cm=None, leg_thickness_cm=None, materials=None):
+                        depth_cm=None, leg_thickness_cm=None, materials=None, profile=None):
     """Save per-furniture-type DrawingModel JSON alongside the DXF file."""
     try:
         from app.backend.drawing_model import build_round_pedestal_model, build_rectangular_table_model
@@ -190,6 +190,8 @@ def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None,
         data = model.to_dict()
         if materials:
             data['materials'] = materials
+        if profile:
+            data['profile'] = profile
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
     except Exception as e:
@@ -559,12 +561,13 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         except Exception as e:
             print(f"[DISPATCH] ledger record failed: {e}")
 
+        profile = vbe.get('profile') if vbe.get('profile') in ('cylinder', 'tapered', 'flared') else 'cylinder'
         extra = {'base_dia_cm': base_dia, 'neck_dia_cm': neck_dia, 'collar_dia_cm': collar_dia,
-                 'materials': materials or {}}
+                 'materials': materials or {}, 'profile': profile}
         try:
             save_round_pedestal_table(str(dxf_path), top_dia_cm=dia, height_cm=height,
                                        base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-                                       collar_dia_cm=collar_dia, materials=materials)
+                                       collar_dia_cm=collar_dia, materials=materials, profile=profile)
         except Exception as e:
             print(f"[DISPATCH] save_round_pedestal_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -649,7 +652,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                          base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'),
                          depth_cm=extra.get('resolved_dimensions', {}).get('depth_cm'),
                          leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'),
-                         materials=extra.get('materials'))
+                         materials=extra.get('materials'), profile=extra.get('profile'))
     try:
         # Proportion ledger recording for round_pedestal_table already
         # happened above, right where base_dia/neck_dia/collar_dia were
@@ -730,7 +733,8 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         svg_collar_dia = resolved.get('collar_diameter_cm', float(svg_top_dia) * 0.625)
         return build_round_pedestal_model(float(svg_top_dia), float(svg_height),
                                            collar_dia_cm=float(svg_collar_dia),
-                                           materials=(dispatch_extra or {}).get('materials'), **svg_kwargs)
+                                           materials=(dispatch_extra or {}).get('materials'),
+                                           profile=(dispatch_extra or {}).get('profile', 'cylinder'), **svg_kwargs)
 
     # Unrecognized/generic type — trace the actually-detected geometry
     # instead of fabricating an unrelated round-pedestal-table shape.
@@ -1209,12 +1213,14 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         json_path = Path(str(dxf_path).replace('.dxf', '.json'))
         loaded_from_sidecar = False
         sidecar_materials = {}
+        sidecar_profile = 'cylinder'
         if json_path.exists():
             try:
                 sidecar = json.loads(json_path.read_text(encoding='utf-8'))
                 known = sidecar.get('known_dimensions', {})
                 est = sidecar.get('estimated_components', {})
                 sidecar_materials = sidecar.get('materials', {})
+                sidecar_profile = sidecar.get('profile', 'cylinder')
                 if known.get('top_diameter_cm'): top_dia = known['top_diameter_cm']
                 if known.get('overall_height_cm'): height = known['overall_height_cm']
                 if est.get('pedestal_diameter_cm'): base_dia = est['pedestal_diameter_cm']
@@ -1252,13 +1258,13 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         try: save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
                                          base_dia_cm=base_dia, neck_dia_cm=neck_dia,
                                          top_thick_cm=top_thick, collar_dia_cm=collar_dia,
-                                         materials=sidecar_materials)
+                                         materials=sidecar_materials, profile=sidecar_profile)
         except Exception as e: print(f"[Adjust] DXF regen failed: {e}")
 
         model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
             base_dia_cm=base_dia, neck_dia_cm=neck_dia,
             top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625),
-            materials=sidecar_materials)
+            materials=sidecar_materials, profile=sidecar_profile)
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')
         with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
@@ -1289,6 +1295,7 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                 'estimated_components': {'pedestal_diameter_cm': base_dia, 'neck_diameter_cm': neck_dia,
                                           'top_thickness_cm': top_thick, 'collar_diameter_cm': final_collar_dia},
                 'materials': sidecar_materials,
+                'profile': sidecar_profile,
             }, indent=2), encoding='utf-8')
         except Exception as e:
             print(f"[Adjust] sidecar persist failed: {e}")
@@ -1348,19 +1355,20 @@ async def edit_materials(dxf_file: str = Form(...), materials: str = Form(...),
             neck_dia = est.get('neck_diameter_cm', 22.4)
             top_thick = est.get('top_thickness_cm', 4.0)
             collar_dia = est.get('collar_diameter_cm')
+            profile = sidecar.get('profile', 'cylinder')
 
             try:
                 save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
                                            base_dia_cm=base_dia, neck_dia_cm=neck_dia,
                                            top_thick_cm=top_thick, collar_dia_cm=collar_dia,
-                                           materials=merged_materials)
+                                           materials=merged_materials, profile=profile)
             except Exception as e:
                 print(f"[MaterialEdit] DXF regen failed: {e}")
 
             model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
                 base_dia_cm=base_dia, neck_dia_cm=neck_dia, top_thick_cm=top_thick,
                 collar_dia_cm=(collar_dia or top_dia * 0.625), materials=merged_materials,
-                project=project or "Furniture Shop Drawing", client=client or "")
+                profile=profile, project=project or "Furniture Shop Drawing", client=client or "")
         else:
             return JSONResponse({"error": f"Material editing not yet supported for {furniture_type}"},
                                  status_code=400)
