@@ -138,17 +138,17 @@ def aggregate_comparison_errors(
             SELECT product_id, overall_score, edge_overlap_score, entity_match_score,
                    dimension_deviation_pct, errors_json, dimension_comparisons_json
             FROM comparison_results
-            WHERE created_at > NOW() - INTERVAL '%s days'
+            WHERE created_at > NOW() - INTERVAL %s
             ORDER BY created_at DESC
             LIMIT %s
-        """, (days_back, limit))
+        """, (f"{days_back} days", limit))
 
         scores = []
         for row in cur.fetchall():
             product_id = row[0]
             overall_score = row[1] or 0
-            errors = json.loads(row[5] or "[]")
-            dim_comparisons = json.loads(row[6] or "[]")
+            errors = row[5] if isinstance(row[5], (list, dict)) else (json.loads(row[5]) if row[5] else [])
+            dim_comparisons = row[6] if isinstance(row[6], (list, dict)) else (json.loads(row[6]) if row[6] else [])
 
             scores.append(overall_score)
             result["total_comparisons"] += 1
