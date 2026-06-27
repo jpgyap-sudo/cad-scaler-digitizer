@@ -14,7 +14,9 @@ def load_grayscale(image_path: str):
 def detect_lines(image_path: str, min_line_length: int = 35, max_line_gap: int = 10) -> list[DetectedLine]:
     gray = load_grayscale(image_path)
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    edges = cv2.Canny(blur, 50, 150, apertureSize=3)
+    from app.services.digitizer_config import get_canny_thresholds
+    _canny_low, _canny_high = get_canny_thresholds()
+    edges = cv2.Canny(blur, _canny_low, _canny_high, apertureSize=3)
     raw_lines = cv2.HoughLinesP(
         edges,
         rho=1,

@@ -218,9 +218,11 @@ def compare_images(original_img: Any, dxf_raster: Any) -> tuple[float, list, int
     gray_orig = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
     gray_dxf = cv2.cvtColor(dxf_resized, cv2.COLOR_BGR2GRAY)
 
-    # Edge detection
-    edges_orig = cv2.Canny(gray_orig, 50, 150)
-    edges_dxf = cv2.Canny(gray_dxf, 50, 150)
+    # Edge detection (configurable thresholds from training feedback)
+    from app.services.digitizer_config import get_canny_thresholds
+    _canny_low, _canny_high = get_canny_thresholds()
+    edges_orig = cv2.Canny(gray_orig, _canny_low, _canny_high)
+    edges_dxf = cv2.Canny(gray_dxf, _canny_low, _canny_high)
 
     # Morphological dilation to make edges thicker for comparison
     kernel = np.ones((3, 3), np.uint8)

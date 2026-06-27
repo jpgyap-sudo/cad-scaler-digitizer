@@ -27,7 +27,9 @@ def preprocess(gray):
 
 def detect_lines(binary):
     """Hough Probabilistic line detection."""
-    edges = cv2.Canny(binary, 50, 150, apertureSize=3)
+    from app.services.digitizer_config import get_canny_thresholds
+    _canny_low, _canny_high = get_canny_thresholds()
+    edges = cv2.Canny(binary, _canny_low, _canny_high, apertureSize=3)
     raw = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=50, minLineLength=35, maxLineGap=12)
     lines = []
     if raw is not None:

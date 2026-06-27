@@ -52,7 +52,7 @@ def _get_conn():
         conn = psycopg2.connect(
             host=os.environ.get("PG_HOST", "postgres"),
             port=os.environ.get("PG_PORT", "5432"),
-            database=os.environ.get("PG_DATABASE", "cad_digitizer"),
+            database=os.environ.get("PG_DATABASE", "cad_reference_library"),
             user=os.environ.get("PG_USER", "postgres"),
             password=os.environ.get("PG_PASSWORD", "postgres"),
         )

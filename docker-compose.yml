@@ -23,6 +23,11 @@ services:
     restart: unless-stopped
     networks:
       - cad-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
       interval: 30s
@@ -43,6 +48,11 @@ services:
       - "${NODE_API_PORT:-4000}:4000"
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -93,6 +103,11 @@ services:
       - "${PYTHON_WORKER_PORT:-8001}:8001"
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
     environment:
       - HOST=0.0.0.0
       - PORT=8001
@@ -141,8 +156,16 @@ services:
     container_name: cad-crawler-worker
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 3G
     environment:
       - NODE_ENV=production
+      - CRAWLER_CONCURRENCY=${CRAWLER_CONCURRENCY:-2}
+      - CRAWLER_MIN_DELAY_MS=${CRAWLER_MIN_DELAY_MS:-3000}
+      - CRAWLER_MAX_DELAY_MS=${CRAWLER_MAX_DELAY_MS:-8000}
       - REDIS_URL=redis://redis:6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - DATABASE_URL=postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/${PG_DATABASE:-cad_reference_library}
@@ -237,8 +260,14 @@ services:
 # =============================================================================
 volumes:
   cad_pg_data:
+    driver_opts:
+      size: "20gb"
   cad_redis_data:
+    driver_opts:
+      size: "5gb"
   cad_qdrant_data:
+    driver_opts:
+      size: "10gb"
   cad_temp:
   cad_uploads:
 

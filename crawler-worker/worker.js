@@ -17,9 +17,9 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 const QUEUE_NAME = "crawler:jobs";
 const PROGRESS_CHANNEL = "cad:progress";
-const MAX_CONCURRENT = 1; // One at a time — stealth requires low-and-slow
-const MIN_JOB_DELAY_MS = 8000;
-const MAX_JOB_DELAY_MS = 15000;
+const MAX_CONCURRENT = parseInt(process.env.CRAWLER_CONCURRENCY || "2");
+const MIN_JOB_DELAY_MS = parseInt(process.env.CRAWLER_MIN_DELAY_MS || "3000");
+const MAX_JOB_DELAY_MS = parseInt(process.env.CRAWLER_MAX_DELAY_MS || "8000");
 
 function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;

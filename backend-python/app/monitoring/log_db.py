@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 
 PG_HOST = os.environ.get("PG_HOST", "postgres")
 PG_PORT = os.environ.get("PG_PORT", "5432")
-PG_DATABASE = os.environ.get("PG_DATABASE", "cad_digitizer")
+PG_DATABASE = os.environ.get("PG_DATABASE", "cad_reference_library")
 PG_USER = os.environ.get("PG_USER", "postgres")
 PG_PASSWORD = os.environ.get("PG_PASSWORD", "postgres")
 
