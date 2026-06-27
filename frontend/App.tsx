@@ -741,6 +741,7 @@ const App: React.FC = () => {
                         highlightKey={highlightedSliderKey}
                         componentSchema={cadEngineResult?.component_schema}
                         highlightComponent={highlightedComponent}
+                        suggestedBaseShape={cadEngineResult?.ai_analysis?.visual_base_estimate?.profile}
                         onAdjusted={(dims, svgUrl) => {
                           setCurrentDims(dims);
                           setSvgPreviewUrl(svgUrl);

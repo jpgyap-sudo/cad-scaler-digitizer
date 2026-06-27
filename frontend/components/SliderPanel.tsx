@@ -24,6 +24,12 @@ interface SliderPanelProps {
    *  clicking a drawing part (highlightComponent) scrolls to + flashes its whole section. */
   componentSchema?: ComponentSchema[] | null;
   highlightComponent?: string | null;
+  /** AI's guessed base profile from the photo (cylinder/tapered/flared/unknown).
+   *  Shown as a one-click suggestion, NOT auto-applied - vision models have been
+   *  observed misjudging this (e.g. calling an obviously flared pedestal a plain
+   *  cylinder), so the user always confirms rather than the shape silently
+   *  changing under them. */
+  suggestedBaseShape?: 'cylinder' | 'tapered' | 'flared' | 'unknown';
 }
 
 const ROUND_SLIDERS: DimSlider[] = [
@@ -56,6 +62,7 @@ const BASE_SHAPE_RATIOS: Record<BaseShape, { neck: number; base: number }> = {
 
 const SliderPanel: React.FC<SliderPanelProps> = ({
   dxfFile, initialDims, furnitureType, onAdjusted, className = '', highlightKey, componentSchema, highlightComponent,
+  suggestedBaseShape,
 }) => {
   const isRound = !furnitureType?.includes('rectangular');
   const flatSliders = isRound ? ROUND_SLIDERS : RECT_SLIDERS;
@@ -237,8 +244,23 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
         <div className="mb-3">
           <div className="text-[10px] text-slate-500 mb-1">
             Base Shape
-            <span className="text-slate-400 normal-case"> -- AI guessed this from the photo; override if wrong</span>
+            <span className="text-slate-400 normal-case"> -- look at the photo and pick the one that matches</span>
           </div>
+          {/* AI's guess, shown as a one-click suggestion rather than applied
+              automatically: vision models have been observed misreading this
+              (e.g. calling a visibly flared pedestal "cylinder"), so the
+              proportions should only change once a person confirms. */}
+          {suggestedBaseShape && suggestedBaseShape !== 'unknown' && baseShape === null && (
+            <button
+              onClick={() => handleBaseShape(suggestedBaseShape as BaseShape)}
+              disabled={loading}
+              className="w-full mb-1.5 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-50 text-amber-700
+                border border-amber-200 hover:bg-amber-100 transition-colors text-left disabled:opacity-50"
+            >
+              💡 AI thinks this looks <strong className="capitalize">{suggestedBaseShape}</strong> -
+              tap to use that starting point, or pick manually below
+            </button>
+          )}
           <div className="grid grid-cols-3 gap-1">
             {(['cylinder', 'tapered', 'flared'] as BaseShape[]).map(shape => (
               <button

@@ -65,6 +65,15 @@ export type DigitizeResult = {
   };
   image_quality?: { blur_score: number; is_blurry: boolean; threshold: number };
   materials?: Record<string, { description: string; inferred: boolean } | string>;
+  ai_analysis?: {
+    visual_base_estimate?: {
+      profile?: 'cylinder' | 'tapered' | 'flared' | 'unknown';
+      neck_ratio?: number;
+      base_ratio?: number;
+      has_collar?: boolean;
+      collar_ratio?: number;
+    };
+  };
   detected: {
     lines: number;
     circles: number;
