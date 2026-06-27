@@ -3190,3 +3190,117 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: audit fixes — ReferenceError, NameError, DB name, ML pipeline gaps
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 69291a757495403fd4a178f16aac56d9062fad22
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 69291a757495403fd4a178f16aac56d9062fad22
+**Files:** 
+
+**Summary:**
+Commit: fix: audit fixes — ReferenceError, NameError, DB name, ML pipeline gaps
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: audit fixes — ReferenceError, NameError, DB name, ML pipeline gaps*
+
+#### Lesson Learned
+
+Commit: fix: audit fixes — ReferenceError, NameError, DB name, ML pipeline gaps
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: all remaining audit issues — verifier, queue, deps, orphaned files
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 509f7776a673d87e15c9cc57a1b7e5678e48031e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 509f7776a673d87e15c9cc57a1b7e5678e48031e
+**Files:** 
+
+**Summary:**
+Commit: fix: all remaining audit issues — verifier, queue, deps, orphaned files
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: all remaining audit issues — verifier, queue, deps, orphaned files*
+
+#### Lesson Learned
+
+Commit: fix: all remaining audit issues — verifier, queue, deps, orphaned files
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: crawl_to_dxf audit — remove unused imports, fix httpx alias, make API URL configurable
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a22073898c0f95b0de0b4ba2bb92f6f8ded6c05d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a22073898c0f95b0de0b4ba2bb92f6f8ded6c05d
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: crawl_to_dxf audit — remove unused imports, fix httpx alias, make API URL configurable
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: crawl_to_dxf audit — remove unused imports, fix httpx alias, make API URL configurable*
+
+#### Lesson Learned
+
+Commit: fix: crawl_to_dxf audit — remove unused imports, fix httpx alias, make API URL configurable
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

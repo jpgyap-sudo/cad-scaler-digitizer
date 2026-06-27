@@ -199,22 +199,55 @@ def _ratios_from_sections(visual_base_estimate: dict) -> dict:
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
                         depth_cm=None, leg_thickness_cm=None, materials=None, profile=None):
-    """Save per-furniture-type DrawingModel JSON alongside the DXF file."""
+    """Save per-furniture-type DrawingModel JSON alongside the DXF file.
+    Now supports ALL known furniture types."""
     try:
-        from app.backend.drawing_model import build_round_pedestal_model, build_rectangular_table_model
+        from app.backend.drawing_builders import (
+            build_round_pedestal_model, build_rectangular_table_model,
+            build_cabinet_model, build_sofa_model, build_coffee_table_model,
+            build_dining_chair_model, build_wardrobe_model,
+            build_reception_counter_model, build_bed_headboard_model,
+            build_asymmetric_pedestal_model, build_oval_pedestal_model,
+            build_console_table_model, build_office_desk_model,
+        )
         json_path = Path(str(dxf_path).replace('.dxf', '.json'))
 
+        model = None
         if f_type == 'round_pedestal_table':
-            kwargs = {}
-            if base_dia_cm is not None: kwargs['base_dia_cm'] = base_dia_cm
-            if neck_dia_cm is not None: kwargs['neck_dia_cm'] = neck_dia_cm
-            model = build_round_pedestal_model(float(width_cm), float(height_cm), **kwargs)
+            model = build_round_pedestal_model(float(width_cm), float(height_cm),
+                base_dia_cm=base_dia_cm or 44.0, neck_dia_cm=neck_dia_cm or 22.4,
+                materials=materials, profile=profile)
         elif f_type == 'rectangular_table':
             model = build_rectangular_table_model(
                 float(width_cm), float(depth_cm or 80),
-                float(height_cm), float(leg_thickness_cm or 6))
-        else:
-            return  # Other types don't have DrawingModel builders yet
+                float(height_cm), float(leg_thickness_cm or 6), materials=materials)
+        elif f_type == 'cabinet':
+            model = build_cabinet_model(float(width_cm), float(depth_cm or 50), float(height_cm), materials=materials)
+        elif f_type == 'sofa':
+            model = build_sofa_model(float(width_cm), float(depth_cm or 80), float(height_cm), materials=materials)
+        elif f_type == 'coffee_table':
+            model = build_coffee_table_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type in ('dining_chair', 'chair'):
+            model = build_dining_chair_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'wardrobe':
+            model = build_wardrobe_model(float(width_cm), float(depth_cm or 60), float(height_cm), materials=materials)
+        elif f_type == 'reception_counter':
+            model = build_reception_counter_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'bed_headboard':
+            model = build_bed_headboard_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'oval_pedestal_table':
+            model = build_oval_pedestal_model(float(width_cm), float(depth_cm or 100), float(height_cm),
+                pedestal_dia_cm=base_dia_cm or 40.0, materials=materials)
+        elif f_type == 'console_table':
+            model = build_console_table_model(float(width_cm), float(depth_cm or 40), float(height_cm), materials=materials)
+        elif f_type == 'office_desk':
+            model = build_office_desk_model(float(width_cm), float(depth_cm or 60), float(height_cm), materials=materials)
+        elif f_type == 'asymmetric_pedestal_table':
+            model = build_asymmetric_pedestal_model(float(width_cm), float(depth_cm or 90), float(height_cm),
+                materials=materials)
+
+        if model is None:
+            return
 
         data = model.to_dict()
         if materials:
@@ -724,28 +757,28 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         w = real_w or _dim(['w', 'width'], 100.0)
         h = real_h or _dim(['h', 'height'], 180.0)
         d = _dim(['d', 'depth'], 50.0)
-        try: save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        try: save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type == 'sofa':
         w = real_w or _dim(['w', 'width'], 200.0)
         h = real_h or _dim(['h', 'height'], 85.0)
         d = _dim(['d', 'depth'], 80.0)
-        try: save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h)
+        try: save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type == 'coffee_table':
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
-        try: save_coffee_table(str(dxf_path), width_cm=w, height_cm=h)
+        try: save_coffee_table(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type in ('dining_chair', 'chair'):
         w = real_w or _dim(['w', 'width', 'seat'], 45.0)
         h = real_h or _dim(['h', 'height'], 90.0)
-        try: save_dining_chair(str(dxf_path), width_cm=w, height_cm=h)
+        try: save_dining_chair(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type == 'wardrobe':
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 200.0)
-        try: save_wardrobe(str(dxf_path), width_cm=w, height_cm=h)
+        try: save_wardrobe(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type == 'asymmetric_pedestal_table':
         l = real_w or _dim(['l', 'length', 'len', 'w', 'width'], 180.0)
@@ -760,7 +793,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
             save_asymmetric_pedestal_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val,
                                             large_ped_dia_cm=lp, small_ped_dia_cm=sp,
                                             left_ped_x_cm=lpx, right_ped_x_cm=rpx, overhang_cm=oh,
-                                            materials=extra.get('materials'))
+                                            materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_asymmetric_pedestal_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -776,7 +809,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         d = _dim(['d', 'depth'], 100.0)
         pd = _dim(['pedestal_dia', 'ped_dia'], 40.0)
         try:
-            save_oval_pedestal_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, pedestal_dia_cm=pd)
+            save_oval_pedestal_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, pedestal_dia_cm=pd, materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_oval_pedestal_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -790,7 +823,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         d = _dim(['d', 'depth'], 40.0)
         lt = _dim(['leg', 'thickness', 'leg_thick'], 4.0)
         try:
-            save_console_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, leg_thick_cm=lt)
+            save_console_table(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val, leg_thick_cm=lt, materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_console_table FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -806,7 +839,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         mph = _dim(['modesty', 'panel'], 15.0)
         try:
             save_office_desk(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h_val,
-                              leg_thick_cm=lt, modesty_panel_h_cm=mph)
+                              leg_thick_cm=lt, modesty_panel_h_cm=mph, materials=materials)
         except Exception as e:
             print(f"[DISPATCH] save_office_desk FAILED: {e}")
             save_generic(str(dxf_path), [], [], [])
@@ -818,12 +851,12 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     elif f_type == 'reception_counter':
         w = real_w or _dim(['w', 'width'], 180.0)
         h = real_h or _dim(['h', 'height'], 110.0)
-        try: save_reception_counter(str(dxf_path), width_cm=w, height_cm=h)
+        try: save_reception_counter(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     elif f_type == 'bed_headboard':
         w = real_w or _dim(['w', 'width'], 160.0)
         h = real_h or _dim(['h', 'height'], 120.0)
-        try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h)
+        try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
     else:
         print(f"EXPORTER USED: save_generic (unknown type: {f_type})")
@@ -1573,6 +1606,48 @@ def preview_svg(filename: str):
     return JSONResponse({"error": "DXF not found"}, status_code=404)
 
 
+# --- FURNITURE ADJUST DISPATCH TABLE (Gap #1b fix) ---
+FURNITURE_ADJUST_DISPATCH = {}
+def _get_adjust_fn(furniture_type: str):
+    key = furniture_type
+    if key not in FURNITURE_ADJUST_DISPATCH:
+        try:
+            from app.backend.dxf_exporter import (
+                save_round_pedestal_table, save_rectangular_table,
+                save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
+                save_wardrobe, save_reception_counter, save_bed_headboard,
+                save_asymmetric_pedestal_table, save_oval_pedestal_table,
+                save_console_table, save_office_desk,
+            )
+            from app.backend.drawing_builders import (
+                build_round_pedestal_model, build_rectangular_table_model,
+                build_cabinet_model, build_sofa_model, build_coffee_table_model,
+                build_dining_chair_model, build_wardrobe_model,
+                build_reception_counter_model, build_bed_headboard_model,
+                build_asymmetric_pedestal_model, build_oval_pedestal_model,
+                build_console_table_model, build_office_desk_model,
+            )
+            FURNITURE_ADJUST_DISPATCH.update({
+                'round_pedestal_table': (save_round_pedestal_table, build_round_pedestal_model),
+                'rectangular_table': (save_rectangular_table, build_rectangular_table_model),
+                'cabinet': (save_cabinet, build_cabinet_model),
+                'sofa': (save_sofa, build_sofa_model),
+                'coffee_table': (save_coffee_table, build_coffee_table_model),
+                'dining_chair': (save_dining_chair, build_dining_chair_model),
+                'chair': (save_dining_chair, build_dining_chair_model),
+                'wardrobe': (save_wardrobe, build_wardrobe_model),
+                'reception_counter': (save_reception_counter, build_reception_counter_model),
+                'bed_headboard': (save_bed_headboard, build_bed_headboard_model),
+                'asymmetric_pedestal_table': (save_asymmetric_pedestal_table, build_asymmetric_pedestal_model),
+                'oval_pedestal_table': (save_oval_pedestal_table, build_oval_pedestal_model),
+                'console_table': (save_console_table, build_console_table_model),
+                'office_desk': (save_office_desk, build_office_desk_model),
+            })
+        except ImportError as e:
+            print(f"[Adjust] Import failed: {e}")
+    return FURNITURE_ADJUST_DISPATCH.get(key, (None, None))
+
+
 @router.post("/adjust")
 async def adjust_dimensions(dxf_file: str = Form(...),
                               top_diameter_cm: float = Form(None),
@@ -1584,7 +1659,8 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                               width_cm: float = Form(None),
                               depth_cm: float = Form(None),
                               leg_thickness_cm: float = Form(None),
-                              materials: str = Form(None)):
+                              materials: str = Form(None),
+                              visibility: str = Form(None)):
     # materials: optional JSON object of {component: text} applied in the SAME
     # regeneration as the dimension changes, so the UI can do dimensions +
     # materials in ONE request instead of two sequential calls (a stalled
@@ -1597,160 +1673,152 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                 material_overrides = {k: v for k, v in parsed.items() if v}
         except (json.JSONDecodeError, ValueError):
             pass
+    # visibility: optional JSON object of {component: bool} — when a component
+    # is False, skip it or draw on HIDDEN layer during regeneration.
+    visibility_overrides = None
+    if visibility:
+        try:
+            parsed = json.loads(visibility)
+            if isinstance(parsed, dict):
+                visibility_overrides = {k: bool(v) for k, v in parsed.items()}
+        except (json.JSONDecodeError, ValueError):
+            pass
     safe = os.path.basename(dxf_file)
     dxf_path = OUT / safe
     if not dxf_path.exists(): return JSONResponse({"error": "DXF not found"}, status_code=404)
 
     try:
-        import ezdxf, re
-        doc = ezdxf.readfile(str(dxf_path))
         from app.backend.svg_exporter import drawing_to_svg
-
-        ftype = "round_pedestal_table"
-        has_circle = any(e.dxftype() == "CIRCLE" for e in doc.modelspace())
-        dim_texts = []
-        for e in doc.modelspace():
-            if e.dxftype() == "DIMENSION":
-                txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
-                dim_texts.append(txt)
-        all_txt = " ".join(dim_texts).lower()
-        if not has_circle and any(k in all_txt for k in ["w =", "width"]): ftype = "rectangular_table"
-
-        if ftype == "rectangular_table":
-            w, h, d, lt = 120.0, 70.0, 80.0, 6.0
-            for txt in dim_texts:
-                nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
-                val = float(nums[0]) if nums else None
-                if val:
-                    if "w =" in txt.lower() or "width" in txt.lower(): w = val
-                    elif "h =" in txt.lower() or "height" in txt.lower(): h = val
-                    elif "d =" in txt.lower() or "depth" in txt.lower(): d = val
-            if width_cm is not None: w = width_cm
-            if overall_height_cm is not None: h = overall_height_cm
-            if depth_cm is not None: d = depth_cm
-            if leg_thickness_cm is not None: lt = leg_thickness_cm
-
-            from app.backend.dxf_exporter import save_rectangular_table
-            try: save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_thickness_cm=lt)
-            except Exception as e: print(f"[Adjust] Rect DXF regen failed: {e}")
-
-            from app.backend.drawing_builders import build_rectangular_table_model
-            model = build_rectangular_table_model(w, d, h, lt)
-            svg = drawing_to_svg(model)
-            svg_path = OUT / safe.replace('.dxf', '.svg')
-            with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
-
-            return JSONResponse({"furniture_type": "rectangular_table", "dxf_file": safe,
-                "preview_svg": f"/api/preview/svg/{safe}",
-                "dimensions": {"width_cm": w, "depth_cm": d, "overall_height_cm": h, "leg_thickness_cm": lt}})
-
-        from app.backend.drawing_builders import build_round_pedestal_model
-        top_dia, height = 80.0, 70.0
-        base_dia, neck_dia, top_thick = 44.0, 22.4, 4.0
-        collar_dia = None
-
-        # Prefer the structured JSON sidecar saved at generation time over
-        # scraping DIMENSION entity text: the text-scrape heuristic ("dia"
-        # text with value > 50cm is the top diameter, else the base") breaks
-        # whenever a non-top component (e.g. a 60cm base plate) also exceeds
-        # 50cm - it gets misread as the top diameter, silently corrupting an
-        # otherwise-correct value on every subsequent /adjust call.
         json_path = Path(str(dxf_path).replace('.dxf', '.json'))
-        loaded_from_sidecar = False
+
+        # ---- Read furniture_type from sidecar JSON (Gap #1b fix) ----
+        ftype = "round_pedestal_table"
+        known = {}
+        est = {}
         sidecar_materials = {}
-        sidecar_profile = 'cylinder'
         if json_path.exists():
             try:
                 sidecar = json.loads(json_path.read_text(encoding='utf-8'))
+                ftype = sidecar.get('furniture_type', 'round_pedestal_table')
                 known = sidecar.get('known_dimensions', {})
                 est = sidecar.get('estimated_components', {})
                 sidecar_materials = sidecar.get('materials', {})
-                sidecar_profile = sidecar.get('profile', 'cylinder')
-                if known.get('top_diameter_cm'): top_dia = known['top_diameter_cm']
-                if known.get('overall_height_cm'): height = known['overall_height_cm']
-                if est.get('pedestal_diameter_cm'): base_dia = est['pedestal_diameter_cm']
-                if est.get('neck_diameter_cm'): neck_dia = est['neck_diameter_cm']
-                if est.get('top_thickness_cm'): top_thick = est['top_thickness_cm']
-                if est.get('collar_diameter_cm'): collar_dia = est['collar_diameter_cm']
-                loaded_from_sidecar = True
             except Exception as e:
                 print(f"[Adjust] sidecar load failed: {e}")
 
-        if not loaded_from_sidecar:
-            for txt in dim_texts:
-                nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
-                val = float(nums[0]) if nums else None
-                if val:
-                    if "%%c" in txt or "dia" in txt.lower():
-                        if val > 50: top_dia = val
-                        else: base_dia = val
-                    if "h =" in txt.lower() or "height" in txt.lower(): height = val
+        save_fn, build_fn = _get_adjust_fn(ftype)
+        if save_fn is None or build_fn is None:
+            return JSONResponse({"error": f"No adjust support for {ftype}"}, status_code=400)
+        # ---- Build kwargs for save_*() and build_*_model() ----
+        if ftype == 'round_pedestal_table':
+            save_kwargs = {
+                'top_dia_cm': merged_dims.get('top_diameter_cm', 80.0),
+                'height_cm': merged_dims.get('overall_height_cm', 70.0),
+                'base_dia_cm': merged_dims.get('base_diameter_cm', 44.0),
+                'neck_dia_cm': merged_dims.get('neck_diameter_cm', 22.4),
+                'top_thick_cm': merged_dims.get('top_thickness_cm', 4.0),
+                'collar_dia_cm': merged_dims.get('collar_diameter_cm'),
+                'materials': sidecar_materials, 'profile': 'cylinder',
+            }
+        elif ftype in ('cabinet', 'sofa', 'wardrobe', 'reception_counter', 'bed_headboard', 'coffee_table'):
+            save_kwargs = {
+                'width_cm': merged_dims.get('width_cm', 100.0),
+                'depth_cm': merged_dims.get('depth_cm', 60.0),
+                'height_cm': merged_dims.get('overall_height_cm', 180.0),
+                'materials': sidecar_materials,
+            }
+        elif ftype in ('dining_chair', 'chair'):
+            save_kwargs = {
+                'width_cm': merged_dims.get('width_cm', 45.0),
+                'height_cm': merged_dims.get('overall_height_cm', 90.0),
+                'materials': sidecar_materials,
+            }
+        elif ftype == 'rectangular_table':
+            save_kwargs = {
+                'width_cm': merged_dims.get('width_cm', 120.0),
+                'depth_cm': merged_dims.get('depth_cm', 80.0),
+                'height_cm': merged_dims.get('overall_height_cm', 70.0),
+                'leg_thickness_cm': merged_dims.get('leg_thickness_cm', 6.0),
+                'materials': sidecar_materials,
+            }
+        elif ftype == 'oval_pedestal_table':
+            save_kwargs = {
+                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 180.0)),
+                'depth_cm': merged_dims.get('depth_cm', 100.0),
+                'height_cm': merged_dims.get('overall_height_cm', 75.0),
+                'pedestal_dia_cm': merged_dims.get('pedestal_dia_cm', 40.0),
+                'materials': sidecar_materials,
+            }
+        elif ftype == 'console_table':
+            save_kwargs = {
+                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 120.0)),
+                'depth_cm': merged_dims.get('depth_cm', 40.0),
+                'height_cm': merged_dims.get('overall_height_cm', 75.0),
+                'leg_thick_cm': merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0)),
+                'materials': sidecar_materials,
+            }
+        elif ftype == 'office_desk':
+            save_kwargs = {
+                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 140.0)),
+                'depth_cm': merged_dims.get('depth_cm', 60.0),
+                'height_cm': merged_dims.get('overall_height_cm', 75.0),
+                'leg_thick_cm': merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0)),
+                'modesty_panel_h_cm': merged_dims.get('modesty_panel_h_cm', 15.0),
+                'materials': sidecar_materials,
+            }
+        elif ftype == 'asymmetric_pedestal_table':
+            save_kwargs = {
+                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 180.0)),
+                'depth_cm': merged_dims.get('depth_cm', 90.0),
+                'height_cm': merged_dims.get('overall_height_cm', 75.0),
+                'large_ped_dia_cm': merged_dims.get('large_ped_dia_cm', 40.0),
+                'small_ped_dia_cm': merged_dims.get('small_ped_dia_cm', 22.0),
+                'left_ped_x_cm': merged_dims.get('left_ped_x_cm', 30.0),
+                'right_ped_x_cm': merged_dims.get('right_ped_x_cm', -25.0),
+                'overhang_cm': merged_dims.get('overhang_cm', 20.0),
+                'materials': sidecar_materials,
+            }
+        else:
+            return JSONResponse({"error": f"Unsupported type: {ftype}"}, status_code=400)
 
-        if top_diameter_cm is not None: top_dia = top_diameter_cm
-        if overall_height_cm is not None: height = overall_height_cm
-        if base_diameter_cm is not None: base_dia = base_diameter_cm
-        if neck_diameter_cm is not None: neck_dia = neck_diameter_cm
-        if top_thickness_cm is not None: top_thick = top_thickness_cm
-        if collar_diameter_cm is not None: collar_dia = collar_diameter_cm
+        # Apply visibility overrides to all types in one step
+        if visibility_overrides:
+            save_kwargs['visibility'] = visibility_overrides
 
-        # Merge any material overrides sent alongside the dimension change so a
-        # single /adjust call applies both (and persists them via the sidecar
-        # write further down, which already serializes sidecar_materials).
-        if material_overrides:
-            sidecar_materials = {**sidecar_materials, **material_overrides}
+        # ---- Regenerate DXF and SVG ----
+        try:
+            save_fn(str(dxf_path), **save_kwargs)
+        except Exception as e:
+            print(f"[Adjust] DXF regen failed for {ftype}: {e}")
 
-        from app.backend.dxf_exporter import save_round_pedestal_table
-        try: save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
-                                         base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-                                         top_thick_cm=top_thick, collar_dia_cm=collar_dia,
-                                         materials=sidecar_materials, profile=sidecar_profile)
-        except Exception as e: print(f"[Adjust] DXF regen failed: {e}")
-
-        model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
-            base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-            top_thick_cm=top_thick, collar_dia_cm=(collar_dia or top_dia * 0.625),
-            materials=sidecar_materials, profile=sidecar_profile)
+        model = build_fn(**save_kwargs)
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')
         with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
 
-        final_collar_dia = round(collar_dia or top_dia * 0.625, 1)
+        # ---- Persist adjusted state ----
         try:
-            # A manual /adjust is a real human correction - write it back into
-            # the ledger so the next photo of similar furniture benefits too
-            # (this is the other half of the read in _ledger_blend above).
-            from app.backend.brain_sync import record_proportion
-            record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'pedestal_diameter_cm', base_dia)
-            record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'neck_diameter_cm', neck_dia)
-            if collar_dia is not None:
-                record_proportion('round_pedestal_table', 'top_diameter_cm', top_dia, 'collar_diameter_cm', final_collar_dia)
-        except Exception as e: print(f"[Adjust] brain_sync recording failed: {e}")
-        from app.backend.dimension_validator import check_round_pedestal_proportions
-        proportion_warnings = check_round_pedestal_proportions(top_dia, {
-            'collar_diameter_cm': final_collar_dia,
-            'pedestal_diameter_cm': base_dia,
-            'neck_diameter_cm': neck_dia,
-        })
-
-        # Persist the adjusted state so it doesn't go stale on the *next*
-        # /adjust call (which loads defaults from this same sidecar).
-        try:
-            json_path.write_text(json.dumps({
-                'known_dimensions': {'top_diameter_cm': top_dia, 'overall_height_cm': height},
-                'estimated_components': {'pedestal_diameter_cm': base_dia, 'neck_diameter_cm': neck_dia,
-                                          'top_thickness_cm': top_thick, 'collar_diameter_cm': final_collar_dia},
-                'materials': sidecar_materials,
-                'profile': sidecar_profile,
-            }, indent=2), encoding='utf-8')
+            new_known = {}
+            new_est = {}
+            for k, v in merged_dims.items():
+                if k in ('top_diameter_cm', 'overall_height_cm', 'width_cm', 'depth_cm', 'length_cm'):
+                    new_known[k] = v
+                else:
+                    new_est[k] = v
+            new_sidecar = {
+                'furniture_type': ftype, 'known_dimensions': new_known,
+                'estimated_components': new_est, 'materials': sidecar_materials,
+                'profile': sidecar.get('profile', 'cylinder'),
+            }
+            json_path.write_text(json.dumps(new_sidecar, indent=2), encoding='utf-8')
         except Exception as e:
             print(f"[Adjust] sidecar persist failed: {e}")
 
-        return JSONResponse({"dxf_file": safe, "preview_svg": f"/api/preview/svg/{safe}",
-            "dimensions": {"top_diameter_cm": round(top_dia, 1), "overall_height_cm": round(height, 1),
-                           "base_diameter_cm": round(base_dia, 1), "neck_diameter_cm": round(neck_dia, 1),
-                           "top_thickness_cm": round(top_thick, 1),
-                           "collar_diameter_cm": final_collar_dia},
-            "warnings": proportion_warnings})
+        return JSONResponse({
+            "dxf_file": safe, "preview_svg": f"/api/preview/svg/{safe}",
+            "dimensions": {k: round(v, 1) if isinstance(v, float) else v for k, v in merged_dims.items()},
+            "furniture_type": ftype,
+        })
     except Exception as e: return JSONResponse({"error": f"Adjust failed: {e}"}, status_code=500)
 
 
@@ -1791,32 +1859,55 @@ async def edit_materials(dxf_file: str = Form(...), materials: str = Form(...),
 
         from app.backend.svg_exporter import drawing_to_svg
 
-        if furniture_type == 'round_pedestal_table':
-            from app.backend.drawing_builders import build_round_pedestal_model
-            from app.backend.dxf_exporter import save_round_pedestal_table
-            top_dia = known.get('top_diameter_cm', 80.0)
-            height = known.get('overall_height_cm', 70.0)
-            base_dia = est.get('pedestal_diameter_cm', 44.0)
-            neck_dia = est.get('neck_diameter_cm', 22.4)
-            top_thick = est.get('top_thickness_cm', 4.0)
-            collar_dia = est.get('collar_diameter_cm')
-            profile = sidecar.get('profile', 'cylinder')
-
-            try:
-                save_round_pedestal_table(str(dxf_path), top_dia_cm=top_dia, height_cm=height,
-                                           base_dia_cm=base_dia, neck_dia_cm=neck_dia,
-                                           top_thick_cm=top_thick, collar_dia_cm=collar_dia,
-                                           materials=merged_materials, profile=profile)
-            except Exception as e:
-                print(f"[MaterialEdit] DXF regen failed: {e}")
-
-            model = build_round_pedestal_model(top_dia_cm=top_dia, height_cm=height,
-                base_dia_cm=base_dia, neck_dia_cm=neck_dia, top_thick_cm=top_thick,
-                collar_dia_cm=(collar_dia or top_dia * 0.625), materials=merged_materials,
-                profile=profile, project=project or "Furniture Shop Drawing", client=client or "")
-        else:
+        save_fn, build_fn = _get_adjust_fn(furniture_type)
+        if save_fn is None:
             return JSONResponse({"error": f"Material editing not yet supported for {furniture_type}"},
                                  status_code=400)
+
+        # Build kwargs from sidecar dimensions
+        all_dims = {**known, **est}
+        if furniture_type == 'round_pedestal_table':
+            save_kwargs = {
+                'top_dia_cm': all_dims.get('top_diameter_cm', 80.0),
+                'height_cm': all_dims.get('overall_height_cm', 70.0),
+                'base_dia_cm': all_dims.get('pedestal_diameter_cm', 44.0),
+                'neck_dia_cm': all_dims.get('neck_diameter_cm', 22.4),
+                'top_thick_cm': all_dims.get('top_thickness_cm', 4.0),
+                'collar_dia_cm': all_dims.get('collar_diameter_cm'),
+                'materials': merged_materials, 'profile': sidecar.get('profile', 'cylinder'),
+            }
+        elif furniture_type in ('cabinet', 'sofa', 'wardrobe', 'reception_counter', 'bed_headboard', 'coffee_table'):
+            save_kwargs = {
+                'width_cm': all_dims.get('width_cm', 100.0),
+                'depth_cm': all_dims.get('depth_cm', 60.0),
+                'height_cm': all_dims.get('overall_height_cm', 180.0),
+                'materials': merged_materials,
+            }
+        elif furniture_type in ('dining_chair', 'chair'):
+            save_kwargs = {
+                'width_cm': all_dims.get('width_cm', 45.0),
+                'height_cm': all_dims.get('overall_height_cm', 90.0),
+                'materials': merged_materials,
+            }
+        elif furniture_type == 'rectangular_table':
+            save_kwargs = {
+                'width_cm': all_dims.get('width_cm', 120.0),
+                'depth_cm': all_dims.get('depth_cm', 80.0),
+                'height_cm': all_dims.get('overall_height_cm', 70.0),
+                'leg_thickness_cm': all_dims.get('leg_thickness_cm', 6.0),
+                'materials': merged_materials,
+            }
+        else:
+            save_kwargs = {'materials': merged_materials}
+            for k, v in all_dims.items():
+                save_kwargs[k] = v
+
+        try:
+            save_fn(str(dxf_path), **save_kwargs)
+        except Exception as e:
+            print(f"[MaterialEdit] DXF regen failed for {furniture_type}: {e}")
+
+        model = build_fn(**save_kwargs)
 
         svg = drawing_to_svg(model)
         svg_path = OUT / safe.replace('.dxf', '.svg')

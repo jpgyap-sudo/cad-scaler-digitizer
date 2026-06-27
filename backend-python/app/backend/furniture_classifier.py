@@ -63,6 +63,26 @@ def normalize_furniture_type(ftype: str) -> str:
         "two_pedestal_table": "asymmetric_pedestal_table",
         "rectangular_pedestal_table": "asymmetric_pedestal_table",
         "table": "generic_2d_furniture",  # Fallback: "table" alone is too generic
+        # New types for 18-template system
+        "lounge_chair": "lounge_chair",
+        "lounge": "lounge_chair",
+        "easy_chair": "lounge_chair",
+        "club_chair": "lounge_chair",
+        "side_table": "side_table",
+        "end_table": "side_table",
+        "occasional_table": "side_table",
+        "nightstand": "nightstand",
+        "bedside_table": "nightstand",
+        "bedside": "nightstand",
+        "bed": "bed",
+        "platform_bed": "bed",
+        "sideboard": "sideboard",
+        "buffet": "sideboard",
+        "credenza": "sideboard",
+        "tv_console": "tv_console",
+        "media_console": "tv_console",
+        "media_unit": "tv_console",
+        "entertainment_center": "tv_console",
     }
     return aliases.get(s, s)
 

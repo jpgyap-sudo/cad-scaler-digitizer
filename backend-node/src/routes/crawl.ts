@@ -127,6 +127,7 @@ crawlRouter.get("/:jobId", async (req, res) => {
     await client.connect();
 
     const raw = await client.get(`crawler:result:${jobId}`);
+    const timeoutKey = await client.get(`crawler:timeout:${jobId}`);
     await client.disconnect();
 
     if (raw) {
@@ -134,8 +135,13 @@ crawlRouter.get("/:jobId", async (req, res) => {
         const result = JSON.parse(raw);
         return res.json({ jobId, ...result });
       } catch {
-        // fall through to pending
+        // fall through
       }
+    }
+
+    // Check for timeout — job started but never completed within window
+    if (timeoutKey === "1") {
+      return res.json({ jobId, status: "timed_out", message: "Crawl did not complete within the allowed time" });
     }
 
     res.json({ jobId, status: "pending" });

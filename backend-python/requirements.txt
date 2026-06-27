@@ -15,3 +15,5 @@ rq==1.16.2
 qdrant-client==1.18.0
 svgwrite==1.4.3
 boto3==1.34.127
+openai>=1.0.0
+google-genai>=1.0.0

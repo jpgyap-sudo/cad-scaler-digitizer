@@ -4,6 +4,7 @@ These were previously in drawing_model.py but were extracted to their own module
 during the accuracy upgrade to keep the model clean. Re-exported for backward compat.
 
 All builder functions accept optional EntityMetadata for confidence tracking.
+Gap #1/#2: all build_*_model() accept materials + visibility parameters.
 """
 
 import math
@@ -167,6 +168,8 @@ def build_rectangular_table_model(
     width_cm: float = 120.0, depth_cm: float = 80.0, height_cm: float = 70.0,
     leg_thickness_cm: float = 6.0, client: str = "", project: str = "Furniture Shop Drawing",
     material_notes: Optional[List[str]] = None,
+    materials: Optional[Dict[str, str]] = None,
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for a rectangular table."""
     sc = 0.4; w = width_cm * sc; d = depth_cm * sc; h = height_cm * sc
@@ -183,6 +186,11 @@ def build_rectangular_table_model(
     top_view_right_edge = ox + w2 + 12.0
     fx = top_view_right_edge + w2 + 20.0
     now = datetime.now().strftime('%Y-%m-%d')
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     tv = View(name="TOP VIEW")
     tv.polygons.append(PolygonComponent(points=[Point(ox - w2, y_mid - d2), Point(ox + w2, y_mid - d2), Point(ox + w2, y_mid + d2), Point(ox - w2, y_mid + d2)], layer="OBJECT", name="tabletop"))
     for lx, ly in [(ox - w2, y_mid - d2), (ox + w2 - lt, y_mid - d2), (ox - w2, y_mid + d2 - lt), (ox + w2 - lt, y_mid + d2 - lt)]:
@@ -204,8 +212,8 @@ def build_rectangular_table_model(
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx - w2, top_y + 10), height=3, layer="MTEXT"))
     tb = TitleBlockData(drawing_title=f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=now,
         material_notes=material_notes or [
-            "TABLETOP — Solid hardwood, stained finish",
-            "LEGS — Solid wood, matching finish",
+            f"TABLETOP — {mats.get('tabletop', 'Solid hardwood, stained finish')}",
+            f"LEGS — {mats.get('legs', 'Solid wood, matching finish')}",
         ],
         general_notes=["ALL DIMENSIONS IN CENTIMETERS (CM) UNLESS NOTED", "TOLERANCES: +/- 2mm UNLESS OTHERWISE SPECIFIED"],
     )
@@ -214,7 +222,14 @@ def build_rectangular_table_model(
         estimated_components={"leg_thickness_cm": leg_thickness_cm})
 
 
-def build_cabinet_model(width_cm=100, depth_cm=50, height_cm=180, client="", project="Furniture Shop Drawing"):
+def build_cabinet_model(width_cm=100, depth_cm=50, height_cm=180, client="", project="Furniture Shop Drawing",
+                        materials: Optional[Dict[str, str]] = None,
+                        visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     sc = 0.3; w = width_cm * sc; h = height_cm * sc; fx = (420 - w) / 2; floor_y = 50.0; top_y = floor_y + h; w2 = w / 2; margin = w * 0.05
     now = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
@@ -227,12 +242,22 @@ def build_cabinet_model(width_cm=100, depth_cm=50, height_cm=180, client="", pro
     fv.dimensions.append(DimensionComponent(p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y), label=f"H = {height_cm:g} cm", layer="DIMENSION"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(drawing_title=f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now)
+    tb = TitleBlockData(drawing_title=f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now,
+        material_notes=[f"CARCASS — {mats.get('carcass', '18mm MDF, matte lacquer')}",
+                        f"DOORS — {mats.get('doors', 'MDF, painted finish')}",
+                        f"BASE — {mats.get('base', 'Solid wood plinth')}"])
     return DrawingModel(furniture_type="cabinet", views=[fv], title_block=tb,
         known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm})
 
 
-def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project="Furniture Shop Drawing"):
+def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project="Furniture Shop Drawing",
+                     materials: Optional[Dict[str, str]] = None,
+                     visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     sc = 0.3; w = width_cm * sc; h = height_cm * sc; fx = (420 - w) / 2; floor_y = 50.0; top_y = floor_y + h; seat_y = floor_y + h * 0.55; arm_h = h * 0.4
     now = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
@@ -243,12 +268,19 @@ def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project
     fv.dimensions.append(DimensionComponent(p1=Point(fx + w + 8, floor_y), p2=Point(fx + w + 8, top_y), label=f"H = {height_cm:g} cm", layer="DIMENSION"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w, floor_y - 8), label=f"W = {width_cm:g} cm", layer="DIMENSION"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(drawing_title=f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now)
+    tb = TitleBlockData(drawing_title=f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}", project=project, client=client, scale="1:3.3", revision="A", date=now,
+        material_notes=[f"BODY — {mats.get('body', 'Upholstered fabric')}",
+                        f"SEAT — {mats.get('seat', 'High-density foam')}",
+                        f"BACKREST — {mats.get('backrest', 'Upholstered fabric')}",
+                        f"LEGS — {mats.get('legs', 'Solid wood, tapered')}"])
     return DrawingModel(furniture_type="sofa", views=[fv], title_block=tb,
         known_dimensions={"width_cm": width_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm})
 
 
-def build_coffee_table_model(w=100.0, d=60.0, h=45.0):
+def build_coffee_table_model(w=100.0, d=60.0, h=45.0,
+                             materials: Optional[Dict[str, str]] = None,
+                             visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
     sc, cx, ym = 0.6, 100.0, 190.0; r = min(w, d) / 2 * sc; n = datetime.now().strftime('%Y-%m-%d')
     tv = View(name="TOP VIEW")
     tv.circles.append(CircleComponent(center=Point(cx, ym), radius=r, layer="OBJECT"))
@@ -256,12 +288,17 @@ def build_coffee_table_model(w=100.0, d=60.0, h=45.0):
     tv.lines.append(LineComponent(start=Point(cx, ym-r-5), end=Point(cx, ym+r+5), layer="CENTER"))
     tv.dimensions.append(DimensionComponent(p1=Point(cx-r, ym), p2=Point(cx+r, ym), label=f"%%c{min(w,d):g} cm", layer="DIMENSION"))
     tv.texts.append(TextComponent(content="TOP VIEW", position=Point(cx-10, ym+r+10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n,
+        material_notes=[f"TABLE TOP — {mats.get('tabletop', 'Tempered glass / solid wood')}",
+                        f"LEGS — {mats.get('legs', 'Powder-coated steel')}"])
     return DrawingModel(furniture_type="coffee_table", views=[tv], title_block=tb,
         known_dimensions={"width_cm": w, "depth_cm": d, "overall_height_cm": h})
 
 
-def build_dining_chair_model(w=45.0, h=90.0):
+def build_dining_chair_model(w=45.0, h=90.0,
+                             materials: Optional[Dict[str, str]] = None,
+                             visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
     sc, w2 = 0.5, w * 0.5 * 0.5; fx = (420 - w * 0.5) / 2; fy, ty = 50.0, 50.0 + h * 0.5; sy = fy + h * 0.5 * 0.5
     n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
@@ -269,13 +306,18 @@ def build_dining_chair_model(w=45.0, h=90.0):
     fv.polygons.append(PolygonComponent(points=[Point(fx, fy), Point(fx+w*0.5, fy), Point(fx+w*0.5, sy), Point(fx, sy)], layer="OBJECT", name="seat"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx+w*0.5+8, fy), p2=Point(fx+w*0.5+8, ty), label=f"H = {h:g} cm", layer="DIMENSION"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, ty+10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(f"Dining Chair {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n)
+    tb = TitleBlockData(f"Dining Chair {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n,
+        material_notes=[f"SEAT — {mats.get('seat', 'Upholstered fabric over foam')}",
+                        f"BACKREST — {mats.get('backrest', 'Solid wood slats')}",
+                        f"LEGS — {mats.get('legs', 'Solid wood, stained')}"])
     return DrawingModel(furniture_type="dining_chair", views=[fv], title_block=tb,
         known_dimensions={"width_cm": w, "overall_height_cm": h})
 
 
-def build_wardrobe_model(w=120.0, d=60.0, h=200.0):
-    return build_cabinet_model(w, d, h)
+def build_wardrobe_model(w=120.0, d=60.0, h=200.0,
+                         materials: Optional[Dict[str, str]] = None,
+                         visibility: Optional[Dict[str, bool]] = None):
+    return build_cabinet_model(w, d, h, materials=materials)
 
 
 def build_oval_pedestal_model(
@@ -333,12 +375,14 @@ def build_console_table_model(
     length_cm: float = 120.0, depth_cm: float = 40.0, height_cm: float = 75.0,
     top_thick_cm: float = 2.5, leg_thick_cm: float = 4.0, leg_inset_cm: float = 2.0,
     client: str = "", project: str = "Furniture Shop Drawing",
+    materials: Optional[Dict[str, str]] = None,
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for a console/sofa table — 3 views."""
     now = datetime.now().strftime('%Y-%m-%d')
     sc = 0.4; w = length_cm * sc; d = depth_cm * sc; h = height_cm * sc
     tt = top_thick_cm * sc; lt = leg_thick_cm * sc; li = leg_inset_cm * sc
-    w2, d2 = w / 2, d / 2; y_mid = 180.0; mats = {}
+    w2, d2 = w / 2, d / 2; y_mid = 180.0; mats = materials or {}
     tx, ty = 100.0, y_mid
     tv = View(name="TOP VIEW")
     tv.polygons.append(PolygonComponent(points=[Point(tx - w2, ty - d2), Point(tx + w2, ty - d2), Point(tx + w2, ty + d2), Point(tx - w2, ty + d2)], layer="OBJECT", name="tabletop"))
@@ -368,7 +412,9 @@ def build_console_table_model(
     sv.dimensions.append(DimensionComponent(p1=Point(sx - d2, floor_y - 8), p2=Point(sx + d2, floor_y - 8), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
     sv.texts.append(TextComponent(content="SIDE VIEW", position=Point(sx - d2, top_y + 10), height=3, layer="MTEXT"))
     tb = TitleBlockData(drawing_title=f"Console Table {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
-        project=project, client=client, scale="1:2.5", revision="A", date=now)
+        project=project, client=client, scale="1:2.5", revision="A", date=now,
+        material_notes=[f"TABLE TOP — {mats.get('tabletop', 'Solid wood / MDF')}",
+                        f"LEGS — {mats.get('legs', 'Solid wood, matching top')}"])
     return DrawingModel(furniture_type="console_table", views=[tv, fv, sv], title_block=tb,
         known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
         estimated_components={"leg_thickness_cm": leg_thick_cm, "top_thickness_cm": top_thick_cm})
@@ -378,8 +424,11 @@ def build_office_desk_model(
     length_cm: float = 140.0, depth_cm: float = 60.0, height_cm: float = 75.0,
     top_thick_cm: float = 2.5, leg_thick_cm: float = 4.0, modesty_panel_h_cm: float = 15.0,
     leg_inset_cm: float = 2.0, client: str = "", project: str = "Furniture Shop Drawing",
+    materials: Optional[Dict[str, str]] = None,
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for an office desk with modesty panel — 3 views."""
+    mats = materials or {}
     now = datetime.now().strftime('%Y-%m-%d')
     sc = 0.35; w = length_cm * sc; d = depth_cm * sc; h = height_cm * sc
     tt = top_thick_cm * sc; lt = leg_thick_cm * sc; mh = modesty_panel_h_cm * sc; li = leg_inset_cm * sc
@@ -420,7 +469,10 @@ def build_office_desk_model(
     sv.dimensions.append(DimensionComponent(p1=Point(sx - d2, floor_y - 8), p2=Point(sx + d2, floor_y - 8), label=f"D = {depth_cm * 10:.0f} mm", layer="DIMENSION"))
     sv.texts.append(TextComponent(content="SIDE VIEW", position=Point(sx - d2, top_y + 10), height=3, layer="MTEXT"))
     tb = TitleBlockData(drawing_title=f"Office Desk {length_cm * 10:.0f}x{depth_cm * 10:.0f}x{height_cm * 10:.0f} mm",
-        project=project, client=client, scale="1:3", revision="A", date=now)
+        project=project, client=client, scale="1:3", revision="A", date=now,
+        material_notes=[f"TABLE TOP — {mats.get('tabletop', 'MDF with melamine finish')}",
+                        f"LEGS — {mats.get('legs', 'Powder-coated steel')}",
+                        f"MODESTY PANEL — {mats.get('modesty_panel', 'MDF, matching top')}"])
     return DrawingModel(furniture_type="office_desk", views=[tv, fv, sv], title_block=tb,
         known_dimensions={"length_cm": length_cm, "depth_cm": depth_cm, "overall_height_cm": height_cm},
         estimated_components={"leg_thickness_cm": leg_thick_cm, "modesty_panel_h_cm": modesty_panel_h_cm})
@@ -627,19 +679,28 @@ def build_generic_model(lines=None, circles=None, rects=None, client="", project
     return DrawingModel(furniture_type="generic_2d_furniture", views=[view], title_block=tb)
 
 
-def build_reception_counter_model(w=180.0, h=110.0):
+def build_reception_counter_model(w=180.0, h=110.0,
+                                  materials: Optional[Dict[str, str]] = None,
+                                  visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
     sc = 0.3; fx = (420 - w * sc) / 2; fy, ty = 50.0, 50.0 + h * sc; n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
     fv.polygons.append(PolygonComponent(points=[Point(fx, fy), Point(fx+w*sc, fy), Point(fx+w*sc, ty), Point(fx, ty)], layer="OBJECT", name="counter_body"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx+w*sc+8, fy), p2=Point(fx+w*sc+8, ty), label=f"H = {h:g} cm", layer="DIMENSION"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx, fy-8), p2=Point(fx+w*sc, fy-8), label=f"W = {w:g} cm", layer="DIMENSION"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, ty+10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(f"Reception Counter {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:3", revision="A", date=n)
+    tb = TitleBlockData(f"Reception Counter {w:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:3", revision="A", date=n,
+        material_notes=[f"COUNTER TOP — {mats.get('counter_top', 'Engineered quartz / solid surface')}",
+                        f"FRONT PANEL — {mats.get('front_panel', 'MDF, matte lacquer')}",
+                        f"BASE — {mats.get('base', 'Brushed stainless steel')}"])
     return DrawingModel(furniture_type="reception_counter", views=[fv], title_block=tb,
         known_dimensions={"width_cm": w, "overall_height_cm": h})
 
 
-def build_bed_headboard_model(w=180.0, h=60.0, d=5.0, client="", project="Furniture Shop Drawing"):
+def build_bed_headboard_model(w=180.0, h=60.0, d=5.0, client="", project="Furniture Shop Drawing",
+                              materials: Optional[Dict[str, str]] = None,
+                              visibility: Optional[Dict[str, bool]] = None):
+    mats = materials or {}
     sc = 0.4; w2 = w * sc; h2 = h * sc; fx = (420 - w2) / 2; floor_y = 30.0; top_y = floor_y + h2
     n = datetime.now().strftime('%Y-%m-%d')
     fv = View(name="FRONT VIEW")
@@ -647,6 +708,8 @@ def build_bed_headboard_model(w=180.0, h=60.0, d=5.0, client="", project="Furnit
     fv.dimensions.append(DimensionComponent(p1=Point(fx + w2 + 8, floor_y), p2=Point(fx + w2 + 8, top_y), label=f"H = {h:g} cm", layer="DIMENSION"))
     fv.dimensions.append(DimensionComponent(p1=Point(fx, floor_y - 8), p2=Point(fx + w2, floor_y - 8), label=f"W = {w:g} cm", layer="DIMENSION"))
     fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx, top_y + 10), height=3, layer="MTEXT"))
-    tb = TitleBlockData(f"Bed Headboard {w:.0f}x{h:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=n)
+    tb = TitleBlockData(f"Bed Headboard {w:.0f}x{h:.0f}", project=project, client=client, scale="1:2.5", revision="A", date=n,
+        material_notes=[f"HEADBOARD PANEL — {mats.get('headboard', 'Upholstered panel, velvet fabric')}",
+                        f"POSTS/LEGS — {mats.get('posts', 'Solid wood, stained finish')}"])
     return DrawingModel(furniture_type="bed_headboard", views=[fv], title_block=tb,
         known_dimensions={"width_cm": w, "overall_height_cm": h})

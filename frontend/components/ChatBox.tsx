@@ -70,7 +70,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
 
       if (data.action === 'render' && onRenderRequest) {
         onRenderRequest(data.state);
-        // Also regenerate DXF by calling /api/adjust with updated dimensions
+        // === Dimensions: regenerate DXF via /adjust ===
         if (dxfFile && data.state?.dimensions) {
           try {
             const adjForm = new FormData();
@@ -83,8 +83,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
             console.error('DXF regen from chat failed:', e);
           }
         }
-        // Material/finish descriptions from chat were only ever stored in
-        // session state, never applied to the drawing - push them through too.
+        // === Materials: update leader/titleblock text via /material/edit ===
         if (dxfFile && data.state?.materials && Object.keys(data.state.materials).length > 0) {
           try {
             const matForm = new FormData();
@@ -93,6 +92,23 @@ const ChatBox: React.FC<ChatBoxProps> = ({ sessionId, imageId, dxfFile, onRender
             await apiPost('/py-api/material/edit', matForm);
           } catch (e) {
             console.error('Material edit from chat failed:', e);
+          }
+        }
+        // === Visibility: push component visibility to /adjust ===
+        if (dxfFile && data.state?.visibility && Object.keys(data.state.visibility).length > 0) {
+          try {
+            const visForm = new FormData();
+            visForm.append('dxf_file', dxfFile);
+            visForm.append('visibility', JSON.stringify(data.state.visibility));
+            // Also forward current dimensions so /adjust can regenerate with vis applied
+            if (data.state?.dimensions) {
+              for (const [k, v] of Object.entries(data.state.dimensions)) {
+                visForm.append(k, String(v));
+              }
+            }
+            await apiPost('/py-api/adjust', visForm);
+          } catch (e) {
+            console.error('Visibility update from chat failed:', e);
           }
         }
       }

@@ -47,6 +47,55 @@ export interface AccuracyPipeline {
   reconstruction?: Record<string, any>;
 }
 
+export interface TemplateGraphView {
+  template_id: string;
+  template_name: string;
+  product_type: string;
+  family: string;
+  resolved_parameters_mm: Record<string, number>;
+  required_views: string[];
+  required_details: string[];
+  drawing_notes: string[];
+}
+
+export interface ConstraintResult {
+  id: string;
+  description: string;
+  expression: string;
+  severity: string;
+  passed: boolean;
+}
+
+export interface ResolveResult {
+  template_id: string;
+  template_name: string;
+  product_type: string;
+  family: string;
+  resolved_parameters_mm: Record<string, number>;
+  parameters_schema: Array<{
+    name: string;
+    default: number;
+    min_value: number;
+    max_value: number;
+    description: string;
+  }>;
+  required_views: string[];
+  required_details: string[];
+  drawing_notes: string[];
+  constraints: ConstraintResult[];
+  warnings: string[];
+}
+
+export interface Phase3Result {
+  vision_features?: Record<string, any>;
+  scene_graph?: Record<string, any>;
+  template_graph?: TemplateGraphView;
+  validation?: Record<string, any>;
+  production?: Record<string, any>;
+  warnings: string[];
+  errors: string[];
+}
+
 export type DigitizeResult = {
   job_id: string;
   download: string;
@@ -54,6 +103,9 @@ export type DigitizeResult = {
   preview_svg?: string;
   resolved_dimensions?: Record<string, number>;
   component_schema?: ComponentSchema[] | null;
+  template_graph?: TemplateGraphView;
+  template_warnings?: string[];
+  phase3?: Phase3Result | null;
   accuracy_pipeline?: AccuracyPipeline;
   furniture: {
     type: string;
@@ -87,28 +139,48 @@ export type DigitizeResult = {
 export type FurnitureType =
   | 'round_pedestal_table'
   | 'rectangular_table'
-  | 'sofa'
-  | 'cabinet'
-  | 'bed_headboard'
-  | 'chair'
-  | 'asymmetric_pedestal_table'
   | 'oval_pedestal_table'
   | 'console_table'
+  | 'coffee_table'
+  | 'side_table'
+  | 'sofa'
+  | 'lounge_chair'
+  | 'dining_chair'
+  | 'chair'
+  | 'cabinet'
+  | 'sideboard'
+  | 'tv_console'
+  | 'nightstand'
+  | 'wardrobe'
+  | 'bed'
+  | 'bed_headboard'
   | 'office_desk'
+  | 'reception_counter'
+  | 'asymmetric_pedestal_table'
   | 'generic_2d_furniture'
   | '';
 
 const FURNITURE_LABELS: Record<string, string> = {
   round_pedestal_table: 'Round Pedestal Table',
   rectangular_table: 'Rectangular Table',
-  sofa: 'Sofa / Couch',
-  cabinet: 'Cabinet / Wardrobe',
-  bed_headboard: 'Bed / Headboard',
-  chair: 'Chair',
-  asymmetric_pedestal_table: 'Asymmetric Pedestal Table',
   oval_pedestal_table: 'Oval Pedestal Table',
   console_table: 'Console / Sofa Table',
+  coffee_table: 'Coffee Table',
+  side_table: 'Side / End Table',
+  sofa: 'Sofa / Couch',
+  lounge_chair: 'Lounge Chair',
+  dining_chair: 'Dining Chair',
+  chair: 'Chair',
+  cabinet: 'Cabinet',
+  sideboard: 'Sideboard / Buffet',
+  tv_console: 'TV Console',
+  nightstand: 'Nightstand',
+  wardrobe: 'Wardrobe',
+  bed: 'Platform Bed',
+  bed_headboard: 'Bed Headboard',
   office_desk: 'Office Desk',
+  reception_counter: 'Reception Counter',
+  asymmetric_pedestal_table: 'Asymmetric Pedestal Table',
   generic_2d_furniture: 'Generic Furniture',
 };
 
@@ -287,4 +359,41 @@ export function getPdfUrl(dxfFile: string): string {
   const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
   if (base.startsWith('http')) return `${base}/api/preview/pdf/${dxfFile}`;
   return `${window.location.origin}/py-api/preview/pdf/${dxfFile}`;
+}
+
+/**
+ * Pre-digitize resolve: get template graph + parameter schema + constraints
+ * for a furniture type, WITHOUT uploading a photo.
+ * Returns the full ResolveResult for showing sliders/notes BEFORE digitizing.
+ */
+export async function resolveTemplate(
+  furnitureType: string,
+  options?: {
+    lengthCm?: number;
+    depthCm?: number;
+    heightCm?: number;
+    widthCm?: number;
+    topThicknessCm?: number;
+    seatHeightCm?: number;
+  }
+): Promise<ResolveResult> {
+  const form = new FormData();
+  form.append('furniture_type', furnitureType);
+  if (options?.lengthCm) form.append('length_cm', String(options.lengthCm));
+  if (options?.depthCm) form.append('depth_cm', String(options.depthCm));
+  if (options?.heightCm) form.append('height_cm', String(options.heightCm));
+  if (options?.widthCm) form.append('width_cm', String(options.widthCm));
+  if (options?.topThicknessCm) form.append('top_thickness_cm', String(options.topThicknessCm));
+  if (options?.seatHeightCm) form.append('seat_height_cm', String(options.seatHeightCm));
+
+  const base = getEngineBase();
+  const url = `${base}/digitize/resolve`;
+  const res = await fetch(url, { method: 'POST', body: form });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Resolve failed (${res.status}): ${err}`);
+  }
+
+  return res.json();
 }

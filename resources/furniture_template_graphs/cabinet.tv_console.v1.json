@@ -1,0 +1,68 @@
+{
+  "id": "cabinet.tv_console.v1",
+  "name": "TV console / media unit",
+  "product_type": "tv_console",
+  "family": "cabinet",
+  "parameters": [
+    {
+      "name": "length_mm",
+      "default": 1800,
+      "min_value": 800,
+      "max_value": 2400,
+      "description": "Console length"
+    },
+    {
+      "name": "depth_mm",
+      "default": 450,
+      "min_value": 350,
+      "max_value": 600,
+      "description": "Console depth"
+    },
+    {
+      "name": "height_mm",
+      "default": 600,
+      "min_value": 450,
+      "max_value": 750,
+      "description": "Console height"
+    },
+    {
+      "name": "panel_thickness_mm",
+      "default": 18,
+      "min_value": 12,
+      "max_value": 25,
+      "description": "Panel thickness"
+    }
+  ],
+  "components": [
+    {
+      "id": "case",
+      "role": "case",
+      "shape": "rectangular_box",
+      "material_role": "casework",
+      "parameter_map": {
+        "length_mm": "length_mm",
+        "depth_mm": "depth_mm",
+        "height_mm": "height_mm"
+      }
+    },
+    {
+      "id": "doors",
+      "role": "doors_or_drawers",
+      "shape": "rectangular_panels",
+      "material_role": "casework",
+      "parameter_map": {}
+    }
+  ],
+  "constraints": [],
+  "required_views": [
+    "front_elevation",
+    "side_elevation",
+    "top"
+  ],
+  "required_details": [
+    "cable_management_detail"
+  ],
+  "drawing_notes": [
+    "TV CONSOLE \u2014 SHOW CABLE MANAGEMENT PROVISIONS."
+  ]
+}

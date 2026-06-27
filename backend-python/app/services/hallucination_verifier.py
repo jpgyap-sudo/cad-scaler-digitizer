@@ -233,8 +233,15 @@ def verify_dimensions(
     """
     verdicts: dict[str, Verdict] = {}
     all_evidence: list[float] = []
+    dimensions_checked = 0
+    dimensions_with_bounds = 0
+
+    # Issue early warning if no or too few dimensions detected
+    if len(detected_dims) < 2:
+        pass  # Will be reflected in overall score and summary
 
     for dim_key, value_cm in detected_dims.items():
+        dimensions_checked += 1
         evidence: list[str] = []
         contradictions: list[str] = []
         sources: list[str] = []
@@ -245,6 +252,11 @@ def verify_dimensions(
         if bounds_pass:
             evidence.append(f"Within physical bounds for {furniture_type}")
             scores.append(1.0)
+            dimensions_with_bounds += 1
+        elif bounds_reason is None:
+            # Dimension key has no known bounds — reduce confidence
+            evidence.append(f"No bounds defined for {dim_key} — confidence reduced")
+            scores.append(0.4)
         else:
             contradictions.append(bounds_reason)
             scores.append(0.0)
@@ -335,8 +347,28 @@ def verify_dimensions(
         )
         all_evidence.append(avg_score)
 
-    # Overall score
-    overall = sum(all_evidence) / max(len(all_evidence), 1) if all_evidence else 0.0
+    # Overall score — penalize if too few dimensions or unknown dimension keys
+    raw_score = sum(all_evidence) / max(len(all_evidence), 1) if all_evidence else 0.0
+
+    # Penalty for insufficient dimensions
+    if dimensions_checked < 2:
+        dim_penalty = 0.3  # -30% for single dimension
+    elif dimensions_checked < 3:
+        dim_penalty = 0.1  # -10% for only 2 dimensions
+    else:
+        dim_penalty = 0.0
+
+    # Confidence interval: wider uncertainty with fewer dims
+    if dimensions_checked >= 5:
+        ci = 0.05  # ±5% for 5+ dims
+    elif dimensions_checked >= 3:
+        ci = 0.10  # ±10% for 3-4 dims
+    elif dimensions_checked >= 1:
+        ci = 0.20  # ±20% for 1-2 dims
+    else:
+        ci = 0.50
+
+    overall = max(0.0, raw_score - dim_penalty)
 
     # Summary
     verified = sum(1 for v in verdicts.values() if v.verdict == VERIFIED)
@@ -344,7 +376,8 @@ def verify_dimensions(
     hallucinated = sum(1 for v in verdicts.values() if v.verdict == HALLUCINATION)
     summary = (
         f"{furniture_type}: {verified} verified, {estimated} estimated, "
-        f"{hallucinated} hallucinated | overall confidence: {overall:.1%}"
+        f"{hallucinated} hallucinated ({dimensions_checked} dims checked) | "
+        f"score: {overall:.1%} ±{ci:.0%}"
     )
 
     return VerificationReport(

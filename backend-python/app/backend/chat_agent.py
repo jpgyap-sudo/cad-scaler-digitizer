@@ -62,6 +62,31 @@ class ChatResponse:
     render_hint: Optional[str] = None
 
 
+# All 18 furniture types supported by the template graph system:
+FURNITURE_TYPES_LIST = (
+    "round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, "
+    "dining_chair, wardrobe, reception_counter, bed_headboard, "
+    "asymmetric_pedestal_table, oval_pedestal_table, console_table, "
+    "office_desk, side_table, lounge_chair, nightstand, bed, sideboard, tv_console"
+)
+
+# Editable dimension keys per furniture type:
+DIMENSION_KEYS_BY_TYPE = {
+    "round_pedestal_table": "top_diameter_cm, overall_height_cm, base_diameter_cm, neck_diameter_cm, collar_diameter_cm, top_thickness_cm",
+    "rectangular_table": "width_cm, depth_cm, overall_height_cm, leg_thickness_cm, top_thickness_cm, leg_inset_cm",
+    "cabinet": "width_cm, depth_cm, overall_height_cm, door_count, door_thickness_cm, drawer_count, base_height_cm",
+    "sofa": "width_cm, depth_cm, overall_height_cm, seat_height_cm, armrest_width_cm, armrest_height_cm, backrest_height_cm, leg_height_cm",
+    "coffee_table": "width_cm, depth_cm, overall_height_cm, top_thickness_cm, leg_thickness_cm, lower_shelf_height_cm",
+    "dining_chair": "width_cm, overall_height_cm, seat_height_cm, seat_depth_cm, backrest_height_cm, leg_thickness_cm",
+    "wardrobe": "width_cm, depth_cm, overall_height_cm, door_count, rail_height_cm, shelf_count, base_height_cm",
+    "bed_headboard": "width_cm, overall_height_cm, panel_thickness_cm, post_width_cm, post_height_cm",
+    "reception_counter": "width_cm, depth_cm, overall_height_cm, top_thickness_cm, base_height_cm, overhang_cm",
+    "asymmetric_pedestal_table": "length_cm, depth_cm, overall_height_cm, top_thickness_cm, large_ped_dia_cm, small_ped_dia_cm, left_ped_x_cm, right_ped_x_cm, overhang_cm",
+    "oval_pedestal_table": "length_cm, depth_cm, overall_height_cm, top_thickness_cm, pedestal_dia_cm",
+    "console_table": "length_cm, depth_cm, overall_height_cm, top_thickness_cm, leg_thick_cm, leg_inset_cm",
+    "office_desk": "length_cm, depth_cm, overall_height_cm, top_thickness_cm, leg_thick_cm, modesty_panel_h_cm",
+}
+
 SYSTEM_PROMPT = """You are a furniture CAD assistant for a shop drawing generator app.
 
 Your job: analyze user messages about furniture items and return structured JSON.
@@ -73,21 +98,35 @@ The app generates professional CAD drawings (DXF format) from uploaded furniture
 4. Specify which components are visible or hidden
 5. Teach you workflow preferences (e.g., 'always use brushed steel for modern pieces')
 
+SUPPORTED FURNITURE TYPES (all 18):
+{types_list}
+
+EDITABLE DIMENSION KEYS BY TYPE:
+{dim_keys}
+
 Return ONLY valid JSON:
-{
+{{
   "response": "your concise, helpful reply to the user (1-2 sentences)",
   "action": "continue" or "render",
-  "updates": {
-    "furniture_type": null or one of: round_pedestal_table, rectangular_table, cabinet, sofa, coffee_table, dining_chair, wardrobe, reception_counter, bed_headboard,
-    "materials": {"component": "material description"},
-    "dimensions": {"component": value_in_cm_number},
-    "visibility": {"component": true_or_false},
+  "updates": {{
+    "furniture_type": null or one of the types listed above,
+    "materials": {{"component": "material description"}},
+    "dimensions": {{"component": value_in_cm_number}},
+    "visibility": {{"component": true_or_false}},
     "notes": ["note text for the drawing"]
-  }
-}
+  }}
+}}
 
-Material components: tabletop, pedestal_body, collar_plate, neck_ring, legs, seat, backrest, frame, drawer_front, base_foot
-Dimension keys: top_diameter_cm, overall_height_cm, base_diameter_cm, neck_diameter_cm, collar_diameter_cm, top_thickness_cm, width_cm, depth_cm, leg_thickness_cm
+Material components per type:
+- round_pedestal_table: tabletop, collar_plate, neck_ring, pedestal_body, base_foot
+- rectangular_table/cabinet/wardrobe: tabletop/carcass, doors/legs, base
+- sofa: body, seat, backrest, armrests, legs
+- coffee_table/console_table/office_desk: tabletop, legs, lower_shelf/modesty_panel
+- dining_chair: seat, backrest, legs
+- bed_headboard: headboard, posts/posts, frame
+- reception_counter: counter_top, front_panel, base
+- asymmetric_pedestal_table/oval_pedestal_table: tabletop, large_pedestal/small_pedestal/pedestal
+Dimension keys: top_diameter_cm, overall_height_cm, base_diameter_cm, neck_diameter_cm, collar_diameter_cm, top_thickness_cm, width_cm, depth_cm, leg_thickness_cm, length_cm, large_ped_dia_cm, small_ped_dia_cm, pedestal_dia_cm, modesty_panel_h_cm, seat_height_cm, backrest_height_cm, door_count, shelf_count
 Visibility: set to false to hide a component, true to show it
 
 The drawing state given as context (if any) shows the CURRENT value of every dimension already set — use it to resolve relative/relational requests.
@@ -96,11 +135,14 @@ Rules:
 - Be conversational and helpful
 - Extract ALL measurable details from user messages
 - If the user gives a RELATIONAL instruction without an exact number (e.g. "make the base a different diameter than the pedestal/neck", "the legs should be thicker", "make it wider than the top") you MUST still compute and return a concrete number in updates.dimensions using the current state shown in context plus normal furniture proportions - never leave it unset or silently do nothing. State your reasoning briefly in the response (e.g. "neck is 50cm, so I set the base to 65cm").
-- If a relational request references a component with no key in "Dimension keys" above, pick the closest matching key - do not skip the request.
+- If a relational request references a component with no key in the dimension keys above, pick the closest matching key - do not skip the request.
 - If user says 'render', 'generate', 'show me', or 'update drawing' → set action to "render"
 - If user describes a workflow preference, store it in notes
 - Default action is "continue" unless user explicitly asks for rendering
-"""
+""".format(
+    types_list=FURNITURE_TYPES_LIST,
+    dim_keys="\\n".join(f"  {k}: {v}" for k, v in DIMENSION_KEYS_BY_TYPE.items())
+)
 
 
 def _openai_chat(prompt: str, context: Optional[str] = None) -> Optional[str]:

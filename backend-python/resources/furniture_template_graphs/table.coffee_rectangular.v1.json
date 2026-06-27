@@ -1,0 +1,73 @@
+{
+  "id": "table.coffee_rectangular.v1",
+  "name": "Rectangular coffee table",
+  "product_type": "coffee_table",
+  "family": "table",
+  "parameters": [
+    {
+      "name": "length_mm",
+      "default": 1200,
+      "min_value": 600,
+      "max_value": 1800,
+      "description": "Table length"
+    },
+    {
+      "name": "depth_mm",
+      "default": 600,
+      "min_value": 400,
+      "max_value": 1000,
+      "description": "Table depth"
+    },
+    {
+      "name": "height_mm",
+      "default": 380,
+      "min_value": 300,
+      "max_value": 480,
+      "description": "Table height"
+    },
+    {
+      "name": "top_thickness_mm",
+      "default": 25,
+      "min_value": 12,
+      "max_value": 50,
+      "description": "Top thickness"
+    }
+  ],
+  "components": [
+    {
+      "id": "top",
+      "role": "top",
+      "shape": "rectangular_slab",
+      "material_role": "top",
+      "parameter_map": {
+        "length_mm": "length_mm",
+        "depth_mm": "depth_mm",
+        "thickness_mm": "top_thickness_mm"
+      }
+    },
+    {
+      "id": "legs",
+      "role": "support",
+      "shape": "rectangular_prism",
+      "quantity": 4,
+      "material_role": "base",
+      "parameter_map": {}
+    }
+  ],
+  "constraints": [
+    {
+      "id": "height_range",
+      "description": "Coffee table height must be between 300-480mm",
+      "expression": "300 <= height_mm <= 480",
+      "severity": "warning"
+    }
+  ],
+  "required_views": [
+    "top",
+    "front_elevation"
+  ],
+  "required_details": [],
+  "drawing_notes": [
+    "COFFEE TABLE \u2014 LOW HEIGHT."
+  ]
+}

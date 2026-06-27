@@ -43,6 +43,9 @@ async function processJob(job) {
   const { jobId, url, manufacturer, category } = job;
   console.log(`[Crawler Worker] Processing job ${jobId}: ${url} [${manufacturer}]`);
 
+  // Set timeout key (10 min) — if job doesn't complete, status shows timed_out
+  await redisClient.setEx(`crawler:timeout:${jobId}`, 600, "1");
+
   // Publish progress
   await redisClient.publish(PROGRESS_CHANNEL, JSON.stringify({
     job_id: jobId,

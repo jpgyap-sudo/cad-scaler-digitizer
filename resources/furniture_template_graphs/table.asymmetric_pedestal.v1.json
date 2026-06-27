@@ -1,7 +1,7 @@
 {
-  "id": "table.dual_cylindrical_pedestal.v1",
-  "name": "Dual cylindrical pedestal dining table",
-  "product_type": "dining_table",
+  "id": "table.asymmetric_pedestal.v1",
+  "name": "Asymmetric dual pedestal table",
+  "product_type": "asymmetric_pedestal_table",
   "family": "table",
   "parameters": [
     {
@@ -9,49 +9,63 @@
       "default": 1800,
       "min_value": 1200,
       "max_value": 3200,
-      "description": "Overall table length"
+      "description": "Table length"
     },
     {
       "name": "depth_mm",
       "default": 900,
-      "min_value": 650,
-      "max_value": 1400
+      "min_value": 600,
+      "max_value": 1500,
+      "description": "Table depth"
     },
     {
       "name": "height_mm",
       "default": 750,
       "min_value": 720,
-      "max_value": 780
+      "max_value": 780,
+      "description": "Table height"
     },
     {
       "name": "top_thickness_mm",
       "default": 30,
-      "min_value": 18,
-      "max_value": 80
+      "min_value": 15,
+      "max_value": 50,
+      "description": "Top slab thickness"
     },
     {
       "name": "large_pedestal_diameter_mm",
-      "default": 420,
-      "min_value": 250,
-      "max_value": 700
+      "default": 400,
+      "min_value": 300,
+      "max_value": 500,
+      "description": "Large pedestal diameter"
     },
     {
       "name": "small_pedestal_diameter_mm",
       "default": 220,
-      "min_value": 120,
-      "max_value": 450
+      "min_value": 150,
+      "max_value": 300,
+      "description": "Small pedestal diameter"
     },
     {
       "name": "left_pedestal_x_mm",
-      "default": -420
+      "default": -300,
+      "min_value": -800,
+      "max_value": 0,
+      "description": "Left pedestal X offset from center"
     },
     {
       "name": "right_pedestal_x_mm",
-      "default": 420
+      "default": 250,
+      "min_value": 0,
+      "max_value": 800,
+      "description": "Right pedestal X offset from center"
     },
     {
       "name": "pedestal_height_mm",
-      "default": 720
+      "default": 720,
+      "min_value": 400,
+      "max_value": 760,
+      "description": "Pedestal column height"
     }
   ],
   "components": [
@@ -74,8 +88,7 @@
       "parameter_map": {
         "diameter_mm": "large_pedestal_diameter_mm",
         "height_mm": "pedestal_height_mm",
-        "x_mm": "left_pedestal_x_mm",
-        "y_mm": "zero"
+        "x_mm": "left_pedestal_x_mm"
       }
     },
     {
@@ -86,8 +99,7 @@
       "parameter_map": {
         "diameter_mm": "small_pedestal_diameter_mm",
         "height_mm": "pedestal_height_mm",
-        "x_mm": "right_pedestal_x_mm",
-        "y_mm": "zero"
+        "x_mm": "right_pedestal_x_mm"
       }
     },
     {
@@ -105,21 +117,15 @@
   "constraints": [
     {
       "id": "height_range",
-      "description": "Dining table height should be 720-780mm",
+      "description": "Table height must be between 720-780mm",
       "expression": "720 <= height_mm <= 780",
       "severity": "warning"
     },
     {
       "id": "pedestal_ratio",
-      "description": "Large pedestal should be larger than small pedestal",
+      "description": "Large pedestal must be larger than small pedestal",
       "expression": "large_pedestal_diameter_mm > small_pedestal_diameter_mm",
       "severity": "error"
-    },
-    {
-      "id": "top_span",
-      "description": "Long stone table should include hidden frame",
-      "expression": "length_mm <= 2200 or top_thickness_mm >= 30",
-      "severity": "warning"
     }
   ],
   "required_views": [
@@ -128,12 +134,11 @@
     "side_elevation"
   ],
   "required_details": [
-    "top_thickness_detail",
     "pedestal_mounting_detail",
     "hidden_frame_detail"
   ],
   "drawing_notes": [
-    "SHOW HIDDEN STEEL FRAME UNDER STONE TOP.",
-    "SHOW PEDESTAL DIAMETERS AND POSITIONS."
+    "SHOW ASYMMETRIC PEDESTAL POSITIONS.",
+    "SHOW HIDDEN STEEL FRAME UNDER STONE TOP."
   ]
 }

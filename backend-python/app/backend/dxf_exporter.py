@@ -9,9 +9,11 @@ Fixes applied:
 - update_extents() called before every saveas()
 - CENTER linetype loaded safely (CENTER2 not always available)
 - No dependency on text_tokenizer (only text_normalizer)
+- Gap #1/#2: all save_*() accept materials + visibility parameters
 """
 import math
 from datetime import datetime
+from typing import Optional, Dict
 import ezdxf
 from app.backend.layer_manager import setup_layers
 from app.backend.text_normalizer import normalize_dimension_text, clean_text_for_dxf
@@ -235,7 +237,8 @@ def _add_leader(msp, text, start_point, end_point, height=3):
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
                                base_dia_cm=None, neck_dia_cm=None, top_thick_cm=None,
                                collar_dia_cm=None, materials=None, profile="cylinder",
-                               _scale_result=None, _validation_result=None):
+                               _scale_result=None, _validation_result=None,
+                               visibility: Optional[Dict[str, bool]] = None):
     """Round pedestal table shop drawing with anti-hallucination rules.
     
     VISIBLE components (conf >= 0.70) → solid OBJECT layer
@@ -258,7 +261,10 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
             vr = None
     
     # Helper: determine if a component should be drawn and with what linetype
-    def _visible(name): 
+    def _visible(name):
+        if visibility is not None and name in visibility:
+            if not visibility[name]:
+                return False
         if vr and name in vr.components:
             return vr.components[name].visibility != "UNKNOWN"
         return True
@@ -422,7 +428,9 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
 
 
 def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_thickness_cm=6,
-                            _validation_result=None):
+                            _validation_result=None,
+                            materials: Optional[Dict[str, str]] = None,
+                            visibility: Optional[Dict[str, bool]] = None):
     """Rectangular table with tabletop, 4 legs, stretchers, and dimensions."""
     # --- Anti-hallucination helpers ---
     vr = _validation_result
@@ -450,6 +458,12 @@ def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_th
     w2, d2 = w / 2, d / 2
     ox, y_mid = 100, 180
     lt = leg_thickness_cm * sc  # leg thickness in pixels
+
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
 
     # ===== TOP VIEW =====
     _add_polyline(msp, [(ox - w2, y_mid - d2), (ox + w2, y_mid - d2),
@@ -502,12 +516,24 @@ def save_rectangular_table(path, width_cm=120, depth_cm=80, height_cm=70, leg_th
     _add_centerline(msp, (fx, floor_y - 5), (fx, top_y + 5))
     _add_mtext(msp, 'FRONT VIEW', (fx - w2, top_y + 10), 3)
 
-    generate_title_block(msp, f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Rectangular Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"TABLE TOP — {mats.get('tabletop', 'Solid wood, clear coat')}",
+                             f"LEGS — {mats.get('legs', 'Solid wood, matching finish')}",
+                         ])
     return _save(doc, path)
 
 
-def save_cabinet(path, width_cm=100, depth_cm=50, height_cm=180):
+def save_cabinet(path, width_cm=100, depth_cm=50, height_cm=180,
+                 materials: Optional[Dict[str, str]] = None,
+                 visibility: Optional[Dict[str, bool]] = None):
     """Cabinet with double doors, shelves, handles, and dimensions."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.3
@@ -551,12 +577,25 @@ def save_cabinet(path, width_cm=100, depth_cm=50, height_cm=180):
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
-    generate_title_block(msp, f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"CARCASS — {mats.get('carcass', '18mm MDF, matte lacquer')}",
+                             f"DOORS — {mats.get('doors', 'MDF, painted finish')}",
+                             f"BASE — {mats.get('base', 'Solid wood plinth')}",
+                         ])
     return _save(doc, path)
 
 
-def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45):
+def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45,
+              materials: Optional[Dict[str, str]] = None,
+              visibility: Optional[Dict[str, bool]] = None):
     """Sofa with seat, backrest, armrests, and cushion dividers."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.3
@@ -596,12 +635,26 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45):
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
-    generate_title_block(msp, f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"BODY — {mats.get('body', 'Upholstered fabric')}",
+                             f"SEAT — {mats.get('seat', 'High-density foam')}",
+                             f"BACKREST — {mats.get('backrest', 'Upholstered fabric')}",
+                             f"LEGS — {mats.get('legs', 'Solid wood, tapered')}",
+                         ])
     return _save(doc, path)
 
 
-def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation_result=None):
+def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation_result=None,
+                      materials: Optional[Dict[str, str]] = None,
+                      visibility: Optional[Dict[str, bool]] = None):
     """Round coffee table — top view circle with diameter dimension."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.6
@@ -619,12 +672,24 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation
     _add_centerline(msp, (cx, y_mid - r - 5), (cx, y_mid + r + 5))
     _add_diameter_dim(msp, (cx, y_mid), r, f'%%c{min(width_cm, depth_cm):g} cm')
     _add_mtext(msp, 'TOP VIEW', (cx - 10, y_mid + r + 10), 3)
-    generate_title_block(msp, f"Coffee Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Coffee Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"TABLE TOP — {mats.get('tabletop', 'Tempered glass / solid wood')}",
+                             f"LEGS — {mats.get('legs', 'Powder-coated steel')}",
+                         ])
     return _save(doc, path)
 
 
-def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_cm=45, _validation_result=None):
+def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_cm=45, _validation_result=None,
+                      materials: Optional[Dict[str, str]] = None,
+                      visibility: Optional[Dict[str, bool]] = None):
     """Dining chair with seat, backrest, and 4 legs in front view."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.5
@@ -665,12 +730,25 @@ def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, back_top_y + 8), 3)
 
-    generate_title_block(msp, f"Dining Chair {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Dining Chair {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"SEAT — {mats.get('seat', 'Upholstered fabric over foam')}",
+                             f"BACKREST — {mats.get('backrest', 'Solid wood slats')}",
+                             f"LEGS — {mats.get('legs', 'Solid wood, stained')}",
+                         ])
     return _save(doc, path)
 
 
-def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_result=None):
+def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_result=None,
+                  materials: Optional[Dict[str, str]] = None,
+                  visibility: Optional[Dict[str, bool]] = None):
     """Wardrobe with double doors, shelves, hanging rail, and handles."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.25
@@ -712,12 +790,25 @@ def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_re
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
-    generate_title_block(msp, f"Wardrobe {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Wardrobe {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"CARCASS — {mats.get('carcass', '18mm MDF, matte white lacquer')}",
+                             f"DOORS — {mats.get('doors', 'MDF, matte lacquer')}",
+                             f"BASE — {mats.get('base', 'Solid wood plinth')}",
+                         ])
     return _save(doc, path)
 
 
-def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, counter_height_cm=75, _validation_result=None):
+def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, counter_height_cm=75, _validation_result=None,
+                           materials: Optional[Dict[str, str]] = None,
+                           visibility: Optional[Dict[str, bool]] = None):
     """Reception counter with top view, front view, and transaction height label."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.25
@@ -749,14 +840,31 @@ def save_reception_counter(path, width_cm=180, depth_cm=80, height_cm=110, count
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
-    generate_title_block(msp, f"Reception Counter {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Reception Counter {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"COUNTER TOP — {mats.get('counter_top', 'Engineered quartz / solid surface')}",
+                             f"FRONT PANEL — {mats.get('front_panel', 'MDF, matte lacquer')}",
+                             f"BASE — {mats.get('base', 'Brushed stainless steel')}",
+                         ])
     return _save(doc, path)
 
 
-def save_bed_headboard(path, width_cm=160, height_cm=120, _validation_result=None):
+def save_bed_headboard(path, width_cm=160, height_cm=120, _validation_result=None,
+                       materials: Optional[Dict[str, str]] = None,
+                       visibility: Optional[Dict[str, bool]] = None):
     """Bed headboard with headboard panel, legs, and dimensions."""
+    mats = materials or {}
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     doc = setup_doc()
     msp = doc.modelspace()
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     sc = 0.4
     w = width_cm * sc
     h = height_cm * sc
@@ -782,13 +890,19 @@ def save_bed_headboard(path, width_cm=160, height_cm=120, _validation_result=Non
     _add_dimension(msp, (fx, floor_y - 8), (fx + w, floor_y - 8),
                    (fx, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 10), 3)
-    generate_title_block(msp, f"Bed Headboard {width_cm:.0f}x{height_cm:.0f}")
+    generate_title_block(msp, f"Bed Headboard {width_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"HEADBOARD PANEL — {mats.get('headboard', 'Upholstered panel, velvet fabric')}",
+                             f"POSTS/LEGS — {mats.get('posts', 'Solid wood, stained finish')}",
+                         ])
     return _save(doc, path)
 
 
 def save_oval_pedestal_table(path, length_cm=180, depth_cm=100, height_cm=75,
                               top_thick_cm=3, pedestal_dia_cm=40, base_plate_cm=5,
-                              materials=None):
+                              materials=None,
+                              visibility: Optional[Dict[str, bool]] = None):
     """Oval/elliptical pedestal table — TOP VIEW + FRONT ELEVATION.
     
     Oval tabletop with single central cylindrical pedestal.
@@ -888,7 +1002,8 @@ def save_oval_pedestal_table(path, length_cm=180, depth_cm=100, height_cm=75,
 
 def save_console_table(path, length_cm=120, depth_cm=40, height_cm=75,
                         top_thick_cm=2.5, leg_thick_cm=4, leg_inset_cm=2,
-                        materials=None):
+                        materials=None,
+                        visibility: Optional[Dict[str, bool]] = None):
     """Console / sofa table — TOP/FRONT/SIDE views.
     
     Narrow long table with four simple legs at corners.
@@ -969,10 +1084,15 @@ def save_console_table(path, length_cm=120, depth_cm=40, height_cm=75,
 
 def save_office_desk(path, length_cm=140, depth_cm=60, height_cm=75,
                      top_thick_cm=2.5, leg_thick_cm=4, modesty_panel_h_cm=15,
-                     leg_inset_cm=2, materials=None):
+                     leg_inset_cm=2, materials=None,
+                     visibility: Optional[Dict[str, bool]] = None):
     """Office desk with modesty panel — TOP/FRONT/SIDE views."""
     doc = setup_doc()
     msp = doc.modelspace()
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     sc = 0.35
     w = length_cm * sc
     d = depth_cm * sc
@@ -1058,7 +1178,8 @@ def save_office_desk(path, length_cm=140, depth_cm=60, height_cm=75,
 def save_asymmetric_pedestal_table(path, length_cm=180, depth_cm=90, height_cm=75,
                                     top_thick_cm=3, large_ped_dia_cm=40, small_ped_dia_cm=22,
                                     left_ped_x_cm=30, right_ped_x_cm=-25, overhang_cm=20,
-                                    base_plate_cm=5, materials=None):
+                                    base_plate_cm=5, materials=None,
+                                    visibility: Optional[Dict[str, bool]] = None):
     """Asymmetric cylindrical pedestal dining table — TOP/FRONT/SIDE views.
     
     Rectangular tabletop with two offset cylindrical pedestals of different
