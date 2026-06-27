@@ -193,8 +193,11 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             opts_text = " " + opt_val + " "
 
                             # Pattern A: {W}x{L}(L)x{H}(H)cm — HomeU format
-                            for m in re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*)\s*(?:\(?H\)?)?\s*(?:cm|mm)?', opts_text, re.I):
+                            for m in re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*)\s*(?:\(?H\)?)?\s*(cm|mm)?', opts_text, re.I):
                                 w, l, h = float(m[0]), float(m[1]), float(m[2])
+                                unit = m[3] if len(m) > 3 and m[3] else "cm"
+                                if unit == "mm":
+                                    w, l, h = w / 10, l / 10, h / 10
                                 if "width_cm" not in result or w > result["width_cm"]:
                                     result["width_cm"] = w
                                     result["length_cm"] = l
@@ -203,13 +206,31 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                                     result["sizes"] = []
                                 result["sizes"].append({"width": w, "length": l, "height": h, "variant": opt_val})
 
-                            # Pattern B: {W}x{D}x{H} cm — standard format
+                            # Pattern B: {W}x{D}x{H} cm — standard format (3 values)
                             if "width_cm" not in result:
-                                m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:cm|mm)?', opts_text, re.I)
+                                m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(cm|mm)?', opts_text, re.I)
                                 if m:
-                                    result["width_cm"] = float(m.group(1))
-                                    result["depth_cm"] = float(m.group(2))
-                                    result["overall_height_cm"] = float(m.group(3))
+                                    w = float(m.group(1))
+                                    d = float(m.group(2))
+                                    h = float(m.group(3))
+                                    unit = m.group(4) if m.lastindex >= 4 and m.group(4) else "cm"
+                                    if unit == "mm":
+                                        w, d, h = w / 10, d / 10, h / 10
+                                    result["width_cm"] = w
+                                    result["depth_cm"] = d
+                                    result["overall_height_cm"] = h
+
+                            # Pattern C: {W}x{D} (mm|cm) — 2 values like "2000 x 1000mm"
+                            if "width_cm" not in result:
+                                m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(cm|mm)?', opts_text, re.I)
+                                if m:
+                                    w = float(m.group(1))
+                                    d = float(m.group(2))
+                                    unit = m.group(3) if m.lastindex >= 3 and m.group(3) else "cm"
+                                    if unit == "mm":
+                                        w, d = w / 10, d / 10
+                                    result["width_cm"] = w
+                                    result["depth_cm"] = d
 
                     # Pattern 1: cf-size-{seating}{W}x{L}lx{H}hcm
                     for match in re.findall(r'(\d+)x(\d+)lx(\d+)hcm', all_text, re.I):
