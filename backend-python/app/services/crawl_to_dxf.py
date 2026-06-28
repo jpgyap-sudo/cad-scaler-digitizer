@@ -557,12 +557,12 @@ async def crawl_and_digitize(
 
     # Step 3: Extract dimensions from the product page
     page_dims = await extract_dimensions_from_page(page_url)
-    real_h = None
-    real_d = None
     if page_dims:
         logger.info(f"[CrawlToDXF] Found page dimensions: {page_dims}")
         result["page_dimensions"] = page_dims
-        # Use discovered dimensions for scale
+        # Use discovered width for scale if not already provided
+        real_h = None
+        real_d = None
         if not real_width_cm and page_dims.get("width_cm"):
             real_width_cm = page_dims["width_cm"]
             logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
@@ -570,6 +570,22 @@ async def crawl_and_digitize(
             real_h = page_dims["overall_height_cm"]
         elif page_dims.get("height_cm"):
             real_h = page_dims["height_cm"]
+        # Also extract depth for hybrid dispatch
+        if page_dims.get("depth_cm"):
+            real_d = page_dims["depth_cm"]
+        elif page_dims.get("length_cm"):
+            real_d = page_dims["length_cm"]
+
+        # Shape detection from page URL slug — remaps generic types to specific templates
+        _slug = urlparse(page_url).path.rstrip("/").split("/")[-1].lower() if page_url else ""
+        _shape_keywords = {"round": "round_pedestal_table", "oval": "oval_pedestal_table",
+                           "square": "rectangular_table", "pedestal": "round_pedestal_table"}
+        if furniture_type in ("table", "furniture") and _slug:
+            for kw, mapped_type in _shape_keywords.items():
+                if kw in _slug:
+                    furniture_type = mapped_type
+                    logger.info(f"[CrawlToDXF] Shape detected: {kw} → {mapped_type} (slug: {_slug})")
+                    break
         # depth_cm was parsed from the page but never forwarded to the
         # digitizer at all - every dispatch defaulted to a hardcoded depth
         # guess even when the real value was already known (e.g. a square
