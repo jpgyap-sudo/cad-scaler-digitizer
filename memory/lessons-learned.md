@@ -4406,3 +4406,155 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: add missing Query import to routes.py
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a2eaa35ed7c7f180e7086bbc278de74745e61ec4
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a2eaa35ed7c7f180e7086bbc278de74745e61ec4
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/drawing_builders.py,frontend/App.tsx,frontend/components/NavBar.tsx
+
+**Summary:**
+Commit: fix: add missing Query import to routes.py
+Files: backend-python/app/api/routes.py,backend-python/app/backend/drawing_builders.py,frontend/App.tsx,frontend/components/NavBar.tsx
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add missing Query import to routes.py*
+
+#### Lesson Learned
+
+Commit: fix: add missing Query import to routes.py
+Files: backend-python/app/api/routes.py,backend-python/app/backend/drawing_builders.py,frontend/App.tsx,frontend/components/NavBar.tsx
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: coffee_table dispatch never used or exposed depth, breaking crawled tables
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7e4e234039b82d48467feb7d72d9efe736d7b082
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 7e4e234039b82d48467feb7d72d9efe736d7b082
+**Files:** 
+
+**Summary:**
+Commit: fix: coffee_table dispatch never used or exposed depth, breaking crawled tables
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: coffee_table dispatch never used or exposed depth, breaking crawled tables*
+
+#### Lesson Learned
+
+Commit: fix: coffee_table dispatch never used or exposed depth, breaking crawled tables
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 8 remaining audit issues — duplicates, stale files, dead code, swagger
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ba9185e5329e28d179b2edd3704ff26b229a2099
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** ba9185e5329e28d179b2edd3704ff26b229a2099
+**Files:** 
+
+**Summary:**
+Commit: fix: 8 remaining audit issues — duplicates, stale files, dead code, swagger
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 8 remaining audit issues — duplicates, stale files, dead code, swagger*
+
+#### Lesson Learned
+
+Commit: fix: 8 remaining audit issues — duplicates, stale files, dead code, swagger
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: Glenn sofa height (2→82cm median) + Evon bed (W)x(L)x(H) pattern
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit feafb78052f92f86b546e72a03121a3436a69516
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** feafb78052f92f86b546e72a03121a3436a69516
+**Files:** 
+
+**Summary:**
+Commit: fix: Glenn sofa height (2→82cm median) + Evon bed (W)x(L)x(H) pattern
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Glenn sofa height (2→82cm median) + Evon bed (W)x(L)x(H) pattern*
+
+#### Lesson Learned
+
+Commit: fix: Glenn sofa height (2→82cm median) + Evon bed (W)x(L)x(H) pattern
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

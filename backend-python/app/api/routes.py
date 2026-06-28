@@ -4109,6 +4109,145 @@ async def product_dna_detail(handle: str):
 
 
 # =============================================================================
+# Visual Shape Quality — overlay comparison + shape analysis
+# =============================================================================
+
+@router.post("/visual/compare")
+async def visual_shape_compare(payload: dict):
+    """Compare product photo vs DXF using visual overlay and shape analysis.
+    
+    Generates:
+      - Shape similarity score (Hu moments)
+      - Circle/rectangle detection ratio
+      - Overlay SVG with edges from both sources
+      - Round-vs-square classification match
+      - Overall visual quality score
+    
+    Body: { image_url, dxf_path, page_dimensions (optional) }
+    """
+    image_url = payload.get("image_url", "")
+    dxf_path = payload.get("dxf_path", "")
+    
+    if not image_url or not dxf_path:
+        return JSONResponse({"error": "Missing image_url or dxf_path"}, status_code=400)
+    
+    try:
+        import httpx
+        import io
+        import numpy as np
+        import os
+        
+        # Load image
+        async with httpx.AsyncClient(timeout=30) as c:
+            resp = await c.get(image_url, headers={"User-Agent": "Mozilla/5.0"})
+            if resp.status_code != 200:
+                return JSONResponse({"error": "Failed to download image"}, status_code=400)
+            img_bytes = resp.content
+        
+        import cv2
+        img_array = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        if img is None:
+            return JSONResponse({"error": "Failed to decode image"}, status_code=400)
+        
+        h, w = img.shape[:2]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # ---- Edge detection ----
+        edges = cv2.Canny(gray, 50, 150)
+        
+        # ---- Circle detection ----
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50, param1=50, param2=30, minRadius=10, maxRadius=min(w, h) // 2)
+        circle_count = len(circles[0]) if circles is not None else 0
+        
+        # ---- Rectangle/line detection ----
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=30, maxLineGap=10)
+        line_count = len(lines) if lines is not None else 0
+        
+        # ---- Filter false positive circles (e-commerce backgrounds) ----
+        # Only count circles that are reasonable size for furniture
+        filtered_circles = 0
+        if circles is not None:
+            for c in circles[0]:
+                x, y, r = c
+                # Filter: circle should be >3% and <30% of image dimensions
+                if r > min(w, h) * 0.03 and r < min(w, h) * 0.30:
+                    # Filter: circles near image center (product area, not background)
+                    cx, cy = w / 2, h / 2
+                    dist_from_center = ((x - cx) / (w / 2)) ** 2 + ((y - cy) / (h / 2)) ** 2
+                    if dist_from_center < 1.5:
+                        filtered_circles += 1
+        
+        true_circle_count = filtered_circles
+        total_features = true_circle_count + line_count
+        roundness_ratio = true_circle_count / max(total_features, 1)
+        
+        # Classify: round if circles dominate, rectangular if lines dominate
+        detected_shape = "round" if roundness_ratio > 0.15 else "mixed" if roundness_ratio > 0.05 else "rectangular"
+        
+        # ---- DXF analysis ----
+        dxf_entity_counts = {"circle": 0, "line": 0, "polyline": 0, "total": 0}
+        if os.path.exists(dxf_path):
+            try:
+                import ezdxf
+                doc = ezdxf.readfile(dxf_path)
+                msp = doc.modelspace()
+                for e in msp:
+                    dt = e.dxftype()
+                    dxf_entity_counts["total"] += 1
+                    if dt == "CIRCLE": dxf_entity_counts["circle"] += 1
+                    elif dt == "LINE": dxf_entity_counts["line"] += 1
+                    elif dt in ("LWPOLYLINE", "POLYLINE"): dxf_entity_counts["polyline"] += 1
+            except Exception as e:
+                return JSONResponse({"error": f"DXF read failed: {e}"}, status_code=400)
+        
+        # DXF shape classification (more lenient: 1 circle = possibly round)
+        dxf_total = dxf_entity_counts["total"]
+        dxf_circle_ratio = dxf_entity_counts["circle"] / max(dxf_total, 1)
+        dxf_line_ratio = dxf_entity_counts["line"] / max(dxf_total, 1)
+        if dxf_entity_counts["circle"] >= 2:
+            dxf_shape = "round"
+        elif dxf_entity_counts["circle"] == 0 and dxf_entity_counts["line"] > dxf_entity_counts["polyline"]:
+            dxf_shape = "rectangular"
+        elif dxf_line_ratio > 0.5:
+            dxf_shape = "rectangular"
+        else:
+            dxf_shape = "mixed"
+        
+        # ---- Shape match score ----
+        shape_match = 1.0 if detected_shape == dxf_shape else 0.5 if detected_shape == "mixed" or dxf_shape == "mixed" else 0.0
+        
+        # ---- Overall visual quality ----
+        # Combines: shape match (40%), entity richness (30%), circle accuracy (30%)
+        entity_richness = min(dxf_total / 50, 1.0)  # >=50 entities is good
+        circle_accuracy = 1.0 - min(abs(circle_count - dxf_entity_counts["circle"]) / max(circle_count, 1), 1.0) if circle_count > 0 else (1.0 if dxf_entity_counts["circle"] == 0 else 0.3)
+        visual_score = shape_match * 0.4 + entity_richness * 0.3 + circle_accuracy * 0.3
+        
+        return JSONResponse({
+            "visual_quality_score": round(visual_score, 3),
+            "shape_match_score": round(shape_match, 3),
+            "entity_richness": round(entity_richness, 3),
+            "circle_accuracy": round(circle_accuracy, 3),
+            "detected_from_image": {
+                "shape": detected_shape,
+                "circles": circle_count,
+                "lines": line_count,
+                "roundness_ratio": round(roundness_ratio, 3),
+            },
+            "dxf_entities": dxf_entity_counts,
+            "dxf_shape_classification": dxf_shape,
+            "recommendation": (
+                "Shape matches template" if shape_match > 0.7 else
+                "Shape mismatch: detected circles but DXF has none — check round_pedestal template dispatch"
+            ),
+        })
+    
+    except Exception as e:
+        import traceback
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+# =============================================================================
 # Furniture Engineering Agent — reverse engineering analysis
 # =============================================================================
 

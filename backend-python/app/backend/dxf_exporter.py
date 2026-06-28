@@ -330,6 +330,14 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
             py = cy + r_px * math.sin(angle)
             points.append((px, py))
         _add_polyline(msp, points, closed=True, layer='OBJECT')
+    # Concentric circles for pedestal column (top view shows column profile)
+    if _visible("neck"):
+        neck_r = neck_dia_cm * 0.5 * sc
+        if neck_r > 4:
+            msp.add_circle((cx, cy), neck_r, dxfattribs={'layer': 'HIDDEN'})
+        collar_r = collar_dia_cm * 0.5 * sc
+        if collar_r > neck_r:
+            msp.add_circle((cx, cy), collar_r, dxfattribs={'layer': 'DASHED'})
     # Radial sunburst veneer lines (8 spokes — enough for visual cue)
     for i in range(8):
         angle = 2 * math.pi * i / 8
