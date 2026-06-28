@@ -66,8 +66,8 @@ REDIS_PASSWORD=change-this-to-another-strong-password
 SPACES_ENDPOINT=https://sgp1.digitaloceanspaces.com
 SPACES_REGION=sgp1
 SPACES_BUCKET=homeatelierspaces
-SPACES_KEY=DO00M6AC44YMBXXVA92U
-SPACES_SECRET=OOXgoRMlb4iqpNWQW8kjQxyqgxsgOlQeWc59c1gDT1I
+SPACES_KEY=REPLACE_WITH_YOUR_SPACES_KEY
+SPACES_SECRET=REPLACE_WITH_YOUR_SPACES_SECRET
 SPACES_CDN_BASE=https://homeatelierspaces.sgp1.cdn.digitaloceanspaces.com/cad-reference-library
 
 # Qdrant

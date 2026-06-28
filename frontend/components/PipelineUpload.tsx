@@ -76,7 +76,7 @@ const PipelineUpload: React.FC<PipelineUploadProps> = ({
       if (furnitureType) formData.append('furniture_type', furnitureType);
 
       const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
-      const url = base ? `${base}/api/pipeline/run` : '/api/pipeline/run';
+      const url = base ? `${base}/pipeline/run` : '/py-api/pipeline/run';
 
       const res = await fetch(url, { method: 'POST', body: formData });
       const data = await res.json();

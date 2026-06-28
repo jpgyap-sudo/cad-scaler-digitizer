@@ -1140,49 +1140,6 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         h = resolved.get('overall_height_cm', real_h or 200)
         return build_wardrobe_model(float(w), float(d), float(h))
     if f_type == 'oval_pedestal_table':
-        return [
-            {"name": "tabletop", "label": "Tabletop", "dims": [
-                {"key": "length_cm", "label": "Length", "min": 120, "max": 300, "step": 1, "unit": "cm"},
-                {"key": "depth_cm", "label": "Depth", "min": 60, "max": 150, "step": 1, "unit": "cm"},
-                {"key": "top_thickness_cm", "label": "Thickness", "min": 2, "max": 5, "step": 0.1, "unit": "cm"}],
-             "material": {"key": "tabletop", "default": "Marble / engineered stone"}},
-            {"name": "pedestal", "label": "Pedestal", "dims": [
-                {"key": "pedestal_dia_cm", "label": "Diameter", "min": 25, "max": 55, "step": 1, "unit": "cm"}],
-             "material": {"key": "pedestal", "default": "Brushed stainless steel"}},
-            {"name": "overall", "label": "Overall", "dims": [
-                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
-        ]
-    if f_type == 'console_table':
-        return [
-            {"name": "tabletop", "label": "Tabletop", "dims": [
-                {"key": "length_cm", "label": "Length", "min": 80, "max": 200, "step": 1, "unit": "cm"},
-                {"key": "depth_cm", "label": "Depth", "min": 25, "max": 55, "step": 1, "unit": "cm"},
-                {"key": "top_thickness_cm", "label": "Thickness", "min": 1.5, "max": 4, "step": 0.1, "unit": "cm"}],
-             "material": {"key": "tabletop", "default": "Solid wood / MDF"}},
-            {"name": "legs", "label": "Legs", "dims": [
-                {"key": "leg_thick_cm", "label": "Leg Thickness", "min": 2, "max": 6, "step": 0.5, "unit": "cm"},
-                {"key": "leg_inset_cm", "label": "Inset", "min": 1, "max": 5, "step": 0.5, "unit": "cm"}],
-             "material": {"key": "legs", "default": "Solid wood, matching top"}},
-            {"name": "overall", "label": "Overall", "dims": [
-                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
-        ]
-    if f_type == 'office_desk':
-        return [
-            {"name": "tabletop", "label": "Desk Top", "dims": [
-                {"key": "length_cm", "label": "Length", "min": 90, "max": 200, "step": 1, "unit": "cm"},
-                {"key": "depth_cm", "label": "Depth", "min": 50, "max": 80, "step": 1, "unit": "cm"},
-                {"key": "top_thickness_cm", "label": "Thickness", "min": 1.5, "max": 4, "step": 0.1, "unit": "cm"}],
-             "material": {"key": "tabletop", "default": "MDF with melamine finish"}},
-            {"name": "legs", "label": "Legs", "dims": [
-                {"key": "leg_thick_cm", "label": "Leg Thickness", "min": 3, "max": 6, "step": 0.5, "unit": "cm"}],
-             "material": {"key": "legs", "default": "Powder-coated steel"}},
-            {"name": "modesty_panel", "label": "Modesty Panel", "dims": [
-                {"key": "modesty_panel_h_cm", "label": "Panel Height", "min": 10, "max": 30, "step": 1, "unit": "cm"}],
-             "material": {"key": "modesty_panel", "default": "MDF, matching top"}},
-            {"name": "overall", "label": "Overall", "dims": [
-                {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
-        ]
-    if f_type == 'oval_pedestal_table':
         l = resolved.get('length_cm', real_w or 180)
         d = resolved.get('depth_cm', 100)
         h = resolved.get('overall_height_cm', real_h or 75)

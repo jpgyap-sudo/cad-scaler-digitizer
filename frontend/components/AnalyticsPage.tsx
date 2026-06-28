@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Cpu, Layers, Loader2, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
-const NODE_API = "http://localhost:4000";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);

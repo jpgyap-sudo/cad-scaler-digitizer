@@ -182,8 +182,8 @@ services:
     networks:
       - cad-network
     healthcheck:
-      test: ["CMD-SHELL", "docker inspect -f '{{.State.Status}}' cad-crawler-worker | grep -q running || exit 1"]
-      interval: 60s
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
@@ -253,6 +253,12 @@ services:
       - PYTHON_WORKER_URL=http://python-worker:8001
       - NODE_API_URL=http://node-api:4000
       - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
     depends_on:
       python-worker:
         condition: service_healthy

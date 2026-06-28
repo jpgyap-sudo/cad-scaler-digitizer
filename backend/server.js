@@ -13,7 +13,7 @@ app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.API_BACKEND_PORT || 5001;
 const HOST = process.env.API_BACKEND_HOST || '127.0.0.1';
-const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
+const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:8001';
 
 // Multer for file uploads
 const uploadDir = path.join(__dirname, '..', 'uploads');
