@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export type SmartQuestion = {
   id: string;
@@ -12,22 +12,78 @@ export type SmartQuestion = {
   affects_dxf?: boolean;
 };
 
+/** Format from furniture_intelligence template_proposal.questions */
+export type UncertaintyQuestion = {
+  field: string;
+  question: string;
+  options: string[];
+};
+
 type Props = {
   questions: SmartQuestion[];
+  uncertaintyQuestions?: UncertaintyQuestion[];
   disabled?: boolean;
   onApply: (answers: Record<string, string>) => void;
 };
 
-export default function SmartConfirmations({ questions, disabled, onApply }: Props) {
+function uncertaintyToSmartQuestions(uqs: UncertaintyQuestion[]): SmartQuestion[] {
+  return uqs.map((u) => ({
+    id: u.field,
+    type: 'field_confirmation',
+    severity: 'high' as const,
+    title: u.question,
+    message: u.question,
+    options: u.options.map((o) => ({ label: o, value: o })),
+    required: true,
+    affects_dxf: true,
+  }));
+}
+
+export default function SmartConfirmations({ questions, uncertaintyQuestions, disabled, onApply }: Props) {
   const [answers, setAnswers] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const q of questions || []) {
       if (q.default_value) init[q.id] = String(q.default_value);
     }
+    const uqs = uncertaintyQuestions || [];
+    for (const uq of uqs) {
+      if (uq.options.length > 0) init[uq.field] = uq.options[0];
+    }
     return init;
   });
 
-  if (!questions || questions.length === 0) return null;
+  // Rebuild answers when prop changes
+  useEffect(() => {
+    setAnswers((prev) => {
+      const next = { ...prev };
+      const uqs = uncertaintyQuestions || [];
+      for (const uq of uqs) {
+        if (!(uq.field in next) && uq.options.length > 0) {
+          next[uq.field] = uq.options[0];
+        }
+      }
+      return next;
+    });
+  }, [uncertaintyQuestions]);
+
+  // Merge uncertainty questions as SmartQuestions
+  const smartQuestions = questions || [];
+  const uqSmart = uncertaintyQuestions ? uncertaintyToSmartQuestions(uncertaintyQuestions) : [];
+  const allQuestions = [...smartQuestions, ...uqSmart];
+
+  // De-duplicate by id
+  const seen = new Set<string>();
+  const deduped = allQuestions.filter((q) => {
+    if (seen.has(q.id)) return false;
+    seen.add(q.id);
+    return true;
+  });
+
+  // Separate dimension_review questions (handled by dimension correction panel)
+  const dimQuestions = deduped.filter((q) => q.type === 'dimension_review');
+  const confirmQuestions = deduped.filter((q) => q.type !== 'dimension_review');
+
+  if (deduped.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 my-4 shadow-sm">
@@ -39,12 +95,12 @@ export default function SmartConfirmations({ questions, disabled, onApply }: Pro
           </p>
         </div>
         <span className="text-xs font-semibold bg-white border border-amber-200 text-amber-700 px-2 py-1 rounded-full">
-          {questions.length} smart check{questions.length > 1 ? 's' : ''}
+          {deduped.length} smart check{deduped.length > 1 ? 's' : ''}
         </span>
       </div>
 
       <div className="mt-4 space-y-3">
-        {questions.map((q) => (
+        {confirmQuestions.map((q) => (
           <div key={q.id} className="bg-white rounded-xl border border-amber-100 p-3">
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase tracking-wide font-bold text-amber-700">{q.severity}</span>
@@ -73,8 +129,14 @@ export default function SmartConfirmations({ questions, disabled, onApply }: Pro
         ))}
       </div>
 
+      {dimQuestions.length > 0 && (
+        <div className="mt-3 text-sm text-amber-700 bg-amber-100 rounded-xl p-3">
+          {dimQuestions.length} dimension review question{dimQuestions.length > 1 ? 's' : ''} pending — resolve in the dimension correction panel below.
+        </div>
+      )}
+
       <button
-        disabled={disabled}
+        disabled={disabled || confirmQuestions.length === 0}
         onClick={() => onApply(answers)}
         className="mt-4 w-full rounded-xl bg-amber-600 text-white font-bold py-2.5 hover:bg-amber-700 disabled:opacity-50"
       >

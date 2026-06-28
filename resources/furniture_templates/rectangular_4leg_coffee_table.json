@@ -1,0 +1,22 @@
+{
+  "template_id": "ct_rect_4leg_basic",
+  "template_name": "Rectangular Four-Leg Coffee Table",
+  "category": "coffee_table",
+  "keywords": ["rectangular", "coffee table", "four legs", "wood", "shelf"],
+  "required_components": [
+    {"id": "top", "type": "tabletop", "shape": "rectangle"},
+    {"id": "legs", "type": "leg_set", "count": 4}
+  ],
+  "drafting_rules": {
+    "top": "Draw rectangle tabletop with four leg locations near corners.",
+    "front": "Draw slab top with two visible legs and optional apron.",
+    "side": "Draw slab top with two visible legs."
+  },
+  "default_parameters_mm": {
+    "overall_length": 1200,
+    "overall_depth": 600,
+    "overall_height": 420,
+    "top_thickness": 25,
+    "leg_width": 50
+  }
+}

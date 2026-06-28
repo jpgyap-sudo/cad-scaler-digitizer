@@ -4292,3 +4292,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: add missing save functions, dispatch, and manifest entries for lounge_chair, sideboard, tv_console, and 7 new fixtu
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 2aa3ba779868ea55983a0e409c251712d60c5936
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 2aa3ba779868ea55983a0e409c251712d60c5936
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: fix: add missing save functions, dispatch, and manifest entries for lounge_chair, sideboard, tv_console, and 7 new fixture types
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add missing save functions, dispatch, and manifest entries for lounge_chair, sideboard, tv_console, and 7 new fixture types*
+
+#### Lesson Learned
+
+Commit: fix: add missing save functions, dispatch, and manifest entries for lounge_chair, sideboard, tv_console, and 7 new fixture types
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -1,0 +1,35 @@
+{
+  "template_id": "ct_oval_sculptural_pedestal_bowl",
+  "template_name": "Oval Sculptural Pedestal Coffee Table with Recessed Bowl",
+  "category": "coffee_table",
+  "keywords": ["oval", "coffee table", "stone", "brass", "pedestal", "bowl", "sculptural", "truncated cone"],
+  "required_components": [
+    {"id": "top", "type": "tabletop", "shape": "oval", "material": "stone"},
+    {"id": "bowl", "type": "recessed_bowl", "shape": "circle", "material": "brass"},
+    {"id": "base", "type": "pedestal", "shape": "truncated_cone", "material": "brass"}
+  ],
+  "drafting_rules": {
+    "top": "Draw oval stone slab with concentric circular recessed bowl near center. Use centerlines and section marker A-A.",
+    "front": "Draw thin oval slab as flat line/thick profile. Under it draw tapered truncated cone brass pedestal centered below slab.",
+    "side": "Same structure as front but shorter apparent width due to oval depth.",
+    "section": "Show stone slab thickness, circular recessed brass bowl, hidden steel mounting plate, hollow tapered metal pedestal."
+  },
+  "default_parameters_mm": {
+    "overall_length": 1200,
+    "overall_depth": 700,
+    "overall_height": 360,
+    "top_thickness": 22,
+    "bowl_diameter": 220,
+    "bowl_depth": 35,
+    "base_bottom_diameter": 520,
+    "base_top_diameter": 320,
+    "base_height": 310
+  },
+  "confidence_rules": {
+    "top_shape_oval": 0.25,
+    "base_type_truncated_cone": 0.25,
+    "has_recessed_bowl": 0.25,
+    "stone_top_brass_base": 0.15,
+    "coffee_table_category": 0.10
+  }
+}

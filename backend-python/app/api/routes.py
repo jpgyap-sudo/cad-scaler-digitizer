@@ -1479,6 +1479,49 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                         ai_result = json.loads(cleaned.strip())
         except Exception as e: print(f"[Hybrid] OpenAI error: {e}")
 
+        # ===== Furniture Intelligence Confirmation Loop =====
+        furniture_analysis_result = None
+        template_proposal_result = None
+        uncertainty_questions = []
+        try:
+            from app.furniture_intelligence.schemas.furniture_analysis import FurnitureAnalysis
+            from app.furniture_intelligence.services.template_matcher import match_template
+
+            if ai_result and isinstance(ai_result, dict):
+                # Convert ai_result (dict) to FurnitureAnalysis
+                ai_category = ai_result.get('category') or ai_result.get('furniture_type', 'other')
+                ai_top_shape = 'circle' if 'round' in str(ai_result.get('furniture_type', '')).lower() else 'rectangle'
+                ai_base_type = 'pedestal' if 'pedestal' in str(ai_result.get('furniture_type', '')).lower() else 'four_legs'
+                ai_components = []
+                raw_mats = ai_result.get('materials') or {}
+                if isinstance(raw_mats, dict):
+                    for k, v in raw_mats.items():
+                        desc = v.get('description', '') if isinstance(v, dict) else str(v)
+                        ai_components.append({
+                            'id': k, 'type': k, 'label': desc or k,
+                            'shape': '', 'material': k, 'finish': '',
+                            'confidence': 1.0
+                        })
+
+                analysis = FurnitureAnalysis(
+                    product_name=ai_result.get('product_name'),
+                    category=ai_category,
+                    design_family=[ai_result.get('profile', 'modern')] if ai_result.get('profile') else ['modern'],
+                    top_shape=ai_top_shape,
+                    base_type=ai_base_type,
+                    components=ai_components,
+                    required_views=['top', 'front', 'side'],
+                    assumptions=ai_result.get('assumptions', []),
+                    uncertainty={'top_shape': 0.2, 'base_type': 0.2},
+                    confidence=ai_result.get('confidence', 0.5)
+                )
+                template_proposal = match_template(analysis)
+                template_proposal_result = template_proposal.model_dump() if hasattr(template_proposal, 'model_dump') else template_proposal
+                uncertainty_questions = template_proposal_result.get('questions', []) if isinstance(template_proposal_result, dict) else []
+                furniture_analysis_result = analysis.model_dump() if hasattr(analysis, 'model_dump') else None
+        except Exception as e:
+            print(f"[Hybrid] Furniture Intelligence analysis failed (non-fatal): {e}")
+
         img, gray = load_image(str(img_path))
         binary = preprocess(gray)
         lines_raw = detect_lines(binary)
@@ -1752,6 +1795,9 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'materials': raw_materials or {},
             'accuracy_pipeline': accuracy_results,
             'phase3': phase3_result.to_api_dict() if phase3_result else None,
+            'furniture_analysis': furniture_analysis_result,
+            'template_proposal': template_proposal_result,
+            'uncertainty_questions': uncertainty_questions,
             'cad_intelligence': cad_intel_result,
             'image_quality': image_quality,
             'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])

@@ -1,0 +1,187 @@
+{
+  "proposal": {
+    "template_id": "ct_oval_sculptural_pedestal_bowl",
+    "template_name": "Oval Sculptural Pedestal Coffee Table with Recessed Bowl",
+    "score": 1.0,
+    "analysis": {
+      "product_name": "Melina Coffee Table",
+      "category": "coffee_table",
+      "design_family": [
+        "modern luxury",
+        "sculptural pedestal",
+        "stone and brass"
+      ],
+      "top_shape": "oval",
+      "base_type": "truncated_cone",
+      "components": [
+        {
+          "id": "top",
+          "type": "tabletop",
+          "label": "thin oval stone tabletop",
+          "shape": "oval",
+          "material": "stone",
+          "finish": "honed grey terrazzo/marble",
+          "confidence": 0.96,
+          "notes": []
+        },
+        {
+          "id": "bowl",
+          "type": "recessed_bowl",
+          "label": "recessed circular brass bowl",
+          "shape": "circle",
+          "material": "brass",
+          "finish": "brushed brass",
+          "confidence": 0.98,
+          "notes": []
+        },
+        {
+          "id": "base",
+          "type": "pedestal",
+          "label": "tapered truncated cone brass pedestal",
+          "shape": "truncated_cone",
+          "material": "brass",
+          "finish": "brushed brass",
+          "confidence": 0.95,
+          "notes": []
+        }
+      ],
+      "relationships": {
+        "top": {
+          "supported_by": "base",
+          "overhang": "large"
+        },
+        "bowl": {
+          "position": "recessed into tabletop",
+          "alignment": "near center"
+        },
+        "base": {
+          "alignment": "centered under top"
+        }
+      },
+      "required_views": [
+        "top",
+        "front",
+        "side",
+        "section",
+        "isometric"
+      ],
+      "assumptions": [
+        "No visible legs or apron",
+        "Hidden mounting plate under stone top",
+        "Base is hollow metal shell"
+      ],
+      "uncertainty": {
+        "exact_dimensions": 0.7,
+        "bowl_offset": 0.35
+      },
+      "confidence": 0.94
+    },
+    "questions": [
+      {
+        "field": "relationships.bowl.alignment",
+        "question": "Is the brass bowl centered or offset?",
+        "options": [
+          "centered",
+          "slightly offset",
+          "unknown"
+        ]
+      }
+    ]
+  },
+  "corrections": [
+    {
+      "field": "top_shape",
+      "value": "oval",
+      "note": "User confirmed oval, not circle"
+    },
+    {
+      "field": "base_type",
+      "value": "truncated_cone",
+      "note": "User confirmed tapered brass pedestal"
+    }
+  ],
+  "final_analysis": {
+    "product_name": "Melina Coffee Table",
+    "category": "coffee_table",
+    "design_family": [
+      "modern luxury",
+      "sculptural pedestal",
+      "stone and brass"
+    ],
+    "top_shape": "oval",
+    "base_type": "truncated_cone",
+    "components": [
+      {
+        "id": "top",
+        "type": "tabletop",
+        "label": "thin oval stone tabletop",
+        "shape": "oval",
+        "material": "stone",
+        "finish": "honed grey terrazzo/marble",
+        "confidence": 0.96,
+        "notes": []
+      },
+      {
+        "id": "bowl",
+        "type": "recessed_bowl",
+        "label": "recessed circular brass bowl",
+        "shape": "circle",
+        "material": "brass",
+        "finish": "brushed brass",
+        "confidence": 0.98,
+        "notes": []
+      },
+      {
+        "id": "base",
+        "type": "pedestal",
+        "label": "tapered truncated cone brass pedestal",
+        "shape": "truncated_cone",
+        "material": "brass",
+        "finish": "brushed brass",
+        "confidence": 0.95,
+        "notes": []
+      }
+    ],
+    "relationships": {
+      "top": {
+        "supported_by": "base",
+        "overhang": "large"
+      },
+      "bowl": {
+        "position": "recessed into tabletop",
+        "alignment": "near center"
+      },
+      "base": {
+        "alignment": "centered under top"
+      }
+    },
+    "required_views": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric"
+    ],
+    "assumptions": [
+      "No visible legs or apron",
+      "Hidden mounting plate under stone top",
+      "Base is hollow metal shell"
+    ],
+    "uncertainty": {
+      "exact_dimensions": 0.7,
+      "bowl_offset": 0.35
+    },
+    "confidence": 0.94
+  },
+  "parameters_mm": {
+    "overall_length": 1200.0,
+    "overall_depth": 700.0,
+    "overall_height": 360.0,
+    "top_thickness": 22.0,
+    "bowl_diameter": 220.0,
+    "bowl_depth": 35.0,
+    "base_bottom_diameter": 520.0,
+    "base_top_diameter": 320.0,
+    "base_height": 310.0
+  }
+}

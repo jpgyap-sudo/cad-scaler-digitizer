@@ -757,10 +757,12 @@ const App: React.FC = () => {
                 )}
 
                 <div className="p-4 border-t border-slate-200"><BrainStats /></div>
-                {(cadEngineResult?.smart_workflow as any)?.confirmation_questions?.length > 0 && cadEngineResult && (
+                {((cadEngineResult?.smart_workflow as any)?.confirmation_questions?.length > 0
+                  || (cadEngineResult as any)?.uncertainty_questions?.length > 0) && cadEngineResult && (
                   <div className="px-4 border-t border-slate-200">
                     <SmartConfirmations
-                      questions={(cadEngineResult as any).smart_workflow.confirmation_questions}
+                      questions={(cadEngineResult as any).smart_workflow.confirmation_questions || []}
+                      uncertaintyQuestions={(cadEngineResult as any).uncertainty_questions || []}
                       disabled={isProcessing}
                       onApply={async (answers) => {
                         if (!pendingFile && !fileInputRef.current?.files?.[0]) return;

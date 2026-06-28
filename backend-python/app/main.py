@@ -20,6 +20,7 @@ if _env_path.exists():
                     os.environ[_k] = _v.strip().strip('"').strip("'")
 
 from app.api.routes import router
+from app.furniture_intelligence.api.routes import router as fi_router
 from app.monitoring.middleware import MonitoringMiddleware
 
 app = FastAPI(title="AI Furniture CAD Digitizer", version="2.0.0")
@@ -37,6 +38,7 @@ app.add_middleware(
 
 app.include_router(router, prefix="/api")
 app.include_router(router, prefix="/py-api")  # Vite dev proxy compatibility
+app.include_router(fi_router, prefix="/api")
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
