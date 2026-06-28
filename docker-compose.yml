@@ -130,6 +130,9 @@ services:
     volumes:
       - cad_temp:/tmp/cad_digitizer_outputs
       - cad_uploads:/tmp/cad_digitizer_uploads
+      - type: bind
+        source: ./fixtures
+        target: /fixtures
     depends_on:
       redis:
         condition: service_healthy

@@ -4026,3 +4026,79 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: audit round 2 - merged_dims crash, SVG preview hardcode, scale pipeline, section_predictor, benchmarks
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ba2aa7725c88f3d01f5dcb18114cdb39cadd6f59
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** ba2aa7725c88f3d01f5dcb18114cdb39cadd6f59
+**Files:** AUDIT_REPORT.md,backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,frontend/App.tsx,frontend/components/CrawlInput.tsx,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: fix: audit round 2 - merged_dims crash, SVG preview hardcode, scale pipeline, section_predictor, benchmarks
+Files: AUDIT_REPORT.md,backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,frontend/App.tsx,frontend/components/CrawlInput.tsx,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: audit round 2 - merged_dims crash, SVG preview hardcode, scale pipeline, section_predictor, benchmarks*
+
+#### Lesson Learned
+
+Commit: fix: audit round 2 - merged_dims crash, SVG preview hardcode, scale pipeline, section_predictor, benchmarks
+Files: AUDIT_REPORT.md,backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,fixtures/manifest.json,frontend/App.tsx,frontend/components/CrawlInput.tsx,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 3 audit gaps — SmartConfirmations wiring, furniture crash, endpoint robustness
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 0aec00cccb5dbc0a30f4793517337b687a778cc1
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 0aec00cccb5dbc0a30f4793517337b687a778cc1
+**Files:** 
+
+**Summary:**
+Commit: fix: 3 audit gaps — SmartConfirmations wiring, furniture crash, endpoint robustness
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 3 audit gaps — SmartConfirmations wiring, furniture crash, endpoint robustness*
+
+#### Lesson Learned
+
+Commit: fix: 3 audit gaps — SmartConfirmations wiring, furniture crash, endpoint robustness
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

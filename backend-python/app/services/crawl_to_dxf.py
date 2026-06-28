@@ -533,7 +533,18 @@ async def crawl_and_digitize(
     # To avoid HTTP overhead, import and call _run_digitize_pipeline from routes.py directly
     API_BASE = os.environ.get("PYTHON_WORKER_URL", "http://localhost:8001")
     files = {"file": ("product.png", img_bytes, "image/png")}
-    params = {"furniture_type": furniture_type}
+    # furniture_type here is the crawl form's generic top-level category
+    # ("table", "sofa", "lighting", "rug", "furniture", ...) - it is NOT a
+    # specific classifier output. /api/digitize treats an explicit
+    # furniture_type as an override that takes priority over its own image
+    # classifier (see routes.py: "furniture_type or classifier_result['type']").
+    # Forwarding the crawl category there bypassed real classification
+    # entirely - "table" alone always normalizes to generic_2d_furniture
+    # (too vague to trust), so every crawled table rendered as raw,
+    # unclassified detected circles instead of going through the real
+    # classifier and its rectangular/round/oval table templates. Let the
+    # classifier run on the actual image instead.
+    params = {}
     if real_width_cm:
         params["real_width_cm"] = str(real_width_cm)
     if real_h:
