@@ -1,19 +1,24 @@
 from __future__ import annotations
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List
 from app.furniture_intelligence.schemas.furniture_analysis import FurnitureAnalysis, TemplateProposal
 
 TEMPLATE_DIR = Path(__file__).resolve().parents[4] / 'resources' / 'furniture_templates'
 
+logger = logging.getLogger('template_matcher')
+
 
 def load_templates(template_dir: Path = TEMPLATE_DIR) -> List[Dict[str, Any]]:
     results = []
     for p in sorted(template_dir.glob('*.json')):
+        if p.name.startswith('_registry'):  # B-9 FIX: skip registry
+            continue
         try:
             results.append(json.loads(p.read_text(encoding='utf-8')))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Malformed template JSON: {p} — {e}")  # B-8 FIX: log warning
     # Also load pack's own templates from local templates/ dir
     local_dir = Path(__file__).resolve().parents[1] / 'templates'
     if local_dir.exists():
@@ -29,10 +34,34 @@ def _has_component(analysis: FurnitureAnalysis, type_name: str) -> bool:
     return any(c.type == type_name or type_name in c.label.lower() for c in analysis.components)
 
 
+def _category_match(analysis_cat: str, template_cat: str) -> bool:
+    """B-4 FIX: Normalized category matching with alias map."""
+    if not template_cat:
+        return False
+    norm = analysis_cat.lower().replace('-', '_').replace(' ', '_').strip()
+    tcat = template_cat.lower().replace('-', '_').replace(' ', '_').strip()
+    if norm == tcat:
+        return True
+    # Alias map: AI category → expected template category
+    alias = {
+        'coffee_table': 'center_table',
+        'center_table': 'coffee_table',
+        'dining_table': 'rectangular_table',
+        'round_pedestal_table': 'center_table',
+        'dining_chair': 'chair',
+        'bed': 'bed_headboard',
+        'oval_pedestal_table': 'dining_table',
+        'console_table': 'console_table',
+        'office_desk': 'office_desk',
+        'side_table': 'side_table',
+    }
+    return alias.get(norm) == tcat or alias.get(tcat) == norm
+
+
 def _score_via_required_components(analysis: FurnitureAnalysis, template: Dict[str, Any]) -> float:
     """Score using pack schema: required_components (list of {type, shape, material})."""
     score = 0.0
-    if analysis.category == template.get('category'):
+    if _category_match(analysis.category, template.get('category', '')):
         score += 0.15
     text = ' '.join(analysis.design_family + [analysis.top_shape, analysis.base_type]
                     + [c.label for c in analysis.components]).lower()
@@ -59,7 +88,7 @@ def _score_via_required_components(analysis: FurnitureAnalysis, template: Dict[s
 def _score_via_visual_signature(analysis: FurnitureAnalysis, template: Dict[str, Any]) -> float:
     """Score using HomeU schema: parts (list of {name, required}) + visual_signature ({positive, negative})."""
     score = 0.0
-    if analysis.category == template.get('category'):
+    if _category_match(analysis.category, template.get('category', '')):
         score += 0.15
     text = ' '.join(analysis.design_family + [analysis.top_shape, analysis.base_type]
                     + [c.label for c in analysis.components]).lower()
@@ -112,8 +141,13 @@ def score_template(analysis: FurnitureAnalysis, template: Dict[str, Any]) -> flo
 
 
 def build_questions(analysis: FurnitureAnalysis) -> List[Dict[str, Any]]:
+    """B-5 FIX: Generate uncertainty questions dynamically from analysis.
+    For each dimension with high uncertainty, generate a question.
+    """
     q = []
     uncertainty = analysis.uncertainty or {}
+    
+    # Shape questions (furniture-agnostic)
     if uncertainty.get('top_shape', 1.0) < 0.75 or analysis.top_shape in ['irregular', 'unknown']:
         q.append({
             'field': 'top_shape',
@@ -132,6 +166,27 @@ def build_questions(analysis: FurnitureAnalysis) -> List[Dict[str, Any]]:
             'question': 'Is the brass bowl centered or offset?',
             'options': ['centered', 'slightly offset', 'unknown']
         })
+    
+    # Dynamic questions from uncertainty keys — ANY field with confidence < 0.6
+    for field, conf in uncertainty.items():
+        if field in ('top_shape', 'base_type', 'bowl_offset'):
+            continue  # Already handled above
+        if conf < 0.6:
+            q.append({
+                'field': field,
+                'question': f'Is the {field.replace("_", " ")} correct?',
+                'options': ['yes', 'no', 'unknown']
+            })
+    
+    # If we have detected components with low confidence, ask about them
+    for comp in analysis.components:
+        if comp.confidence < 0.6:
+            q.append({
+                'field': f'components.{comp.id}.type',
+                'question': f'Is this a {comp.label}?',
+                'options': ['yes, correct', 'no, different type', 'unknown']
+            })
+    
     return q
 
 

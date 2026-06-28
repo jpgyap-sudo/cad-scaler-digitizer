@@ -1,96 +1,80 @@
-# Audit Report: Latest Fixes (2026-06-28)
+# Audit Report: Confirmation Loop Integration (commit 6a62eff)
 
-**Commit**: Fixes applied during this session
-**Files Changed**:
-- `backend-python/app/api/routes.py` — 5 edits (merged_dims, preview_svg, view, benchmark endpoints)
-- `backend-python/app/backend/dxf_exporter.py` — 1 edit (scale_solver replacement)
-- `fixtures/manifest.json` — 1 edit (added asymmetric pedestal entry)
+**Integration of `furniture_intelligence` pack with existing CAD digitizer**
+**Date**: 2026-06-28
 
 ---
 
-## ✅ Fixed Issues (Round 2)
+## 🔴 Critical Bugs (2)
 
-| ID | Description | Severity | Status |
-|----|------------|----------|--------|
-| BUG-1 | `anti_hallucination_validator.py` module-level `@property` | CRITICAL | Already fixed in codebase before this session |
-| BUG-3 | `dimension_associator.py` passes `text_boxes` where `vision_lines` expected | CRITICAL | Already fixed in codebase before this session |
-| BUG-4 | `scale_solver.py` `has_sufficient_data` missing attribute | HIGH | Already fixed in codebase before this session |
-| BUG-8 | `ocr_layout_parser.py` `pytesseract.pytesseract` typo | HIGH | Already fixed in codebase before this session |
+### B-1: `LAST_PROPOSAL` — Shared global state, not thread-safe
+- **File**: [`furniture_intelligence/api/routes.py:15`](backend-python/app/furniture_intelligence/api/routes.py:15)
+- **Issue**: `LAST_PROPOSAL` is a **module-level global variable**. In a multi-user server (Uvicorn with workers or async), if User A calls `/analyze` and then User B calls `/analyze`, B's proposal overwrites A's. Then A calls `/confirm` and gets B's template, or vice versa. Data corruption between users.
+- **Fix**: Store proposals per-session (e.g., using a `session_id` query param + dict), or store in Redis, or generate a proposal_id and pass it to `/confirm`.
 
-### Fixed This Session
-
-| ID | Description | File | Fix |
-|----|------------|------|-----|
-| **BUG-NEW-1** | `/adjust` endpoint uses undefined `merged_dims` (NameError crash) | [`routes.py:1862`](backend-python/app/api/routes.py:1862) | Added merged_dims construction from sidecar JSON + form overrides |
-| **BUG-7** | Preview SVG always shows round pedestal table | [`routes.py:1736`](backend-python/app/api/routes.py:1736), [`routes.py:2464`](backend-python/app/api/routes.py:2464) | Both `/preview/svg` and `/view` now read sidecar JSON and dispatch via `_build_svg_model()` |
-| **FG-4** | `dxf_exporter.py` still uses deprecated `visual_ratio_scaler` | [`dxf_exporter.py:248`](backend-python/app/backend/dxf_exporter.py:248) | Replaced both import sites with `scale_solver.compute_scale()` |
-| **WG-2** | `accuracy_benchmark.py` not exposed via API | [`routes.py:3544`](backend-python/app/api/routes.py:3544) | Added `GET /benchmark/run`, `GET /benchmark/fixtures`, `POST /benchmark/run` |
-| **FG-5** | Asymmetric pedestal fixture missing from manifest | [`manifest.json`](fixtures/manifest.json) | Added entry with correct type and path |
+### B-2: `apply_corrections()` fragile `__class__` reference
+- **File**: [`correction_engine.py:27`](backend-python/app/furniture_intelligence/services/correction_engine.py:27)
+- **Issue**: `proposal.analysis.__class__.model_validate(data)` assumes `analysis` is exactly a `FurnitureAnalysis` instance. If a subclass or different type is used, `model_validate()` may fail or lose fields.
+- **Fix**: `from app.furniture_intelligence.schemas.furniture_analysis import FurnitureAnalysis` and call `FurnitureAnalysis.model_validate(data)` directly.
 
 ---
 
-## 🔴 REMAINING Critical/High Issues
+## 🟡 High Issues (2)
 
-### BUG-NEW-2: POST `/benchmark/run` fixture limit silently ignored
-- **File**: [`routes.py:3581`](backend-python/app/api/routes.py:3581)
-- **Issue**: The endpoint loads `fixtures` to check the limit, then calls `run_accuracy_benchmark()` which **re-loads** fixtures internally — so the `max_fixtures` limit is never applied.
-- **Fix**: Change to call `run_accuracy_benchmark` with filtered fixture list, or pass fixture count.
+### B-3: `default_parameters_for()` returns empty for 32 of 34 templates
+- **File**: [`correction_engine.py:16`](backend-python/app/furniture_intelligence/services/correction_engine.py:16)
+- **Issue**: Only 2 pack templates have `default_parameters_mm`. The 32 HomeU templates have `required_dimensions` and `parts` but **no `default_parameters_mm`** field. So for most furniture types, `parameters_mm` is empty and the DXF/SVG generators use hardcoded defaults (1200x700x360mm oval coffee table) regardless of actual furniture type.
+- **Impact**: A wardrobe classified via HomeU templates will generate an oval coffee table DXF from the confirmation generators.
+- **Fix**: Add `default_parameters_mm` mapping to all 32 HomeU templates, or derive default parameters from `required_dimensions` in the correction engine.
 
-### BUG-NEW-3: `dxf_exporter.py` scale_solver always falls back to hardcoded defaults
-- **File**: [`dxf_exporter.py:286`](backend-python/app/backend/dxf_exporter.py:286)
-- **Issue**: The scale_solver integration passes a mock `Association` with no real dimension-geometry relationship. `compute_scale` returns a `ScaleSolution` with empty `resolved_dimensions`, so the `sr` dict always uses the `top_dia_cm * 0.55` fallback. The code compiles and runs but doesn't meaningfully use the scale solver.
-- **Fix**: Either pass real association data, or simplify to directly compute ratios from the known dimensions without going through scale_solver.
-
-### BUG-NEW-4: Preview/view fallback DIMENSION scan assumes round table
-- **File**: [`routes.py:1757`](backend-python/app/api/routes.py:1757), [`routes.py:2486`](backend-python/app/api/routes.py:2486)
-- **Issue**: When no sidecar JSON exists for a DXF file and no DIMENSION entities are found, the fallback is `80x70` round pedestal table regardless of the actual furniture type.
-- **Fix**: Accept that the fallback is generic; at minimum extract ALL dimension values and determine furniture type from the DXF content.
-
-### WG-2: `section_predictor.py` not wired into API (HIGH)
-- **File**: [`routes.py:23`](backend-python/app/api/routes.py:23) (imported but never called)
-- **Issue**: `predict_drawing_sections` is imported at line 23 but never called in any endpoint. 389 lines of production code with zero integration.
-- **Fix**: Wire into `/digitize`, `/digitize/hybrid`, or create a dedicated `/predict-sections` endpoint.
-
-### SG-1: API prefix mismatch `/api` vs `/py-api` (HIGH)
-- **Backend**: `main.py` registers router with `prefix="/api"`
-- **Frontend**: `cadEngine.ts` uses `VITE_CAD_ENGINE_URL || '/py-api'`
-- **Issue**: Works only because of Vite dev proxy. Production deployment without nginx rewrite will break ALL API calls.
-- **Fix**: Either align the prefix or add a proxy route. Already documented in original audit.
-
-### BUG-6: `ConfidencePanel.tsx` — `lockedTexts` uses local React state, not server state (LOW)
-- **File**: [`ConfidencePanel.tsx:139`](frontend/components/ConfidencePanel.tsx:139)
-- **Issue**: Lock state is persisted in `sessionStorage`, not synchronized with server. Survives re-renders within a session but resets on page reload.
-- **Fix**: Read lock state from `/corrections/{session_id}` endpoint on mount.
+### B-4: Category matching fails between AI output and HomeU template categories
+- **File**: [`template_matcher.py:35`](backend-python/app/furniture_intelligence/services/template_matcher.py:35) and line 62
+- **Issue**: The score function does `analysis.category == template.get('category')`. But AI returns categories like `"coffee_table"` while HomeU templates use `"center_table"`. AI returns `"sofa"` (matching). AI returns `"dining_table"` (matching). But `"round_pedestal_table"` → template has no category field matching that. The category match is **case-sensitive** and uses exact string comparison without normalization.
+- **Impact**: Category match (worth 0.15 score) fails for mismatched category names, reducing template score for HomeU templates.
+- **Fix**: Normalize both sides: `analysis.category.replace('-','_').lower().strip()` and normalize template category. Also build a category map from template filenames (e.g., any template starting with `coffee_table_` should match `coffee_table` or `center_table`).
 
 ---
 
-## 🟡 Feature Gaps (Medium)
+## 🟡 Medium Issues (2)
 
-### FG-3: Line role correction UI exists but corrections always send `[]`
-- **Files**: [`App.tsx:388`](frontend/App.tsx:388), [`App.tsx:417`](frontend/App.tsx:417), [`ConfidencePanel.tsx:216`](frontend/components/ConfidencePanel.tsx:216)
-- **Current state**: The `ConfidencePanel` has full UI for line role reclassification (dropdown, correction tracking, visual display). The `App.tsx` wires `onCorrectLineRole` which sends corrections to the API. **However**, the `handleCorrectValue` and `handleLockDimension` functions still hardcode `line_role_corrections: '[]'`, so line role corrections sent directly from the panel DO work, but dimension-only corrections still overwrite the role corrections if both are sent.
-- **Fix**: Merge accumulated `lineRoleCorrections` from the panel state into the dimension correction requests.
+### B-5: `build_questions()` only handles 3 specific uncertainty fields
+- **File**: [`template_matcher.py:114`](backend-python/app/furniture_intelligence/services/template_matcher.py:114)
+- **Issue**: Hardcoded for oval-coffee-table-with-bowl scenario (`top_shape`, `base_type`, `bowl_offset`). For other furniture types (sofa: arm_height, cushion_count; cabinet: door_count, drawer_count; wardrobe: shelf_count), no uncertainty questions are generated.
+- **Fix**: Generate questions dynamically from template `required_dimensions` + `parts` where values are missing or estimated.
 
-### WG-4: Frontend `DigitizeResult` type missing `accuracy_pipeline` field
-- **File**: [`cadEngine.ts:23`](frontend/services/cadEngine.ts:23) (the `AccuracyPipeline` interface exists at line 36 but the `DigitizeResult` interface at higher lines may not include it)
-- **Issue**: TypeScript compiles with `implicit any` — no compile-time safety for the accuracy pipeline data contract.
-- **Fix**: Add `accuracy_pipeline?: AccuracyPipeline` to the `DigitizeResult` interface.
+### B-6: FIX: `SmartConfirmations.tsx` handles `uncertaintyQuestions` from `cadEngineResult` but the `/digitize/hybrid` response wraps them inside `template_proposal.questions`
+- **File**: [`routes.py:1520`](backend-python/app/api/routes.py:1520)
+- **Current code**: `uncertainty_questions = template_proposal_result.get('questions', [])` — correctly extracts from `template_proposal` and puts at top-level. ✅ Working.
+- But `/digitize/hybrid` only runs the analysis if `ai_result` exists. If OpenAI is not configured (no API key), `ai_result` is empty and no questions are generated.
 
 ---
 
-## 🟢 Summary
+## 🟢 Low Issues (3)
 
-| Category | Count | Critical | High | Medium | Low | Fixed |
-|----------|-------|----------|------|--------|-----|-------|
-| Bugs (new) | 3 | 0 | 2 | 1 | 0 | 0 |
-| Wiring Gaps | 1 | 0 | 1 | 0 | 0 | 0 |
-| Feature Gaps | 2 | 0 | 0 | 2 | 0 | 0 |
-| **New Total** | **6** | **0** | **3** | **3** | **0** | **0** |
-| Fixed This Session | 5 | 1 | 2 | 1 | 1 | 5 |
-| Prior Fixed | 4 | 2 | 2 | 0 | 0 | 4 |
+### B-7: Pack requirements not in `requirements.txt`
+- **Files**: `requirements.txt` in pack vs `backend-python/requirements.txt`
+- **Issue**: The pack uses `openai` and `google-generativeai` which aren't in the main `requirements.txt`. If `pip install` from the main file, these won't be installed.
 
-### Immediate Action Items:
-1. **HIGH**: Wire `section_predictor.py` into API routes or remove it
-2. **HIGH**: Fix API prefix for production (`/api` vs `/py-api`)
-3. **MEDIUM**: Fix POST `/benchmark/run` to actually use the fixture limit parameter
-4. **MEDIUM**: Merge line role corrections into dimension correction requests in frontend
+### B-8: `load_templates()` silently drops malformed JSON
+- **File**: [`template_matcher.py:10`](backend-python/app/furniture_intelligence/services/template_matcher.py:10)
+- **Issue**: If a .json file has a syntax error, it's silently skipped. No warning is printed.
+
+### B-9: `_registry.json` loaded as template
+- **File**: [`template_matcher.py:12`](backend-python/app/furniture_intelligence/services/template_matcher.py:12)
+- **Issue**: The `load_templates()` in `template_matcher.py` **does not skip `_registry.json`** unlike the one in `template_selector.py` which has `if p.name.startswith("_registry"): continue`. So `_registry.json` (which just lists template names) gets loaded as a template and scored.
+
+---
+
+## Summary
+
+| Category | Count | Critical | High | Medium | Low |
+|----------|-------|----------|------|--------|-----|
+| Bugs | 9 | 2 | 2 | 2 | 3 |
+
+### Priority Actions:
+1. **CRITICAL**: Fix `LAST_PROPOSAL` global state — add session_id support
+2. **CRITICAL**: Fix `fragile __class__` in `apply_corrections()`
+3. **HIGH**: Add `default_parameters_mm` to 32 HomeU templates
+4. **HIGH**: Fix category matching normalization in template_matcher.py
+5. **MEDIUM**: Make `build_questions()` dynamic from template schema
+6. **LOW**: Skip `_registry.json` in template_matcher.py load_templates()
