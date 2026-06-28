@@ -537,11 +537,12 @@ async def crawl_and_digitize(
 
     # Step 3: Extract dimensions from the product page
     page_dims = await extract_dimensions_from_page(page_url)
+    real_h = None
+    real_d = None
     if page_dims:
         logger.info(f"[CrawlToDXF] Found page dimensions: {page_dims}")
         result["page_dimensions"] = page_dims
         # Use discovered dimensions for scale
-        real_h = None
         if not real_width_cm and page_dims.get("width_cm"):
             real_width_cm = page_dims["width_cm"]
             logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
@@ -549,6 +550,12 @@ async def crawl_and_digitize(
             real_h = page_dims["overall_height_cm"]
         elif page_dims.get("height_cm"):
             real_h = page_dims["height_cm"]
+        # depth_cm was parsed from the page but never forwarded to the
+        # digitizer at all - every dispatch defaulted to a hardcoded depth
+        # guess even when the real value was already known (e.g. a square
+        # 120x120 coffee table rendering with a wrong 60cm default depth).
+        if page_dims.get("depth_cm"):
+            real_d = page_dims["depth_cm"]
 
     # Step 4: Digitize via HTTP call (to self, typically localhost:8001)
     # To avoid HTTP overhead, import and call _run_digitize_pipeline from routes.py directly
@@ -570,6 +577,8 @@ async def crawl_and_digitize(
         params["real_width_cm"] = str(real_width_cm)
     if real_h:
         params["real_height_cm"] = str(real_h)
+    if real_d:
+        params["real_depth_cm"] = str(real_d)
 
     async with httpx.AsyncClient(timeout=120) as client:
         digitize_resp = await client.post(
