@@ -694,6 +694,15 @@ def save_cabinet(path, width_cm=100, depth_cm=50, height_cm=180,
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
+    # === SIDE VIEW (depth) ===
+    sv_w = depth_cm * sc
+    sx = fx + w + 40
+    _add_polyline(msp, [(sx, floor_y), (sx + sv_w, floor_y),
+                        (sx + sv_w, top_y), (sx, top_y)], True)
+    _add_dimension(msp, (sx, floor_y - 8), (sx + sv_w, floor_y - 8),
+                   (sx + sv_w / 2, floor_y - 14), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, top_y + 8), 3)
+
     generate_title_block(msp, f"Cabinet {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
                          material_notes=[
@@ -752,6 +761,15 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45,
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
+    # === SIDE VIEW (depth) ===
+    sv_w = depth_cm * sc
+    sx = fx + w + 40
+    _add_polyline(msp, [(sx, floor_y), (sx + sv_w, floor_y),
+                        (sx + sv_w, top_y), (sx, top_y)], True)
+    _add_dimension(msp, (sx, floor_y - 8), (sx + sv_w, floor_y - 8),
+                   (sx + sv_w / 2, floor_y - 14), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, top_y + 8), 3)
+
     generate_title_block(msp, f"Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
                          material_notes=[
@@ -766,7 +784,7 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45,
 def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation_result=None,
                       materials: Optional[Dict[str, str]] = None,
                       visibility: Optional[Dict[str, bool]] = None):
-    """Round coffee table — top view circle with diameter dimension."""
+    """Coffee table — top view circle + front elevation + side depth view."""
     mats = materials or {}
     def _component_visible(name):
         if visibility is not None and name in visibility:
@@ -774,21 +792,66 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation
         return True
     doc = setup_doc()
     msp = doc.modelspace()
-    sc = 0.6
-    r = min(width_cm, depth_cm) / 2 * sc
-    cx, y_mid = 100, 190
+    sc = 0.7
+    top_r = min(width_cm, depth_cm) / 2 * sc
+    top_thick_cm = 3.0
+    leg_thick_cm = 4.0
+    
+    # === TOP VIEW ===
+    cx_t, cy_t = 60, 150
     try:
-        msp.add_circle((cx, y_mid), r, dxfattribs={'layer': 'OBJECT'})
+        msp.add_circle((cx_t, cy_t), top_r, dxfattribs={'layer': 'OBJECT'})
     except Exception:
         num_segments = 64
-        points = [(cx + r * math.cos(2 * math.pi * i / num_segments),
-                   y_mid + r * math.sin(2 * math.pi * i / num_segments))
-                  for i in range(num_segments)]
-        _add_polyline(msp, points, closed=True, layer='OBJECT')
-    _add_centerline(msp, (cx - r - 5, y_mid), (cx + r + 5, y_mid))
-    _add_centerline(msp, (cx, y_mid - r - 5), (cx, y_mid + r + 5))
-    _add_diameter_dim(msp, (cx, y_mid), r, f'%%c{min(width_cm, depth_cm):g} cm')
-    _add_mtext(msp, 'TOP VIEW', (cx - 10, y_mid + r + 10), 3)
+        pts = [(cx_t + top_r * math.cos(2 * math.pi * i / num_segments),
+                cy_t + top_r * math.sin(2 * math.pi * i / num_segments)) for i in range(num_segments)]
+        _add_polyline(msp, pts, closed=True, layer='OBJECT')
+    _add_centerline(msp, (cx_t - top_r - 5, cy_t), (cx_t + top_r + 5, cy_t))
+    _add_centerline(msp, (cx_t, cy_t - top_r - 5), (cx_t, cy_t + top_r + 5))
+    _add_diameter_dim(msp, (cx_t, cy_t), top_r, f'%%c{min(width_cm, depth_cm):g} cm')
+    _add_mtext(msp, 'TOP VIEW', (cx_t - 12, cy_t + top_r + 10), 2.5)
+
+    # === FRONT VIEW ===
+    fv_w = width_cm * sc * 0.5  # side view shows depth
+    fv_h = height_cm * sc
+    fv_x, fv_floor = 200, 40
+    fv_top = fv_floor + fv_h
+    leg_h = fv_h - top_thick_cm * sc
+    
+    # Top surface
+    _add_polyline(msp, [
+        (fv_x - fv_w, fv_top), (fv_x + fv_w, fv_top),
+        (fv_x + fv_w, fv_top - top_thick_cm * sc),
+        (fv_x - fv_w, fv_top - top_thick_cm * sc)
+    ], True, 'OBJECT')
+    # Legs
+    leg_inset = fv_w * 0.15
+    for lx in [fv_x - fv_w + leg_inset, fv_x + fv_w - leg_inset - leg_thick_cm * sc]:
+        _add_polyline(msp, [
+            (lx, fv_top - top_thick_cm * sc),
+            (lx + leg_thick_cm * sc, fv_top - top_thick_cm * sc),
+            (lx + leg_thick_cm * sc, fv_floor), (lx, fv_floor)
+        ], True, 'OBJECT')
+    # Dimensions
+    _add_dimension(msp, (fv_x - fv_w - 12, fv_floor), (fv_x - fv_w - 12, fv_top),
+                   (fv_x - fv_w - 18, (fv_floor + fv_top) / 2), f'H = {height_cm:g} cm')
+    _add_dimension(msp, (fv_x - fv_w, fv_floor - 10), (fv_x + fv_w, fv_floor - 10),
+                   (fv_x, fv_floor - 16), f'W = {width_cm:g} cm')
+    _add_mtext(msp, 'FRONT VIEW', (fv_x - 14, fv_top + 8), 2.5)
+
+    # === SIDE VIEW (depth) ===
+    sv_w = depth_cm * sc * 0.5
+    sv_x = 200
+    sv_top = fv_top
+    # Side profile
+    _add_polyline(msp, [
+        (sv_x - sv_w, sv_top), (sv_x + sv_w, sv_top),
+        (sv_x + sv_w, fv_floor), (sv_x - sv_w, fv_floor)
+    ], True, 'OBJECT')
+    _add_dimension(msp, (sv_x - sv_w - 12, fv_floor), (sv_x - sv_w - 12, sv_top),
+                   (sv_x - sv_w - 18, (fv_floor + sv_top) / 2), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sv_x - 14, sv_top + 8), 2.5)
+
     generate_title_block(msp, f"Coffee Table {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
                          material_notes=[
@@ -846,6 +909,15 @@ def save_dining_chair(path, width_cm=45, depth_cm=45, height_cm=90, seat_height_
     _add_dimension(msp, (fx, floor_y - 8), (fx + w, floor_y - 8),
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, back_top_y + 8), 3)
+
+    # === SIDE VIEW (depth) ===
+    sv_w = depth_cm * sc
+    sx = fx + w + 30
+    _add_polyline(msp, [(sx, floor_y), (sx + sv_w, floor_y),
+                        (sx + sv_w, back_top_y), (sx, back_top_y)], True)
+    _add_dimension(msp, (sx, floor_y - 8), (sx + sv_w, floor_y - 8),
+                   (sx + sv_w / 2, floor_y - 14), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, back_top_y + 8), 3)
 
     generate_title_block(msp, f"Dining Chair {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",
@@ -906,6 +978,15 @@ def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_re
     _add_dimension(msp, (fx, floor_y - 8), (fx + w, floor_y - 8),
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
+
+    # === SIDE VIEW (depth) ===
+    sv_w = depth_cm * sc
+    sx = fx + w + 30
+    _add_polyline(msp, [(sx, floor_y), (sx + sv_w, floor_y),
+                        (sx + sv_w, top_y), (sx, top_y)], True)
+    _add_dimension(msp, (sx, floor_y - 8), (sx + sv_w, floor_y - 8),
+                   (sx + sv_w / 2, floor_y - 14), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, top_y + 8), 3)
 
     generate_title_block(msp, f"Wardrobe {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
                          project="Furniture Shop Drawing",

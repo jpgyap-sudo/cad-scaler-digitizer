@@ -551,10 +551,12 @@ def compare_digitization(
         # The digitizer used them as real_width_cm reference, so the DXF SHOULD match.
         # Score = page_data_confidence * entity_completeness.
         # If page dims exist AND entity match > 0.5, the product was correctly identified.
+        # BUG FIX: removed max(0.99, ...) floor that masked real deviation.
+        # Previously dim_score = max(0.99, dim_reliability) meant 10% deviation → still 0.99.
+        # Now dim_score = dim_reliability directly: 10% deviation → 0.90.
         has_entity_match = result.entity_match_score > 0.5
         dim_reliability = max(0.5, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
-        # Boost: page dims are the strongest signal available
-        dim_score = max(0.99, dim_reliability) if has_entity_match else max(0.8, dim_reliability)
+        dim_score = dim_reliability  # no floor — let real deviation show
         edge_weight = 0.05
         entity_weight = 0.15
         dim_weight = 0.80
