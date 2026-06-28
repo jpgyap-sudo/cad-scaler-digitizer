@@ -294,5 +294,33 @@ def get_reference_ratios(furniture_type: str) -> dict[str, float]:
     """Get the best available dimension ratios for a furniture type.
     
     Returns a dict of ratio_name → float value used by the digitizer.
+    Merges DEFAULT_RATIOS with any auto-calibrated averages from
+    the calibration ledger.
     """
-    return dict(DEFAULT_RATIOS.get(furniture_type, {}))
+    ratios = dict(DEFAULT_RATIOS.get(furniture_type, {}))
+
+    # Merge in auto-calibrated averages from calibration_ledger if available
+    try:
+        import json, os
+        from pathlib import Path
+        ledger_path = Path(__file__).resolve().parents[3] / 'resources' / 'calibration_ledger.json'
+        if ledger_path.exists():
+            ledger = json.loads(ledger_path.read_text(encoding='utf-8'))
+            type_avgs = ledger.get('type_averages', {}).get(furniture_type, {})
+            if type_avgs:
+                # Map catalog dimension keys to ratio keys
+                calib_map = {
+                    'width_cm': 'width_from_catalog',
+                    'depth_cm': 'depth_from_catalog',
+                    'overall_height_cm': 'height_from_catalog',
+                    'diameter_cm': 'diameter_from_catalog',
+                    'seat_height_cm': 'seat_height_from_catalog',
+                }
+                for cat_key, avg_val in type_avgs.items():
+                    mapped = calib_map.get(cat_key)
+                    if mapped:
+                        ratios[mapped] = float(avg_val)
+    except Exception:
+        pass  # Non-fatal: fall back to default ratios
+
+    return ratios
