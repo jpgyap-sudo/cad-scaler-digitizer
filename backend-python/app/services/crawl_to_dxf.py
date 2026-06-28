@@ -556,13 +556,18 @@ async def crawl_and_digitize(
     logger.info(f"[CrawlToDXF] Downloaded {len(img_bytes)} bytes")
 
     # Step 3: Extract dimensions from the product page
+    # real_h/real_d MUST be initialized before the `if page_dims:` block, not
+    # inside it - they're referenced later in the params={} section below
+    # regardless of whether page_dims came back empty. This was fixed once
+    # (commit 7e4e234), then reintroduced by a later commit that moved the
+    # init back inside the if-block - see AUDIT_LOG.md for the full history.
+    real_h = None
+    real_d = None
     page_dims = await extract_dimensions_from_page(page_url)
     if page_dims:
         logger.info(f"[CrawlToDXF] Found page dimensions: {page_dims}")
         result["page_dimensions"] = page_dims
         # Use discovered width for scale if not already provided
-        real_h = None
-        real_d = None
         if not real_width_cm and page_dims.get("width_cm"):
             real_width_cm = page_dims["width_cm"]
             logger.info(f"[CrawlToDXF] Using page width: {real_width_cm}cm")
@@ -570,7 +575,6 @@ async def crawl_and_digitize(
             real_h = page_dims["overall_height_cm"]
         elif page_dims.get("height_cm"):
             real_h = page_dims["height_cm"]
-        # Also extract depth for hybrid dispatch
         # Map length_cm to depth_cm when available (common for tables: width x length)
         if page_dims.get("depth_cm"):
             real_d = page_dims["depth_cm"]
@@ -578,22 +582,17 @@ async def crawl_and_digitize(
             real_d = page_dims["length_cm"]
             page_dims["depth_cm"] = real_d  # make available to dispatch
 
-        # Shape detection from page URL slug — remaps generic types to specific templates
-        _slug = urlparse(page_url).path.rstrip("/").split("/")[-1].lower() if page_url else ""
-        _shape_keywords = {"round": "round_pedestal_table", "oval": "oval_pedestal_table",
-                           "square": "rectangular_table", "pedestal": "round_pedestal_table"}
-        if furniture_type in ("table", "furniture") and _slug:
-            for kw, mapped_type in _shape_keywords.items():
-                if kw in _slug:
-                    furniture_type = mapped_type
-                    logger.info(f"[CrawlToDXF] Shape detected: {kw} → {mapped_type} (slug: {_slug})")
-                    break
-        # depth_cm was parsed from the page but never forwarded to the
-        # digitizer at all - every dispatch defaulted to a hardcoded depth
-        # guess even when the real value was already known (e.g. a square
-        # 120x120 coffee table rendering with a wrong 60cm default depth).
-        if page_dims.get("depth_cm"):
-            real_d = page_dims["depth_cm"]
+        # NOTE: slug-based shape detection (round/oval/square/pedestal in the
+        # URL) used to live here and reassign furniture_type. It has been
+        # removed: furniture_type at this point is only read by
+        # verify_dimensions() (hallucination check) and the skeleton preview
+        # below - it is NOT forwarded to /api/digitize/hybrid (see the
+        # comment a few lines down for why that's intentional), so
+        # reassigning it here had no effect on the actual rendered CAD
+        # output. It also never covered coffee_table. The real fix for
+        # round-vs-rectangular shape detection needs a shape parameter
+        # threaded through build_coffee_table_model/_dispatch_furniture
+        # instead - see AUDIT_LOG.md.
 
     # Step 4: Digitize via HTTP call (to self, typically localhost:8001)
     # To avoid HTTP overhead, import and call _run_digitize_pipeline from routes.py directly
