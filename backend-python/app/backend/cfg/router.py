@@ -6,18 +6,17 @@ All existing endpoints continue to work unchanged. These are additive.
 """
 
 from __future__ import annotations
+
 import json
+import logging
 import os
 import uuid
-import logging
 from pathlib import Path
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
-from app.backend.cfg import CanonicalFurnitureGraph, FurnitureGraph
+from app.backend.cfg import CanonicalFurnitureGraph
 from app.backend.cfg.canonical_furniture_graph import cfg_to_drawing_model
 from app.backend.grammar import FurnitureGrammar
 from app.backend.self_critic import SelfCritic
@@ -46,7 +45,7 @@ async def cfg_health():
 @router.get("/evaluate")
 async def cfg_evaluate():
     """Run self-diagnostics on all CFG components.
-    
+
     Tests:
     1. Grammar can load all 25+ template types
     2. Each type generates a valid DrawingModel
@@ -56,7 +55,7 @@ async def cfg_evaluate():
     """
     results = {}
     errors = []
-    
+
     # Test 1: Grammar loading
     try:
         grammar = FurnitureGrammar()
@@ -71,7 +70,7 @@ async def cfg_evaluate():
     except Exception as e:
         results["grammar_load"] = {"passed": False, "error": str(e)}
         errors.append(f"Grammar load: {e}")
-    
+
     # Test 2: Each type generates a DrawingModel
     if results.get("grammar_load", {}).get("passed"):
         generate_results = []
@@ -97,7 +96,7 @@ async def cfg_evaluate():
             "passed_count": sum(1 for r in generate_results if r["passed"]),
             "details": generate_results,
         }
-    
+
     # Test 3: CFG round-trip
     try:
         model = grammar.generate(types[0], {"width_cm": 100, "height_cm": 75})
@@ -112,7 +111,7 @@ async def cfg_evaluate():
     except Exception as e:
         results["cfg_roundtrip"] = {"passed": False, "error": str(e)}
         errors.append(f"CFG roundtrip: {e}")
-    
+
     # Test 4: SelfCritic initializes
     try:
         critic = SelfCritic(gap_threshold=0.05, max_iterations=3)
@@ -124,7 +123,7 @@ async def cfg_evaluate():
     except Exception as e:
         results["self_critic_init"] = {"passed": False, "error": str(e)}
         errors.append(f"SelfCritic init: {e}")
-    
+
     all_passed = all(r.get("passed", False) for r in results.values())
     return JSONResponse({
         "status": "healthy" if all_passed else "degraded",
@@ -208,7 +207,6 @@ async def cfg_family(family_name: str):
     family = grammar.get_family(family_name)
     if not family:
         raise HTTPException(status_code=404, detail=f"Family '{family_name}' not found")
-    types = grammar.get_types_by_family(family_name)
     return JSONResponse({
         "family": family_name,
         "inherits": family.inherits,
@@ -231,7 +229,7 @@ async def cfg_family(family_name: str):
 async def cfg_self_critic(
     params_json: str = Form(...),
     image_path: str = Form(""),
-    image: Optional[UploadFile] = File(None),
+    image: UploadFile | None = File(None),
 ):
     """Run self-critic loop on an existing DrawingModel.
 

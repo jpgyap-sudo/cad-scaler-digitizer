@@ -1,22 +1,22 @@
 # CFG — Canonical Furniture Graph package
 # Everything reads from and writes to CFG. No more ad-hoc dicts.
 
+from .canonical_furniture_graph import CanonicalFurnitureGraph
 from .models import (
-    FurnitureGraph,
+    BBox,
+    BillOfMaterials,
+    ComponentGeometry,
     ComponentNode,
     ComponentRelation,
-    ComponentGeometry,
+    CorrectionRecord,
+    FurnitureGraph,
+    HardwareSpec,
     JointSpec,
     MaterialSpec,
-    HardwareSpec,
-    BillOfMaterials,
     ProvenanceEntry,
     ScaleInfo,
-    CorrectionRecord,
-    BBox,
     ViewSpec,
 )
-from .canonical_furniture_graph import CanonicalFurnitureGraph
 
 __all__ = [
     "FurnitureGraph",

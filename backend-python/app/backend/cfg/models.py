@@ -7,8 +7,9 @@ on other app modules.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any, Optional, Dict, List, Tuple
+from typing import Any
 
 
 @dataclass
@@ -40,10 +41,10 @@ class BBox:
 class ComponentGeometry:
     """The geometric representation of a furniture component."""
     type: str = "polygon"          # "polygon" | "circle" | "arc"
-    points: List[Tuple[float, float]] = field(default_factory=list)
-    radius: Optional[float] = None
-    start_angle: Optional[float] = None
-    end_angle: Optional[float] = None
+    points: list[tuple[float, float]] = field(default_factory=list)
+    radius: float | None = None
+    start_angle: float | None = None
+    end_angle: float | None = None
     bounding_box: BBox = field(default_factory=BBox)
 
 
@@ -52,9 +53,9 @@ class ComponentRelation:
     """Explicit geometric relationship between two components."""
     type: str = "PARENT_OF"        # PARENT_OF, ALIGNED_H, ALIGNED_V, SYMMETRIC, CENTERED, PARALLEL, EQUAL_SIZE
     target_id: str = ""
-    axis: Optional[str] = None     # "x" | "y" | "center" | "center_x" | "center_y"
+    axis: str | None = None     # "x" | "y" | "center" | "center_x" | "center_y"
     confidence: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -65,18 +66,18 @@ class ComponentNode:
     component_type: str = ""        # "top", "support", "panel", "leg", "seat", "backrest", "arm", "door", "drawer", "shelf"
     view: str = ""                  # "top" | "front" | "side"
     geometry: ComponentGeometry = field(default_factory=ComponentGeometry)
-    dimensions_mm: Dict[str, float] = field(default_factory=dict)
+    dimensions_mm: dict[str, float] = field(default_factory=dict)
     confidence: float = 0.0
     source: str = "schema_default"  # "measured" | "ocr" | "ratio" | "schema_default" | "user"
-    relations: List[ComponentRelation] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    relations: list[ComponentRelation] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class JointSpec:
     """A joinery specification connecting components."""
     type: str = ""                  # "mortise_tenon" | "dowel" | "screw" | "cam_lock" | "hidden_steel_frame"
-    components: List[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
     description: str = ""
     confidence: float = 0.0
 
@@ -85,8 +86,8 @@ class JointSpec:
 class MaterialSpec:
     """Material specification for a component."""
     material: str = ""
-    finish: Optional[str] = None
-    thickness_mm: Optional[float] = None
+    finish: str | None = None
+    thickness_mm: float | None = None
     confidence: float = 0.0
     source: str = "schema_default"
 
@@ -97,15 +98,15 @@ class HardwareSpec:
     type: str = ""                  # "screw" | "bracket" | "cam_lock" | "confirmat"
     quantity: int = 0
     size: str = ""
-    components: List[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
 
 
 @dataclass
 class BillOfMaterials:
     """Complete bill of materials."""
-    entries: List[Dict[str, Any]] = field(default_factory=list)
+    entries: list[dict[str, Any]] = field(default_factory=list)
 
-    def add_entry(self, name: str, material: str, qty: int, dims_mm: Dict[str, float], notes: str = ""):
+    def add_entry(self, name: str, material: str, qty: int, dims_mm: dict[str, float], notes: str = ""):
         self.entries.append({
             "name": name,
             "material": material,
@@ -122,7 +123,7 @@ class BillOfMaterials:
 @dataclass
 class ScaleInfo:
     """Scale solution with confidence."""
-    mm_per_px: Optional[float] = None
+    mm_per_px: float | None = None
     confidence: float = 0.0
     samples: int = 0
     rejected: int = 0
@@ -133,7 +134,7 @@ class ProvenanceEntry:
     """Provenance tracking for a single field value."""
     source: str = ""               # "ai_vision" | "ocr" | "pixel_geometry" | "template_default" | "user"
     confidence: float = 0.0
-    evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
     agent: str = ""                # "vision_agent" | "dimension_agent" | "construction_agent" | etc.
     timestamp: str = ""
 
@@ -145,7 +146,7 @@ class CorrectionRecord:
     old_value: Any = None
     new_value: Any = None
     timestamp: str = ""
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 @dataclass
@@ -175,32 +176,32 @@ class FurnitureGraph:
     furniture_family: str = ""      # "dining_table", "coffee_table", "sofa", etc.
 
     # === Measurement ===
-    overall_dimensions: Dict[str, float] = field(default_factory=dict)
-    scale: Optional[ScaleInfo] = None
+    overall_dimensions: dict[str, float] = field(default_factory=dict)
+    scale: ScaleInfo | None = None
 
     # === Component Hierarchy ===
-    components: List[ComponentNode] = field(default_factory=list)
-    relations: List[ComponentRelation] = field(default_factory=list)
+    components: list[ComponentNode] = field(default_factory=list)
+    relations: list[ComponentRelation] = field(default_factory=list)
 
     # === Manufacturing ===
-    materials: Dict[str, MaterialSpec] = field(default_factory=dict)
-    joinery: List[JointSpec] = field(default_factory=list)
-    hardware: List[HardwareSpec] = field(default_factory=list)
-    bom: Optional[BillOfMaterials] = None
+    materials: dict[str, MaterialSpec] = field(default_factory=dict)
+    joinery: list[JointSpec] = field(default_factory=list)
+    hardware: list[HardwareSpec] = field(default_factory=list)
+    bom: BillOfMaterials | None = None
 
     # === Engineering ===
-    views: Dict[str, ViewSpec] = field(default_factory=dict)
-    annotations: List[str] = field(default_factory=list)
+    views: dict[str, ViewSpec] = field(default_factory=dict)
+    annotations: list[str] = field(default_factory=list)
 
     # === Provenance ===
-    provenance: Dict[str, ProvenanceEntry] = field(default_factory=dict)
-    corrections: List[CorrectionRecord] = field(default_factory=list)
+    provenance: dict[str, ProvenanceEntry] = field(default_factory=dict)
+    corrections: list[CorrectionRecord] = field(default_factory=list)
 
     # === Learning ===
-    confidence_map: Dict[str, float] = field(default_factory=dict)
+    confidence_map: dict[str, float] = field(default_factory=dict)
 
     # === Metadata ===
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_component(self, component: ComponentNode):
         self.components.append(component)
@@ -218,7 +219,7 @@ class FurnitureGraph:
     def set_overall_dimension(self, key: str, value_mm: float):
         self.overall_dimensions[key] = value_mm
 
-    def get_component(self, name: str) -> Optional[ComponentNode]:
+    def get_component(self, name: str) -> ComponentNode | None:
         for c in self.components:
             if c.name == name or c.id == name:
                 return c
@@ -234,7 +235,7 @@ class FurnitureGraph:
             return 0.0
         return sum(self.confidence_map.values()) / len(self.confidence_map)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict for API responses."""
         def _bbox(b: BBox) -> dict:
             return {"x1": b.x1, "y1": b.y1, "x2": b.x2, "y2": b.y2}

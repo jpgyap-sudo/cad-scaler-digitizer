@@ -24,11 +24,13 @@ USAGE:
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, Tuple
+
 import logging
+from typing import Any
 
 from app.backend.drawing_model import DrawingModel
-from .definitions import get_grammar, GrammarTemplate, GrammarFamily, BuilderFn
+
+from .definitions import GrammarFamily, GrammarTemplate, get_grammar
 
 logger = logging.getLogger("grammar_engine")
 
@@ -47,14 +49,14 @@ class FurnitureGrammar:
     def __init__(self):
         self._grammar = get_grammar()
         # Build reverse lookup: template name → family name
-        self._template_to_family: Dict[str, str] = {}
+        self._template_to_family: dict[str, str] = {}
         for fname, family in self._grammar.items():
             for tname in family.templates:
                 self._template_to_family[tname] = fname
 
     # ─── Lookup ─────────────────────────────────────────────────────
 
-    def get_template(self, furniture_type: str) -> Optional[GrammarTemplate]:
+    def get_template(self, furniture_type: str) -> GrammarTemplate | None:
         """Look up a template by furniture type name.
 
         Searches all families. Returns None if not found.
@@ -64,11 +66,11 @@ class FurnitureGrammar:
                 return family.templates[furniture_type]
         return None
 
-    def get_family(self, family_name: str) -> Optional[GrammarFamily]:
+    def get_family(self, family_name: str) -> GrammarFamily | None:
         """Get a family definition by name."""
         return self._grammar.get(family_name)
 
-    def get_family_for_type(self, furniture_type: str) -> Optional[GrammarFamily]:
+    def get_family_for_type(self, furniture_type: str) -> GrammarFamily | None:
         """Get the family that contains this furniture type."""
         fname = self._template_to_family.get(furniture_type)
         if fname:
@@ -79,15 +81,15 @@ class FurnitureGrammar:
         """Check if a furniture type is known to the grammar."""
         return furniture_type in self._template_to_family
 
-    def get_known_types(self) -> List[str]:
+    def get_known_types(self) -> list[str]:
         """List all known furniture types across all families."""
         return list(self._template_to_family.keys())
 
-    def get_families(self) -> List[str]:
+    def get_families(self) -> list[str]:
         """List all family names."""
         return list(self._grammar.keys())
 
-    def get_types_by_family(self, family_name: str) -> List[str]:
+    def get_types_by_family(self, family_name: str) -> list[str]:
         """Get all template names in a family."""
         family = self._grammar.get(family_name)
         if family:
@@ -96,7 +98,7 @@ class FurnitureGrammar:
 
     # ─── Generation ─────────────────────────────────────────────────
 
-    def generate(self, furniture_type: str, params: Dict[str, Any]) -> DrawingModel:
+    def generate(self, furniture_type: str, params: dict[str, Any]) -> DrawingModel:
         """Generate a DrawingModel for the given furniture type.
 
         Delegates to existing builder function when available.
@@ -129,7 +131,7 @@ class FurnitureGrammar:
 
     # ─── Builder delegation ─────────────────────────────────────────
 
-    def _delegate_to_builder(self, template: GrammarTemplate, params: Dict[str, Any]) -> DrawingModel:
+    def _delegate_to_builder(self, template: GrammarTemplate, params: dict[str, Any]) -> DrawingModel:
         """Call the existing builder function with the right parameters.
 
         This is how the grammar stays backward compatible. The builder
@@ -160,7 +162,7 @@ class FurnitureGrammar:
             logger.error(f"[Grammar] Builder error for {template.name}: {e}")
             raise
 
-    def _normalize_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Normalize common parameter names to what builders expect.
 
         Maps user-facing dimension names → builder function parameter names.
@@ -198,7 +200,7 @@ class FurnitureGrammar:
     # ─── Generic composition fallback ────────────────────────────────
 
     def _compose_from_primitives(
-        self, furniture_type: str, family: GrammarFamily, params: Dict[str, Any]
+        self, furniture_type: str, family: GrammarFamily, params: dict[str, Any]
     ) -> DrawingModel:
         """Compose a DrawingModel from grammar primitives when no builder exists.
 
@@ -210,9 +212,19 @@ class FurnitureGrammar:
         logger.info(f"[Grammar] Composing {furniture_type} from {family.name} primitives")
 
         from app.backend.drawing_model import (
-            DrawingModel as DM, View as DV, Point as DP,
-            PolygonComponent, LineComponent, DimensionComponent,
-            TextComponent, EntityMetadata,
+            DimensionComponent,
+            EntityMetadata,
+            PolygonComponent,
+            TextComponent,
+        )
+        from app.backend.drawing_model import (
+            DrawingModel as DM,
+        )
+        from app.backend.drawing_model import (
+            Point as DP,
+        )
+        from app.backend.drawing_model import (
+            View as DV,
         )
 
         # Extract dimensions
@@ -300,7 +312,6 @@ class FurnitureGrammar:
         # SIDE VIEW
         side = DV(name="SIDE VIEW")
         side_w = d * sc
-        side_h = h * sc
         sx, sy = 200.0, top_y  # align with front view
 
         side.polygons.append(PolygonComponent(
@@ -324,7 +335,7 @@ class FurnitureGrammar:
 
         return model
 
-    def _generic_fallback(self, params: Dict[str, Any]) -> DrawingModel:
+    def _generic_fallback(self, params: dict[str, Any]) -> DrawingModel:
         """Last-resort generic fallback when nothing is known about the type."""
         logger.warning("[Grammar] Using generic fallback — no type or family match")
         return self._compose_from_primitives("generic", GrammarFamily(name="generic"), params)
@@ -332,7 +343,7 @@ class FurnitureGrammar:
 
 # ─── Convenience functions ──────────────────────────────────────────
 
-_engine: Optional[FurnitureGrammar] = None
+_engine: FurnitureGrammar | None = None
 
 def get_grammar_engine() -> FurnitureGrammar:
     """Get singleton grammar engine."""

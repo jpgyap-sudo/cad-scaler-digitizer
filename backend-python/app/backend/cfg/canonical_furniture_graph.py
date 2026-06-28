@@ -18,35 +18,35 @@ Usage:
 """
 
 from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from app.backend.drawing_model import (
-    DrawingModel, View, EntityMetadata,
-    Point as DMPoint,
-)
 from app.backend.cad_intelligence.component_graph import ComponentGraph as PipeComponentGraph
 from app.backend.cad_intelligence.models import ScaleSolution as PipeScale
+from app.backend.drawing_model import (
+    DrawingModel,
+    EntityMetadata,
+)
+from app.backend.drawing_model import (
+    Point as DMPoint,
+)
 
 from .models import (
-    FurnitureGraph,
-    ComponentNode,
-    ComponentRelation,
-    ComponentGeometry,
-    JointSpec,
-    MaterialSpec,
-    HardwareSpec,
+    BBox,
     BillOfMaterials,
+    ComponentGeometry,
+    ComponentNode,
+    FurnitureGraph,
+    MaterialSpec,
     ProvenanceEntry,
     ScaleInfo,
-    CorrectionRecord,
-    BBox,
     ViewSpec,
 )
 
 
-def _point_to_tuple(p) -> Tuple[float, float]:
+def _point_to_tuple(p) -> tuple[float, float]:
     if hasattr(p, 'x') and hasattr(p, 'y'):
         return (p.x, p.y)
     if isinstance(p, (list, tuple)) and len(p) >= 2:
@@ -54,7 +54,7 @@ def _point_to_tuple(p) -> Tuple[float, float]:
     return (0.0, 0.0)
 
 
-def _bbox_from_points(points: List[Tuple[float, float]]) -> BBox:
+def _bbox_from_points(points: list[tuple[float, float]]) -> BBox:
     if not points:
         return BBox()
     xs = [p[0] for p in points]
@@ -74,7 +74,7 @@ def _metadata_confidence(meta) -> float:
     return 0.0
 
 
-def _metadata_evidence(meta) -> List[str]:
+def _metadata_evidence(meta) -> list[str]:
     if hasattr(meta, 'evidence'):
         return meta.evidence or []
     return []
@@ -86,13 +86,13 @@ class CanonicalFurnitureGraph:
     @classmethod
     def from_pipeline_result(
         cls,
-        drawing_model: Optional[DrawingModel] = None,
-        component_graph: Optional[PipeComponentGraph] = None,
+        drawing_model: DrawingModel | None = None,
+        component_graph: PipeComponentGraph | None = None,
         unified_result: Any = None,
-        scale: Optional[PipeScale] = None,
+        scale: PipeScale | None = None,
         furniture_type: str = "",
         furniture_family: str = "",
-        overall_dims: Optional[Dict[str, float]] = None,
+        overall_dims: dict[str, float] | None = None,
     ) -> FurnitureGraph:
         """Assemble CFG from existing module outputs.
 
@@ -244,13 +244,13 @@ class CanonicalFurnitureGraph:
     @classmethod
     def _from_unified_result(cls, cfg: FurnitureGraph, result: Any):
         """Extract provenance from unified router result.
-        
+
         Reads UnifiedResult fields: product_type, top_shape, support_type,
         material_top, material_base, dimensions, and their ProvenanceValue
         objects which carry source, confidence, and note.
         """
         now = datetime.utcnow().isoformat()
-        
+
         # product_type
         pt = getattr(result, 'product_type', None)
         if pt:
@@ -306,7 +306,7 @@ class CanonicalFurnitureGraph:
                     cfg.set_provenance(f"dim_{dkey}", ProvenanceEntry(
                         source=src,
                         confidence=conf,
-                        evidence=[f"from unified_router"],
+                        evidence=["from unified_router"],
                         agent="unified_router.dimension",
                         timestamp=now,
                     ))
@@ -324,7 +324,7 @@ class CanonicalFurnitureGraph:
         return cfg
 
 
-def cfg_to_drawing_model(cfg: FurnitureGraph, existing_model: Optional[DrawingModel] = None) -> DrawingModel:
+def cfg_to_drawing_model(cfg: FurnitureGraph, existing_model: DrawingModel | None = None) -> DrawingModel:
     """Convert CFG back to DrawingModel for existing exporters.
 
     This is a lossless* conversion — all ComponentNode geometry
@@ -334,9 +334,18 @@ def cfg_to_drawing_model(cfg: FurnitureGraph, existing_model: Optional[DrawingMo
       DrawingModel -> CFG -> DrawingModel is a round-trip for entities.
     """
     from app.backend.drawing_model import (
-        DrawingModel as DM, View as DV,
-        PolygonComponent, CircleComponent,
-        Point as DMP, EntityMetadata,
+        CircleComponent,
+        EntityMetadata,
+        PolygonComponent,
+    )
+    from app.backend.drawing_model import (
+        DrawingModel as DM,
+    )
+    from app.backend.drawing_model import (
+        Point as DMP,
+    )
+    from app.backend.drawing_model import (
+        View as DV,
     )
 
     # Build completely new DrawingModel — don't mutate existing_model
@@ -349,7 +358,7 @@ def cfg_to_drawing_model(cfg: FurnitureGraph, existing_model: Optional[DrawingMo
     )
 
     # Group components by view name
-    view_groups: Dict[str, DV] = {}
+    view_groups: dict[str, DV] = {}
 
     for comp in cfg.components:
         vname = comp.view or "FRONT VIEW"
@@ -383,7 +392,7 @@ def cfg_to_drawing_model(cfg: FurnitureGraph, existing_model: Optional[DrawingMo
     return dm
 
 
-def _extract_poly_dimensions(points: List[Tuple[float, float]]) -> Dict[str, float]:
+def _extract_poly_dimensions(points: list[tuple[float, float]]) -> dict[str, float]:
     """Estimate width/height from polygon points."""
     if not points:
         return {}

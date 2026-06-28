@@ -14,10 +14,11 @@ If a type has no builder, the grammar engine composes from geometry primitives.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, Callable
+
+from collections.abc import Callable
+from typing import Any
 
 from app.backend.drawing_model import DrawingModel
-
 
 # ─── Type alias for builder functions ───────────────────────────────
 BuilderFn = Callable[..., DrawingModel]
@@ -33,7 +34,7 @@ class GrammarTemplate:
         top_type: str = "rectangle",
         base_type: str = "four_leg",
         leg_count: int = 4,
-        builder_fn: Optional[BuilderFn] = None,
+        builder_fn: BuilderFn | None = None,
         description: str = "",
     ):
         self.name = name
@@ -50,13 +51,13 @@ class GrammarFamily:
     def __init__(
         self,
         name: str,
-        inherits: Optional[List[str]] = None,
-        top_types: Optional[List[str]] = None,
-        base_types: Optional[List[str]] = None,
-        proportions: Optional[Dict[str, float]] = None,
-        view_order: Optional[List[str]] = None,
-        height_range: Optional[List[float]] = None,
-        overrides: Optional[Dict[str, Any]] = None,
+        inherits: list[str] | None = None,
+        top_types: list[str] | None = None,
+        base_types: list[str] | None = None,
+        proportions: dict[str, float] | None = None,
+        view_order: list[str] | None = None,
+        height_range: list[float] | None = None,
+        overrides: dict[str, Any] | None = None,
     ):
         self.name = name
         self.inherits = inherits or []
@@ -66,7 +67,7 @@ class GrammarFamily:
         self.view_order = view_order or ["top", "front", "side"]
         self.height_range = height_range or [30, 110]
         self.overrides = overrides or {}
-        self.templates: Dict[str, GrammarTemplate] = {}
+        self.templates: dict[str, GrammarTemplate] = {}
 
 
 # ─── Grammar Definitions ────────────────────────────────────────────
@@ -149,25 +150,25 @@ BED_FAMILY = GrammarFamily(
 # ─── Master Grammar Dictionary ──────────────────────────────────────
 # Maps family names to family objects with their template instances.
 
-def _define_grammar() -> Dict[str, GrammarFamily]:
+def _define_grammar() -> dict[str, GrammarFamily]:
     """Build the complete grammar with all template instances."""
     from app.backend.drawing_builders import (
-        build_round_pedestal_model,
-        build_rectangular_table_model,
-        build_cabinet_model,
-        build_sofa_model,
-        build_coffee_table_model,
-        build_dining_chair_model,
-        build_wardrobe_model,
-        build_oval_pedestal_model,
-        build_console_table_model,
-        build_office_desk_model,
         build_asymmetric_pedestal_model,
-        build_reception_counter_model,
         build_bed_headboard_model,
+        build_cabinet_model,
+        build_coffee_table_model,
+        build_console_table_model,
+        build_dining_chair_model,
+        build_office_desk_model,
+        build_oval_pedestal_model,
+        build_reception_counter_model,
+        build_rectangular_table_model,
+        build_round_pedestal_model,
+        build_sofa_model,
+        build_wardrobe_model,
     )
 
-    grammar: Dict[str, GrammarFamily] = {}
+    grammar: dict[str, GrammarFamily] = {}
 
     # ── Table Family (8 templates + 5 generic) ──
     tables = GrammarFamily(
@@ -398,9 +399,9 @@ def _define_grammar() -> Dict[str, GrammarFamily]:
 
 
 # ─── Singleton access ──────────────────────────────────────────────
-_grammar_cache: Optional[Dict[str, GrammarFamily]] = None
+_grammar_cache: dict[str, GrammarFamily] | None = None
 
-def get_grammar() -> Dict[str, GrammarFamily]:
+def get_grammar() -> dict[str, GrammarFamily]:
     global _grammar_cache
     if _grammar_cache is None:
         _grammar_cache = _define_grammar()

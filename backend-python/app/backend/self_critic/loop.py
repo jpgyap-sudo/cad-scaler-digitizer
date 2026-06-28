@@ -18,19 +18,13 @@ USAGE:
 """
 
 from __future__ import annotations
-import os
-import json
-import tempfile
+
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from app.backend.drawing_model import DrawingModel, EntityMetadata
 from app.backend.svg_exporter import render_svg
-from app.backend.anti_hallucination_validator import (
-    EntityVerdict, ValidationResult, validate_drawing, Visibility,
-)
 
 logger = logging.getLogger("self_critic")
 
@@ -44,17 +38,17 @@ class GapRegion:
     severity: float                   # 0.0-1.0
     description: str
     suggested_action: str             # "re_detect" | "hide_component" | "override_dim" | "adjust_position" | "enforce_symmetry"
-    bbox: Optional[Tuple[float, float, float, float]] = None  # pixel region
+    bbox: tuple[float, float, float, float] | None = None  # pixel region
 
 
-@dataclass 
+@dataclass
 class GapReport:
     """Complete gap analysis report."""
-    gaps: List[GapRegion] = field(default_factory=list)
+    gaps: list[GapRegion] = field(default_factory=list)
     gap_pixel_count: int = 0
     total_pixel_count: int = 0
     gap_score: float = 1.0            # 0.0 = perfect, 1.0 = completely wrong
-    
+
     @property
     def gap_ratio(self) -> float:
         if self.total_pixel_count == 0:
@@ -69,13 +63,13 @@ class SelfCriticResult:
     gap_score: float                  # final gap score
     iterations: int                   # how many iterations ran
     converged: bool                   # True if gap_threshold was met
-    gap_history: List[float]          # gap score per iteration
-    repairs_applied: List[str]        # descriptions of repairs made
+    gap_history: list[float]          # gap score per iteration
+    repairs_applied: list[str]        # descriptions of repairs made
 
 
 class SelfCritic:
     """Orchestrates render → compare → repair → repeat.
-    
+
     Each step delegates to existing modules:
       Render:    svg_exporter.render_svg()
       Compare:   OpenCV absdiff() OR comparison_agent.py
@@ -90,23 +84,23 @@ class SelfCritic:
         self,
         model: DrawingModel,
         original_image_path: str,
-        existing_comparison: Optional[Any] = None,
+        existing_comparison: Any | None = None,
     ) -> SelfCriticResult:
         """Run the self-critic loop.
-        
+
         Args:
             model: Initial DrawingModel to evaluate
             original_image_path: Path to the original uploaded image
             existing_comparison: If comparison_agent comparison already exists,
                                  skip re-comparison
-        
+
         Returns:
             SelfCriticResult with final model and metrics
         """
         best_model = model
         best_gap = 1.0
-        gap_history: List[float] = []
-        repairs: List[str] = []
+        gap_history: list[float] = []
+        repairs: list[str] = []
 
         for iteration in range(self.max_iterations):
             logger.info(f"[SelfCritic] Iteration {iteration + 1}/{self.max_iterations}")
@@ -158,10 +152,10 @@ class SelfCritic:
         self,
         svg_output: str,
         original_image_path: str,
-        existing_comparison: Optional[Any] = None,
+        existing_comparison: Any | None = None,
     ) -> GapReport:
         """Compare rendered SVG to original image.
-        
+
         Uses existing comparison_agent when available, or direct OpenCV.
         """
         # Try using existing comparison agent first
@@ -180,10 +174,10 @@ class SelfCritic:
             severity = getattr(err, 'severity', 'minor')
             bbox = getattr(err, 'bbox', None)
             desc = getattr(err, 'description', '')
-            
+
             gap_type = self._map_error_type(error_type)
             component = self._infer_component(desc)
-            
+
             gaps.append(GapRegion(
                 type=gap_type,
                 component_name=component,
@@ -206,7 +200,7 @@ class SelfCritic:
 
     def _opencv_compare(self, svg_output: str, original_image_path: str) -> GapReport:
         """Direct OpenCV-based comparison.
-        
+
         Renders SVG to bitmap, compares pixel-by-pixel with original.
         """
         gaps = []
@@ -279,9 +273,9 @@ class SelfCritic:
 
     # ── Repair ─────────────────────────────────────────────────────
 
-    def _repair(self, model: DrawingModel, report: GapReport) -> Tuple[DrawingModel, List[str]]:
+    def _repair(self, model: DrawingModel, report: GapReport) -> tuple[DrawingModel, list[str]]:
         """Apply repairs to the DrawingModel based on gap analysis.
-        
+
         Uses anti_hallucination_validator for confidence-based repairs,
         and direct model manipulation for structural repairs.
         """
