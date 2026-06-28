@@ -1817,28 +1817,3 @@ def save_wall_panel(path, width_cm=120, height_cm=240, thickness_cm=2.0, slat_sp
     return _save(doc, path)
 
 
-# ===========================================================================
-# Missing template exports (armchair, bar stool, bench chaise)
-# ===========================================================================
-
-def save_armchair(path, width_cm=70, depth_cm=75, height_cm=85, seat_height_cm=45, leg_thickness_cm=5,
-                  armrest_height_cm=22, materials=None, **kwargs):
-    """Armchair — wider dining chair with armrests. Reuses dining chair layout."""
-    save_dining_chair(path, width_cm=width_cm, depth_cm=depth_cm, height_cm=height_cm,
-                       seat_height_cm=seat_height_cm, leg_thickness_cm=leg_thickness_cm,
-                       materials=materials)
-
-
-def save_bar_stool(path, diameter_or_width_cm=45, height_cm=75, seat_height_cm=65,
-                   base_diameter_cm=40, materials=None, **kwargs):
-    """Bar stool — narrow tall stool with footrest ring. Reuses dining chair layout."""
-    save_dining_chair(path, width_cm=diameter_or_width_cm, depth_cm=diameter_or_width_cm,
-                       height_cm=height_cm, seat_height_cm=seat_height_cm,
-                       leg_thickness_cm=3, materials=materials)
-
-
-def save_bench_chaise(path, length_cm=150, depth_cm=70, height_cm=85, seat_height_cm=45,
-                      backrest_height_cm=40, materials=None, **kwargs):
-    """Bench chaise — long cushioned bench without armrests. Reuses sofa layout."""
-    save_sofa(path, width_cm=length_cm, depth_cm=depth_cm, height_cm=height_cm,
-              seat_height_cm=seat_height_cm, materials=materials)

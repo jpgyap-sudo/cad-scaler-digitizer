@@ -254,6 +254,20 @@ def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None,
         elif f_type == 'asymmetric_pedestal_table':
             model = build_asymmetric_pedestal_model(float(width_cm), float(depth_cm or 90), float(height_cm),
                 materials=materials)
+        elif f_type == 'armchair_lounge':
+            model = build_dining_chair_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'bar_stool':
+            model = build_dining_chair_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'bench_chaise':
+            model = build_sofa_model(float(width_cm), float(depth_cm or 70), float(height_cm), materials=materials)
+        elif f_type == 'ottoman_pouf':
+            model = build_coffee_table_model(float(width_cm), float(height_cm), materials=materials)
+        elif f_type == 'rug_rectangular':
+            model = build_rectangular_table_model(float(width_cm), float(depth_cm or 120), float(1), float(1), materials=materials)
+        elif f_type == 'stone_slab_rectangular':
+            model = build_rectangular_table_model(float(width_cm), float(depth_cm or 100), float(thickness_cm or 2), float(1), materials=materials)
+        elif f_type == 'wall_panel_fluted':
+            model = build_wardrobe_model(float(width_cm), float(depth_cm or 5), float(height_cm), materials=materials)
 
         if model is None:
             return

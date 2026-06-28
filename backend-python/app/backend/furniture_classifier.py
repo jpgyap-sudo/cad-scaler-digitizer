@@ -34,7 +34,6 @@ def normalize_furniture_type(ftype: str) -> str:
         "closet": "wardrobe",
         "bed_headboard": "bed_headboard",
         "headboard": "bed_headboard",
-        "bed": "bed_headboard",
         "chair": "chair",
         "dining_chair": "dining_chair",
         "armchair": "armchair_lounge",
