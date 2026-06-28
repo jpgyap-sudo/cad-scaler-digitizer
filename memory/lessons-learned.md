@@ -4558,3 +4558,117 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: add Query import, deduplicate save functions, restore template graph files
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d373d6f8dcfcc58e1fe606833470ce21249aad19
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d373d6f8dcfcc58e1fe606833470ce21249aad19
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: fix: add Query import, deduplicate save functions, restore template graph files
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add Query import, deduplicate save functions, restore template graph files*
+
+#### Lesson Learned
+
+Commit: fix: add Query import, deduplicate save functions, restore template graph files
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: shape-based template dispatch + real_d bug fix
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f1407c6d7682f8901632dc05f92f7d0d40db1103
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** f1407c6d7682f8901632dc05f92f7d0d40db1103
+**Files:** 
+
+**Summary:**
+Commit: fix: shape-based template dispatch + real_d bug fix
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: shape-based template dispatch + real_d bug fix*
+
+#### Lesson Learned
+
+Commit: fix: shape-based template dispatch + real_d bug fix
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: Vivaldi 80x80→80x140 + CFG canonical import + validate_drawing alias
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 90be31f56030fba16445a1344ec5c682d45b952b
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 90be31f56030fba16445a1344ec5c682d45b952b
+**Files:** 
+
+**Summary:**
+Commit: fix: Vivaldi 80x80→80x140 + CFG canonical import + validate_drawing alias
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Vivaldi 80x80→80x140 + CFG canonical import + validate_drawing alias*
+
+#### Lesson Learned
+
+Commit: fix: Vivaldi 80x80→80x140 + CFG canonical import + validate_drawing alias
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
