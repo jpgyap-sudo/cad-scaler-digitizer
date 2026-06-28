@@ -1,0 +1,4730 @@
+[
+  {
+    "id": "homeu_b1_42_wood_ceiling_fan",
+    "title": "42 wood ceiling fan",
+    "handle": "42-wood-ceiling-fan",
+    "template_family": "ceiling_fan_3_blade_light",
+    "product_type": "Fan",
+    "tags": [
+      "fan"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "42_wood_ceiling_fan.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aalto_modern_sofa",
+    "title": "Aalto │ Modern Sofa",
+    "handle": "aalto-modern-sofa",
+    "template_family": "straight_modern_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa",
+      "4-seater",
+      "seating"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aalto_modern_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aalto_sofa_3d_model",
+    "title": "Aalto Sofa 3D Model",
+    "handle": "aalto-sofa-3d-model",
+    "template_family": "ignore_3d_model_reference",
+    "product_type": "3DMODEL",
+    "tags": [],
+    "components": [
+      "main_body",
+      "support",
+      "surface",
+      "details"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aalto_sofa_3d_model.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_abigail_designer_throw_pillow",
+    "title": "Abigail | Designer Throw Pillow",
+    "handle": "abigail-designer-throw-pillow",
+    "template_family": "square_throw_pillow",
+    "product_type": "pillow",
+    "tags": [
+      "pillow"
+    ],
+    "components": [
+      "fabric_shell",
+      "filling",
+      "seams",
+      "decorative_face"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "abigail_designer_throw_pillow.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_achelle_designer_throw_pillow",
+    "title": "Achelle | Designer Throw Pillow",
+    "handle": "achelle-designer-throw-pillow",
+    "template_family": "decorative_throw_pillow_with_strap",
+    "product_type": "pillow",
+    "tags": [
+      "pillow"
+    ],
+    "components": [
+      "fabric_shell",
+      "filling",
+      "seams",
+      "decorative_face"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "achelle_designer_throw_pillow.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adagio_ottoman",
+    "title": "Adagio Ottoman | Modern Furniture",
+    "handle": "adagio-ottoman",
+    "template_family": "rectangular_upholstered_ottoman",
+    "product_type": "Furniture",
+    "tags": [
+      "ottoman",
+      "seating"
+    ],
+    "components": [
+      "main_body",
+      "support",
+      "surface",
+      "details"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adagio_ottoman.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adagio_sofa",
+    "title": "Adagio Sofa | Modern Living",
+    "handle": "adagio-sofa",
+    "template_family": "modular_sofa_variants",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa",
+      "chaise",
+      "seating"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adagio_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adelina_led_pendant_light",
+    "title": "Adelina Led Pendant Light",
+    "handle": "adelina-led-pendant-light",
+    "template_family": "linear_multi_head_pendant",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adelina_led_pendant_light.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adley_console_table",
+    "title": "Adley Console Table",
+    "handle": "adley-console-table",
+    "template_family": "rectangular_console_table",
+    "product_type": "Furniture",
+    "tags": [
+      "console",
+      "table"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adley_console_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adriana_modern_dining_chair",
+    "title": "Adriana | Modern Dining Chair",
+    "handle": "adriana-modern-dining-chair",
+    "template_family": "rounded_back_dining_chair",
+    "product_type": "Furniture",
+    "tags": [
+      "diningchair",
+      "seating"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adriana_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adriano_modern_dining_chair",
+    "title": "Adriano | Modern Dining Chair",
+    "handle": "adriano-modern-dining-chair",
+    "template_family": "bentwood_metal_leg_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adriano_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_adriano_modern_dining_chair_1",
+    "title": "Adriano | Modern Dining Chair 2",
+    "handle": "adriano-modern-dining-chair-1",
+    "template_family": "abs_shell_metal_leg_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "adriano_modern_dining_chair_1.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aeris_console_table",
+    "title": "Aeris Console Table",
+    "handle": "aeris-console-table",
+    "template_family": "sculptural_single_support_console",
+    "product_type": "Furniture",
+    "tags": [
+      "console",
+      "table"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aeris_console_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_af1",
+    "title": "Alban Boucle | Modern Lounge chair",
+    "handle": "af1",
+    "template_family": "boucle_lounge_chair",
+    "product_type": "Furniture",
+    "tags": [
+      "armchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "af1.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alanis_modern_sofa",
+    "title": "Alanis │ Modern Sofa",
+    "handle": "alanis-modern-sofa",
+    "template_family": "wide_arm_straight_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa",
+      "4-seater"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alanis_modern_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alba_dining_table",
+    "title": "Alba | Modern Dining Table",
+    "handle": "alba-dining-table",
+    "template_family": "rectangular_marble_steel_dining_table",
+    "product_type": "Furniture",
+    "tags": [
+      "diningtable",
+      "table"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alba_dining_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_albert_armchair",
+    "title": "Albert Armchair",
+    "handle": "albert-armchair",
+    "template_family": "classic_armchair_ottoman",
+    "product_type": "Furniture",
+    "tags": [
+      "armchair",
+      "ottoman"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "albert_armchair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_albert_sofa",
+    "title": "Albert Sofa | Modern Living",
+    "handle": "albert-sofa",
+    "template_family": "classic_straight_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "albert_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alcanthia_modern_chandelier",
+    "title": "Alcanthia Modern Chandelier",
+    "handle": "alcanthia-modern-chandelier",
+    "template_family": "round_crystal_chandelier",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alcanthia_modern_chandelier.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aldino_modern_dining_chair",
+    "title": "Aldino | Modern Dining Chair",
+    "handle": "aldino-modern-dining-chair",
+    "template_family": "bentwood_simple_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aldino_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aldo_sofa",
+    "title": "Aldo Sofa | Modern Interior",
+    "handle": "aldo-sofa",
+    "template_family": "rounded_molded_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aldo_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alea_pendant_light",
+    "title": "Alea Pendant Light",
+    "handle": "alea-pendant-light",
+    "template_family": "double_curvilinear_pendant",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alea_pendant_light.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alfieri_table",
+    "title": "Alfieri | Modern Dining Table",
+    "handle": "alfieri-table",
+    "template_family": "rectangular_marble_top_dining_table",
+    "product_type": "Furniture",
+    "tags": [
+      "diningtable"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alfieri_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alice_coffee_table",
+    "title": "Alice Coffee Table | Center Table",
+    "handle": "alice-coffee-table",
+    "template_family": "low_square_or_rectangular_coffee_table",
+    "product_type": "Furniture",
+    "tags": [
+      "coffeetable",
+      "table"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alice_coffee_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aliyah_modern_sideboard",
+    "title": "Aliyah | Modern Sideboard",
+    "handle": "aliyah-modern-sideboard",
+    "template_family": "ribbed_front_sideboard",
+    "product_type": "Furniture",
+    "tags": [
+      "sideboard"
+    ],
+    "components": [
+      "carcass",
+      "doors_or_drawers",
+      "legs_or_plinth",
+      "front_panel"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aliyah_modern_sideboard.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_allegra_modern_leather_dining_chair",
+    "title": "Allegra | Modern Leather Dining Chair",
+    "handle": "allegra-modern-leather-dining-chair",
+    "template_family": "leather_wood_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "allegra_modern_leather_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alpha_club_chair",
+    "title": "Alpha Club Armchair",
+    "handle": "alpha-club-chair",
+    "template_family": "club_armchair",
+    "product_type": "Furniture",
+    "tags": [
+      "armchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alpha_club_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alpha_club_sofa",
+    "title": "Alpha Club Sofa",
+    "handle": "alpha-club-sofa",
+    "template_family": "club_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alpha_club_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alto_modern_dining_chair",
+    "title": "Alto | Modern Dining Chair",
+    "handle": "alto-modern-dining-chair",
+    "template_family": "champagne_frame_bentwood_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alto_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alunah_modern_sideboard",
+    "title": "Alunah | Modern Sideboard",
+    "handle": "alunah-modern-sideboard",
+    "template_family": "slatted_wood_sideboard_brass_lines",
+    "product_type": "Furniture",
+    "tags": [
+      "sideboard"
+    ],
+    "components": [
+      "carcass",
+      "doors_or_drawers",
+      "legs_or_plinth",
+      "front_panel"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alunah_modern_sideboard.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_alvaro_dining_table",
+    "title": "Alvaro | Modern Dining Table",
+    "handle": "alvaro-dining-table",
+    "template_family": "sculptural_marble_dining_table",
+    "product_type": "Furniture",
+    "tags": [
+      "diningtable"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "alvaro_dining_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_amara_modern_dining_chair",
+    "title": "Amara | Modern Dining Chair",
+    "handle": "amara-modern-dining-chair",
+    "template_family": "open_bentwood_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "amara_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_amelia_sintered_stone",
+    "title": "Amelia Sintered Stone",
+    "handle": "amelia-sintered-stone",
+    "template_family": "stone_slab_material",
+    "product_type": "Material",
+    "tags": [
+      "sinteredstone"
+    ],
+    "components": [
+      "slab",
+      "surface_finish",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "section_edge",
+      "material_reference"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "amelia_sintered_stone.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_amenti_pendant_light",
+    "title": "Amenti Pendant Light",
+    "handle": "amenti-pendant-light",
+    "template_family": "cylindrical_pendant_light",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "amenti_pendant_light.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_amico_led_linear_pendant_light",
+    "title": "Amico Nordic Pendant Light",
+    "handle": "amico-led-linear-pendant-light",
+    "template_family": "linear_pendant_light",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "amico_led_linear_pendant_light.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_andrea_modern_dining_chair",
+    "title": "Andrea | Modern Dining Chair",
+    "handle": "andrea-modern-dining-chair",
+    "template_family": "curved_plush_dining_chair",
+    "product_type": "Furniture",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "andrea_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_anne_modern_sofa",
+    "title": "Anne │ Modern Sofa",
+    "handle": "anne-modern-sofa",
+    "template_family": "rounded_arm_straight_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "anne_modern_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_antique_brass_table",
+    "title": "Antique bronze table | Modern Center Table",
+    "handle": "antique-brass-table",
+    "template_family": "round_nesting_marble_bronze_tables",
+    "product_type": "Furniture",
+    "tags": [
+      "coffeetable"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "antique_brass_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_apeture_sconce",
+    "title": "Apeture Sconce",
+    "handle": "apeture-sconce",
+    "template_family": "wall_sconce_glass_diffuser",
+    "product_type": "LIGHTING",
+    "tags": [
+      "walllight"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "apeture_sconce.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_arabescato",
+    "title": "Arabescato",
+    "handle": "arabescato",
+    "template_family": "natural_stone_swatch",
+    "product_type": "Material",
+    "tags": [
+      "naturalstone",
+      "tabletop"
+    ],
+    "components": [
+      "slab",
+      "surface_finish",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "section_edge",
+      "material_reference"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "arabescato.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_arabescato_gold_sintered_stone",
+    "title": "Arabescato Luxe Sintered Stone",
+    "handle": "arabescato-gold-sintered-stone",
+    "template_family": "sintered_stone_swatch",
+    "product_type": "Material",
+    "tags": [
+      "sinteredstone",
+      "tabletop"
+    ],
+    "components": [
+      "slab",
+      "surface_finish",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "section_edge",
+      "material_reference"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "arabescato_gold_sintered_stone.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_arc_console_table",
+    "title": "Arc Console Table",
+    "handle": "arc-console-table",
+    "template_family": "arched_console_table",
+    "product_type": "Furniture",
+    "tags": [
+      "console",
+      "table"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "arc_console_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_arcadia_sofa_modern_living",
+    "title": "Arcadia Sofa",
+    "handle": "arcadia-sofa-modern-living",
+    "template_family": "straight_sofa_2_or_3_seater",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "arcadia_sofa_modern_living.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_arco_modern_side_table",
+    "title": "Arco | Modern Side Table",
+    "handle": "arco-modern-side-table",
+    "template_family": "box_side_table_nightstand",
+    "product_type": "Furniture",
+    "tags": [
+      "nightstand"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "arco_modern_side_table.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aria_modern_l_shape_sofa",
+    "title": "Aria │ Modern L-shape Sofa",
+    "handle": "aria-modern-l-shape-sofa",
+    "template_family": "l_shape_sectional_sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "components": [
+      "seat_base",
+      "seat_cushions",
+      "backrest",
+      "armrests",
+      "legs_or_plinth"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aria_modern_l_shape_sofa.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_aria_modern_upholstered_dining_chair",
+    "title": "Aria | Modern Upholstered Dining Chair",
+    "handle": "aria-modern-upholstered-dining-chair",
+    "template_family": "fully_upholstered_dining_chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "aria_modern_upholstered_dining_chair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_ariston_sintered_stone",
+    "title": "Ariston Sintered Stone",
+    "handle": "ariston-sintered-stone",
+    "template_family": "sintered_stone_swatch",
+    "product_type": "Material",
+    "tags": [
+      "sinteredstone",
+      "tabletop"
+    ],
+    "components": [
+      "slab",
+      "surface_finish",
+      "edge_profile"
+    ],
+    "views_required": [
+      "top",
+      "section_edge",
+      "material_reference"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "ariston_sintered_stone.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_new_diningchair",
+    "title": "Alhyssia | Modern Dining Chair",
+    "handle": "new-diningchair",
+    "template_family": "curved_velvet_dining_chair",
+    "product_type": "Furniture",
+    "tags": [
+      "diningchair"
+    ],
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_base",
+      "upholstery_shell"
+    ],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section",
+      "isometric_preview"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "new_diningchair.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_table_lamp_5",
+    "title": "Aisha Melt Table Lamp",
+    "handle": "table-lamp-5",
+    "template_family": "glass_iron_table_lamp",
+    "product_type": "LIGHTING",
+    "tags": [
+      "tablelamp"
+    ],
+    "components": [
+      "top",
+      "base_or_legs",
+      "support_frame",
+      "edge_profile"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "table_lamp_5.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b1_usb_wireless_charging_floor_lamp",
+    "title": "Almelda Floor Lamp",
+    "handle": "usb-wireless-charging-floor-lamp",
+    "template_family": "floor_lamp_with_phone_charging",
+    "product_type": "LIGHTING",
+    "tags": [
+      "floorlamp"
+    ],
+    "components": [
+      "canopy_or_mount",
+      "body",
+      "diffuser_or_shade",
+      "light_source",
+      "support_rods_or_blades"
+    ],
+    "views_required": [
+      "front_elevation",
+      "side_elevation",
+      "top_mounting_plan",
+      "section_detail"
+    ],
+    "schema_version": "homeu-template-v1",
+    "batch": 1,
+    "file": "usb_wireless_charging_floor_lamp.json",
+    "source_batch_dir": "temp_batch1"
+  },
+  {
+    "id": "homeu_b2_051_armondo_modern_sofa",
+    "title": "051 Armondo Modern Sofa",
+    "handle": "051_armondo_modern_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "051_armondo_modern_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_052_artic_ocean_sintered_stone",
+    "title": "052 Artic Ocean Sintered Stone",
+    "handle": "052_artic_ocean_sintered_stone",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "052_artic_ocean_sintered_stone.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_053_artuco_sparkling_pendant",
+    "title": "053 Artuco Sparkling Pendant",
+    "handle": "053_artuco_sparkling_pendant",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "053_artuco_sparkling_pendant.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_054_astor_pendant",
+    "title": "054 Astor Pendant",
+    "handle": "054_astor_pendant",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "054_astor_pendant.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_055_tatiana_pendant_light",
+    "title": "055 Tatiana Pendant Light",
+    "handle": "055_tatiana_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "055_tatiana_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_056_glass_table_lamp_metal_base",
+    "title": "056 Glass Table Lamp Metal Base",
+    "handle": "056_glass_table_lamp_metal_base",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "056_glass_table_lamp_metal_base.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_057_athena_modern_sideboard",
+    "title": "057 Athena Modern Sideboard",
+    "handle": "057_athena_modern_sideboard",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "057_athena_modern_sideboard.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_058_table_lamp_4",
+    "title": "058 Table Lamp 4",
+    "handle": "058_table_lamp_4",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "058_table_lamp_4.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_059_atlas_gris_sintered_stone",
+    "title": "059 Atlas Gris Sintered Stone",
+    "handle": "059_atlas_gris_sintered_stone",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "059_atlas_gris_sintered_stone.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_060_atlas_gris_sintered_stone_copy",
+    "title": "060 Atlas Gris Sintered Stone Copy",
+    "handle": "060_atlas_gris_sintered_stone_copy",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "060_atlas_gris_sintered_stone_copy.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_061_augustin_armchair",
+    "title": "061 Augustin Armchair",
+    "handle": "061_augustin_armchair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "061_augustin_armchair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_062_augustin_pouf",
+    "title": "062 Augustin Pouf",
+    "handle": "062_augustin_pouf",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "062_augustin_pouf.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_063_augustin_sofa",
+    "title": "063 Augustin Sofa",
+    "handle": "063_augustin_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "063_augustin_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_064_aura_modern_dining_chair",
+    "title": "064 Aura Modern Dining Chair",
+    "handle": "064_aura_modern_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "064_aura_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_065_aurelia_console_table",
+    "title": "065 Aurelia Console Table",
+    "handle": "065_aurelia_console_table",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "065_aurelia_console_table.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_066_aurelio_modern_dining_chair",
+    "title": "066 Aurelio Modern Dining Chair",
+    "handle": "066_aurelio_modern_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "066_aurelio_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_067_aurelio_modern_luxury_dining_chair",
+    "title": "067 Aurelio Modern Luxury Dining Chair",
+    "handle": "067_aurelio_modern_luxury_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "067_aurelio_modern_luxury_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_068_glass_pendant_geometric_glass_shade",
+    "title": "068 Glass Pendant Geometric Glass Shade",
+    "handle": "068_glass_pendant_geometric_glass_shade",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "068_glass_pendant_geometric_glass_shade.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_069_ava_pendant_light",
+    "title": "069 Ava Pendant Light",
+    "handle": "069_ava_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "069_ava_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_070_atoll_sofa",
+    "title": "070 Atoll Sofa",
+    "handle": "070_atoll_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "070_atoll_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_071_alicia_table_lamp",
+    "title": "071 Alicia Table Lamp",
+    "handle": "071_alicia_table_lamp",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "071_alicia_table_lamp.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_072_axel_designer_throw_pillow",
+    "title": "072 Axel Designer Throw Pillow",
+    "handle": "072_axel_designer_throw_pillow",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "072_axel_designer_throw_pillow.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_073_axis_bench_sofa",
+    "title": "073 Axis Bench Sofa",
+    "handle": "073_axis_bench_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "073_axis_bench_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_074_axton_modern_pendant_light",
+    "title": "074 Axton Modern Pendant Light",
+    "handle": "074_axton_modern_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "074_axton_modern_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_075_back_lighted_shelf",
+    "title": "075 Back Lighted Shelf",
+    "handle": "075_back_lighted_shelf",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "075_back_lighted_shelf.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_076_balance_chair",
+    "title": "076 Balance Chair",
+    "handle": "076_balance_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "076_balance_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_077_ba_dining_chair",
+    "title": "077 Ba Dining Chair",
+    "handle": "077_ba_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "077_ba_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_078_becker_dining_table",
+    "title": "078 Becker Dining Table",
+    "handle": "078_becker_dining_table",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "078_becker_dining_table.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_079_becker_dining_table_1",
+    "title": "079 Becker Dining Table 1",
+    "handle": "079_becker_dining_table_1",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "079_becker_dining_table_1.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_080_beetle_bar_stool",
+    "title": "080 Beetle Bar Stool",
+    "handle": "080_beetle_bar_stool",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "080_beetle_bar_stool.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_081_bell_glass_side_table",
+    "title": "081 Bell Glass Side Table",
+    "handle": "081_bell_glass_side_table",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "081_bell_glass_side_table.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_082_bell_pepper_table_lamp",
+    "title": "082 Bell Pepper Table Lamp",
+    "handle": "082_bell_pepper_table_lamp",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "082_bell_pepper_table_lamp.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_083_belle_modern_pendant_light",
+    "title": "083 Belle Modern Pendant Light",
+    "handle": "083_belle_modern_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "083_belle_modern_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_084_marco_modern_upholstered_dining_chair",
+    "title": "084 Marco Modern Upholstered Dining Chair",
+    "handle": "084_marco_modern_upholstered_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "084_marco_modern_upholstered_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_085_berto_modern_dining_chair",
+    "title": "085 Berto Modern Dining Chair",
+    "handle": "085_berto_modern_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "085_berto_modern_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_086_bianca_modern_upholstered_dining_chair",
+    "title": "086 Bianca Modern Upholstered Dining Chair",
+    "handle": "086_bianca_modern_upholstered_dining_chair",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "086_bianca_modern_upholstered_dining_chair.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_087_bianco_calacatta",
+    "title": "087 Bianco Calacatta",
+    "handle": "087_bianco_calacatta",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "087_bianco_calacatta.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_088_black_taurus",
+    "title": "088 Black Taurus",
+    "handle": "088_black_taurus",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "088_black_taurus.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_089_blanchfleur_glass_pendant_light",
+    "title": "089 Blanchfleur Glass Pendant Light",
+    "handle": "089_blanchfleur_glass_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "089_blanchfleur_glass_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_090_table_lamp_2",
+    "title": "090 Table Lamp 2",
+    "handle": "090_table_lamp_2",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "090_table_lamp_2.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_091_blossom_pendant_light",
+    "title": "091 Blossom Pendant Light",
+    "handle": "091_blossom_pendant_light",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "091_blossom_pendant_light.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_092_blue_roma",
+    "title": "092 Blue Roma",
+    "handle": "092_blue_roma",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "092_blue_roma.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_093_boni_console_table_with_marble_top_metal_frame",
+    "title": "093 Boni Console Table With Marble Top Metal Frame",
+    "handle": "093_boni_console_table_with_marble_top_metal_frame",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "093_boni_console_table_with_marble_top_metal_frame.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_094_bori_table_lamp",
+    "title": "094 Bori Table Lamp",
+    "handle": "094_bori_table_lamp",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "094_bori_table_lamp.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_095_bow_tables",
+    "title": "095 Bow Tables",
+    "handle": "095_bow_tables",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "095_bow_tables.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_096_hm7901_sectional_sofa",
+    "title": "096 Hm7901 Sectional Sofa",
+    "handle": "096_hm7901_sectional_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "096_hm7901_sectional_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_097_hm7901_sofa",
+    "title": "097 Hm7901 Sofa",
+    "handle": "097_hm7901_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "097_hm7901_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_098_branch_crystal_chandelier_1",
+    "title": "098 Branch Crystal Chandelier 1",
+    "handle": "098_branch_crystal_chandelier_1",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "098_branch_crystal_chandelier_1.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_099_brass_modern_bar_stool",
+    "title": "099 Brass Modern Bar Stool",
+    "handle": "099_brass_modern_bar_stool",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "099_brass_modern_bar_stool.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b2_100_bretagne_sofa",
+    "title": "100 Bretagne Sofa",
+    "handle": "100_bretagne_sofa",
+    "template_family": "unknown",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu_template_resource_v1",
+    "batch": 2,
+    "file": "100_bretagne_sofa.json",
+    "source_batch_dir": "temp_batch2"
+  },
+  {
+    "id": "homeu_b3_brookside-sofa",
+    "title": "Brookside Sofa",
+    "handle": "brookside-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "brookside-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_bruno-modern-dining-chair",
+    "title": "Bruno Modern Dining Chair",
+    "handle": "bruno-modern-dining-chair",
+    "template_family": "upholstered_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "bruno-modern-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_bruno-tables",
+    "title": "Bruno Tables",
+    "handle": "bruno-tables",
+    "template_family": "round_nested_coffee_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "bruno-tables.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_brunt-coffee-table",
+    "title": "Brunt Coffee Table",
+    "handle": "brunt-coffee-table",
+    "template_family": "round_coffee_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "brunt-coffee-table.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_buratti-dining-table",
+    "title": "Buratti Dining Table",
+    "handle": "buratti-dining-table",
+    "template_family": "rectangular_dining_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "buratti-dining-table.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_butterfly-armchair",
+    "title": "Butterfly Armchair",
+    "handle": "butterfly-armchair",
+    "template_family": "lounge_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "butterfly-armchair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_butterfly-sofa",
+    "title": "Butterfly Sofa",
+    "handle": "butterfly-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "butterfly-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_caelia-nordic-style-pendant-light",
+    "title": "Caelia Nordic Style Pendant Light",
+    "handle": "caelia-nordic-style-pendant-light",
+    "template_family": "single_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "caelia-nordic-style-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_calacatta-luxe-sintered-stone",
+    "title": "Calacatta Luxe Sintered Stone",
+    "handle": "calacatta-luxe-sintered-stone",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "calacatta-luxe-sintered-stone.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_calacatta-viola-sintered-stone",
+    "title": "Calacatta Viola Sintered Stone",
+    "handle": "calacatta-viola-sintered-stone",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "calacatta-viola-sintered-stone.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_calacatta-viola",
+    "title": "Calacatta Viola",
+    "handle": "calacatta-viola",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "calacatta-viola.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_callie-dining-chair",
+    "title": "Callie Dining Chair",
+    "handle": "callie-dining-chair",
+    "template_family": "upholstered_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "callie-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_callista-modern-luxury-dining-chair",
+    "title": "Callista Modern Luxury Dining Chair",
+    "handle": "callista-modern-luxury-dining-chair",
+    "template_family": "luxury_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "callista-modern-luxury-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_cameleo-modern-rug",
+    "title": "Cameleo Modern Rug",
+    "handle": "cameleo-modern-rug",
+    "template_family": "round_rug",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "cameleo-modern-rug.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_camia-dining-chair",
+    "title": "Camia Dining Chair",
+    "handle": "camia-dining-chair",
+    "template_family": "curved_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "camia-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_camillo-dining-table",
+    "title": "Camillo Dining Table",
+    "handle": "camillo-dining-table",
+    "template_family": "round_dining_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "camillo-dining-table.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_capone-console-table-with-marble-top-metal-frame",
+    "title": "Capone Console Table With Marble Top Metal Frame",
+    "handle": "capone-console-table-with-marble-top-metal-frame",
+    "template_family": "console_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "capone-console-table-with-marble-top-metal-frame.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_capone-round-dining-table",
+    "title": "Capone Round Dining Table",
+    "handle": "capone-round-dining-table",
+    "template_family": "round_dining_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "capone-round-dining-table.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_capraia-breccia-sintered-stone",
+    "title": "Capraia Breccia Sintered Stone",
+    "handle": "capraia-breccia-sintered-stone",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "capraia-breccia-sintered-stone.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carla-sofa",
+    "title": "Carla Sofa",
+    "handle": "carla-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carla-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carolina-modern-pendant-light",
+    "title": "Carolina Modern Pendant Light",
+    "handle": "carolina-modern-pendant-light",
+    "template_family": "linear_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carolina-modern-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carolina-round-pendant-light",
+    "title": "Carolina Round Pendant Light",
+    "handle": "carolina-round-pendant-light",
+    "template_family": "round_multihead_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carolina-round-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carrara-grey",
+    "title": "Carrara Grey",
+    "handle": "carrara-grey",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carrara-grey.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carrara-luxe-sintered-stone",
+    "title": "Carrara Luxe Sintered Stone",
+    "handle": "carrara-luxe-sintered-stone",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carrara-luxe-sintered-stone.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carrara-white",
+    "title": "Carrara White",
+    "handle": "carrara-white",
+    "template_family": "stone_slab_swatch",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carrara-white.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_carrie-bar-stool",
+    "title": "Carrie Bar Stool",
+    "handle": "carrie-bar-stool",
+    "template_family": "bar_stool",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "carrie-bar-stool.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_ceiling-fan-with-light",
+    "title": "Ceiling Fan With Light",
+    "handle": "ceiling-fan-with-light",
+    "template_family": "ceiling_fan",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "ceiling-fan-with-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_celeste-dining-armchair",
+    "title": "Celeste Dining Armchair",
+    "handle": "celeste-dining-armchair",
+    "template_family": "dining_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "celeste-dining-armchair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_celeste-modern-dining-chair",
+    "title": "Celeste Modern Dining Chair",
+    "handle": "celeste-modern-dining-chair",
+    "template_family": "wood_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "celeste-modern-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_celestine-modern-dining-chair",
+    "title": "Celestine Modern Dining Chair",
+    "handle": "celestine-modern-dining-chair",
+    "template_family": "low_back_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "celestine-modern-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_celio-lounge-chair",
+    "title": "Celio Lounge Chair",
+    "handle": "celio-lounge-chair",
+    "template_family": "lounge_chair_with_ottoman",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "celio-lounge-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_cesare-modern-dining-chair",
+    "title": "Cesare Modern Dining Chair",
+    "handle": "cesare-modern-dining-chair",
+    "template_family": "compact_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "cesare-modern-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chapeau-modern-pendant-light",
+    "title": "Chapeau Modern Pendant Light",
+    "handle": "chapeau-modern-pendant-light",
+    "template_family": "single_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chapeau-modern-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chelsie-pendant-light",
+    "title": "Chelsie Pendant Light",
+    "handle": "chelsie-pendant-light",
+    "template_family": "single_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chelsie-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chester-armchair",
+    "title": "Chester Armchair",
+    "handle": "chester-armchair",
+    "template_family": "tufted_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chester-armchair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chester-ottoman",
+    "title": "Chester Ottoman",
+    "handle": "chester-ottoman",
+    "template_family": "ottoman",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chester-ottoman.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chester-sofa",
+    "title": "Chester Sofa",
+    "handle": "chester-sofa",
+    "template_family": "tufted_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chester-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chesterfield-style-armchair",
+    "title": "Chesterfield Style Armchair",
+    "handle": "chesterfield-style-armchair",
+    "template_family": "chesterfield_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chesterfield-style-armchair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chiara-arm-chair",
+    "title": "Chiara Arm Chair",
+    "handle": "chiara-arm-chair",
+    "template_family": "accent_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chiara-arm-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chiara-armchair",
+    "title": "Chiara Armchair",
+    "handle": "chiara-armchair",
+    "template_family": "accent_armchair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chiara-armchair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chiara-sofa",
+    "title": "Chiara Sofa",
+    "handle": "chiara-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chiara-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chiclet-sofa",
+    "title": "Chiclet Sofa",
+    "handle": "chiclet-sofa",
+    "template_family": "rounded_modular_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chiclet-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_chloe-modern-rug",
+    "title": "Chloe Modern Rug",
+    "handle": "chloe-modern-rug",
+    "template_family": "rectangular_rug",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "chloe-modern-rug.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_cielo-bar-stool",
+    "title": "Cielo Bar Stool",
+    "handle": "cielo-bar-stool",
+    "template_family": "bar_stool",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "cielo-bar-stool.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_hm8532-lounge-chair",
+    "title": "Hm8532 Lounge Chair",
+    "handle": "hm8532-lounge-chair",
+    "template_family": "lounge_chair_with_ottoman",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "hm8532-lounge-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_luca-modern-upholstered-dining-chair",
+    "title": "Luca Modern Upholstered Dining Chair",
+    "handle": "luca-modern-upholstered-dining-chair",
+    "template_family": "upholstered_dining_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "luca-modern-upholstered-dining-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_luna-pendant-light",
+    "title": "Luna Pendant Light",
+    "handle": "luna-pendant-light",
+    "template_family": "pendant_light_cluster",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "luna-pendant-light.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_natuzzi-italia-king-sofa",
+    "title": "Natuzzi Italia King Sofa",
+    "handle": "natuzzi-italia-king-sofa",
+    "template_family": "chesterfield_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "natuzzi-italia-king-sofa.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_qt-chillax-chair",
+    "title": "Qt Chillax Chair",
+    "handle": "qt-chillax-chair",
+    "template_family": "accent_chair",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "qt-chillax-chair.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b3_semi-round-lawson-seating",
+    "title": "Semi Round Lawson Seating",
+    "handle": "semi-round-lawson-seating",
+    "template_family": "semi_round_modular_sofa",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [],
+    "schema_version": "homeu-template-v1",
+    "batch": 3,
+    "file": "semi-round-lawson-seating.json",
+    "source_batch_dir": "temp_batch3"
+  },
+  {
+    "id": "homeu_b4_bell-glass-side-table",
+    "title": "Bell Glass | Modern Side Table",
+    "handle": "bell-glass-side-table",
+    "template_family": "glass_side_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "bell-glass-side-table.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_dione-tables",
+    "title": "Dione Tables",
+    "handle": "dione-tables",
+    "template_family": "nesting_coffee_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "dione-tables.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_melina-coffee-table",
+    "title": "Melina Coffee Table",
+    "handle": "melina-coffee-table",
+    "template_family": "oval_pedestal_coffee_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "melina-coffee-table.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_nebulae-interstellar-pendant-light",
+    "title": "Nebulae Pendant Light",
+    "handle": "nebulae-interstellar-pendant-light",
+    "template_family": "cluster_pendant_light",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "nebulae-interstellar-pendant-light.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_rene-side-table",
+    "title": "René Side Table",
+    "handle": "rene-side-table",
+    "template_family": "side_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "rene-side-table.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_siraj-eclipse-side-table",
+    "title": "Siraj Eclipse Side Table",
+    "handle": "siraj-eclipse-side-table",
+    "template_family": "sculptural_side_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "siraj-eclipse-side-table.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_wooden-ceiling-fan",
+    "title": "Wooden Ceiling Fan",
+    "handle": "wooden-ceiling-fan",
+    "template_family": "ceiling_fan",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "wooden-ceiling-fan.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_wpc-wall-panel-grille-series",
+    "title": "WPC Fluted Wall Panel",
+    "handle": "wpc-wall-panel-grille-series",
+    "template_family": "fluted_wall_panel",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "wpc-wall-panel-grille-series.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_wpc-wall-panel",
+    "title": "WPC Indoor Wall Panel",
+    "handle": "wpc-wall-panel",
+    "template_family": "wall_panel",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "wpc-wall-panel.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b4_yvo-glass-table",
+    "title": "Yvo Glass Table",
+    "handle": "yvo-glass-table",
+    "template_family": "glass_side_table",
+    "product_type": "",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 4,
+    "file": "yvo-glass-table.json",
+    "source_batch_dir": "temp_batch4/homeu_shopify_templates_batch4_regenerated"
+  },
+  {
+    "id": "homeu_b5_agata_seating_set",
+    "title": "Outline Armchair",
+    "handle": "agata-seating-set",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "agata_seating_set.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_augustin_armchair",
+    "title": "Augustin Armchair",
+    "handle": "augustin-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "augustin_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_augustin_pouf",
+    "title": "Augustin Pouf",
+    "handle": "augustin-pouf",
+    "template_family": "pouf_ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "augustin_pouf.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_augustin_sofa",
+    "title": "Augustin Sofa | Modern Interior",
+    "handle": "augustin-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "augustin_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_bell_glass_side_table",
+    "title": "Bell Glass | Modern Side Table",
+    "handle": "bell-glass-side-table",
+    "template_family": "glass_side_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "bell_glass_side_table.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_bretagne_sofa",
+    "title": "Bretagne Sofa",
+    "handle": "bretagne-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "bretagne_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_butterfly_armchair",
+    "title": "Butterfly Armchair",
+    "handle": "butterfly-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "butterfly_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_butterfly_sofa",
+    "title": "Butterfly Sofa",
+    "handle": "butterfly-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "butterfly_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_chesterfield_style_armchair",
+    "title": "Chesterfield Style Armchair",
+    "handle": "chesterfield-style-armchair",
+    "template_family": "chesterfield_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "chesterfield_style_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_chiara_arm_chair",
+    "title": "Chiara | Modern Arm Chair",
+    "handle": "chiara-arm-chair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "chiara_arm_chair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_chiara_sofa",
+    "title": "Chiara Sofa | Modern Living",
+    "handle": "chiara-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "chiara_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_costa_sofa",
+    "title": "Costa Sofa | Modern Interior",
+    "handle": "costa-sofa",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "costa_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_dione_tables",
+    "title": "Dione Tables | Contemporary Design | Modern Center Table",
+    "handle": "dione-tables",
+    "template_family": "nesting_coffee_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "dione_tables.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_gallo_modular_seating_system",
+    "title": "Gallo Modular Seating System",
+    "handle": "gallo-modular-seating-system",
+    "template_family": "modular_seating_system",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "gallo_modular_seating_system.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_gerald_arm_chair",
+    "title": "Gerald | Modern Arm Chair",
+    "handle": "gerald-arm-chair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "gerald_arm_chair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_john_john_sofa",
+    "title": "John John Sofa | Modern Living",
+    "handle": "john-john-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "john_john_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_la_scala_armchair",
+    "title": "Vicente Armchair",
+    "handle": "la-scala-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "la_scala_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_lawson_armchair",
+    "title": "HM2702 Armchair",
+    "handle": "lawson-armchair",
+    "template_family": "semi_round_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "lawson_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_lawson_sofa",
+    "title": "Verdant Curve Sofa | Modern Interior",
+    "handle": "lawson-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "lawson_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_letizia_sofa",
+    "title": "Letizia Sofa | Modern Interior",
+    "handle": "letizia-sofa",
+    "template_family": "modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "letizia_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_marchesi_sofa",
+    "title": "Marchesi Sofa",
+    "handle": "marchesi-sofa",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "marchesi_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_marino_armchair",
+    "title": "Marino Armchair",
+    "handle": "marino-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "marino_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_marino_sofa",
+    "title": "Marino  sofa | Modern Living",
+    "handle": "marino-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "marino_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_martini_sofa",
+    "title": "Martini Sofa",
+    "handle": "martini-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "martini_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_melina_coffee_table",
+    "title": "Melina Coffee Table | Center Table",
+    "handle": "melina-coffee-table",
+    "template_family": "oval_pedestal_coffee_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "melina_coffee_table.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_melting_light_armchair",
+    "title": "Melting Light Armchair",
+    "handle": "melting-light-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "melting_light_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_melting_light_sofa",
+    "title": "Melting Light Sofa",
+    "handle": "melting-light-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "melting_light_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_messina",
+    "title": "Messina Bello | Modern Interior",
+    "handle": "messina",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "messina.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_natuzzi_italia_king_sofa",
+    "title": "Chesterfield Style King Sofa | Modern Living",
+    "handle": "natuzzi-italia-king-sofa",
+    "template_family": "chesterfield_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "natuzzi_italia_king_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_nebulae_interstellar_pendant_light",
+    "title": "Nebulae Interstellar Pendant Light | Contemporary Lighting",
+    "handle": "nebulae-interstellar-pendant-light",
+    "template_family": "cluster_pendant_light",
+    "product_type": "LIGHTING",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "nebulae_interstellar_pendant_light.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_outline_ottoman",
+    "title": "Outline Ottoman",
+    "handle": "outline-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "outline_ottoman.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_outline_sofa",
+    "title": "Outline Sofa | Modern Living",
+    "handle": "outline-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "outline_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_pisani_seating_set",
+    "title": "Pisani Seating Set | Modern Interior",
+    "handle": "pisani-seating-set",
+    "template_family": "sofa_set",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "pisani_seating_set.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_rene_side_table",
+    "title": "René | Modern Side Table",
+    "handle": "rene-side-table",
+    "template_family": "side_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "rene_side_table.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_richard_armchair",
+    "title": "Franco Armchair",
+    "handle": "richard-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "richard_armchair.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_richard_ottoman",
+    "title": "Franco Ottoman",
+    "handle": "richard-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "richard_ottoman.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_richard_sofa",
+    "title": "Franco Sofa | Modern Living",
+    "handle": "richard-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "richard_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_semi_round_lawson_seating",
+    "title": "Bridget Semi-round Seating | Modern Interior",
+    "handle": "semi-round-lawson-seating",
+    "template_family": "semi_round_modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "semi_round_lawson_seating.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_seymour_sofa",
+    "title": "Seymour Sofa",
+    "handle": "seymour-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "seymour_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_siraj_eclipse_side_table",
+    "title": "Siraj Eclipse | Modern  Side Table",
+    "handle": "siraj-eclipse-side-table",
+    "template_family": "sculptural_side_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "siraj_eclipse_side_table.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_tape_ottoman",
+    "title": "HM9002 Ottoman",
+    "handle": "tape-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "tape_ottoman.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_tape_seating_set",
+    "title": "Poltrona Eleganza Armchair | HM9002  | Modern Interior",
+    "handle": "tape-seating-set",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "tape_seating_set.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_tape_sofa",
+    "title": "Textura Luxe Sofa | Modern Living",
+    "handle": "tape-sofa",
+    "template_family": "modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "tape_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_verona",
+    "title": "Verona | Modern Sofa",
+    "handle": "verona",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "verona.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_vicente_sofa",
+    "title": "Vicente Sofa | Modern Living",
+    "handle": "vicente-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "vicente_sofa.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_wooden_ceiling_fan",
+    "title": "Wooden Ceiling Fan",
+    "handle": "wooden-ceiling-fan",
+    "template_family": "ceiling_fan",
+    "product_type": "Fan",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "side",
+      "top"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "wooden_ceiling_fan.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_wpc_wall_panel",
+    "title": "WPC INDOOR WALL PANEL- WOODGRAIN SERIES",
+    "handle": "wpc-wall-panel",
+    "template_family": "wall_panel",
+    "product_type": "WPC BAMBOO FIBER WALL PANEL",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "section",
+      "profile"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "wpc_wall_panel.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_wpc_wall_panel_grille_series",
+    "title": "WPC Slat (Fluted) Wall Panel",
+    "handle": "wpc-wall-panel-grille-series",
+    "template_family": "fluted_wall_panel",
+    "product_type": "WPC BAMBOO FIBER WALL PANEL",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "front",
+      "section",
+      "profile"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "wpc_wall_panel_grille_series.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b5_yvo_glass_table",
+    "title": "Yvo Glass Table | Contemporary Design",
+    "handle": "yvo-glass-table",
+    "template_family": "glass_side_table",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side",
+      "section_optional"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 5,
+    "file": "yvo_glass_table.json",
+    "source_batch_dir": "temp_batch5/homeu_shopify_templates_batch5"
+  },
+  {
+    "id": "homeu_b6_adagio_ottoman",
+    "title": "Adagio Ottoman | Modern Furniture",
+    "handle": "adagio-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "adagio_ottoman.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_adagio_sofa",
+    "title": "Adagio Sofa | Modern Living",
+    "handle": "adagio-sofa",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "adagio_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_agata_seating_set",
+    "title": "Outline Armchair",
+    "handle": "agata-seating-set",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "agata_seating_set.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_alpha_club_sofa",
+    "title": "Alpha Club Sofa | Modern Living",
+    "handle": "alpha-club-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "alpha_club_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_atoll_sofa",
+    "title": "Avery Sofa | Modern Living",
+    "handle": "atoll-sofa",
+    "template_family": "sofa_bench",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "atoll_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_augustin_armchair",
+    "title": "Augustin Armchair",
+    "handle": "augustin-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "augustin_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_augustin_pouf",
+    "title": "Augustin Pouf",
+    "handle": "augustin-pouf",
+    "template_family": "pouf_ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "augustin_pouf.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_augustin_sofa",
+    "title": "Augustin Sofa | Modern Interior",
+    "handle": "augustin-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "augustin_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_bretagne_sofa",
+    "title": "Bretagne Sofa",
+    "handle": "bretagne-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "bretagne_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_brookside_sofa",
+    "title": "Brookside sofa | Modern Living",
+    "handle": "brookside-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "brookside_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_butterfly_armchair",
+    "title": "Butterfly Armchair",
+    "handle": "butterfly-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "butterfly_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_butterfly_sofa",
+    "title": "Butterfly Sofa",
+    "handle": "butterfly-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "butterfly_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_chesterfield_style_armchair",
+    "title": "Chesterfield Style Armchair",
+    "handle": "chesterfield-style-armchair",
+    "template_family": "chesterfield_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "chesterfield_style_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_chiara_arm_chair",
+    "title": "Chiara | Modern Arm Chair",
+    "handle": "chiara-arm-chair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "chiara_arm_chair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_chiara_sofa",
+    "title": "Chiara Sofa | Modern Living",
+    "handle": "chiara-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "chiara_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_costa_sofa",
+    "title": "Costa Sofa | Modern Interior",
+    "handle": "costa-sofa",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "costa_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_gallo_modular_seating_system",
+    "title": "Gallo Modular Seating System",
+    "handle": "gallo-modular-seating-system",
+    "template_family": "modular_seating_system",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "gallo_modular_seating_system.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_gentry_sofa",
+    "title": "Gentry Sofa | Modern Living",
+    "handle": "gentry-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "gentry_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_gregory_armchair",
+    "title": "Gregory Armchair",
+    "handle": "gregory-armchair",
+    "template_family": "midcentury_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "gregory_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_gregory_sofa",
+    "title": "Gregory Sofa | Modern Living",
+    "handle": "gregory-sofa",
+    "template_family": "midcentury_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "gregory_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_john_john_sofa",
+    "title": "John John Sofa | Modern Living",
+    "handle": "john-john-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "john_john_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_la_scala_armchair",
+    "title": "Vicente Armchair",
+    "handle": "la-scala-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "la_scala_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_lawson_armchair",
+    "title": "HM2702 Armchair",
+    "handle": "lawson-armchair",
+    "template_family": "semi_round_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "lawson_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_lawson_sofa",
+    "title": "Verdant Curve Sofa | Modern Interior",
+    "handle": "lawson-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "lawson_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_letizia_sofa",
+    "title": "Letizia Sofa | Modern Interior",
+    "handle": "letizia-sofa",
+    "template_family": "modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "letizia_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_lincoln_sofa",
+    "title": "Lincoln Sofa | Modern Living",
+    "handle": "lincoln-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "lincoln_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_marchesi_sofa",
+    "title": "Marchesi Sofa",
+    "handle": "marchesi-sofa",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "marchesi_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_marino_armchair",
+    "title": "Marino Armchair",
+    "handle": "marino-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "marino_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_marino_sofa",
+    "title": "Marino sofa | Modern Living",
+    "handle": "marino-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "marino_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_martini_armchair",
+    "title": "Martini Armchair",
+    "handle": "martini-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "martini_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_martini_sofa",
+    "title": "Martini Sofa",
+    "handle": "martini-sofa",
+    "template_family": "curved_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "martini_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_melting_light_armchair",
+    "title": "Melting Light Armchair",
+    "handle": "melting-light-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "melting_light_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_melting_light_sofa",
+    "title": "Melting Light Sofa",
+    "handle": "melting-light-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "melting_light_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_messina",
+    "title": "Messina Bello | Modern Interior",
+    "handle": "messina",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "messina.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_natuzzi_italia_king_sofa",
+    "title": "Chesterfield Style King Sofa | Modern Living",
+    "handle": "natuzzi-italia-king-sofa",
+    "template_family": "chesterfield_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "natuzzi_italia_king_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_nivola_armchair",
+    "title": "Nivola Armchair",
+    "handle": "nivola-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "nivola_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_nivola_sofa",
+    "title": "Nivola Sofa | Modern Living",
+    "handle": "nivola-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "nivola_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_outline_ottoman",
+    "title": "Outline Ottoman",
+    "handle": "outline-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "outline_ottoman.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_outline_sofa",
+    "title": "Outline Sofa | Modern Living",
+    "handle": "outline-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "outline_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_pisani_seating_set",
+    "title": "Pisani Seating Set | Modern Interior",
+    "handle": "pisani-seating-set",
+    "template_family": "sofa_set",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "pisani_seating_set.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_richard_armchair",
+    "title": "Franco Armchair",
+    "handle": "richard-armchair",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "richard_armchair.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_richard_ottoman",
+    "title": "Franco Ottoman",
+    "handle": "richard-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "richard_ottoman.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_richard_sofa",
+    "title": "Franco Sofa | Modern Living",
+    "handle": "richard-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "richard_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_semi_round_lawson_seating",
+    "title": "Bridget Semi-round Seating | Modern Interior",
+    "handle": "semi-round-lawson-seating",
+    "template_family": "semi_round_modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "semi_round_lawson_seating.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_seymour_sofa",
+    "title": "Seymour Sofa",
+    "handle": "seymour-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "seymour_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_tape_ottoman",
+    "title": "HM9002 Ottoman",
+    "handle": "tape-ottoman",
+    "template_family": "ottoman",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "tape_ottoman.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_tape_seating_set",
+    "title": "Poltrona Eleganza Armchair | HM9002 | Modern Interior",
+    "handle": "tape-seating-set",
+    "template_family": "modern_armchair",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "tape_seating_set.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_tape_sofa",
+    "title": "Textura Luxe Sofa | Modern Living",
+    "handle": "tape-sofa",
+    "template_family": "modular_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "tape_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_verona",
+    "title": "Verona | Modern Sofa",
+    "handle": "verona",
+    "template_family": "modular_chaise_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "verona.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  },
+  {
+    "id": "homeu_b6_vicente_sofa",
+    "title": "Vicente Sofa | Modern Living",
+    "handle": "vicente-sofa",
+    "template_family": "straight_sofa",
+    "product_type": "Furniture",
+    "tags": [],
+    "components": [],
+    "views_required": [
+      "top",
+      "front",
+      "side"
+    ],
+    "schema_version": "homeu-product-template-v1",
+    "batch": 6,
+    "file": "vicente_sofa.json",
+    "source_batch_dir": "temp_batch6/homeu_shopify_templates_batch6"
+  }
+]

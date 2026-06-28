@@ -1,0 +1,20 @@
+{
+  "schema_version": "homeu-product-template-v1",
+  "title": "Melina Coffee Table",
+  "handle": "melina-coffee-table",
+  "template_family": "oval_pedestal_coffee_table",
+  "views_required": [
+    "top",
+    "front",
+    "side"
+  ],
+  "confirmation_questions": [
+    "Confirm overall silhouette.",
+    "Confirm top shape/profile.",
+    "Confirm base/support geometry."
+  ],
+  "drafting_notes": [
+    "Generate preview before DXF.",
+    "Use confirmation loop before CAD."
+  ]
+}

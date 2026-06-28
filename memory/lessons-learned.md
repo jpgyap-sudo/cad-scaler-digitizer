@@ -4330,3 +4330,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: 9 audit bugs in confirmation loop integration
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d3841d9fa525a679623589652d27f85344f92918
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d3841d9fa525a679623589652d27f85344f92918
+**Files:** AUDIT_REPORT.md,backend-python/app/furniture_intelligence/api/routes.py,backend-python/app/furniture_intelligence/services/correction_engine.py,backend-python/app/furniture_intelligence/services/template_matcher.py
+
+**Summary:**
+Commit: fix: 9 audit bugs in confirmation loop integration
+Files: AUDIT_REPORT.md,backend-python/app/furniture_intelligence/api/routes.py,backend-python/app/furniture_intelligence/services/correction_engine.py,backend-python/app/furniture_intelligence/services/template_matcher.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 9 audit bugs in confirmation loop integration*
+
+#### Lesson Learned
+
+Commit: fix: 9 audit bugs in confirmation loop integration
+Files: AUDIT_REPORT.md,backend-python/app/furniture_intelligence/api/routes.py,backend-python/app/furniture_intelligence/services/correction_engine.py,backend-python/app/furniture_intelligence/services/template_matcher.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

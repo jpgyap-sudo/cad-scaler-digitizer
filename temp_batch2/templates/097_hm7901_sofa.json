@@ -1,0 +1,60 @@
+{
+  "schema_version": "homeu_template_resource_v1",
+  "batch": "batch_2",
+  "sequence": 97,
+  "source": "Shopify connected store",
+  "product": {
+    "title": "Brailey Sofa | Modern Living",
+    "handle": "hm7901-sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa"
+    ],
+    "featured_image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Est-Living-Design-Directory-Fanuli-Adda-Sofa-3-750x540.jpg?v=1622789385"
+  },
+  "template": {
+    "template_id": "homeu_hm7901_sofa",
+    "template_family": "modular_straight_sofa",
+    "category": "sofa",
+    "visual_dna": {
+      "category": "sofa",
+      "family": "modular_straight_sofa",
+      "primary_shape": "unknown_from_catalog_image",
+      "support_type": "unknown_until_vision_confirmation",
+      "material_cues": [],
+      "style_cues": [
+        "contemporary",
+        "homeu_catalog"
+      ]
+    },
+    "components": [
+      "seat_base",
+      "backrest",
+      "armrests",
+      "cushions",
+      "legs_or_plinth"
+    ],
+    "required_views": [
+      "top_view",
+      "front_elevation",
+      "side_elevation",
+      "section",
+      "isometric_preview"
+    ],
+    "confirmation_questions": [
+      "Is it straight, curved, or sectional?",
+      "Are arms visible on both sides?",
+      "Is the base legged, plinth, or floating?",
+      "How many seat modules?"
+    ],
+    "drafting_rules": {
+      "ai_role": "describe and propose only",
+      "user_role": "confirm or correct visible pattern",
+      "cad_role": "generate deterministic top/front/side/section from confirmed JSON",
+      "preview_first": true,
+      "dxf_after_approval": true
+    },
+    "geometry_status": "template_seed_only",
+    "notes": "Generated from Shopify catalog metadata. Use product image and user confirmation loop to finalize visual DNA before DXF."
+  }
+}

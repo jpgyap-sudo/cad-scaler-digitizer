@@ -1,0 +1,58 @@
+{
+  "schema_version": "homeu-template-v1",
+  "batch": 3,
+  "source": "shopify_connected_admin_search_products",
+  "shopify": {
+    "title": "Bridget Semi-round Seating | Modern Interior",
+    "handle": "semi-round-lawson-seating",
+    "product_type": "Furniture",
+    "tags": [
+      "sofa",
+      "semiround",
+      "modularseating"
+    ]
+  },
+  "template_id": "homeu_b3_101_semi-round-lawson-seating",
+  "template_family": "semi_round_modular_sofa",
+  "visual_dna": {
+    "category": "furniture",
+    "family": "semi_round_modular_sofa",
+    "shape_guess": "infer_from_image",
+    "style_tags": [
+      "semiround"
+    ],
+    "material_guess": "extract_from_description_or_user_confirmation"
+  },
+  "component_graph": {
+    "components": [
+      "seat_cushion",
+      "backrest",
+      "armrest",
+      "base_or_legs",
+      "upholstery"
+    ],
+    "relationships": [
+      "main surface/support relationship to be confirmed by vision AI",
+      "visible components drive top/front/side projection"
+    ]
+  },
+  "required_views": [
+    "top",
+    "front",
+    "side",
+    "section",
+    "isometric"
+  ],
+  "confirmation_questions": [
+    "Is the selected product family correct?",
+    "Are the main shapes correct: round, oval, rectangular, curved, or irregular?",
+    "Are the supports correct: legs, pedestal, frame, plinth, suspended, or none?",
+    "Should the preview generate top/front/side/section before DXF?"
+  ],
+  "cad_rules": {
+    "ai_role": "describe and propose only",
+    "user_role": "confirm or correct template fields",
+    "code_role": "generate deterministic SVG/DXF from confirmed JSON"
+  },
+  "status": "draft_template_resource"
+}

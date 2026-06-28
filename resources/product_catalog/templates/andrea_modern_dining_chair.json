@@ -1,0 +1,46 @@
+{
+  "schema_version": "homeu-template-v1",
+  "source": "Shopify Admin batch 1",
+  "product_title": "Andrea | Modern Dining Chair",
+  "handle": "andrea-modern-dining-chair",
+  "product_type": "Furniture",
+  "tags": [
+    "diningchair"
+  ],
+  "template_family": "curved_plush_dining_chair",
+  "visual_reference": {
+    "type": "shopify_image_url",
+    "url": "TO_BE_FILLED_FROM_SHOPIFY_EXPORT_OR_PRODUCT_JSON"
+  },
+  "components": [
+    "seat",
+    "backrest",
+    "legs_or_base",
+    "upholstery_shell"
+  ],
+  "views_required": [
+    "top",
+    "front",
+    "side",
+    "section",
+    "isometric_preview"
+  ],
+  "drafting_rules": {
+    "ai_role": "Describe furniture structure first; do not draw DXF directly.",
+    "cad_role": "Generate geometry only after user confirms template JSON.",
+    "preview_role": "Generate SVG/PNG shop drawing preview from same JSON used for DXF."
+  },
+  "confirmation_questions": [
+    "Is the product category correct?",
+    "Is the top/seat/body shape correct?",
+    "Is the support/base type correct?",
+    "Are there hidden components that should appear in section view?",
+    "Should this generate DXF now or only preview first?"
+  ],
+  "confidence_defaults": {
+    "category": 0.65,
+    "component_graph": 0.55,
+    "dimension_extraction": 0.4,
+    "requires_user_confirmation": true
+  }
+}

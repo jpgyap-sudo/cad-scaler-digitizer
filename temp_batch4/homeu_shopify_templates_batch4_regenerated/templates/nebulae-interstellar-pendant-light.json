@@ -1,0 +1,20 @@
+{
+  "schema_version": "homeu-product-template-v1",
+  "title": "Nebulae Pendant Light",
+  "handle": "nebulae-interstellar-pendant-light",
+  "template_family": "cluster_pendant_light",
+  "views_required": [
+    "top",
+    "front",
+    "side"
+  ],
+  "confirmation_questions": [
+    "Confirm overall silhouette.",
+    "Confirm top shape/profile.",
+    "Confirm base/support geometry."
+  ],
+  "drafting_notes": [
+    "Generate preview before DXF.",
+    "Use confirmation loop before CAD."
+  ]
+}

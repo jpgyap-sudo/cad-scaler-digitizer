@@ -1,0 +1,60 @@
+{
+  "schema_version": "homeu_template_resource_v1",
+  "batch": "batch_2",
+  "sequence": 66,
+  "source": "Shopify connected store",
+  "product": {
+    "title": "Aurelio | Modern Dining Chair",
+    "handle": "aurelio-modern-dining-chair",
+    "product_type": "Dining Chair",
+    "tags": [
+      "diningchair"
+    ],
+    "featured_image_url": ""
+  },
+  "template": {
+    "template_id": "homeu_aurelio_modern_dining_chair",
+    "template_family": "wide_bentwood_dining_chair",
+    "category": "dining_chair",
+    "visual_dna": {
+      "category": "dining_chair",
+      "family": "wide_bentwood_dining_chair",
+      "primary_shape": "unknown_from_catalog_image",
+      "support_type": "unknown_until_vision_confirmation",
+      "material_cues": [],
+      "style_cues": [
+        "contemporary",
+        "homeu_catalog"
+      ]
+    },
+    "components": [
+      "seat",
+      "backrest",
+      "legs_or_frame",
+      "upholstery",
+      "support_frame"
+    ],
+    "required_views": [
+      "top_view",
+      "front_elevation",
+      "side_elevation",
+      "section",
+      "isometric_preview"
+    ],
+    "confirmation_questions": [
+      "Is the back open or fully upholstered?",
+      "Are legs metal or wood?",
+      "Is there a footrest?",
+      "Is the seat round, square, or organic?"
+    ],
+    "drafting_rules": {
+      "ai_role": "describe and propose only",
+      "user_role": "confirm or correct visible pattern",
+      "cad_role": "generate deterministic top/front/side/section from confirmed JSON",
+      "preview_first": true,
+      "dxf_after_approval": true
+    },
+    "geometry_status": "template_seed_only",
+    "notes": "Generated from Shopify catalog metadata. Use product image and user confirmation loop to finalize visual DNA before DXF."
+  }
+}

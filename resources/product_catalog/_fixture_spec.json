@@ -1,0 +1,1271 @@
+{
+  "schema_version": "fixture-v1",
+  "name": "batch_4_product_catalog_verification",
+  "description": "Verification of 259 Shopify product templates integrated in resources/product_catalog",
+  "total_templates": 259,
+  "total_families": 101,
+  "batches": {
+    "1": {
+      "count": 50,
+      "families": [
+        "abs_shell_metal_leg_dining_chair",
+        "arched_console_table",
+        "bentwood_metal_leg_dining_chair",
+        "bentwood_simple_dining_chair",
+        "boucle_lounge_chair",
+        "box_side_table_nightstand",
+        "ceiling_fan_3_blade_light",
+        "champagne_frame_bentwood_chair",
+        "classic_armchair_ottoman",
+        "classic_straight_sofa",
+        "club_armchair",
+        "club_sofa",
+        "curved_plush_dining_chair",
+        "curved_velvet_dining_chair",
+        "cylindrical_pendant_light",
+        "decorative_throw_pillow_with_strap",
+        "double_curvilinear_pendant",
+        "floor_lamp_with_phone_charging",
+        "fully_upholstered_dining_chair",
+        "glass_iron_table_lamp",
+        "ignore_3d_model_reference",
+        "l_shape_sectional_sofa",
+        "leather_wood_dining_chair",
+        "linear_multi_head_pendant",
+        "linear_pendant_light",
+        "low_square_or_rectangular_coffee_table",
+        "modular_sofa_variants",
+        "natural_stone_swatch",
+        "open_bentwood_dining_chair",
+        "rectangular_console_table",
+        "rectangular_marble_steel_dining_table",
+        "rectangular_marble_top_dining_table",
+        "rectangular_upholstered_ottoman",
+        "ribbed_front_sideboard",
+        "round_crystal_chandelier",
+        "round_nesting_marble_bronze_tables",
+        "rounded_arm_straight_sofa",
+        "rounded_back_dining_chair",
+        "rounded_molded_sofa",
+        "sculptural_marble_dining_table",
+        "sculptural_single_support_console",
+        "sintered_stone_swatch",
+        "slatted_wood_sideboard_brass_lines",
+        "square_throw_pillow",
+        "stone_slab_material",
+        "straight_modern_sofa",
+        "straight_sofa_2_or_3_seater",
+        "wall_sconce_glass_diffuser",
+        "wide_arm_straight_sofa"
+      ]
+    },
+    "2": {
+      "count": 50,
+      "families": [
+        "unknown"
+      ]
+    },
+    "3": {
+      "count": 50,
+      "families": [
+        "accent_armchair",
+        "accent_chair",
+        "bar_stool",
+        "ceiling_fan",
+        "chesterfield_armchair",
+        "chesterfield_sofa",
+        "compact_dining_chair",
+        "console_table",
+        "curved_dining_chair",
+        "dining_armchair",
+        "linear_pendant_light",
+        "lounge_armchair",
+        "lounge_chair_with_ottoman",
+        "low_back_dining_chair",
+        "luxury_dining_chair",
+        "ottoman",
+        "pendant_light_cluster",
+        "rectangular_dining_table",
+        "rectangular_rug",
+        "round_coffee_table",
+        "round_dining_table",
+        "round_multihead_pendant_light",
+        "round_nested_coffee_table",
+        "round_rug",
+        "rounded_modular_sofa",
+        "semi_round_modular_sofa",
+        "single_pendant_light",
+        "stone_slab_swatch",
+        "straight_sofa",
+        "tufted_armchair",
+        "tufted_sofa",
+        "upholstered_dining_chair",
+        "wood_dining_chair"
+      ]
+    },
+    "4": {
+      "count": 10,
+      "families": [
+        "ceiling_fan",
+        "cluster_pendant_light",
+        "fluted_wall_panel",
+        "glass_side_table",
+        "nesting_coffee_table",
+        "oval_pedestal_coffee_table",
+        "sculptural_side_table",
+        "side_table",
+        "wall_panel"
+      ]
+    },
+    "5": {
+      "count": 49,
+      "families": [
+        "ceiling_fan",
+        "chesterfield_armchair",
+        "chesterfield_sofa",
+        "cluster_pendant_light",
+        "curved_sofa",
+        "fluted_wall_panel",
+        "glass_side_table",
+        "modern_armchair",
+        "modular_chaise_sofa",
+        "modular_seating_system",
+        "modular_sofa",
+        "nesting_coffee_table",
+        "ottoman",
+        "oval_pedestal_coffee_table",
+        "pouf_ottoman",
+        "sculptural_side_table",
+        "semi_round_armchair",
+        "semi_round_modular_sofa",
+        "side_table",
+        "sofa_set",
+        "straight_sofa",
+        "wall_panel"
+      ]
+    },
+    "6": {
+      "count": 50,
+      "families": [
+        "chesterfield_armchair",
+        "chesterfield_sofa",
+        "curved_sofa",
+        "midcentury_armchair",
+        "midcentury_sofa",
+        "modern_armchair",
+        "modular_chaise_sofa",
+        "modular_seating_system",
+        "modular_sofa",
+        "ottoman",
+        "pouf_ottoman",
+        "semi_round_armchair",
+        "semi_round_modular_sofa",
+        "sofa_bench",
+        "sofa_set",
+        "straight_sofa"
+      ]
+    }
+  },
+  "text_search_tests": [
+    {
+      "query": "modern sofa",
+      "expected_families": [
+        "straight_sofa",
+        "club_sofa",
+        "modular_sofa"
+      ],
+      "mode": "text"
+    },
+    {
+      "query": "round coffee table",
+      "expected_families": [
+        "round_coffee_table",
+        "round_nested_coffee_table"
+      ],
+      "mode": "text"
+    },
+    {
+      "query": "dining chair",
+      "expected_families": [
+        "upholstered_dining_chair",
+        "dining_armchair"
+      ],
+      "mode": "text"
+    },
+    {
+      "query": "sintered stone slab",
+      "expected_families": [
+        "stone_slab_swatch",
+        "sintered_stone_swatch"
+      ],
+      "mode": "text"
+    }
+  ],
+  "visual_dna_tests": [
+    {
+      "name": "straight sofa visual",
+      "features": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "category_hint": "sofa",
+        "symmetry": "symmetric"
+      },
+      "top_expected_family": [
+        "straight_sofa",
+        "classic_straight_sofa",
+        "club_sofa",
+        "modular_sofa"
+      ]
+    },
+    {
+      "name": "round table visual",
+      "features": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table"
+      },
+      "top_expected_family": [
+        "round_dining_table",
+        "round_coffee_table",
+        "round_nested_coffee_table"
+      ]
+    },
+    {
+      "name": "ceiling fan visual",
+      "features": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "category_hint": "fan"
+      },
+      "top_expected_family": [
+        "ceiling_fan",
+        "ceiling_fan_3_blade_light"
+      ]
+    },
+    {
+      "name": "wall panel visual",
+      "features": {
+        "top_shape": "rectangular",
+        "base_type": "wall_mounted",
+        "category_hint": "panel"
+      },
+      "top_expected_family": [
+        "wall_panel",
+        "fluted_wall_panel"
+      ]
+    }
+  ],
+  "families": {
+    "abs_shell_metal_leg_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "accent_armchair": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "accent_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "arched_console_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "bar_stool": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "seating",
+        "archetype_score": 0.55
+      }
+    },
+    "bentwood_metal_leg_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "bentwood_simple_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "boucle_lounge_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "box_side_table_nightstand": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "ceiling_fan": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.9
+      }
+    },
+    "ceiling_fan_3_blade_light": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.9
+      }
+    },
+    "champagne_frame_bentwood_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "chesterfield_armchair": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.75
+      }
+    },
+    "chesterfield_sofa": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.75
+      }
+    },
+    "classic_armchair_ottoman": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "ottoman",
+        "archetype_score": 0.4
+      }
+    },
+    "classic_straight_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.45
+      }
+    },
+    "club_armchair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.65
+      }
+    },
+    "club_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.65
+      }
+    },
+    "cluster_pendant_light": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "compact_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "console_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "curved_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "irregular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.65
+      }
+    },
+    "curved_plush_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "irregular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.65
+      }
+    },
+    "curved_sofa": {
+      "count": 6,
+      "visual_dna": {
+        "top_shape": "irregular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.65
+      }
+    },
+    "curved_velvet_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "irregular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.65
+      }
+    },
+    "cylindrical_pendant_light": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "decorative_throw_pillow_with_strap": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "pillow",
+        "archetype_score": 0.35
+      }
+    },
+    "dining_armchair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "double_curvilinear_pendant": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "floor_lamp_with_phone_charging": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "floor",
+        "leg_type": "cylindrical",
+        "category_hint": "lighting",
+        "archetype_score": 0.65
+      }
+    },
+    "fluted_wall_panel": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "wall_mounted",
+        "leg_type": "no_legs",
+        "category_hint": "panel",
+        "archetype_score": 0.85
+      }
+    },
+    "fully_upholstered_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "glass_iron_table_lamp": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "glass_side_table": {
+      "count": 4,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "ignore_3d_model_reference": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "furniture",
+        "archetype_score": 0.5
+      }
+    },
+    "l_shape_sectional_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.55
+      }
+    },
+    "leather_wood_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "linear_multi_head_pendant": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "linear_pendant_light": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "lounge_armchair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "lounge_chair_with_ottoman": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "low_back_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "low_square_or_rectangular_coffee_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "luxury_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "midcentury_armchair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.6
+      }
+    },
+    "midcentury_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.6
+      }
+    },
+    "modern_armchair": {
+      "count": 21,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "modular_chaise_sofa": {
+      "count": 9,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.5
+      }
+    },
+    "modular_seating_system": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.5
+      }
+    },
+    "modular_sofa": {
+      "count": 4,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.5
+      }
+    },
+    "modular_sofa_variants": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "sofa",
+        "archetype_score": 0.5
+      }
+    },
+    "natural_stone_swatch": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.9
+      }
+    },
+    "nesting_coffee_table": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "open_bentwood_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "ottoman": {
+      "count": 8,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "ottoman",
+        "archetype_score": 0.4
+      }
+    },
+    "oval_pedestal_coffee_table": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "oval",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.65
+      }
+    },
+    "pendant_light_cluster": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "pouf_ottoman": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "ottoman",
+        "archetype_score": 0.35
+      }
+    },
+    "rectangular_console_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "rectangular_dining_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "rectangular_marble_steel_dining_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "rectangular_marble_top_dining_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "rectangular_rug": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "rug",
+        "archetype_score": 0.4
+      }
+    },
+    "rectangular_upholstered_ottoman": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "ottoman",
+        "archetype_score": 0.4
+      }
+    },
+    "ribbed_front_sideboard": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "bed",
+        "archetype_score": 0.6
+      }
+    },
+    "round_coffee_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "round_crystal_chandelier": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "round_dining_table": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "round_multihead_pendant_light": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "round_nested_coffee_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "round_nesting_marble_bronze_tables": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "round_rug": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "rounded_arm_straight_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "rounded_back_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "rounded_modular_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "rounded_molded_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "sculptural_marble_dining_table": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "sculptural_side_table": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "organic",
+        "base_type": "legs",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.75
+      }
+    },
+    "sculptural_single_support_console": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "organic",
+        "base_type": "legs",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.75
+      }
+    },
+    "semi_round_armchair": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "semi_round_modular_sofa": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "pedestal",
+        "leg_type": "single_pedestal",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "side_table": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.5
+      }
+    },
+    "single_pendant_light": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "ceiling",
+        "leg_type": "no_legs",
+        "category_hint": "lighting",
+        "archetype_score": 0.7
+      }
+    },
+    "sintered_stone_swatch": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.9
+      }
+    },
+    "slatted_wood_sideboard_brass_lines": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "plinth",
+        "category_hint": "storage",
+        "archetype_score": 0.6
+      }
+    },
+    "sofa_bench": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "seating",
+        "archetype_score": 0.55
+      }
+    },
+    "sofa_set": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.45
+      }
+    },
+    "square_throw_pillow": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "pillow",
+        "archetype_score": 0.35
+      }
+    },
+    "stone_slab_material": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "stone_slab_swatch": {
+      "count": 7,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "floor",
+        "leg_type": "no_legs",
+        "category_hint": "material",
+        "archetype_score": 0.85
+      }
+    },
+    "straight_modern_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.45
+      }
+    },
+    "straight_sofa": {
+      "count": 29,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.45
+      }
+    },
+    "straight_sofa_2_or_3_seater": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "seating",
+        "archetype_score": 0.55
+      }
+    },
+    "tufted_armchair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.7
+      }
+    },
+    "tufted_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.7
+      }
+    },
+    "unknown": {
+      "count": 50,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "furniture",
+        "archetype_score": 0.5
+      }
+    },
+    "upholstered_dining_chair": {
+      "count": 3,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    },
+    "wall_panel": {
+      "count": 2,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "furniture",
+        "archetype_score": 0.5
+      }
+    },
+    "wall_sconce_glass_diffuser": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "round",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "table",
+        "archetype_score": 0.6
+      }
+    },
+    "wide_arm_straight_sofa": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "rectangular",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "sofa",
+        "archetype_score": 0.45
+      }
+    },
+    "wood_dining_chair": {
+      "count": 1,
+      "visual_dna": {
+        "top_shape": "square",
+        "base_type": "legs",
+        "leg_type": "four_leg",
+        "category_hint": "chair",
+        "archetype_score": 0.55
+      }
+    }
+  }
+}

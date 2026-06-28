@@ -1,0 +1,42 @@
+{
+  "schema_version": "homeu-product-template-v1",
+  "source": "Shopify Batch 5 - credit card fees skipped",
+  "title": "Wooden Ceiling Fan",
+  "handle": "wooden-ceiling-fan",
+  "product_type": "Fan",
+  "template_family": "ceiling_fan",
+  "visual_reference": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/53_60ba30f1-8d2d-4afb-9ea6-0bd834959e14.png?v=1622709059",
+  "visual_dna": {
+    "category": "fan",
+    "family": "ceiling_fan",
+    "style": [
+      "contemporary",
+      "modern"
+    ],
+    "confidence_seed": 0.65
+  },
+  "template_graph": {
+    "components": [
+      "body",
+      "support",
+      "visible_detail"
+    ],
+    "relationships": [
+      "primary_body_supported_by_base",
+      "visible_parts_project_to_top_front_side"
+    ]
+  },
+  "views_required": [
+    "front",
+    "side",
+    "top"
+  ],
+  "confirmation_questions": [
+    "Confirm main shape and visible components."
+  ],
+  "drafting_notes": [
+    "Use this product template as proposal memory, not direct CAD geometry.",
+    "Ask user to confirm uncertain visual DNA before DXF generation.",
+    "Generate SVG/JPEG preview from confirmed JSON first, then DXF."
+  ]
+}

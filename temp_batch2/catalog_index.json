@@ -1,0 +1,457 @@
+{
+  "batch": "batch_2",
+  "count": 50,
+  "products": [
+    {
+      "sequence": 51,
+      "title": "Armondo │ Modern Sofa",
+      "handle": "armondo-modern-sofa",
+      "template_file": "templates/051_armondo_modern_sofa.json",
+      "category": "sofa",
+      "family": "modern_low_profile_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/s3_571e8d4b-1057-4e69-833c-8d5028ea5f96.webp?v=1752737215"
+    },
+    {
+      "sequence": 52,
+      "title": "Artic Ocean Sintered Stone",
+      "handle": "artic-ocean-sintered-stone",
+      "template_file": "templates/052_artic_ocean_sintered_stone.json",
+      "category": "stone_swatch",
+      "family": "sintered_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/artic.jpg?v=1669614460"
+    },
+    {
+      "sequence": 53,
+      "title": "Artuco Sparkling Pendant",
+      "handle": "artuco-sparkling-pendant",
+      "template_file": "templates/053_artuco_sparkling_pendant.json",
+      "category": "pendant_light",
+      "family": "cluster_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/L1-0.jpg?v=1625117801"
+    },
+    {
+      "sequence": 54,
+      "title": "Astor Pendant Light",
+      "handle": "astor-pendant",
+      "template_file": "templates/054_astor_pendant.json",
+      "category": "pendant_light",
+      "family": "single_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/HJ.jpg?v=1667898011"
+    },
+    {
+      "sequence": 55,
+      "title": "Astrid Pendant Light",
+      "handle": "tatiana-pendant-light",
+      "template_file": "templates/055_tatiana_pendant_light.json",
+      "category": "pendant_light",
+      "family": "round_ring_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/tatiana_d25cb706-33c9-4a99-a827-da28f2bddc37.jpg?v=1666688606"
+    },
+    {
+      "sequence": 56,
+      "title": "Athaliah Glass Table Lamp",
+      "handle": "glass-table-lamp-metal-base",
+      "template_file": "templates/056_glass_table_lamp_metal_base.json",
+      "category": "table_lamp",
+      "family": "glass_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/jube-table-light_7d1db9b0-486a-45fa-817d-452fc7e56e25.jpg?v=1666764462"
+    },
+    {
+      "sequence": 57,
+      "title": "Athena  | Modern Sideboard",
+      "handle": "athena-modern-sideboard",
+      "template_file": "templates/057_athena_modern_sideboard.json",
+      "category": "sideboard",
+      "family": "rectangular_sideboard_ribbed_front",
+      "image_url": ""
+    },
+    {
+      "sequence": 58,
+      "title": "Athena Marble Table Lamp",
+      "handle": "table-lamp-4",
+      "template_file": "templates/058_table_lamp_4.json",
+      "category": "table_lamp",
+      "family": "marble_base_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Untitled-1_48e7187a-c6fc-4def-b119-6984abc91b59.jpg?v=1672820204"
+    },
+    {
+      "sequence": 59,
+      "title": "Atlas Gris Sintered Stone***",
+      "handle": "atlas-gris-sintered-stone",
+      "template_file": "templates/059_atlas_gris_sintered_stone.json",
+      "category": "stone_swatch",
+      "family": "sintered_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/S-03.png?v=1732167448"
+    },
+    {
+      "sequence": 60,
+      "title": "Atlas Gris Sintered Stone***",
+      "handle": "atlas-gris-sintered-stone-copy",
+      "template_file": "templates/060_atlas_gris_sintered_stone_copy.json",
+      "category": "stone_swatch",
+      "family": "sintered_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/S-03.png?v=1732167448"
+    },
+    {
+      "sequence": 61,
+      "title": "Augustin Armchair",
+      "handle": "augustin-armchair",
+      "template_file": "templates/061_augustin_armchair.json",
+      "category": "armchair",
+      "family": "rounded_upholstered_lounge_chair",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/8.png?v=1620896363"
+    },
+    {
+      "sequence": 62,
+      "title": "Augustin Pouf",
+      "handle": "augustin-pouf",
+      "template_file": "templates/062_augustin_pouf.json",
+      "category": "ottoman",
+      "family": "round_pouf_ottoman",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/julep-pouf-tacchini.jpg?v=1620896924"
+    },
+    {
+      "sequence": 63,
+      "title": "Augustin Sofa | Modern Interior",
+      "handle": "augustin-sofa",
+      "template_file": "templates/063_augustin_sofa.json",
+      "category": "sofa",
+      "family": "semi_round_upholstered_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/7.png?v=1620895559"
+    },
+    {
+      "sequence": 64,
+      "title": "Aura | Modern Dining Chair",
+      "handle": "aura-modern-dining-chair",
+      "template_file": "templates/064_aura_modern_dining_chair.json",
+      "category": "dining_chair",
+      "family": "modern_upholstered_dining_chair",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/1_fb328821-48d6-48fe-b45f-174c3bcadc2d.png?v=1756616472"
+    },
+    {
+      "sequence": 65,
+      "title": "Aurelia Console Table",
+      "handle": "aurelia-console-table",
+      "template_file": "templates/065_aurelia_console_table.json",
+      "category": "console_table",
+      "family": "sculptural_console_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/PLSPRC2.png?v=1751961848"
+    },
+    {
+      "sequence": 66,
+      "title": "Aurelio | Modern Dining Chair",
+      "handle": "aurelio-modern-dining-chair",
+      "template_file": "templates/066_aurelio_modern_dining_chair.json",
+      "category": "dining_chair",
+      "family": "wide_bentwood_dining_chair",
+      "image_url": ""
+    },
+    {
+      "sequence": 67,
+      "title": "Aurelio | Modern Luxury Dining Chair",
+      "handle": "aurelio-modern-luxury-dining-chair",
+      "template_file": "templates/067_aurelio_modern_luxury_dining_chair.json",
+      "category": "dining_chair",
+      "family": "luxury_metal_frame_dining_chair",
+      "image_url": ""
+    },
+    {
+      "sequence": 68,
+      "title": "Ava Glass Pendant Light",
+      "handle": "glass-pendant-geometric-glass-shade",
+      "template_file": "templates/068_glass_pendant_geometric_glass_shade.json",
+      "category": "pendant_light",
+      "family": "glass_orb_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/51M652uKCzL._AC_SL1001.jpg?v=1625725507"
+    },
+    {
+      "sequence": 69,
+      "title": "Ava Pendant Light",
+      "handle": "ava-pendant-light",
+      "template_file": "templates/069_ava_pendant_light.json",
+      "category": "pendant_light",
+      "family": "linear_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/a1_283a3454-614f-4975-a117-8eb6c3578ed9.jpg?v=1667459775"
+    },
+    {
+      "sequence": 70,
+      "title": "Avery Sofa | Modern Living",
+      "handle": "atoll-sofa",
+      "template_file": "templates/070_atoll_sofa.json",
+      "category": "sofa_bench",
+      "family": "modern_sofa_bench",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/34.png?v=1621046903"
+    },
+    {
+      "sequence": 71,
+      "title": "Avio Table Lamp",
+      "handle": "alicia-table-lamp",
+      "template_file": "templates/071_alicia_table_lamp.json",
+      "category": "table_lamp",
+      "family": "conical_base_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/6_0f188f48-2656-41a9-ac82-faaaee5ac1a4.jpg?v=1669015897"
+    },
+    {
+      "sequence": 72,
+      "title": "Axel | Designer Throw Pillow",
+      "handle": "axel-designer-throw-pillow",
+      "template_file": "templates/072_axel_designer_throw_pillow.json",
+      "category": "pillow",
+      "family": "square_throw_pillow",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/z6872734299050_b4137041620f8af56f19f7c523ee0654.jpg?v=1754365651"
+    },
+    {
+      "sequence": 73,
+      "title": "Axis Bench Sofa",
+      "handle": "axis-bench-sofa",
+      "template_file": "templates/073_axis_bench_sofa.json",
+      "category": "bench",
+      "family": "modern_bench_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/ChatGPTImageJan31_2026_04_30_20PM.png?v=1769848383"
+    },
+    {
+      "sequence": 74,
+      "title": "Axton Modern Pendant Light",
+      "handle": "axton-modern-pendant-light",
+      "template_file": "templates/074_axton_modern_pendant_light.json",
+      "category": "pendant_light",
+      "family": "linear_bar_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/black_6573d1a9-ffab-44f6-8d6f-53bcd48578a9.jpg?v=1638516453"
+    },
+    {
+      "sequence": 75,
+      "title": "Back Lighted Shelf",
+      "handle": "back-lighted-shelf",
+      "template_file": "templates/075_back_lighted_shelf.json",
+      "category": "shelf",
+      "family": "backlit_wall_shelf",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/s0.jpg?v=1642581009"
+    },
+    {
+      "sequence": 76,
+      "title": "Balance Arm Chair",
+      "handle": "balance-chair",
+      "template_file": "templates/076_balance_chair.json",
+      "category": "armchair",
+      "family": "conical_base_armchair",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Balance.jpg?v=1624000566"
+    },
+    {
+      "sequence": 77,
+      "title": "Bax | Modern Dining Chair",
+      "handle": "ba-dining-chair",
+      "template_file": "templates/077_ba_dining_chair.json",
+      "category": "dining_chair",
+      "family": "compact_upholstered_dining_chair",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/b1_bf261e05-c791-4924-842f-930c123ef13f.jpg?v=1662878459"
+    },
+    {
+      "sequence": 78,
+      "title": "Becker Dining Table",
+      "handle": "becker-dining-table",
+      "template_file": "templates/078_becker_dining_table.json",
+      "category": "dining_table",
+      "family": "rectangular_stone_top_metal_base_dining_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/10_31471e32-5601-4a1e-8607-3a0640acf69e.jpg?v=1663576114"
+    },
+    {
+      "sequence": 79,
+      "title": "Becker Dining Table",
+      "handle": "becker-dining-table-1",
+      "template_file": "templates/079_becker_dining_table_1.json",
+      "category": "dining_table",
+      "family": "rectangular_stone_top_metal_base_dining_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/10_003c755a-ea7c-4325-855f-4bf4d1bbfcf6.jpg?v=1671438655"
+    },
+    {
+      "sequence": 80,
+      "title": "Beetle Bar Stool",
+      "handle": "beetle-bar-stool",
+      "template_file": "templates/080_beetle_bar_stool.json",
+      "category": "bar_stool",
+      "family": "upholstered_bar_stool_metal_legs",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/A9174xslz_1ml2c78_108.jpg?v=1621252366"
+    },
+    {
+      "sequence": 81,
+      "title": "Bell Glass | Modern Side Table",
+      "handle": "bell-glass-side-table",
+      "template_file": "templates/081_bell_glass_side_table.json",
+      "category": "side_table",
+      "family": "bell_glass_side_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/bell-side-table-brass-green-b.png?v=1619326646"
+    },
+    {
+      "sequence": 82,
+      "title": "Bell Pepper Table Lamp",
+      "handle": "bell-pepper-table-lamp",
+      "template_file": "templates/082_bell_pepper_table_lamp.json",
+      "category": "table_lamp",
+      "family": "black_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/8d.jpg?v=1669096932"
+    },
+    {
+      "sequence": 83,
+      "title": "Belle Modern Pendant Light",
+      "handle": "belle-modern-pendant-light",
+      "template_file": "templates/083_belle_modern_pendant_light.json",
+      "category": "pendant_light",
+      "family": "branch_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/g1.jpg?v=1638406118"
+    },
+    {
+      "sequence": 84,
+      "title": "Bellori | Modern Dining Chair",
+      "handle": "marco-modern-upholstered-dining-chair",
+      "template_file": "templates/084_marco_modern_upholstered_dining_chair.json",
+      "category": "dining_chair",
+      "family": "modern_upholstered_dining_chair",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/ChatGPTImageMay19_2026_03_01_57PM.png?v=1779174152"
+    },
+    {
+      "sequence": 85,
+      "title": "Berto | Modern Dining Chair",
+      "handle": "berto-modern-dining-chair",
+      "template_file": "templates/085_berto_modern_dining_chair.json",
+      "category": "dining_chair",
+      "family": "wood_frame_leather_dining_chair",
+      "image_url": ""
+    },
+    {
+      "sequence": 86,
+      "title": "Bianca | Modern Upholstered Dining Chair",
+      "handle": "bianca-modern-upholstered-dining-chair",
+      "template_file": "templates/086_bianca_modern_upholstered_dining_chair.json",
+      "category": "dining_chair",
+      "family": "sculptural_foam_dining_chair",
+      "image_url": ""
+    },
+    {
+      "sequence": 87,
+      "title": "Bianco Calacatta",
+      "handle": "bianco-calacatta",
+      "template_file": "templates/087_bianco_calacatta.json",
+      "category": "stone_swatch",
+      "family": "natural_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Calacatta.jpg?v=1663148347"
+    },
+    {
+      "sequence": 88,
+      "title": "Black Taurus",
+      "handle": "black-taurus",
+      "template_file": "templates/088_black_taurus.json",
+      "category": "stone_swatch",
+      "family": "natural_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/BlackTaurus.jpg?v=1665025762"
+    },
+    {
+      "sequence": 89,
+      "title": "Blanchfleur Glass Pendant Light",
+      "handle": "blanchfleur-glass-pendant-light",
+      "template_file": "templates/089_blanchfleur_glass_pendant_light.json",
+      "category": "pendant_light",
+      "family": "small_glass_pendant_light",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/nwww.jpg?v=1635152494"
+    },
+    {
+      "sequence": 90,
+      "title": "Bloom Table Lamp",
+      "handle": "table-lamp-2",
+      "template_file": "templates/090_table_lamp_2.json",
+      "category": "table_lamp",
+      "family": "round_glowing_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/b_6c1b90ed-1353-4149-b294-b3a64668da18.jpg?v=1669617014"
+    },
+    {
+      "sequence": 91,
+      "title": "Blossom Pendant Light",
+      "handle": "blossom-pendant-light",
+      "template_file": "templates/091_blossom_pendant_light.json",
+      "category": "pendant_light",
+      "family": "linear_blossom_pendant_light",
+      "image_url": ""
+    },
+    {
+      "sequence": 92,
+      "title": "Blue Roma",
+      "handle": "blue-roma",
+      "template_file": "templates/092_blue_roma.json",
+      "category": "stone_swatch",
+      "family": "natural_stone_slab",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/blue.jpg?v=1665025908"
+    },
+    {
+      "sequence": 93,
+      "title": "Boni Console Table with Marble Top & Metal Frame",
+      "handle": "boni-console-table-with-marble-top-metal-frame",
+      "template_file": "templates/093_boni_console_table_with_marble_top_metal_frame.json",
+      "category": "console_table",
+      "family": "marble_top_metal_frame_console_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/a21.jpg?v=1622555193"
+    },
+    {
+      "sequence": 94,
+      "title": "Bori Table Lamp",
+      "handle": "bori-table-lamp",
+      "template_file": "templates/094_bori_table_lamp.json",
+      "category": "table_lamp",
+      "family": "glass_shade_table_lamp",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/9_fa53ab52-d967-40a0-9c26-e494c3870395.jpg?v=1669950870"
+    },
+    {
+      "sequence": 95,
+      "title": "Bow Tables",
+      "handle": "bow-tables",
+      "template_file": "templates/095_bow_tables.json",
+      "category": "coffee_table",
+      "family": "bow_nested_coffee_table",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/desede2.jpg?v=1623313019"
+    },
+    {
+      "sequence": 96,
+      "title": "Brailey Sectional Sofa | Modern Living",
+      "handle": "hm7901-sectional-sofa",
+      "template_file": "templates/096_hm7901_sectional_sofa.json",
+      "category": "sectional_sofa",
+      "family": "modular_sectional_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/33a6963f18998b2dfdd1977601b6a47a.jpg?v=1622791453"
+    },
+    {
+      "sequence": 97,
+      "title": "Brailey Sofa | Modern Living",
+      "handle": "hm7901-sofa",
+      "template_file": "templates/097_hm7901_sofa.json",
+      "category": "sofa",
+      "family": "modular_straight_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Est-Living-Design-Directory-Fanuli-Adda-Sofa-3-750x540.jpg?v=1622789385"
+    },
+    {
+      "sequence": 98,
+      "title": "Branch Crystal Chandelier",
+      "handle": "branch-crystal-chandelier-1",
+      "template_file": "templates/098_branch_crystal_chandelier_1.json",
+      "category": "chandelier",
+      "family": "branch_crystal_chandelier",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Untitled-3.jpg?v=1675751973"
+    },
+    {
+      "sequence": 99,
+      "title": "Brass Modern Bar Stool",
+      "handle": "brass-modern-bar-stool",
+      "template_file": "templates/099_brass_modern_bar_stool.json",
+      "category": "bar_stool",
+      "family": "brass_frame_bar_stool",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/A9eyjduk_1ml2c73_108.jpg?v=1621250788"
+    },
+    {
+      "sequence": 100,
+      "title": "Bretagne Sofa",
+      "handle": "bretagne-sofa",
+      "template_file": "templates/100_bretagne_sofa.json",
+      "category": "sofa",
+      "family": "classic_straight_sofa",
+      "image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/bretagne2seater.jpg?v=1621057372"
+    }
+  ],
+  "next_shopify_cursor": "eyJsYXN0X2lkIjo2NzAwMzM3NTI4OTk2LCJsYXN0X3ZhbHVlIjoiQnJldGFnbmUgU29mYSJ9"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "homeu-product-template-v1",
+  "title": "Dione Tables",
+  "handle": "dione-tables",
+  "template_family": "nesting_coffee_table",
+  "views_required": [
+    "top",
+    "front",
+    "side"
+  ],
+  "confirmation_questions": [
+    "Confirm overall silhouette.",
+    "Confirm top shape/profile.",
+    "Confirm base/support geometry."
+  ],
+  "drafting_notes": [
+    "Generate preview before DXF.",
+    "Use confirmation loop before CAD."
+  ]
+}

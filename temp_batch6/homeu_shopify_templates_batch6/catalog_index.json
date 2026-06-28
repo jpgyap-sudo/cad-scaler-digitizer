@@ -1,0 +1,352 @@
+[
+  {
+    "title": "Chiara | Modern Arm Chair",
+    "handle": "chiara-arm-chair",
+    "family": "modern_armchair",
+    "template": "templates/chiara_arm_chair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/zeena.jpg?v=1620957986"
+  },
+  {
+    "title": "Messina Bello | Modern Interior",
+    "handle": "messina",
+    "family": "modular_chaise_sofa",
+    "template": "templates/messina.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/connerygreay.jpg?v=1619495387"
+  },
+  {
+    "title": "Letizia Sofa | Modern Interior",
+    "handle": "letizia-sofa",
+    "family": "modular_sofa",
+    "template": "templates/letizia_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/connery_square.jpg?v=1619521516"
+  },
+  {
+    "title": "Verona | Modern Sofa",
+    "handle": "verona",
+    "family": "modular_chaise_sofa",
+    "template": "templates/verona.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/connerycorner.jpg?v=1619525664"
+  },
+  {
+    "title": "Marchesi Sofa",
+    "handle": "marchesi-sofa",
+    "family": "modular_chaise_sofa",
+    "template": "templates/marchesi_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Marchesi.jpg?v=1619527783"
+  },
+  {
+    "title": "Outline Armchair",
+    "handle": "agata-seating-set",
+    "family": "modern_armchair",
+    "template": "templates/agata_seating_set.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/agata.jpg?v=1620961460"
+  },
+  {
+    "title": "Pisani Seating Set | Modern Interior",
+    "handle": "pisani-seating-set",
+    "family": "sofa_set",
+    "template": "templates/pisani_seating_set.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/pisani2.jpg?v=1626507079"
+  },
+  {
+    "title": "Bridget Semi-round Seating | Modern Interior",
+    "handle": "semi-round-lawson-seating",
+    "family": "semi_round_modular_sofa",
+    "template": "templates/semi_round_lawson_seating.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Lawson2.jpg?v=1619589940"
+  },
+  {
+    "title": "Verdant Curve Sofa | Modern Interior",
+    "handle": "lawson-sofa",
+    "family": "curved_sofa",
+    "template": "templates/lawson_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/lawson8_1d178b3c-b4d9-4c06-a390-e16baecca614.jpg?v=1620960669"
+  },
+  {
+    "title": "Poltrona Eleganza Armchair | HM9002 | Modern Interior",
+    "handle": "tape-seating-set",
+    "family": "modern_armchair",
+    "template": "templates/tape_seating_set.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/tape.jpg?v=1620907193"
+  },
+  {
+    "title": "Gallo Modular Seating System",
+    "handle": "gallo-modular-seating-system",
+    "family": "modular_seating_system",
+    "template": "templates/gallo_modular_seating_system.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/gallo10.jpg?v=1619667513"
+  },
+  {
+    "title": "Costa Sofa | Modern Interior",
+    "handle": "costa-sofa",
+    "family": "modular_chaise_sofa",
+    "template": "templates/costa_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/costa3.jpg?v=1619676384"
+  },
+  {
+    "title": "Augustin Sofa | Modern Interior",
+    "handle": "augustin-sofa",
+    "family": "curved_sofa",
+    "template": "templates/augustin_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/7.png?v=1620895559"
+  },
+  {
+    "title": "Augustin Armchair",
+    "handle": "augustin-armchair",
+    "family": "modern_armchair",
+    "template": "templates/augustin_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/8.png?v=1620896363"
+  },
+  {
+    "title": "Augustin Pouf",
+    "handle": "augustin-pouf",
+    "family": "pouf_ottoman",
+    "template": "templates/augustin_pouf.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/julep-pouf-tacchini.jpg?v=1620896924"
+  },
+  {
+    "title": "Franco Armchair",
+    "handle": "richard-armchair",
+    "family": "modern_armchair",
+    "template": "templates/richard_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/10.png?v=1620897961"
+  },
+  {
+    "title": "Franco Sofa | Modern Living",
+    "handle": "richard-sofa",
+    "family": "straight_sofa",
+    "template": "templates/richard_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/02_Sofa_Richard_RA280_CITTERIO_Leather_9_4.jpg?v=1620898490"
+  },
+  {
+    "title": "Franco Ottoman",
+    "handle": "richard-ottoman",
+    "family": "ottoman",
+    "template": "templates/richard_ottoman.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/12.png?v=1620899043"
+  },
+  {
+    "title": "John John Sofa | Modern Living",
+    "handle": "john-john-sofa",
+    "family": "straight_sofa",
+    "template": "templates/john_john_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/13.png?v=1620900306"
+  },
+  {
+    "title": "Marino sofa | Modern Living",
+    "handle": "marino-sofa",
+    "family": "straight_sofa",
+    "template": "templates/marino_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/15.png?v=1620902518"
+  },
+  {
+    "title": "Marino Armchair",
+    "handle": "marino-armchair",
+    "family": "modern_armchair",
+    "template": "templates/marino_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/14.png?v=1620902852"
+  },
+  {
+    "title": "Seymour Sofa",
+    "handle": "seymour-sofa",
+    "family": "straight_sofa",
+    "template": "templates/seymour_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/16.png?v=1620906838"
+  },
+  {
+    "title": "Textura Luxe Sofa | Modern Living",
+    "handle": "tape-sofa",
+    "family": "modular_sofa",
+    "template": "templates/tape_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/tape3_58c3ec9c-d429-4519-8e79-7d8482653db3.jpg?v=1620907121"
+  },
+  {
+    "title": "Bretagne Sofa",
+    "handle": "bretagne-sofa",
+    "family": "straight_sofa",
+    "template": "templates/bretagne_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/bretagne2seater.jpg?v=1621057372"
+  },
+  {
+    "title": "HM9002 Ottoman",
+    "handle": "tape-ottoman",
+    "family": "ottoman",
+    "template": "templates/tape_ottoman.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/tap5_a4a9952b-ddf1-4692-a077-fcc0b098def7.jpg?v=1620909623"
+  },
+  {
+    "title": "Chiara Sofa | Modern Living",
+    "handle": "chiara-sofa",
+    "family": "straight_sofa",
+    "template": "templates/chiara_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/zeena3_02d6f7eb-98ba-4a19-aa6a-1d62bf2693df.jpg?v=1620957939"
+  },
+  {
+    "title": "Melting Light Sofa",
+    "handle": "melting-light-sofa",
+    "family": "straight_sofa",
+    "template": "templates/melting_light_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/21.png?v=1620958349"
+  },
+  {
+    "title": "Melting Light Armchair",
+    "handle": "melting-light-armchair",
+    "family": "modern_armchair",
+    "template": "templates/melting_light_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/22.png?v=1620958638"
+  },
+  {
+    "title": "Butterfly Sofa",
+    "handle": "butterfly-sofa",
+    "family": "straight_sofa",
+    "template": "templates/butterfly_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/23.png?v=1620959218"
+  },
+  {
+    "title": "Butterfly Armchair",
+    "handle": "butterfly-armchair",
+    "family": "modern_armchair",
+    "template": "templates/butterfly_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/24.png?v=1620960161"
+  },
+  {
+    "title": "HM2702 Armchair",
+    "handle": "lawson-armchair",
+    "family": "semi_round_armchair",
+    "template": "templates/lawson_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/lawson7_21c125c4-6833-48d0-94eb-4fc9785e3d1a.jpg?v=1620960392"
+  },
+  {
+    "title": "Outline Sofa | Modern Living",
+    "handle": "outline-sofa",
+    "family": "straight_sofa",
+    "template": "templates/outline_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/agata3_e312d6c6-b7a8-4fe9-bd06-c447819b1639.jpg?v=1620961303"
+  },
+  {
+    "title": "Outline Ottoman",
+    "handle": "outline-ottoman",
+    "family": "ottoman",
+    "template": "templates/outline_ottoman.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/agata2.jpg?v=1620962066"
+  },
+  {
+    "title": "Vicente Sofa | Modern Living",
+    "handle": "vicente-sofa",
+    "family": "straight_sofa",
+    "template": "templates/vicente_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/Vicente.jpg?v=1628585799"
+  },
+  {
+    "title": "Vicente Armchair",
+    "handle": "la-scala-armchair",
+    "family": "modern_armchair",
+    "template": "templates/la_scala_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/26.png?v=1620966595"
+  },
+  {
+    "title": "Chesterfield Style King Sofa | Modern Living",
+    "handle": "natuzzi-italia-king-sofa",
+    "family": "chesterfield_sofa",
+    "template": "templates/natuzzi_italia_king_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/27.png?v=1620969679"
+  },
+  {
+    "title": "Chesterfield Style Armchair",
+    "handle": "chesterfield-style-armchair",
+    "family": "chesterfield_armchair",
+    "template": "templates/chesterfield_style_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/28.png?v=1620970301"
+  },
+  {
+    "title": "Martini Sofa",
+    "handle": "martini-sofa",
+    "family": "curved_sofa",
+    "template": "templates/martini_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/martini-001-1-b.jpg?v=1620972297"
+  },
+  {
+    "title": "Martini Armchair",
+    "handle": "martini-armchair",
+    "family": "modern_armchair",
+    "template": "templates/martini_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/29.png?v=1620971326"
+  },
+  {
+    "title": "Adagio Sofa | Modern Living",
+    "handle": "adagio-sofa",
+    "family": "modular_chaise_sofa",
+    "template": "templates/adagio_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/31.png?v=1627271685"
+  },
+  {
+    "title": "Adagio Ottoman | Modern Furniture",
+    "handle": "adagio-ottoman",
+    "family": "ottoman",
+    "template": "templates/adagio_ottoman.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/32.png?v=1621046340"
+  },
+  {
+    "title": "Avery Sofa | Modern Living",
+    "handle": "atoll-sofa",
+    "family": "sofa_bench",
+    "template": "templates/atoll_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/34.png?v=1621046903"
+  },
+  {
+    "title": "Gregory Sofa | Modern Living",
+    "handle": "gregory-sofa",
+    "family": "midcentury_sofa",
+    "template": "templates/gregory_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/35.png?v=1621047344"
+  },
+  {
+    "title": "Gregory Armchair",
+    "handle": "gregory-armchair",
+    "family": "midcentury_armchair",
+    "template": "templates/gregory_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/36.png?v=1621047487"
+  },
+  {
+    "title": "Lincoln Sofa | Modern Living",
+    "handle": "lincoln-sofa",
+    "family": "straight_sofa",
+    "template": "templates/lincoln_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/37.png?v=1621048050"
+  },
+  {
+    "title": "Brookside sofa | Modern Living",
+    "handle": "brookside-sofa",
+    "family": "straight_sofa",
+    "template": "templates/brookside_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/38.png?v=1621048613"
+  },
+  {
+    "title": "Nivola Sofa | Modern Living",
+    "handle": "nivola-sofa",
+    "family": "straight_sofa",
+    "template": "templates/nivola_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/42.png?v=1621050001"
+  },
+  {
+    "title": "Nivola Armchair",
+    "handle": "nivola-armchair",
+    "family": "modern_armchair",
+    "template": "templates/nivola_armchair.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/43.png?v=1621050167"
+  },
+  {
+    "title": "Gentry Sofa | Modern Living",
+    "handle": "gentry-sofa",
+    "family": "straight_sofa",
+    "template": "templates/gentry_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/50.jpg?v=1624677590"
+  },
+  {
+    "title": "Alpha Club Sofa | Modern Living",
+    "handle": "alpha-club-sofa",
+    "family": "straight_sofa",
+    "template": "templates/alpha_club_sofa.json",
+    "image": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/65.png?v=1621055020"
+  }
+]

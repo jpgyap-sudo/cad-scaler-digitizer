@@ -1,0 +1,45 @@
+{
+  "schema_version": "homeu-product-template-v1",
+  "source": "Shopify Batch 5 - credit card fees skipped",
+  "title": "Chiara | Modern Arm Chair",
+  "handle": "chiara-arm-chair",
+  "product_type": "Furniture",
+  "template_family": "modern_armchair",
+  "visual_reference": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/zeena.jpg?v=1620957986",
+  "visual_dna": {
+    "category": "furniture",
+    "family": "modern_armchair",
+    "style": [
+      "contemporary",
+      "modern"
+    ],
+    "confidence_seed": 0.65
+  },
+  "template_graph": {
+    "components": [
+      "seat",
+      "backrest",
+      "left_arm",
+      "right_arm",
+      "legs_or_swivel_base"
+    ],
+    "relationships": [
+      "primary_body_supported_by_base",
+      "visible_parts_project_to_top_front_side"
+    ]
+  },
+  "views_required": [
+    "top",
+    "front",
+    "side"
+  ],
+  "confirmation_questions": [
+    "Is the chair open-frame or fully upholstered?",
+    "Are legs straight, crossed, swivel, or hidden?"
+  ],
+  "drafting_notes": [
+    "Use this product template as proposal memory, not direct CAD geometry.",
+    "Ask user to confirm uncertain visual DNA before DXF generation.",
+    "Generate SVG/JPEG preview from confirmed JSON first, then DXF."
+  ]
+}

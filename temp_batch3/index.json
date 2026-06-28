@@ -1,0 +1,357 @@
+{
+  "batch": 3,
+  "count": 50,
+  "next_cursor": "eyJsYXN0X2lkIjo4NDkzODMxODgwOTM4LCJsYXN0X3ZhbHVlIjoiQ2llbG8gQmFyIFN0b29sIn0=",
+  "items": [
+    {
+      "template_id": "homeu_b3_101_semi-round-lawson-seating",
+      "title": "Bridget Semi-round Seating | Modern Interior",
+      "handle": "semi-round-lawson-seating",
+      "family": "semi_round_modular_sofa",
+      "file": "templates/semi-round-lawson-seating.json"
+    },
+    {
+      "template_id": "homeu_b3_102_brookside-sofa",
+      "title": "Brookside sofa | Modern Living",
+      "handle": "brookside-sofa",
+      "family": "straight_sofa",
+      "file": "templates/brookside-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_103_bruno-tables",
+      "title": "Bruno Tables",
+      "handle": "bruno-tables",
+      "family": "round_nested_coffee_table",
+      "file": "templates/bruno-tables.json"
+    },
+    {
+      "template_id": "homeu_b3_104_bruno-modern-dining-chair",
+      "title": "Bruno | Modern Dining Chair",
+      "handle": "bruno-modern-dining-chair",
+      "family": "upholstered_dining_chair",
+      "file": "templates/bruno-modern-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_105_brunt-coffee-table",
+      "title": "Brunt Coffee Table",
+      "handle": "brunt-coffee-table",
+      "family": "round_coffee_table",
+      "file": "templates/brunt-coffee-table.json"
+    },
+    {
+      "template_id": "homeu_b3_106_luna-pendant-light",
+      "title": "Bulan Pendant Light",
+      "handle": "luna-pendant-light",
+      "family": "pendant_light_cluster",
+      "file": "templates/luna-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_107_buratti-dining-table",
+      "title": "Buratti | Modern Dining Table",
+      "handle": "buratti-dining-table",
+      "family": "rectangular_dining_table",
+      "file": "templates/buratti-dining-table.json"
+    },
+    {
+      "template_id": "homeu_b3_108_butterfly-armchair",
+      "title": "Butterfly Armchair",
+      "handle": "butterfly-armchair",
+      "family": "lounge_armchair",
+      "file": "templates/butterfly-armchair.json"
+    },
+    {
+      "template_id": "homeu_b3_109_butterfly-sofa",
+      "title": "Butterfly Sofa",
+      "handle": "butterfly-sofa",
+      "family": "straight_sofa",
+      "file": "templates/butterfly-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_110_caelia-nordic-style-pendant-light",
+      "title": "Caelia Nordic Style Pendant Light",
+      "handle": "caelia-nordic-style-pendant-light",
+      "family": "single_pendant_light",
+      "file": "templates/caelia-nordic-style-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_111_calacatta-luxe-sintered-stone",
+      "title": "Calacatta Luxe Sintered Stone ✪",
+      "handle": "calacatta-luxe-sintered-stone",
+      "family": "stone_slab_swatch",
+      "file": "templates/calacatta-luxe-sintered-stone.json"
+    },
+    {
+      "template_id": "homeu_b3_112_calacatta-viola",
+      "title": "Calacatta Viola",
+      "handle": "calacatta-viola",
+      "family": "stone_slab_swatch",
+      "file": "templates/calacatta-viola.json"
+    },
+    {
+      "template_id": "homeu_b3_113_calacatta-viola-sintered-stone",
+      "title": "Calacatta Viola Sintered Stone ✪",
+      "handle": "calacatta-viola-sintered-stone",
+      "family": "stone_slab_swatch",
+      "file": "templates/calacatta-viola-sintered-stone.json"
+    },
+    {
+      "template_id": "homeu_b3_114_hm8532-lounge-chair",
+      "title": "Caleb Lounge chair",
+      "handle": "hm8532-lounge-chair",
+      "family": "lounge_chair_with_ottoman",
+      "file": "templates/hm8532-lounge-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_115_callie-dining-chair",
+      "title": "Callie | Modern Dining Chair",
+      "handle": "callie-dining-chair",
+      "family": "upholstered_dining_chair",
+      "file": "templates/callie-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_116_callista-modern-luxury-dining-chair",
+      "title": "Callista | Modern Luxury Dining Chair",
+      "handle": "callista-modern-luxury-dining-chair",
+      "family": "luxury_dining_chair",
+      "file": "templates/callista-modern-luxury-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_117_cameleo-modern-rug",
+      "title": "Cameleo | Modern Rug",
+      "handle": "cameleo-modern-rug",
+      "family": "round_rug",
+      "file": "templates/cameleo-modern-rug.json"
+    },
+    {
+      "template_id": "homeu_b3_118_camia-dining-chair",
+      "title": "Camia Dining Chair",
+      "handle": "camia-dining-chair",
+      "family": "curved_dining_chair",
+      "file": "templates/camia-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_119_camillo-dining-table",
+      "title": "Camillo | Modern Dining Table",
+      "handle": "camillo-dining-table",
+      "family": "round_dining_table",
+      "file": "templates/camillo-dining-table.json"
+    },
+    {
+      "template_id": "homeu_b3_120_capone-console-table-with-marble-top-metal-frame",
+      "title": "Capone Console Table with Faux Marble Top & Metal Frame",
+      "handle": "capone-console-table-with-marble-top-metal-frame",
+      "family": "console_table",
+      "file": "templates/capone-console-table-with-marble-top-metal-frame.json"
+    },
+    {
+      "template_id": "homeu_b3_121_capone-round-dining-table",
+      "title": "Capone | Modern Dining Table",
+      "handle": "capone-round-dining-table",
+      "family": "round_dining_table",
+      "file": "templates/capone-round-dining-table.json"
+    },
+    {
+      "template_id": "homeu_b3_122_capraia-breccia-sintered-stone",
+      "title": "Capraia Breccia Sintered Stone ✪",
+      "handle": "capraia-breccia-sintered-stone",
+      "family": "stone_slab_swatch",
+      "file": "templates/capraia-breccia-sintered-stone.json"
+    },
+    {
+      "template_id": "homeu_b3_123_carla-sofa",
+      "title": "Carla Sofa | Modern Interior",
+      "handle": "carla-sofa",
+      "family": "straight_sofa",
+      "file": "templates/carla-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_124_carolina-modern-pendant-light",
+      "title": "Carolina Linear Modern Pendant Light",
+      "handle": "carolina-modern-pendant-light",
+      "family": "linear_pendant_light",
+      "file": "templates/carolina-modern-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_125_carolina-round-pendant-light",
+      "title": "Carolina Round Modern Pendant Light",
+      "handle": "carolina-round-pendant-light",
+      "family": "round_multihead_pendant_light",
+      "file": "templates/carolina-round-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_126_carrara-grey",
+      "title": "Carrara Grey",
+      "handle": "carrara-grey",
+      "family": "stone_slab_swatch",
+      "file": "templates/carrara-grey.json"
+    },
+    {
+      "template_id": "homeu_b3_127_carrara-luxe-sintered-stone",
+      "title": "Carrara Luxe Sintered Stone ✪",
+      "handle": "carrara-luxe-sintered-stone",
+      "family": "stone_slab_swatch",
+      "file": "templates/carrara-luxe-sintered-stone.json"
+    },
+    {
+      "template_id": "homeu_b3_128_carrara-white",
+      "title": "Carrara White",
+      "handle": "carrara-white",
+      "family": "stone_slab_swatch",
+      "file": "templates/carrara-white.json"
+    },
+    {
+      "template_id": "homeu_b3_129_carrie-bar-stool",
+      "title": "Carrie Bar Stool",
+      "handle": "carrie-bar-stool",
+      "family": "bar_stool",
+      "file": "templates/carrie-bar-stool.json"
+    },
+    {
+      "template_id": "homeu_b3_130_luca-modern-upholstered-dining-chair",
+      "title": "Cavelli | Modern Dining Chair",
+      "handle": "luca-modern-upholstered-dining-chair",
+      "family": "upholstered_dining_chair",
+      "file": "templates/luca-modern-upholstered-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_131_ceiling-fan-with-light",
+      "title": "Ceiling Fan with Light",
+      "handle": "ceiling-fan-with-light",
+      "family": "ceiling_fan",
+      "file": "templates/ceiling-fan-with-light.json"
+    },
+    {
+      "template_id": "homeu_b3_132_celeste-dining-armchair",
+      "title": "Celeste Dining Armchair",
+      "handle": "celeste-dining-armchair",
+      "family": "dining_armchair",
+      "file": "templates/celeste-dining-armchair.json"
+    },
+    {
+      "template_id": "homeu_b3_133_celeste-modern-dining-chair",
+      "title": "Celeste | Modern Dining Chair",
+      "handle": "celeste-modern-dining-chair",
+      "family": "wood_dining_chair",
+      "file": "templates/celeste-modern-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_134_celestine-modern-dining-chair",
+      "title": "Celestine | Modern Dining Chair",
+      "handle": "celestine-modern-dining-chair",
+      "family": "low_back_dining_chair",
+      "file": "templates/celestine-modern-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_135_celio-lounge-chair",
+      "title": "Celio Arm Chair | Modern Lounge Chair",
+      "handle": "celio-lounge-chair",
+      "family": "lounge_chair_with_ottoman",
+      "file": "templates/celio-lounge-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_136_cesare-modern-dining-chair",
+      "title": "Cesare | Modern Dining Chair",
+      "handle": "cesare-modern-dining-chair",
+      "family": "compact_dining_chair",
+      "file": "templates/cesare-modern-dining-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_137_chelsie-pendant-light",
+      "title": "Chelsie Pendant Light",
+      "handle": "chelsie-pendant-light",
+      "family": "single_pendant_light",
+      "file": "templates/chelsie-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_138_chapeau-modern-pendant-light",
+      "title": "Cherry Pendant Light",
+      "handle": "chapeau-modern-pendant-light",
+      "family": "single_pendant_light",
+      "file": "templates/chapeau-modern-pendant-light.json"
+    },
+    {
+      "template_id": "homeu_b3_139_chester-armchair",
+      "title": "Chester  | Modern Arm Chair",
+      "handle": "chester-armchair",
+      "family": "tufted_armchair",
+      "file": "templates/chester-armchair.json"
+    },
+    {
+      "template_id": "homeu_b3_140_chester-ottoman",
+      "title": "Chester Ottoman",
+      "handle": "chester-ottoman",
+      "family": "ottoman",
+      "file": "templates/chester-ottoman.json"
+    },
+    {
+      "template_id": "homeu_b3_141_chester-sofa",
+      "title": "Chester Sofa | Modern Living",
+      "handle": "chester-sofa",
+      "family": "tufted_sofa",
+      "file": "templates/chester-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_142_chesterfield-style-armchair",
+      "title": "Chesterfield Style Armchair",
+      "handle": "chesterfield-style-armchair",
+      "family": "chesterfield_armchair",
+      "file": "templates/chesterfield-style-armchair.json"
+    },
+    {
+      "template_id": "homeu_b3_143_natuzzi-italia-king-sofa",
+      "title": "Chesterfield Style King Sofa | Modern Living",
+      "handle": "natuzzi-italia-king-sofa",
+      "family": "chesterfield_sofa",
+      "file": "templates/natuzzi-italia-king-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_144_chiara-armchair",
+      "title": "Chiara Armchair",
+      "handle": "chiara-armchair",
+      "family": "accent_armchair",
+      "file": "templates/chiara-armchair.json"
+    },
+    {
+      "template_id": "homeu_b3_145_chiara-sofa",
+      "title": "Chiara Sofa | Modern Living",
+      "handle": "chiara-sofa",
+      "family": "straight_sofa",
+      "file": "templates/chiara-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_146_chiara-arm-chair",
+      "title": "Chiara | Modern Arm Chair",
+      "handle": "chiara-arm-chair",
+      "family": "accent_armchair",
+      "file": "templates/chiara-arm-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_147_chiclet-sofa",
+      "title": "Chiclet Sofa | Modern Interior",
+      "handle": "chiclet-sofa",
+      "family": "rounded_modular_sofa",
+      "file": "templates/chiclet-sofa.json"
+    },
+    {
+      "template_id": "homeu_b3_148_qt-chillax-chair",
+      "title": "Chillax | Modern Accent Chair",
+      "handle": "qt-chillax-chair",
+      "family": "accent_chair",
+      "file": "templates/qt-chillax-chair.json"
+    },
+    {
+      "template_id": "homeu_b3_149_chloe-modern-rug",
+      "title": "Chloe | Modern Rug",
+      "handle": "chloe-modern-rug",
+      "family": "rectangular_rug",
+      "file": "templates/chloe-modern-rug.json"
+    },
+    {
+      "template_id": "homeu_b3_150_cielo-bar-stool",
+      "title": "Cielo Bar Stool",
+      "handle": "cielo-bar-stool",
+      "family": "bar_stool",
+      "file": "templates/cielo-bar-stool.json"
+    }
+  ]
+}
