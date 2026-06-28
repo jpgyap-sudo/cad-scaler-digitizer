@@ -302,6 +302,16 @@ Wired into `/digitize/hybrid` as a parallel analysis track returning
 
 ## Recent Updates (2026-06-29)
 
+### Feature Test — 5 Products at 92.2% avg (2026-06-29)
+**CLOSED**: `docs/feature-test-2026-06-29.md` — all 5 products verified:
+- Tangerie dining table: 100×200×75cm, score 0.925
+- Valenza round table: 120×120×75cm, score 0.922 (2 circles — round DXF ✅)
+- Glenn modern sofa: 250×95×82cm, score 0.920 (height 82cm ✅)
+- Evon modern bed: 226×230×102cm, score 0.920 (dims extracted ✅)
+- Aeris console table: 40×140×78cm, score 0.925 (was 0 dims ✅)
+- All 8 containers healthy. All 9 frontend tabs loading.
+- Docker Desktop crash issue: occurs during heavy builds on Windows. Resolved by restart.
+
 ### 14. MCP server for ChatGPT integration (2026-06-29, commit `ad8d1ef`)
 **CLOSED**: `mcp-server/server.js` with 13 tools exposed via SSE (port 3003) 
 and stdio (ChatGPT Desktop). Tools: crawl_product_url, batch_crawl, 
