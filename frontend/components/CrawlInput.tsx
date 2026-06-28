@@ -19,6 +19,7 @@ interface CrawlResult {
   dxf_file?: string;
   download_url?: string;
   preview_svg?: string;
+  skeleton_svg?: string;
   page_dimensions?: PageDimensions;
   detected_dimensions?: Record<string, number>;
   comparison?: {
@@ -152,6 +153,22 @@ export default function CrawlInput() {
                     <Download size={14} />
                     Download DXF
                   </a>
+                )}
+                {/* Phase 3: SVG Skeleton Preview (before DXF download) */}
+                {result.skeleton_svg && (
+                  <div className="mt-2">
+                    <p className="text-[10px] font-semibold text-gray-500 mb-1 flex items-center gap-1">
+                      <Ruler size={10} /> Quick Skeleton Preview (before DXF)
+                    </p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 overflow-hidden" style={{ maxHeight: "120px" }}>
+                      <img
+                        src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(result.skeleton_svg)}
+                        alt="Skeleton Preview"
+                        className="w-full"
+                        style={{ objectFit: "contain", maxHeight: "110px" }}
+                      />
+                    </div>
+                  </div>
                 )}
                 {/* Page dimensions */}
                 {result.page_dimensions && (
