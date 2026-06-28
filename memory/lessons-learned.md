@@ -4254,3 +4254,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: audit findings — deduplicated save functions, _save_drawing_model for 7 new types, bed alias fix
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit b8506ea918da260447fab7a47cb91878d8908132
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** b8506ea918da260447fab7a47cb91878d8908132
+**Files:** backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py
+
+**Summary:**
+Commit: fix: audit findings — deduplicated save functions, _save_drawing_model for 7 new types, bed alias fix
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: audit findings — deduplicated save functions, _save_drawing_model for 7 new types, bed alias fix*
+
+#### Lesson Learned
+
+Commit: fix: audit findings — deduplicated save functions, _save_drawing_model for 7 new types, bed alias fix
+Files: backend-python/app/api/routes.py,backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/furniture_classifier.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

@@ -33,6 +33,7 @@ from app.backend.dxf_exporter import (
     save_console_table, save_office_desk,
     save_armchair, save_bar_stool, save_bench_chaise,
     save_ottoman, save_rug, save_stone_slab, save_wall_panel,
+    save_lounge_chair, save_sideboard, save_tv_console,
 )
 from app.resource_engine.template_loader import TemplateGraphLoader
 from app.resource_engine.template_resolver import TemplateResolver
@@ -1021,6 +1022,24 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
             'width_cm': round(w, 1), 'overall_height_cm': round(h, 1),
             'thickness_cm': round(t, 1), 'slat_spacing_mm': round(ss, 1),
         }
+    elif f_type == 'lounge_chair':
+        w = real_w or _dim(['w', 'width'], 70.0)
+        h = real_h or _dim(['h', 'height'], 90.0)
+        try: save_lounge_chair(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'sideboard':
+        w = real_w or _dim(['w', 'width'], 140.0)
+        h = real_h or _dim(['h', 'height'], 85.0)
+        try: save_sideboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'tv_console':
+        w = real_w or _dim(['w', 'width'], 160.0)
+        h = real_h or _dim(['h', 'height'], 55.0)
+        try: save_tv_console(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
     else:
         # Fallback: if unknown type but dimensions available, try rectangular_table
         fb_w = real_w or _dim(['w', 'width'], 0)

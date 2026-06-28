@@ -1817,3 +1817,22 @@ def save_wall_panel(path, width_cm=120, height_cm=240, thickness_cm=2.0, slat_sp
     return _save(doc, path)
 
 
+def save_lounge_chair(path, width_cm=70, depth_cm=75, height_cm=90, seat_height_cm=45,
+                      materials=None):
+    """Lounge chair — wider, deeper dining chair with plush cushioning."""
+    save_armchair(path, width_cm=width_cm, depth_cm=depth_cm, height_cm=height_cm,
+                  seat_height_cm=seat_height_cm, materials=materials)
+
+
+def save_sideboard(path, width_cm=140, depth_cm=45, height_cm=85, door_count=2,
+                   drawer_count=2, materials=None):
+    """Sideboard with doors and drawers — uses cabinet layout."""
+    save_cabinet(path, width_cm=width_cm, depth_cm=depth_cm, height_cm=height_cm,
+                 materials=materials)
+
+
+def save_tv_console(path, width_cm=160, depth_cm=40, height_cm=55, drawer_count=2,
+                    materials=None):
+    """Low TV/media cabinet — uses cabinet layout at lower height."""
+    save_cabinet(path, width_cm=width_cm, depth_cm=depth_cm, height_cm=height_cm,
+                 materials=materials)

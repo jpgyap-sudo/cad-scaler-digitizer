@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-06-28T07:10:00.000Z",
-  "total_fixtures": 20,
+  "timestamp": "2026-06-28T08:41:00.000Z",
+  "total_fixtures": 27,
   "fixtures": [
     {
       "name": "fabric-sofa-105x92x87",
@@ -120,6 +120,48 @@
       "name": "nightstand-60x40x65",
       "type": "cabinet",
       "path": "fixtures/nightstand-60x40x65/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "armchair-lounge-70x75x90",
+      "type": "armchair_lounge",
+      "path": "fixtures/armchair-lounge-70x75x90/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "bar-stool-40x75x65",
+      "type": "bar_stool",
+      "path": "fixtures/bar-stool-40x75x65/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "bench-chaise-140x55x85",
+      "type": "bench_chaise",
+      "path": "fixtures/bench-chaise-140x55x85/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "ottoman-pouf-55x55x40",
+      "type": "ottoman_pouf",
+      "path": "fixtures/ottoman-pouf-55x55x40/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "rug-160x120",
+      "type": "rug_rectangular",
+      "path": "fixtures/rug-160x120/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "stone-slab-200x100x2",
+      "type": "stone_slab_rectangular",
+      "path": "fixtures/stone-slab-200x100x2/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "wall-panel-120x240",
+      "type": "wall_panel_fluted",
+      "path": "fixtures/wall-panel-120x240/spec.json",
       "reference_image": ""
     }
   ]
