@@ -1,5 +1,55 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — CFG/Grammar/SelfCritic (1000+ lines, substantial) only reachable via a non-default mode; matching dead endpoint pair on the other "mode"
+
+**Status:** DOCUMENTED. Not fixed (investigation-only).
+
+`app/backend/cfg/` (canonical_furniture_graph.py, models.py, router.py — 1002
+lines total) implements a genuinely substantial furniture taxonomy/grammar
+system: 31 furniture types across 6 families (`GET /py-api/cfg/types`,
+verified live, real rich data), plus `/cfg/evaluate`, `/cfg/generate`,
+`/cfg/self-critic`. Mounted in `app/main.py:43` as `app.include_router(cfg_router)`
+— **note it's mounted without the `/py-api` prefix variant the other router
+gets** (`main.py:40-41` mounts the main router under both `/api` and
+`/py-api` explicitly; cfg_router only gets included once, relying on its
+own internal `prefix="/api/cfg"`). In practice `/py-api/cfg/types` still
+resolves correctly (nginx rewrites `/py-api/X` → `/api/X` before forwarding),
+but `/py-api/cfg/health` returned 404 live — not yet root-caused, worth a
+look (possibly a route-registration-order collision with another `/health`
+path; low priority, the substantive endpoints work).
+
+**Bigger finding — reachability:** grepped frontend + `app/api/routes.py` +
+`app/services/` for any caller of the CFG endpoints or its underlying
+classes (`FurnitureGrammar`, `CanonicalFurnitureGraph`, `SelfCritic`)
+**outside the module itself** — found exactly one: `routes.py` lines
+1990-2021, inside the `/digitize/unified` endpoint (Phase 8: "SelfCritic
+Auto-Correction Loop"). Nowhere else in the entire codebase invokes any of
+this system.
+
+Traced whether `/digitize/unified` is actually what real usage hits:
+- Frontend's main upload flow (`App.tsx` ~line 225-240) branches on
+  `engineMode`, which **defaults to `'hybrid'`** (`App.tsx:108`) — calls
+  `/digitize/hybrid`, not `/digitize/unified`. A user has to manually
+  switch the engine-mode toggle to "Smart" to reach `/digitize/unified`
+  (confusingly, the UI labels that mode "Smart" while the function it
+  calls is `digitizeUnified()` hitting `/digitize/unified` — a *separate*
+  `/digitize/smart` endpoint exists in `routes.py` and a matching
+  `digitizeSmart()` exists in `cadEngine.ts`, but **`digitizeSmart()` is
+  never called from anywhere in the frontend** — fully dead pairing,
+  distinct from the unified/CFG one).
+- `crawl_to_dxf.py` (the other major entry point — bulk/automated
+  digitization via the crawler) calls `/digitize/hybrid` directly (see
+  earlier entries in this log) — never reaches `/digitize/unified` either.
+
+**Net effect:** a substantial, real piece of engineering (furniture
+grammar + self-critic auto-correction) is fully wired into exactly one
+endpoint, which is reachable only by a manual UI toggle most users won't
+touch by default, and is never reached at all by the automated crawl path.
+Whether this should become the default engine mode, or get folded into
+`/digitize/hybrid` so the crawl path benefits too, is a product decision —
+flagging, not deciding.
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — SECURITY: real OpenAI key in plaintext frontend env files + client-side calling pattern
 
 **Status:** FLAGGED, HIGH PRIORITY. Not fixed — rotating/removing a live API
