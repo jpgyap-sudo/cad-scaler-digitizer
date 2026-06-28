@@ -1,5 +1,62 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (later still) — Claude (Sonnet 4.6) — comparison_agent overall_score is misleading + coffee table DXF still missing a view
+
+**Status:** DOCUMENTED, NOT YET FIXED.
+
+### Finding 1: `/compare`'s `overall_score` doesn't reflect actual dimension accuracy
+
+`app/services/comparison_agent.py` does three real checks (edge overlap via
+Canny + raster diff, entity count match, dimension deviation vs. page's real
+stated dimensions — this last one is correctly computed and stored in
+`dimension_comparisons`/`dimension_deviation_pct`). The bug is in the
+weighting at ~line 552-557:
+
+```python
+dim_reliability = max(0.5, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
+dim_score = max(0.99, dim_reliability) if has_entity_match else max(0.8, dim_reliability)
+```
+
+Whenever `has_entity_match` (entity_match_score > 0.5, true almost always
+once classification works), `dim_score` is **floored at 0.99 regardless of
+how large `dimension_deviation_pct` actually is**. Verified live: every
+`/crawl-to-dxf` test this session showed `overall_score` ≈ 0.92 even when
+`dimension_deviation_pct` was 67% (Tangerie) or 51% (Melina) — actually quite
+inaccurate dimensions, masked by a score that looks like a near-pass. The raw
+`dimension_deviation_pct` is fine and worth reading directly; just don't
+trust `overall_score` as a proxy for it until this weighting is fixed (the
+`max(0.99, ...)` / `max(0.8, ...)` should just be `dim_reliability` itself).
+
+### Finding 2: coffee table's downloadable DXF still has only 1 view (Top), SVG preview now has 2
+
+Earlier this session I added a FRONT VIEW to `build_coffee_table_model()` in
+`drawing_builders.py` (the SVG *preview* builder) while fixing the Melina
+case. I never touched `save_coffee_table()` in `dxf_exporter.py` (the actual
+DXF file builder) — it still only emits a TOP VIEW. Confirmed by grepping
+every `_add_mtext(msp, '...VIEW'` call against every `save_*` function in
+`dxf_exporter.py`:
+
+| Type | DXF views |
+|---|---|
+| `save_rectangular_table` | Top, Front, Side, Isometric (4) |
+| `save_console_table`, `save_office_desk` | Top, Front, Side (3) |
+| `save_asymmetric_pedestal_table` | Top, Front Elevation, Side Elevation (3) |
+| `save_round_pedestal_table`, `save_oval_pedestal_table`, `save_reception_counter`, `save_armchair`, `save_bar_stool`, `save_bench_chaise`, `save_ottoman` | Top, Front (2) |
+| `save_cabinet` (+ `save_sideboard`/`save_tv_console`, which call it directly), `save_sofa`, `save_dining_chair`, `save_wardrobe`, `save_bed_headboard`, `save_lounge_chair` (calls `save_armchair`) | Front only (1) |
+| `save_rug`, `save_stone_slab` | Top only (1 — correct, flat items) |
+| **`save_coffee_table`** | **Top only (1) — same gap as before my preview-only fix** |
+
+Net effect: what a user downloads for a coffee table still doesn't match
+what the in-browser preview now shows. Same fix pattern as the preview side
+(see commit `7e4e234`) needs porting to `dxf_exporter.py`.
+
+**Open question for whoever picks this up:** is "Front only" intentional for
+cabinet/sofa/wardrobe/etc. (a deliberate simplicity choice for that furniture
+class) or also a gap? Not yet investigated — view count parity with
+rectangular_table's 4-view treatment hasn't been audited type-by-type.
+
+---
+
 ## 2026-06-29 (later) — Claude (Sonnet 4.6) — Production DB was missing almost its entire custom schema
 
 **Status:** FIXED, applied live to production Postgres (user-approved).
