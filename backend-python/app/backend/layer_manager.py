@@ -1,13 +1,14 @@
 """Layer manager — auto-create and validate DXF layers. No layer 0.
 
 Standard layers follow common CAD conventions:
-  OUTLINE     — Visible object edges (main geometry outlines)
-  DIMENSIONS  — Dimension lines, extension lines, dimension text
-  CENTERLINES — Centerlines and symmetry axes
-  HIDDEN      — Hidden lines, inferred/estimated geometry
-  ANNOTATIONS — Text notes, callouts, leader text, material notes
-  REFERENCE_IMAGE — Embedded or referenced source image boundary
+  OBJECT      — Visible object edges (main geometry outlines)
+  DIMENSION   — Dimension lines, extension lines, dimension text
+  LEADER      — Leader lines and callouts
+  CENTERLINE  — Centerlines and symmetry axes
   HATCH       — Hatching and fills (wood grain, fabric, metal)
+  MTEXT       — Multi-line text notes, callouts, labels
+  HIDDEN      — Hidden lines, inferred/estimated geometry
+  REFERENCE_IMAGE — Embedded or referenced source image boundary
   TITLE_BLOCK — Title block, border, revision table
 """
 
@@ -15,34 +16,36 @@ import ezdxf
 
 
 STANDARD_LAYERS = {
-    'OUTLINE': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Visible object edges and main outlines'},
-    'OBJECT': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Main geometry (alias for OUTLINE)'},
-    'DIMENSIONS': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimension lines, extension lines, and dimension text'},
-    'CENTERLINES': {'color': 5, 'linetype': 'CENTER2', 'description': 'Centerlines and symmetry axes'},
+    'OBJECT': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Visible object edges and main outlines'},
+    'DIMENSION': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimension lines, extension lines, and dimension text'},
+    'LEADER': {'color': 4, 'linetype': 'CONTINUOUS', 'description': 'Leader lines and callouts'},
+    'CENTERLINE': {'color': 5, 'linetype': 'CENTER2', 'description': 'Centerlines and symmetry axes'},
     'HIDDEN': {'color': 251, 'linetype': 'HIDDEN', 'description': 'Hidden lines and inferred/estimated geometry'},
-    'ANNOTATIONS': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Text notes, callouts, leader text, material notes'},
+    'MTEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Multi-line text notes, callouts, labels'},
     'REFERENCE_IMAGE': {'color': 9, 'linetype': 'PHANTOM', 'description': 'Embedded or referenced source image boundary'},
     'HATCH': {'color': 8, 'linetype': 'CONTINUOUS', 'description': 'Hatching and fills (wood grain, fabric, metal)'},
     'TITLE_BLOCK': {'color': 6, 'linetype': 'CONTINUOUS', 'description': 'Title block, border, revision table'},
     # Legacy aliases kept for backward compatibility
-    'DIMENSION': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimension lines and text (legacy)'},
-    'LEADER': {'color': 4, 'linetype': 'CONTINUOUS', 'description': 'Leader lines and callouts (legacy)'},
+    'OUTLINE': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Visible object edges (legacy — use OBJECT)'},
+    'DIMENSIONS': {'color': 3, 'linetype': 'CONTINUOUS', 'description': 'Dimension lines (legacy — use DIMENSION)'},
+    'CENTERLINES': {'color': 5, 'linetype': 'CENTER2', 'description': 'Centerlines (legacy — use CENTERLINE)'},
+    'ANNOTATIONS': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Text notes (legacy — use MTEXT)'},
     'CENTER': {'color': 5, 'linetype': 'CENTER2', 'description': 'Centerlines (legacy)'},
     'TEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Text labels (legacy)'},
-    'MTEXT': {'color': 2, 'linetype': 'CONTINUOUS', 'description': 'Multi-line text and annotations (legacy)'},
     'TITLE': {'color': 6, 'linetype': 'CONTINUOUS', 'description': 'Title block (legacy)'},
     'BORDER': {'color': 7, 'linetype': 'CONTINUOUS', 'description': 'Sheet border (legacy)'},
 }
 
 # Recommended layer names for new code (use these instead of legacy names)
 RECOMMENDED_LAYERS = {
-    'outline': 'OUTLINE',
-    'dimensions': 'DIMENSIONS',
-    'centerlines': 'CENTERLINES',
-    'hidden': 'HIDDEN',
-    'annotations': 'ANNOTATIONS',
-    'reference_image': 'REFERENCE_IMAGE',
+    'object': 'OBJECT',
+    'dimension': 'DIMENSION',
+    'leader': 'LEADER',
+    'centerline': 'CENTERLINE',
     'hatch': 'HATCH',
+    'mtext': 'MTEXT',
+    'hidden': 'HIDDEN',
+    'reference_image': 'REFERENCE_IMAGE',
     'title_block': 'TITLE_BLOCK',
 }
 
@@ -66,7 +69,7 @@ def validate_no_layer_0(doc) -> list:
     warnings = []
     for entity in doc.modelspace():
         if entity.dxf.layer == '0':
-            warnings.append(f"Entity {entity.dxftype()} on layer 0 (should use OUTLINE or appropriate layer)")
+            warnings.append(f"Entity {entity.dxftype()} on layer 0 (should use OBJECT or appropriate layer)")
     return warnings
 
 
@@ -79,30 +82,30 @@ def get_layer_color(layer_name: str) -> int:
 
 def layer_for_entity_type(entity_type: str, is_estimated: bool = False) -> str:
     """Map an entity type to the recommended DXF layer.
-    Uses the modern layer naming convention (OUTLINE, DIMENSIONS, etc.)."""
+    Uses the modern layer naming convention (OBJECT, DIMENSION, etc.)."""
     if is_estimated:
         return 'HIDDEN'
     mapping = {
-        'line': 'OUTLINE',
-        'circle': 'OUTLINE',
-        'arc': 'OUTLINE',
-        'polyline': 'OUTLINE',
-        'rectangle': 'OUTLINE',
-        'polygon': 'OUTLINE',
-        'dimension': 'DIMENSIONS',
-        'dimension_line': 'DIMENSIONS',
-        'extension_line': 'DIMENSIONS',
-        'leader': 'DIMENSIONS',
-        'centerline': 'CENTERLINES',
-        'center': 'CENTERLINES',
-        'text': 'ANNOTATIONS',
-        'mtext': 'ANNOTATIONS',
-        'label': 'ANNOTATIONS',
-        'note': 'ANNOTATIONS',
+        'line': 'OBJECT',
+        'circle': 'OBJECT',
+        'arc': 'OBJECT',
+        'polyline': 'OBJECT',
+        'rectangle': 'OBJECT',
+        'polygon': 'OBJECT',
+        'dimension': 'DIMENSION',
+        'dimension_line': 'DIMENSION',
+        'extension_line': 'DIMENSION',
+        'leader': 'LEADER',
+        'centerline': 'CENTERLINE',
+        'center': 'CENTERLINE',
+        'text': 'MTEXT',
+        'mtext': 'MTEXT',
+        'label': 'MTEXT',
+        'note': 'MTEXT',
         'hatch': 'HATCH',
         'fill': 'HATCH',
         'title': 'TITLE_BLOCK',
         'border': 'TITLE_BLOCK',
         'reference_image': 'REFERENCE_IMAGE',
     }
-    return mapping.get(entity_type.lower(), 'OUTLINE')
+    return mapping.get(entity_type.lower(), 'OBJECT')

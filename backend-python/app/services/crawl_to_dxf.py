@@ -336,10 +336,13 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             result["sizes"] = []
                         result["sizes"].append({"width": w, "length": l, "height": h})
 
-                    # Pattern 2: W x D x H or W x L x H
-                    dims = re.findall(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(?:cm|mm)?', all_text, re.I)
+                    # Pattern 2: W x D x H or W x L x H (with optional (H)(L)(W) labels)
+                    dims = re.findall(r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([HWL]\))?\s*(cm|mm)?', all_text, re.I)
                     for d in dims:
                         w, d2, h = float(d[0]), float(d[1]), float(d[2])
+                        unit = d[3] if len(d) > 3 and d[3] else "cm"
+                        if unit == "mm":
+                            w, d2, h = w / 10, d2 / 10, h / 10
                         if "width_cm" not in result:
                             result["width_cm"] = w
                             result["depth_cm"] = d2

@@ -108,9 +108,9 @@ def _force_extents_in_file(path):
 
 
 def _add_polyline(msp, points, closed=False, layer=None):
-    """Add a polyline. Defaults to OUTLINE layer if not specified."""
+    """Add a polyline. Defaults to OBJECT layer if not specified."""
     if layer is None:
-        layer = 'OUTLINE'
+        layer = 'OBJECT'
     if len(points) < 2:
         return
     try:
@@ -123,9 +123,9 @@ def _add_polyline(msp, points, closed=False, layer=None):
 
 
 def _add_mtext(msp, text, pos, height=3, layer=None):
-    """Add multi-line text. Defaults to ANNOTATIONS layer."""
+    """Add multi-line text. Defaults to MTEXT layer."""
     if layer is None:
-        layer = 'ANNOTATIONS'
+        layer = 'MTEXT'
     if not text:
         return
     text = clean_text_for_dxf(str(text))
@@ -141,9 +141,9 @@ def _add_mtext(msp, text, pos, height=3, layer=None):
 
 
 def _add_text(msp, txt, pt, h=2.5, layer=None):
-    """Add single-line text. Defaults to ANNOTATIONS layer."""
+    """Add single-line text. Defaults to MTEXT layer."""
     if layer is None:
-        layer = 'ANNOTATIONS'
+        layer = 'MTEXT'
     if not txt:
         return
     txt = clean_text_for_dxf(str(txt))
@@ -155,29 +155,30 @@ def _add_text(msp, txt, pt, h=2.5, layer=None):
 
 
 def _add_line(msp, a, b, layer=None):
-    """Add a line. Defaults to OUTLINE layer."""
+    """Add a line. Defaults to OBJECT layer."""
     if layer is None:
-        layer = 'OUTLINE'
+        layer = 'OBJECT'
     if abs(a[0] - b[0]) + abs(a[1] - b[1]) < 1e-6:
         return
     msp.add_line(a, b, dxfattribs={'layer': layer})
 
 
 def _add_centerline(msp, p1, p2):
-    _add_line(msp, p1, p2, 'CENTERLINES')
+    _add_line(msp, p1, p2, 'CENTERLINE')
 
 
 def _add_dimension(msp, p1, p2, loc, text=None):
     try:
         override = {'dimtxt': 2.5, 'dimasz': 2.0, 'dimdec': 0}
-        d = msp.add_linear_dim(base=loc, p1=p1, p2=p2, override=override)
+        d = msp.add_linear_dim(base=loc, p1=p1, p2=p2, override=override,
+                                dxfattribs={'layer': 'DIMENSION'})
         if text:
             d.dimension.dxf.text = normalize_dimension_text(text)
         d.render()
     except Exception:
-        _add_line(msp, p1, p2, 'DIMENSIONS')
+        _add_line(msp, p1, p2, 'DIMENSION')
         if text:
-            _add_text(msp, normalize_dimension_text(text), loc, 2.5, 'DIMENSIONS')
+            _add_text(msp, normalize_dimension_text(text), loc, 2.5, 'DIMENSION')
 
 
 def _add_diameter_dim(msp, center, radius, text=None):
@@ -407,7 +408,7 @@ def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
         _add_polyline(msp, [(fx - br_px, ped_bot_y), (fx + br_px, ped_bot_y),
                             (fx + br_px, base_bot_y), (fx - br_px, base_bot_y)], True, base_layer)
         if _is_estimated("base_foot"):
-            _add_text(msp, "(EST.)", (fx - br_px - 15, (ped_bot_y + base_bot_y) / 2), 2, 'MTEXT')
+            _add_text(msp, "(EST.)", (fx - br_px - 15, (ped_bot_y + base_bot_y) / 2), 2)
     # Hatch column — textured pedestal body
     _add_hatch_polygon(msp, [(fx - body_top_px, neck_bot_y), (fx + body_top_px, neck_bot_y),
                               (fx + br_px, ped_bot_y), (fx - br_px, ped_bot_y)], 'ANSI37', 0.3)
@@ -1473,7 +1474,7 @@ def save_generic(path, lines, circles, rects=None):
                 pass
 
     for x1, y1, x2, y2 in rects:
-        _add_polyline(msp, [(x1, y1), (x2, y1), (x2, y2), (x1, y2)], True)
+        _add_polyline(msp, [(x1, y1), (x2, y1), (x2, y2), (x1, y2)], True, 'OBJECT')
 
     _add_mtext(msp, 'GENERIC 2D GEOMETRY (unclassified)', (10, 280), 4)
     generate_title_block(msp, "Generic 2D Furniture Drawing")

@@ -4102,3 +4102,79 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: add fixtures bind mount to python-worker container for benchmark endpoints
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 6b8abc067fe9c7212c806b6b13b83f4723058a24
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 6b8abc067fe9c7212c806b6b13b83f4723058a24
+**Files:** backend-python/app/services/crawl_to_dxf.py,docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scripts/find-homeu-products.py
+
+**Summary:**
+Commit: fix: add fixtures bind mount to python-worker container for benchmark endpoints
+Files: backend-python/app/services/crawl_to_dxf.py,docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scripts/find-homeu-products.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add fixtures bind mount to python-worker container for benchmark endpoints*
+
+#### Lesson Learned
+
+Commit: fix: add fixtures bind mount to python-worker container for benchmark endpoints
+Files: backend-python/app/services/crawl_to_dxf.py,docker-compose.yml,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md,scripts/find-homeu-products.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: crawl-to-dxf used the wrong digitize endpoint for real product photos
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1ca5074fb4c04d8693e271d56765f1e4e232008e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 1ca5074fb4c04d8693e271d56765f1e4e232008e
+**Files:** 
+
+**Summary:**
+Commit: fix: crawl-to-dxf used the wrong digitize endpoint for real product photos
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: crawl-to-dxf used the wrong digitize endpoint for real product photos*
+
+#### Lesson Learned
+
+Commit: fix: crawl-to-dxf used the wrong digitize endpoint for real product photos
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
