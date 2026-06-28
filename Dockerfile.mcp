@@ -13,8 +13,10 @@ RUN npm install --omit=dev
 COPY mcp-server/ ./
 
 EXPOSE 3003
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=5s \
+  CMD wget -qO- http://localhost:3003/health --timeout=5 || exit 1
 ENV NODE_ENV=production
 
-# Health endpoint via HTTP (separate from MCP stdio)
-# The MCP protocol uses stdio, but we add a tiny HTTP server for healthchecks
-CMD ["node", "server.js"]
+# SSE transport for Docker — listens on port 3003
+# For ChatGPT Desktop, use stdio mode locally (without --sse)
+CMD ["node", "server.js", "--sse"]

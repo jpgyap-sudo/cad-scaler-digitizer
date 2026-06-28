@@ -1,23 +1,28 @@
 /**
  * CAD Digitizer MCP Server
  * ==========================
- * Exposes tools for ChatGPT to control the CAD Scaler Digitizer.
- * Connects to the existing API endpoints and exposes them as MCP tools.
+ * Exposes 15 tools for ChatGPT to control the CAD Scaler Digitizer.
+ * Supports both stdio transport (ChatGPT Desktop) and SSE transport (web/Docker).
  *
- * Run: node server.js
- * Connect ChatGPT: mcp-servers.cad-digitizer-mcp.config.json
+ * Usage:
+ *   node server.js              # stdio mode (ChatGPT Desktop)
+ *   node server.js --sse        # SSE mode (Docker container, listens on :3003)
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import axios from "axios";
+import http from "http";
+import { randomBytes } from "crypto";
 
 // ── Configuration ──────────────────────────────────────────────────
 const PY_API = process.env.PYTHON_WORKER_URL || "http://python-worker:8001";
 const NODE_API = process.env.NODE_API_URL || "http://node-api:4000";
+const PORT = parseInt(process.env.MCP_PORT || "3003");
+const USE_SSE = process.argv.includes("--sse") || process.env.MCP_TRANSPORT === "sse";
 
 // ── Helpers ────────────────────────────────────────────────────────
 async function post(url, data) {
@@ -40,279 +45,259 @@ async function get(url) {
   }
 }
 
-// ── MCP Server ─────────────────────────────────────────────────────
-const server = new Server(
-  { name: "cad-digitizer-mcp", version: "1.0.0" },
-  { capabilities: { tools: {} } }
-);
+const TOOL_DEFS = [
+  {
+    name: "crawl_product_url",
+    description: "Crawl a product page URL → extract photo → discover dimensions → generate DXF → validate. One-call pipeline.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Product page URL" },
+        category: { type: "string", description: "furniture type: table, sofa, chair, bed, cabinet, lighting", default: "table" },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "batch_crawl",
+    description: "Crawl multiple product URLs and return DXF + validation for each.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        urls: { type: "array", items: { type: "string" } },
+        category: { type: "string", default: "table" },
+      },
+      required: ["urls"],
+    },
+  },
+  {
+    name: "list_templates",
+    description: "List all 18 engineering templates with parameter ranges, grouped by family.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "suggest_template",
+    description: "Suggest best template for detected dimensions. Returns template name, parameters in mm, and confidence.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        furniture_type: { type: "string", description: "rectangular_table, round_pedestal_table, sofa, dining_chair, bed, desk, console_table" },
+        width_cm: { type: "number" }, height_cm: { type: "number" }, depth_cm: { type: "number" },
+      },
+      required: ["furniture_type"],
+    },
+  },
+  {
+    name: "validate_dimensions",
+    description: "Run hallucination verifier on detected dimensions. Returns VERIFIED/ESTIMATED/HALLUCINATION per dimension.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        furniture_type: { type: "string" },
+        detected_dims: { type: "object", description: "{width_cm, overall_height_cm, depth_cm}" },
+      },
+      required: ["furniture_type", "detected_dims"],
+    },
+  },
+  {
+    name: "compare_digitization",
+    description: "Compare product photo vs generated DXF. Returns edge overlap, entity match, dimension deviation scores.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        image_url: { type: "string", description: "Original product image URL" },
+        dxf_path: { type: "string", description: "Path to generated DXF" },
+        page_dimensions: { type: "object", description: "{width_cm, overall_height_cm} from product page" },
+      },
+      required: ["image_url", "dxf_path"],
+    },
+  },
+  {
+    name: "get_calibration_report",
+    description: "Get error distribution, systematic biases, and recommended correction hints from all comparisons.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "apply_corrections",
+    description: "Auto-apply high-confidence correction hints. Adjusts digitizer parameters from accumulated errors.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "update_parameter",
+    description: "Manually set a digitizer parameter. Common: canny_low (10-150), canny_high (50-400), min_contour_area (5-200).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        param_key: { type: "string", description: "Parameter name" },
+        param_value: { type: "number", description: "New value" },
+      },
+      required: ["param_key", "param_value"],
+    },
+  },
+  {
+    name: "get_current_parameters",
+    description: "Get current digitizer parameters: Canny thresholds, contour area, scale corrections, OCR confidence.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "get_comparison_results",
+    description: "List recent validation comparisons with scores and error counts.",
+    inputSchema: { type: "object", properties: { limit: { type: "number", default: 20 } } },
+  },
+  {
+    name: "get_analytics",
+    description: "Full analytics: comparison stats, score distribution, biases, parameter state.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "cleanup_old_comparisons",
+    description: "Delete comparison results older than N days.",
+    inputSchema: { type: "object", properties: { days: { type: "number", default: 90 } } },
+  },
+];
 
-// ── List Tools ─────────────────────────────────────────────────────
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    // ── Product Crawling ──
-    {
-      name: "crawl_product_url",
-      description: "Crawl a product page URL, extract the hero image, discover dimensions, digitize the photo, and return a DXF file with validation score.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          url: { type: "string", description: "Product page URL to crawl (e.g., https://homeu.ph/products/tangerie-dining-table)" },
-          category: { type: "string", description: "Furniture type: table, sofa, chair, bed, cabinet, lighting", default: "table" },
-        },
-        required: ["url"],
-      },
-    },
-    {
-      name: "batch_crawl",
-      description: "Crawl multiple product URLs in sequence and return results for all.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          urls: { type: "array", items: { type: "string" }, description: "Array of product page URLs" },
-          category: { type: "string", default: "table" },
-        },
-        required: ["urls"],
-      },
-    },
+const TOOL_HANDLERS = {
+  async crawl_product_url(args) {
+    return post(`${PY_API}/api/crawl-to-dxf`, { url: args.url, category: args.category || "table" });
+  },
+  async batch_crawl(args) {
+    const results = [];
+    for (const url of args.urls) {
+      const r = await post(`${PY_API}/api/crawl-to-dxf`, { url, category: args.category || "table" });
+      results.push({ url, status: r.status, dims: r.page_dimensions, score: r.comparison?.overall_score, dxf: !!r.dxf_file });
+    }
+    return { batch_results: results, total: results.length, succeeded: results.filter(r => r.status === "completed").length };
+  },
+  async list_templates() { return get(`${PY_API}/api/templates`); },
+  async suggest_template(args) {
+    const p = new URLSearchParams({ furniture_type: args.furniture_type });
+    if (args.width_cm) p.set("width_cm", args.width_cm);
+    if (args.height_cm) p.set("height_cm", args.height_cm);
+    if (args.depth_cm) p.set("depth_cm", args.depth_cm);
+    return get(`${PY_API}/api/templates/suggest?${p.toString()}`);
+  },
+  async validate_dimensions(args) {
+    return post(`${PY_API}/api/verify`, { product_id: "mcp-request", furniture_type: args.furniture_type, detected_dims: args.detected_dims });
+  },
+  async compare_digitization(args) {
+    return post(`${PY_API}/api/compare`, { job_id: `mcp-${Date.now()}`, product_id: "mcp-compare", image_url: args.image_url, dxf_path: args.dxf_path, page_dimensions: args.page_dimensions });
+  },
+  async get_calibration_report() { return get(`${PY_API}/api/calibration/report`); },
+  async apply_corrections() { return post(`${PY_API}/api/calibration/apply`, {}); },
+  async update_parameter(args) { return post(`${PY_API}/api/calibration/parameters/update`, { param_key: args.param_key, param_value: args.param_value }); },
+  async get_current_parameters() { return get(`${PY_API}/api/calibration/parameters`); },
+  async get_comparison_results(args) { return get(`${PY_API}/api/compare/results?limit=${args.limit || 20}`); },
+  async get_analytics() {
+    const [cal, paramsList] = await Promise.all([get(`${PY_API}/api/calibration/report`), get(`${PY_API}/api/calibration/parameters`)]);
+    return { comparison_stats: cal.comparison_stats, systematic_biases: cal.systematic_biases, correction_hints: cal.correction_hints?.length || 0, current_parameters: paramsList };
+  },
+  async cleanup_old_comparisons(args) { return post(`${PY_API}/api/calibration/cleanup`, { days: args.days || 90 }); },
+};
 
-    // ── Templates ──
-    {
-      name: "list_templates",
-      description: "List all available engineering templates grouped by family. Returns template names, parameter ranges, and IDs.",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "suggest_template",
-      description: "Suggest the best engineering template for detected dimensions. Returns template name, resolved parameters in mm, and solved dimensions.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          furniture_type: { type: "string", description: "Product type: rectangular_table, round_pedestal_table, sofa, dining_chair, bed, cabinet, desk, console_table" },
-          width_cm: { type: "number", description: "Detected width in cm" },
-          height_cm: { type: "number", description: "Detected height in cm" },
-          depth_cm: { type: "number", description: "Detected depth in cm" },
-        },
-        required: ["furniture_type"],
-      },
-    },
+// ── Create MCP Server ──────────────────────────────────────────────
+const server = new Server({ name: "cad-digitizer-mcp", version: "1.0.0" }, { capabilities: { tools: {} } });
 
-    // ── Validation ──
-    {
-      name: "validate_dimensions",
-      description: "Validate detected dimensions against reference geometry and physical bounds. Returns VERIFIED/ESTIMATED/HALLUCINATION verdicts per dimension.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          furniture_type: { type: "string" },
-          detected_dims: { type: "object", description: "Detected dimensions as {width_cm: value, overall_height_cm: value, depth_cm: value}" },
-          reference_geometry: { type: "object", description: "Optional parsed DXF geometry as {bbox: {width, height}, counts: {entityCount}}" },
-        },
-        required: ["furniture_type", "detected_dims"],
-      },
-    },
-    {
-      name: "compare_digitization",
-      description: "Compare a product photo against a generated DXF. Runs edge overlay, entity count, and dimension deviation checks. Returns a 0-1 accuracy score.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          image_url: { type: "string", description: "URL of the original product image" },
-          dxf_path: { type: "string", description: "Local path to the generated DXF file" },
-          product_id: { type: "string" },
-          page_dimensions: { type: "object", description: "Dimensions from product page as {width_cm, overall_height_cm}" },
-        },
-        required: ["image_url", "dxf_path"],
-      },
-    },
+server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOL_DEFS }));
 
-    // ── Calibration ──
-    {
-      name: "get_calibration_report",
-      description: "Get calibration report showing comparison stats, error distribution, systematic biases, and recommended corrections.",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "apply_corrections",
-      description: "Auto-apply high-confidence correction hints from accumulated comparison errors. Adjusts digitizer parameters like Canny thresholds and scale factors.",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "update_parameter",
-      description: "Manually set a digitizer parameter. Takes effect on next digitize call. Common params: canny_low (10-150), canny_high (50-400), min_contour_area (5-200).",
-      inputSchema: {
-        type: "object",
-        properties: {
-          param_key: { type: "string", description: "Parameter name (e.g., canny_low, canny_high, min_contour_area)" },
-          param_value: { type: "number", description: "New value" },
-        },
-        required: ["param_key", "param_value"],
-      },
-    },
-    {
-      name: "get_current_parameters",
-      description: "Get current digitizer parameter values including Canny thresholds, contour area, scale corrections, and OCR confidence.",
-      inputSchema: { type: "object", properties: {} },
-    },
-
-    // ── Analytics ──
-    {
-      name: "get_comparison_results",
-      description: "List recent comparison results with scores, edge overlap, and error counts.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          limit: { type: "number", default: 20 },
-        },
-      },
-    },
-    {
-      name: "get_analytics",
-      description: "Get analytics including comparison counts, score distribution, error breakdown, systematic biases, and current parameters.",
-      inputSchema: { type: "object", properties: {} },
-    },
-
-    // ── Cleanup ──
-    {
-      name: "cleanup_old_comparisons",
-      description: "Delete comparison results older than N days to free database space.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          days: { type: "number", description: "Retention period in days", default: 90 },
-        },
-      },
-    },
-  ],
-}));
-
-// ── Call Tool Handler ──────────────────────────────────────────────
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-
+  const handler = TOOL_HANDLERS[name];
+  if (!handler) throw new Error(`Unknown tool: ${name}`);
   try {
-    let result;
-
-    switch (name) {
-      // ── Crawl ──
-      case "crawl_product_url":
-        result = await post(`${PY_API}/api/crawl-to-dxf`, {
-          url: args.url,
-          category: args.category || "table",
-        });
-        break;
-
-      case "batch_crawl":
-        const results = [];
-        for (const url of args.urls) {
-          const r = await post(`${PY_API}/api/crawl-to-dxf`, {
-            url,
-            category: args.category || "table",
-          });
-          results.push({ url, status: r.status, dims: r.page_dimensions, score: r.comparison?.overall_score, dxf: !!r.dxf_file });
-        }
-        result = { batch_results: results, total: results.length, succeeded: results.filter(r => r.status === "completed").length };
-        break;
-
-      // ── Templates ──
-      case "list_templates":
-        result = await get(`${PY_API}/api/templates`);
-        break;
-
-      case "suggest_template":
-        const params = new URLSearchParams({ furniture_type: args.furniture_type });
-        if (args.width_cm) params.set("width_cm", args.width_cm);
-        if (args.height_cm) params.set("height_cm", args.height_cm);
-        if (args.depth_cm) params.set("depth_cm", args.depth_cm);
-        result = await get(`${PY_API}/api/templates/suggest?${params.toString()}`);
-        break;
-
-      // ── Validation ──
-      case "validate_dimensions":
-        result = await post(`${PY_API}/api/verify`, {
-          product_id: args.product_id || "mcp-request",
-          furniture_type: args.furniture_type,
-          detected_dims: args.detected_dims,
-          reference_geometry: args.reference_geometry,
-        });
-        break;
-
-      case "compare_digitization":
-        result = await post(`${PY_API}/api/compare`, {
-          job_id: args.job_id || `mcp-${Date.now()}`,
-          product_id: args.product_id || "mcp-compare",
-          image_url: args.image_url,
-          dxf_path: args.dxf_path,
-          page_dimensions: args.page_dimensions,
-        });
-        break;
-
-      // ── Calibration ──
-      case "get_calibration_report":
-        result = await get(`${PY_API}/api/calibration/report`);
-        break;
-
-      case "apply_corrections":
-        result = await post(`${PY_API}/api/calibration/apply`, {});
-        break;
-
-      case "update_parameter":
-        result = await post(`${PY_API}/api/calibration/parameters/update`, {
-          param_key: args.param_key,
-          param_value: args.param_value,
-        });
-        break;
-
-      case "get_current_parameters":
-        result = await get(`${PY_API}/api/calibration/parameters`);
-        break;
-
-      // ── Analytics ──
-      case "get_comparison_results":
-        result = await get(`${PY_API}/api/compare/results?limit=${args.limit || 20}`);
-        break;
-
-      case "get_analytics":
-        const [cal, paramsList, results] = await Promise.all([
-          get(`${PY_API}/api/calibration/report`),
-          get(`${PY_API}/api/calibration/parameters`),
-          get(`${PY_API}/api/compare/results?limit=5`),
-        ]);
-        result = {
-          comparison_stats: cal.comparison_stats,
-          systematic_biases: cal.systematic_biases,
-          correction_hints: cal.correction_hints?.length || 0,
-          current_parameters: paramsList,
-          recent_comparisons: results?.slice(0, 5) || [],
-        };
-        break;
-
-      // ── Cleanup ──
-      case "cleanup_old_comparisons":
-        result = await post(`${PY_API}/api/calibration/cleanup`, { days: args.days || 90 });
-        break;
-
-      default:
-        throw new Error(`Unknown tool: ${name}`);
-    }
-
-    // Format response for MCP
-    const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-    return {
-      content: [{ type: "text", text }],
-    };
+    const result = await handler(args || {});
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   } catch (err) {
-    return {
-      content: [{ type: "text", text: `Error: ${err.message}` }],
-      isError: true,
-    };
+    return { content: [{ type: "text", text: `Error: ${err.message}` }], isError: true };
   }
 });
 
+// ── SSE Transport (Docker / web) ───────────────────────────────────
+function startSSEServer() {
+  const clients = new Map();
+  const httpx_server = http.createServer(async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+
+    const url = new URL(req.url, `http://localhost:${PORT}`);
+
+    // Health endpoint
+    if (url.pathname === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, server: "cad-digitizer-mcp", transport: "sse", tools: TOOL_DEFS.length }));
+      return;
+    }
+
+    // SSE endpoint — MCP client connects here
+    if (url.pathname === "/sse") {
+      const sessionId = randomBytes(8).toString("hex");
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+
+      res.write(`event: endpoint\ndata: /messages?sessionId=${sessionId}\n\n`);
+      clients.set(sessionId, res);
+
+      req.on("close", () => { clients.delete(sessionId); });
+      return;
+    }
+
+    // Message endpoint — client posts tool calls here
+    if (url.pathname === "/messages" && req.method === "POST") {
+      const sessionId = url.searchParams.get("sessionId");
+      const clientRes = clients.get(sessionId);
+      if (!clientRes) { res.writeHead(404); res.end("Session not found"); return; }
+
+      let body = "";
+      req.on("data", (chunk) => body += chunk);
+      req.on("end", async () => {
+        try {
+          const message = JSON.parse(body);
+          // Forward to MCP server via temporary stdio transport
+          // We use the standard MCP SDK's SSE Server transport here
+          // For simplicity, handle tool calls directly:
+          if (message.method === "tools/list") {
+            clientRes.write(`data: ${JSON.stringify({ id: message.id, result: { tools: TOOL_DEFS } })}\n\n`);
+          } else if (message.method === "tools/call") {
+            const handler = TOOL_HANDLERS[message.params.name];
+            const result = handler ? await handler(message.params.arguments || {}) : { error: "Unknown tool" };
+            clientRes.write(`data: ${JSON.stringify({ id: message.id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } })}\n\n`);
+          } else {
+            clientRes.write(`data: ${JSON.stringify({ id: message.id, error: { code: -32601, message: `Method not supported: ${message.method}`} })}\n\n`);
+          }
+          res.writeHead(202); res.end();
+        } catch (e) {
+          res.writeHead(400); res.end(`Bad request: ${e.message}`);
+        }
+      });
+      return;
+    }
+
+    res.writeHead(404); res.end("Not found");
+  });
+
+  httpx_server.listen(PORT, "0.0.0.0", () => {
+    console.error(`MCP SSE server listening on http://0.0.0.0:${PORT}`);
+    console.error(`  Health:     http://localhost:${PORT}/health`);
+    console.error(`  SSE URL:    http://localhost:${PORT}/sse`);
+    console.error(`  Tools:      ${TOOL_DEFS.length} registered`);
+  });
+}
+
 // ── Start ──────────────────────────────────────────────────────────
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("CAD Digitizer MCP Server running on stdio");
+  if (USE_SSE) {
+    startSSEServer();
+  } else {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("CAD Digitizer MCP Server running on stdio — connect via ChatGPT Desktop");
+  }
 }
 
 main().catch((err) => {

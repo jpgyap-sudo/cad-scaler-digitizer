@@ -241,6 +241,27 @@ services:
   # --------------------------------------------------------------------------
   # 7. Qdrant — Vector similarity search for CAD geometry
   # --------------------------------------------------------------------------
+  # MCP Server for ChatGPT connectivity
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: cad-mcp-server
+    ports:
+      - "${MCP_PORT:-3003}:3003"
+    environment:
+      - PYTHON_WORKER_URL=http://python-worker:8001
+      - NODE_API_URL=http://node-api:4000
+      - NODE_ENV=production
+    depends_on:
+      python-worker:
+        condition: service_healthy
+      node-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cad-network
+
   qdrant:
     image: qdrant/qdrant:latest
     container_name: cad-qdrant
