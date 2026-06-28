@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CATALOG_DIR = Path(__file__).resolve().parents[3] / "resources" / "product_catalog"
+CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
 DNA_PATH = CATALOG_DIR / "product_dna.json"
 DNA_INDEX_PATH = CATALOG_DIR / "visual_dna_index.json"
 

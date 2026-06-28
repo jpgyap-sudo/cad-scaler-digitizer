@@ -704,5 +704,20 @@ async def crawl_and_digitize(
         except Exception as e:
             logger.warning(f"[CrawlToDXF] Auto-comparison failed (non-fatal): {e}")
 
+    # Phase 3: Generate lightweight SVG skeleton (fast, pre-DXF preview)
+    try:
+        _f_type = furniture_type or "furniture"
+        _w = real_width_cm or page_dims.get("width_cm", 0) if page_dims else 0
+        _h = page_dims.get("overall_height_cm", 0) if page_dims else 0
+        _d = page_dims.get("depth_cm") or page_dims.get("length_cm", 0) if page_dims else 0
+        if _w > 0:
+            import httpx as _httpx2
+            _skel_params = f"furniture_type={_f_type}&width_cm={_w}&height_cm={_h}&depth_cm={_d}"
+            _skel_resp = await _httpx2.AsyncClient(timeout=15).get(f"http://localhost:8001/api/skeleton/{_f_type}?{_skel_params}")
+            if _skel_resp.status_code == 200:
+                result["skeleton_svg"] = _skel_resp.text[:5000]
+    except Exception as _skel_e:
+        logger.warning(f"[CrawlToDXF] Skeleton generation skipped: {_skel_e}")
+
     result["status"] = "completed"
     return result

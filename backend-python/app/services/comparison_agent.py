@@ -641,6 +641,29 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
         conn.commit()
         cur.close()
         conn.close()
+
+        # Auto-trigger calibration after every comparison (if enough data)
+        try:
+            import psycopg2 as _pg2
+            _conn2 = _pg2.connect(
+                host=os.environ.get("PG_HOST", "postgres"), port=int(os.environ.get("PG_PORT", 5432)),
+                dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+                user=os.environ.get("PG_USER", "postgres"), password=os.environ.get("PG_PASSWORD", "postgres"),
+            )
+            _c2 = _conn2.cursor()
+            _c2.execute("SELECT COUNT(*) FROM comparison_results")
+            _count = _c2.fetchone()[0]
+            _c2.close()
+            _conn2.close()
+            if _count >= 3 and _count % 3 == 0:
+                from app.services.training_feedback import generate_correction_hints, apply_correction_hints
+                _hints = generate_correction_hints()
+                _applied = apply_correction_hints(_hints)
+                if _applied > 0:
+                    logger.info(f"Auto-calibration: applied {_applied} correction hints ({_count} comparisons)")
+        except Exception as _:
+            pass
+
         return True
     except Exception as e:
         import traceback

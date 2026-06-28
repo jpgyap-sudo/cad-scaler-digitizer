@@ -375,3 +375,52 @@ def apply_calibration() -> dict[str, Any]:
         "hints_applied": applied,
         "parameters": {k: v for k, v in _parameter_state.items() if k != "correction_history"},
     }
+
+
+def enrich_product_dna_from_comparison(product_id: str, comparison_result: dict) -> bool:
+    """Update per-product DNA with enriched data from a validated comparison.
+    
+    Phase 7 feedback: confirmed product's dimensions, edge overlap, and
+    error patterns are merged back into product_dna.json to improve
+    future classification and template matching.
+    """
+    try:
+        dna_path = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "product_catalog" / "product_dna.json"
+        if not dna_path.exists():
+            logger.warning(f"Product DNA not found at {dna_path}")
+            return False
+        
+        dna = json.loads(dna_path.read_text(encoding="utf-8"))
+        
+        # Find or create product entry
+        entry = dna.get(product_id)
+        if entry is None:
+            # Create minimal entry
+            dna[product_id] = {}
+            entry = dna[product_id]
+        
+        # Enrich with comparison data (only overwrite if comparison is good)
+        score = comparison_result.get("overall_score", 0)
+        if score >= 0.7:
+            dims = comparison_result.get("dimension_comparisons", [])
+            for dc in dims:
+                dim_key = dc.get("dimension", "")
+                dev = dc.get("deviation_pct", 100)
+                if dev < 15 and dim_key == "width":
+                    entry["measured_width_cm"] = dc.get("page_value_cm")
+                elif dev < 15 and dim_key == "height":
+                    entry["measured_height_cm"] = dc.get("page_value_cm")
+            
+            # Update enrichment metadata
+            entry["last_validated"] = datetime.utcnow().isoformat()
+            entry["validation_score"] = score
+            entry["error_count"] = len(comparison_result.get("errors", []))
+            
+            dna_path.write_text(json.dumps(dna, indent=2), encoding="utf-8")
+            logger.info(f"Enriched product DNA: {product_id} (score={score:.3f})")
+            return True
+        
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to enrich product DNA: {e}")
+        return False

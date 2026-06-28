@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Tuple
 
 # Path: backend-python/app/backend/template_selector.py
 # Resources are at: project_root/resources/furniture_templates/
-TEMPLATE_DIR = Path(__file__).resolve().parents[3] / "resources" / "furniture_templates"
-CATALOG_DIR = Path(__file__).resolve().parents[3] / "resources" / "product_catalog"
+TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "resources" / "furniture_templates"
+CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
 
 # ---------------------------------------------------------------------------
 # Legacy construction template loader

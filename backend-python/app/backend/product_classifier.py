@@ -23,7 +23,7 @@ logger = logging.getLogger("product_classifier")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CATALOG_DIR = Path(__file__).resolve().parents[3] / "resources" / "product_catalog"
+CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
 DNA_PATH = CATALOG_DIR / "product_dna.json"
 DNA_INDEX_PATH = CATALOG_DIR / "visual_dna_index.json"
 
@@ -70,6 +70,20 @@ FAMILY_SHAPE_MAP: Dict[str, List[str]] = {
     "sintered_stone": ["rectangle"],
     "bed": ["rectangle"],
     "headboard": ["rectangle"],
+}
+
+# Super-category mapping for cascade fallback (when no family matches)
+FAMILY_CATEGORIES: Dict[str, List[str]] = {
+    "sofa": ["sofa", "armchair", "lounge_chair", "bench", "ottoman", "sectional"],
+    "chair": ["armchair", "dining_chair", "lounge_chair", "bar_stool", "accent_chair"],
+    "table": ["dining_table", "coffee_table", "side_table", "console_table", "pedestal_table", "desk"],
+    "desk": ["desk", "writing_desk", "computer_desk", "standing_desk"],
+    "bed": ["bed", "headboard", "platform_bed", "sleigh_bed", "storage_bed"],
+    "cabinet": ["cabinet", "wardrobe", "sideboard", "bookcase", "shelf", "nightstand"],
+    "lighting": ["pendant", "chandelier", "ceiling_fan", "lamp", "sconce"],
+    "rug": ["rug", "runner", "carpet"],
+    "decor": ["pillow", "wall_panel", "vase", "decor"],
+    "outdoor": ["outdoor_dining", "outdoor_lounger", "outdoor_sofa"],
 }
 
 
@@ -195,7 +209,18 @@ def detect_family(
                 scored.append((text_score, family))
 
     if not scored:
-        return ("unknown", 0.0)
+        # Cascade fallback: try super-category matching via FAMILY_CATEGORIES
+        text_lower = text.lower()
+        for super_cat, sub_families in FAMILY_CATEGORIES.items():
+            if super_cat in text_lower:
+                candidates = [f for f in families if f in sub_families]
+                if candidates:
+                    for cf in candidates:
+                        text_score = _score_family_match(cf, text)
+                        if text_score > 0:
+                            scored.append((text_score * 0.5, cf))
+        if not scored:
+            return ("unknown", 0.0)
 
     scored.sort(key=lambda x: x[0], reverse=True)
     best_score, best_family = scored[0]

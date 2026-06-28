@@ -23,7 +23,7 @@ logger = logging.getLogger("product_search")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CATALOG_DIR = Path(__file__).resolve().parents[3] / "resources" / "product_catalog"
+CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
 REGISTRY_PATH = CATALOG_DIR / "_registry.json"
 DNA_INDEX_PATH = CATALOG_DIR / "visual_dna_index.json"
 PRODUCT_DNA_PATH = CATALOG_DIR / "product_dna.json"

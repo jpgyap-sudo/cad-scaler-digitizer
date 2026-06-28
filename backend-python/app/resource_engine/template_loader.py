@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "furniture_template_graphs"
+# Path from /app/app/resource_engine/template_loader.py to /app/resources/furniture_template_graphs
+TEMPLATE_DIR = Path(__file__).resolve().parent.parent.parent / "resources" / "furniture_template_graphs"
 
 
 class TemplateGraphLoader:
