@@ -24,16 +24,16 @@ const ReviewPanel: React.FC<ReviewPanelProps> = ({ result, onReviewComplete, cla
     try {
       const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
       const url = base
-        ? `${base}/api/pipeline/review`
-        : `/api/pipeline/review`;
+        ? `${base}/corrections/submit`
+        : `/py-api/corrections/submit`;
 
       await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          job_id: result.job_id,
-          action: reviewAction,
-          comment,
+          session_id: result.job_id || 'unknown',
+          approved: reviewAction === 'accept',
+          corrections: { action: reviewAction, comment },
         }),
       });
 

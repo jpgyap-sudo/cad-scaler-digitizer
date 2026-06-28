@@ -286,14 +286,22 @@ function startSSEServer() {
             clientRes.write(`data: ${JSON.stringify({ id: message.id, result: { tools: TOOL_DEFS } })}\n\n`);
           } else if (message.method === "tools/call") {
             const handler = TOOL_HANDLERS[message.params.name];
-            const result = handler ? await handler(message.params.arguments || {}) : { error: "Unknown tool" };
-            clientRes.write(`data: ${JSON.stringify({ id: message.id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } })}\n\n`);
+            if (!handler) {
+              clientRes.write(`data: ${JSON.stringify({ id: message.id, error: { code: -32601, message: `Unknown tool: ${message.params.name}` } })}\n\n`);
+            } else {
+              try {
+                const result = await handler(message.params.arguments || {});
+                clientRes.write(`data: ${JSON.stringify({ id: message.id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } })}\n\n`);
+              } catch (err) {
+                clientRes.write(`data: ${JSON.stringify({ id: message.id, error: { code: -32603, message: err.message } })}\n\n`);
+              }
+            }
           } else {
-            clientRes.write(`data: ${JSON.stringify({ id: message.id, error: { code: -32601, message: `Method not supported: ${message.method}`} })}\n\n`);
+            clientRes.write(`data: ${JSON.stringify({ id: message.id, error: { code: -32601, message: `Method not supported: ${message.method}` } })}\n\n`);
           }
-          res.writeHead(202); res.end();
+          res.writeHead(202, { "Content-Type": "application/json" }); res.end();
         } catch (e) {
-          res.writeHead(400); res.end(`Bad request: ${e.message}`);
+          res.writeHead(400, { "Content-Type": "text/plain" }); res.end(`Bad request: ${e.message}`);
         }
       });
       return;

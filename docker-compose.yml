@@ -264,6 +264,8 @@ services:
         condition: service_healthy
       node-api:
         condition: service_healthy
+      qdrant:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - cad-network

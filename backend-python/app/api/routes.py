@@ -2060,7 +2060,11 @@ async def corrections_reset(session_id: str):
 # ===== DOWNLOAD / PREVIEW =====
 
 @router.get("/download/{filename}")
-def download(filename: str):
+async def download(filename: str):
+    """
+    Download a generated DXF file by filename.
+    Returns the raw DXF binary for CAD applications.
+    """
     safe = os.path.basename(filename)
     path = OUT / safe
     if not path.exists(): return JSONResponse({"error": "Not found"}, status_code=404)
@@ -2068,7 +2072,11 @@ def download(filename: str):
 
 
 @router.get("/preview/svg/{filename}")
-def preview_svg(filename: str):
+async def preview_svg(filename: str):
+    """
+    Get an SVG preview image of a generated DXF.
+    Returns a vector SVG that renders in any browser.
+    """
     safe = os.path.basename(filename)
     svg_path = OUT / safe.replace('.dxf', '.svg')
     if svg_path.exists(): return FileResponse(svg_path, media_type="image/svg+xml; charset=utf-8")
@@ -2155,6 +2163,8 @@ def _get_adjust_fn(furniture_type: str):
 
 
 @router.post("/adjust")
+# Doc: Adjust dimensions of a generated DXF file. Accepts new dimension values
+# and regenerates the DXF with updated proportions.
 async def adjust_dimensions(dxf_file: str = Form(...),
                               top_diameter_cm: float = Form(None),
                               overall_height_cm: float = Form(None),

@@ -1,35 +1,47 @@
 #!/bin/bash
-# Deploy script for CAD Scaler Digitizer - runs on VPS
+# =============================================================================
+# CAD Scaler Digitizer — Deploy Script
+# =============================================================================
+# NOTE: For DigitalOcean VPS / cloud deployment, use:
+#   curl -fsSL https://raw.githubusercontent.com/jpgyap-sudo/cad-scaler-digitizer/master/scripts/deploy-vps.sh | bash
+# =============================================================================
 set -e
 
-cd /opt/cad-digitizer
+echo "=== CAD Scaler Digitizer — Local Deploy ==="
+echo ""
+echo "For cloud/VPS deployment, run:"
+echo "  bash scripts/deploy-vps.sh"
+echo ""
 
-echo "=== Pulling latest code ==="
-git pull
+# Check Docker
+if ! command -v docker &>/dev/null; then
+  echo "ERROR: Docker is not installed."
+  echo "Install Docker Desktop from https://www.docker.com/products/docker-desktop/"
+  exit 1
+fi
 
-echo "=== Setting up PostgreSQL ML tables ==="
-su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_ml_tables.sql" 2>/dev/null || true
+# Pull latest
+git pull origin master 2>/dev/null || true
 
-echo "=== Setting up PostgreSQL monitoring tables ==="
-su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_monitoring_tables.sql" 2>/dev/null || true
+# Ensure .env exists
+if [ ! -f .env ]; then
+  cp .env.production.template .env
+  echo "Created .env from template."
+  echo "Edit .env before continuing:"
+  echo "  nano .env"
+  exit 1
+fi
 
-echo "=== Rebuilding Docker containers ==="
-OPENAI_API_KEY=$(cat .env | grep OPENAI_API_KEY | cut -d= -f2-)
+# Build and start
+echo "Building and starting containers..."
 docker compose up -d --build
 
-echo "=== Running tests ==="
-PYTHONPATH=/opt/cad-digitizer/backend-python python3 -m pytest /opt/cad-digitizer/backend-python/tests/ -v 2>/dev/null || \
-PYTHONPATH=/opt/cad-digitizer/backend-python python3 /opt/cad-digitizer/backend-python/tests/test_dxf_exporter.py
-
-echo "=== Training ML model ==="
-docker exec cad-python-worker pip install -q scikit-learn skl2onnx onnxruntime 2>/dev/null || true
-docker exec -e PYTHONPATH=/app cad-python-worker python /app/scripts/train_classifier.py
-
-echo "=== Verifying API ==="
-sleep 3
-curl -s http://localhost:8001/health
 echo ""
-curl -s http://localhost:8000/api/ml/status
-echo ""
-
 echo "=== Deploy complete ==="
+echo "  Frontend: http://localhost:8080"
+echo "  Node API: http://localhost:4000/health"
+echo "  Python:   http://localhost:8001/health"
+echo "  MCP:      http://localhost:3003/health"
+echo ""
+echo "  API Docs: http://localhost:4000/api/docs"
+echo ""
