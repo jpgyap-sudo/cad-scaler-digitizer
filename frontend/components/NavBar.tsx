@@ -1,7 +1,7 @@
 import React from "react";
-import { Globe, Upload, BookOpen, BarChart3, GitBranch, Ruler, Database, TrendingUp, Zap } from "lucide-react";
+import { Globe, Upload, BookOpen, BarChart3, GitBranch, Ruler, Database, TrendingUp, Zap, Cpu } from "lucide-react";
 
-export type Tab = "upload" | "crawl" | "templates" | "calibration" | "analytics" | "resources" | "improvements" | "workflow";
+export type Tab = "upload" | "crawl" | "templates" | "calibration" | "analytics" | "resources" | "improvements" | "engineering" | "workflow";
 
 interface NavBarProps {
   activeTab: Tab;
@@ -16,6 +16,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "analytics", label: "Analytics", icon: <TrendingUp size={14} /> },
   { id: "resources", label: "Resources", icon: <Database size={14} /> },
   { id: "improvements", label: "Improvements", icon: <Zap size={14} /> },
+  { id: "engineering", label: "Engineering", icon: <Cpu size={14} /> },
   { id: "workflow", label: "How It Works", icon: <GitBranch size={14} /> },
 ];
 

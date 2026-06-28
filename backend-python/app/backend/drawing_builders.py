@@ -280,6 +280,11 @@ def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project
 def build_coffee_table_model(w=100.0, d=60.0, h=45.0,
                              materials: Optional[Dict[str, str]] = None,
                              visibility: Optional[Dict[str, bool]] = None):
+    # NOTE: this always renders a round tabletop (TOP VIEW circle) regardless
+    # of the real shape - there is no shape signal threaded through from
+    # classification, so a square/rectangular coffee table (e.g. Melina)
+    # still gets drawn as round. Fixing that needs real shape detection,
+    # which is a separate, larger piece of work.
     mats = materials or {}
     sc, cx, ym = 0.6, 100.0, 190.0; r = min(w, d) / 2 * sc; n = datetime.now().strftime('%Y-%m-%d')
     tv = View(name="TOP VIEW")
@@ -288,10 +293,24 @@ def build_coffee_table_model(w=100.0, d=60.0, h=45.0,
     tv.lines.append(LineComponent(start=Point(cx, ym-r-5), end=Point(cx, ym+r+5), layer="CENTER"))
     tv.dimensions.append(DimensionComponent(p1=Point(cx-r, ym), p2=Point(cx+r, ym), label=f"%%c{min(w,d):g} cm", layer="DIMENSION"))
     tv.texts.append(TextComponent(content="TOP VIEW", position=Point(cx-10, ym+r+10), height=3, layer="MTEXT"))
+
+    # FRONT VIEW — every other furniture template has one; coffee tables
+    # never did, leaving height entirely unvisualized in the drawing.
+    w2 = w * sc / 2; fx = cx; fy, ty = 30.0, 30.0 + h * sc; top_thick = max(h * sc * 0.06, 2.0)
+    fv = View(name="FRONT VIEW")
+    fv.polygons.append(PolygonComponent(points=[Point(fx-w2, ty-top_thick), Point(fx+w2, ty-top_thick), Point(fx+w2, ty), Point(fx-w2, ty)], layer="OBJECT", name="tabletop"))
+    fv.hatches.append(HatchComponent(points=[Point(fx-w2, ty-top_thick), Point(fx+w2, ty-top_thick), Point(fx+w2, ty), Point(fx-w2, ty)], pattern="ANSI31", scale=0.5, layer="HATCH"))
+    leg_t = max(w2 * 0.08, 2.0)
+    for lx in [fx-w2, fx+w2-leg_t]:
+        fv.polygons.append(PolygonComponent(points=[Point(lx, fy), Point(lx+leg_t, fy), Point(lx+leg_t, ty-top_thick), Point(lx, ty-top_thick)], layer="OBJECT", name="leg"))
+    fv.dimensions.append(DimensionComponent(p1=Point(fx+w2+8, fy), p2=Point(fx+w2+8, ty), label=f"H = {h:g} cm", layer="DIMENSION"))
+    fv.lines.append(LineComponent(start=Point(fx, fy-5), end=Point(fx, ty+5), layer="CENTER"))
+    fv.texts.append(TextComponent(content="FRONT VIEW", position=Point(fx-w2, ty+10), height=3, layer="MTEXT"))
+
     tb = TitleBlockData(f"Coffee Table {w:.0f}x{d:.0f}x{h:.0f}", project="Furniture Shop Drawing", scale="1:2", revision="A", date=n,
         material_notes=[f"TABLE TOP — {mats.get('tabletop', 'Tempered glass / solid wood')}",
                         f"LEGS — {mats.get('legs', 'Powder-coated steel')}"])
-    return DrawingModel(furniture_type="coffee_table", views=[tv], title_block=tb,
+    return DrawingModel(furniture_type="coffee_table", views=[tv, fv], title_block=tb,
         known_dimensions={"width_cm": w, "depth_cm": d, "overall_height_cm": h})
 
 

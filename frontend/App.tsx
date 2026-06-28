@@ -17,6 +17,7 @@ import CalibrationPage from './components/CalibrationPage';
 import ResourcesPage from './components/ResourcesPage';
 import AnalyticsPage from './components/AnalyticsPage';
 import ImprovementsPage from './components/ImprovementsPage';
+import EngineeringPage from './components/EngineeringPage';
 import { VerificationResult, CadDocument } from './types';
 import { runCadAgent, runCadVerifier, runCadCorrector } from './services/agent';
 import { cleanupCadPrimitives } from './services/cadCleanup';
@@ -518,6 +519,10 @@ const App: React.FC = () => {
         ) : currentTab === 'analytics' ? (
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
             <AnalyticsPage />
+          </div>
+        ) : currentTab === 'engineering' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <EngineeringPage />
           </div>
         ) : currentTab === 'improvements' ? (
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">

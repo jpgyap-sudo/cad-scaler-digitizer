@@ -1,6 +1,6 @@
 """API routes for CAD digitizer with accuracy core pipeline."""
 
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, Query
 from fastapi.responses import FileResponse, JSONResponse, Response, HTMLResponse
 from typing import List, Optional
 from pathlib import Path
@@ -565,7 +565,7 @@ def _component_schema(f_type):
     return None
 
 
-def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None):
+def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None, real_d=None):
     """Determine which critical dimensions are still unknown for a furniture type.
     Returns a list of human-readable strings like 'Width', 'Height', 'Depth'.
     Used to prompt the user for missing values instead of silently guessing.
@@ -619,6 +619,8 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
         if real_h is not None and real_h > 0:
             has_val_for['overall_height_cm'] = True
             has_val_for['height_cm'] = True
+        if real_d is not None and real_d > 0:
+            has_val_for['depth_cm'] = True
 
         for d in corrected_dims:
             tag = d.get('tag', '').lower().strip()
@@ -1760,12 +1762,13 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         dxf_path = OUT / dxf_name
         real_w = _parse_float(real_width_cm)
         real_h = _parse_float(real_height_cm)
+        real_d = _parse_float(real_depth_cm)
         visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
         raw_materials = ai_result.get('materials') if isinstance(ai_result, dict) else None
         materials = {k: (v.get('description', '') if isinstance(v, dict) else str(v))
                      for k, v in (raw_materials or {}).items() if v}
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate,
-                                              materials=materials)
+                                              materials=materials, real_d=real_d)
 
         svg_name = None
         try:
@@ -1818,7 +1821,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'template_selection': template_selection,
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True,
                           'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD,
-                          'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h),
+                          'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h, real_d),
                           'template_prompt': template_prompt},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
                          'rectangles': len(constrained.get('rects', [])),
