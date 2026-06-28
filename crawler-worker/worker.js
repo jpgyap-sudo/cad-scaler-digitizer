@@ -104,6 +104,21 @@ async function processJob(job) {
       error: error.message,
     }));
 
+    // Push failed job to dead-letter queue for retry/review
+    try {
+      await redisClient.lPush("crawler:dead-letter", JSON.stringify({
+        jobId,
+        url,
+        manufacturer,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        failedAt: new Date().toISOString(),
+      }));
+      console.log(`[Crawler Worker] Pushed ${jobId} to dead-letter queue`);
+    } catch (dlqError) {
+      console.error(`[Crawler Worker] Failed to push to dead-letter queue: ${dlqError.message}`);
+    }
+
     throw error;
   }
 }

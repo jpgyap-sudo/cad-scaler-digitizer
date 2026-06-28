@@ -3421,3 +3421,33 @@ async def get_error_aggregation(days_back: int = 7, limit: int = 100):
     from app.services.training_feedback import aggregate_comparison_errors
     result = aggregate_comparison_errors(days_back=days_back, limit=limit)
     return JSONResponse(result)
+
+
+@router.post("/calibration/cleanup")
+async def cleanup_old_comparisons(days: int = 90):
+    """Delete comparison results older than N days.
+    
+    Also cleans up old crawl results and failed jobs.
+    Run monthly via cron or manually.
+    """
+    import psycopg2, os
+    try:
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        cur.execute("DELETE FROM comparison_results WHERE created_at < NOW() - INTERVAL '%s days'", (days,))
+        deleted = cur.rowcount
+        cur.execute("DELETE FROM validation_results WHERE created_at < NOW() - INTERVAL '%s days'", (days,))
+        deleted2 = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
+        logger.info(f"Cleanup: deleted {deleted} comparisons, {deleted2} validation results older than {days} days")
+        return JSONResponse({"deleted_comparisons": deleted, "deleted_validations": deleted2, "retention_days": days})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)

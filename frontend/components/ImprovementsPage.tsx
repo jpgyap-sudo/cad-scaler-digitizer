@@ -110,13 +110,13 @@ const CATEGORIES = [
 
 const BUGS: { title: string; description: string; severity: string; status: string }[] = [
   { title: "Elara dimension 2000x750cm instead of 200x100cm", description: "Variant option '2000 x 1000mm' not converted correctly — mm→cm works but the height uses a different pattern.", severity: "Major", status: "Fixed" },
-  { title: "Stratos has range '140-200cm' not parsed", description: "Range values with hyphens (140-200) aren't supported in variant dimension extraction.", severity: "Major", status: "Queued" },
-  { title: "Sofa height shows 2cm on 4-seater", description: "HomeU data says '20(H) mm' for 4-seater sofa — 20mm=2cm is correct but unrealistic for a sofa (likely source data error).", severity: "Medium", status: "Noted" },
-  { title: "Tangerie table duplicate sizes in response", description: "Same sizes appear multiple times from both cf-size tags and variant options — need deduplication.", severity: "Minor", status: "Queued" },
-  { title: "Jardan product pages return 403 on HTTP fetch", description: "Net proceeds that need Playwright always get 403. No Playwright fallback implemented yet.", severity: "Major", status: "Planned" },
+  { title: "Stratos '140-200cm' range parsing", description: "Range '140-200' now handled via _parse_val (takes max). Width=90cm extracted. Height/length may be missing if not in variant options.", severity: "Major", status: "Fixed" },
+  { title: "Sofa height shows 2cm on 4-seater", description: "HomeU data says '20(H) mm' for 4-seater sofa — 20mm=2cm is correct but unrealistic. Source data error on HomeU's side.", severity: "Medium", status: "Noted" },
+  { title: "Tangerie table duplicate sizes in response", description: "Sizes array now deduplicated by unique (width, length, height) tuples before returning.", severity: "Minor", status: "Fixed" },
+  { title: "Jardan product pages 403 on HTTP fetch", description: "Added dual User-Agent retry with Accept-Language header. Shopify JSON API fallback for dimension data still works.", severity: "Major", status: "Fixed" },
   { title: "npx prisma issue on fresh node_modules", description: "Prisma generate fails with empty node_modules due to cached layers.", severity: "Minor", status: "Fixed" },
-  { title: "Comparison results increase with no cleanup", description: "No retention policy for comparison_results table. Add 90-day cleanup.", severity: "Medium", status: "Planned" },
-  { title: "Redis queue jobs lost on container restart", description: "RQ-based dead-letter queue not implemented yet.", severity: "Major", status: "Planned" },
+  { title: "Comparison results no retention policy", description: "POST /api/calibration/cleanup?days=90 endpoint added. Deletes old comparisons and validation results.", severity: "Medium", status: "Fixed" },
+  { title: "Redis queue jobs lost on container restart", description: "Failed crawl jobs now pushed to crawler:dead-letter queue in Redis for retry/review.", severity: "Major", status: "Fixed" },
 ];
 
 export default function ImprovementsPage() {

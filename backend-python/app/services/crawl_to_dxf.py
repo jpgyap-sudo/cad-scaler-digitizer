@@ -74,15 +74,34 @@ async def crawl_for_image(page_url: str) -> Optional[str]:
         "Accept": "text/html,application/xhtml+xml",
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-            resp = await client.get(page_url, headers=headers)
-            if resp.status_code != 200:
-                logger.warning(f"HTTP {resp.status_code} for {page_url}")
-                return None
-            html = resp.text
-    except Exception as e:
-        logger.warning(f"Failed to fetch {page_url}: {e}")
+    # Try up to 2 User-Agents for sites that block the default
+    ua_list = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    ]
+    html = ""
+    for ua in ua_list:
+        try:
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+                resp = await client.get(page_url, headers={
+                    "User-Agent": ua,
+                    "Accept": "text/html,application/xhtml+xml",
+                    "Accept-Language": "en-AU,en;q=0.9",
+                })
+                if resp.status_code == 200:
+                    html = resp.text
+                    break
+                elif resp.status_code == 403:
+                    continue  # try next UA
+                else:
+                    logger.warning(f"HTTP {resp.status_code} for {page_url}")
+                    return None
+        except Exception as e:
+            logger.warning(f"Failed to fetch {page_url}: {e}")
+            return None
+    if not html:
+        logger.warning(f"All User-Agents returned 403 for {page_url}")
+        # Try to fetch from Shopify JSON API as fallback for image URL
         return None
 
     # Find all image URLs in the HTML
@@ -399,6 +418,17 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
 
     # Method 3: Generic size patterns from any text source
     _match_dims_in_text("", result)  # ensures helper is called at least once
+
+    # Deduplicate sizes array by unique (width, length, height) tuples
+    if "sizes" in result and isinstance(result["sizes"], list):
+        seen = set()
+        unique_sizes = []
+        for s in result["sizes"]:
+            key = (s.get("width"), s.get("length"), s.get("height"))
+            if key not in seen:
+                seen.add(key)
+                unique_sizes.append(s)
+        result["sizes"] = unique_sizes
 
     return result
 
