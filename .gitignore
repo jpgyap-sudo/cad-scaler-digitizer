@@ -21,3 +21,7 @@ memory/
 test_output.*
 test-results/
 playwright-report/
+
+frontend/.env
+frontend/.env.production
+frontend/.env.*

@@ -4672,3 +4672,117 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: re-fix real_h/real_d UnboundLocalError regression, remove ineffective shape-detection dead code
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 578d73b2b8cd1d809a51613de3af073a85ffeab3
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 578d73b2b8cd1d809a51613de3af073a85ffeab3
+**Files:** 
+
+**Summary:**
+Commit: fix: re-fix real_h/real_d UnboundLocalError regression, remove ineffective shape-detection dead code
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: re-fix real_h/real_d UnboundLocalError regression, remove ineffective shape-detection dead code*
+
+#### Lesson Learned
+
+Commit: fix: re-fix real_h/real_d UnboundLocalError regression, remove ineffective shape-detection dead code
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: log production DB schema gap found+fixed during audit
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit adabcffb4c45a3e5a32dd6e302092e873290de7a
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** adabcffb4c45a3e5a32dd6e302092e873290de7a
+**Files:** 
+
+**Summary:**
+Commit: docs: log production DB schema gap found+fixed during audit
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: log production DB schema gap found+fixed during audit*
+
+#### Lesson Learned
+
+Commit: docs: log production DB schema gap found+fixed during audit
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: log comparison_agent score-weighting bug + coffee table DXF view gap
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 6d95734b605125b0c34eb633225ded538af27446
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 6d95734b605125b0c34eb633225ded538af27446
+**Files:** 
+
+**Summary:**
+Commit: docs: log comparison_agent score-weighting bug + coffee table DXF view gap
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: log comparison_agent score-weighting bug + coffee table DXF view gap*
+
+#### Lesson Learned
+
+Commit: docs: log comparison_agent score-weighting bug + coffee table DXF view gap
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
