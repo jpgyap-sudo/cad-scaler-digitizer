@@ -25,6 +25,7 @@ import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import PipelineUpload, { PipelineJobResult } from './components/PipelineUpload';
 import CrawlInput from './components/CrawlInput';
+import SmartConfirmations from './components/SmartConfirmations';
 import PipelineProgress from './components/PipelineProgress';
 import DXFPreview from './components/DXFPreview';
 import ReviewPanel from './components/ReviewPanel';
@@ -756,6 +757,38 @@ const App: React.FC = () => {
                 )}
 
                 <div className="p-4 border-t border-slate-200"><BrainStats /></div>
+                {(cadEngineResult?.smart_workflow as any)?.confirmation_questions?.length > 0 && cadEngineResult && (
+                  <div className="px-4 border-t border-slate-200">
+                    <SmartConfirmations
+                      questions={(cadEngineResult as any).smart_workflow.confirmation_questions}
+                      disabled={isProcessing}
+                      onApply={async (answers) => {
+                        if (!pendingFile && !fileInputRef.current?.files?.[0]) return;
+                        const file = pendingFile || fileInputRef.current.files[0];
+                        if (!file) return;
+                        const selectedType = (answers as any).furniture_type || furnitureType;
+                        setFurnitureType(selectedType);
+                        setProcessState("processing");
+                        setStatus("Regenerating DXF with confirmed answers...");
+                        try {
+                          const { digitizeSmartAuto } = await import("./services/cadEngine");
+                          const result = await digitizeSmartAuto(file, {
+                            realWidthCm: realWidthCm ? parseFloat(realWidthCm) : undefined,
+                            realHeightCm: realHeightCm ? parseFloat(realHeightCm) : undefined,
+                            furnitureType: selectedType || undefined,
+                            answers: answers as Record<string, string>,
+                          });
+                          setCadEngineResult(result);
+                          setProcessState("complete");
+                          setStatus("DXF regenerated with confirmed answers.");
+                        } catch (err: any) {
+                          setError(`❌ ${err?.message || "Regeneration failed"}`);
+                          setProcessState("error");
+                        }
+                      }}
+                    />
+                  </div>
+                )}
                 {!isProcessing && (
                   <div className="p-4 border-t border-slate-200">
                     <ChatBox sessionId={cadEngineResult?.job_id} imageId={cadEngineResult?.job_id} dxfFile={cadEngineResult?.dxf_file} onRenderRequest={handleChatRender} />

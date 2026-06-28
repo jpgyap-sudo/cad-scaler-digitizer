@@ -1595,7 +1595,8 @@ async def digitize_smart(
         ocr_lines=detected.get("ocr_lines") or [],
     )
 
-    payload["furniture"]["needs_confirmation"] = payload["smart_workflow"]["needs_confirmation"]
+    if "furniture" in payload and isinstance(payload["furniture"], dict):
+        payload["furniture"]["needs_confirmation"] = payload["smart_workflow"]["needs_confirmation"]
 
     return JSONResponse(payload)
 
