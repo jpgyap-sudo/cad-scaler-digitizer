@@ -238,7 +238,8 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             return v
 
                         # Pattern A: {W}x{L}(L)x{H}(H)cm — HomeU format (compact)
-                        for m in re.findall(r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\(?L\)?)?x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\(?H\)?)?\s*(cm|mm)?', opts_text, re.I):
+                        # Supports: (W)(L)(H) labels anywhere, compact (no spaces), ranges, mm/cm
+                        for m in re.findall(r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([W]\))?\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([L]\))?\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([H]\))?\s*(cm|mm)?', opts_text, re.I):
                             w, l, h = _parse_val(m[0]), _parse_val(m[1]), _parse_val(m[2])
                             unit = m[3] if len(m) > 3 and m[3] else "cm"
                             if unit == "mm":
@@ -338,6 +339,18 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             m = re.search(r'(\d+\.?\d*)\s*cm\s*\(D\)', opts_text, re.I)
                             if m:
                                 result["depth_cm"] = float(m.group(1))
+
+                    # Post-process: fix height that was set by the LAST variant with max width
+                    # Instead, use the MEDIAN height from all sizes (more robust against outliers)
+                    if "sizes" in result and isinstance(result["sizes"], list) and len(result["sizes"]) >= 2:
+                        heights = [s["height"] for s in result["sizes"] if s.get("height", 0) > 0]
+                        if heights:
+                            heights.sort()
+                            median_h = heights[len(heights) // 2]
+                            # Only override if current height is an outlier (< 30% of median)
+                            current_h = result.get("overall_height_cm", 0)
+                            if current_h > 0 and median_h > 0 and current_h < median_h * 0.3:
+                                result["overall_height_cm"] = median_h
 
                     # Pattern 1: cf-size-{seating}{W}x{L}lx{H}hcm
                     for match in re.findall(r'(\d+)x(\d+)lx(\d+)hcm', all_text, re.I):
