@@ -20,16 +20,46 @@ The correction workflow:
 5. DXF is regenerated with corrected values
 """
 
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
-from pathlib import Path
 import json
 import os
 import shutil
+import subprocess
+import sys
+import threading
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Optional, Dict, Any
 
 # Directory for correction state
 CORRECTIONS_DIR = Path(os.path.dirname(__file__)) / ".." / "corrections"
 CORRECTIONS_DIR.mkdir(exist_ok=True)
+
+# ---------------------------------------------------------------------------
+# Automatic retraining trigger
+# After every CORRECTION_THRESHOLD correction submissions, train_classifier.py
+# is spawned as a background subprocess, creating a self-improving feedback loop.
+# ---------------------------------------------------------------------------
+_correction_count = 0
+_correction_threshold = 10
+_correction_lock = threading.Lock()
+
+def _trigger_retraining():
+    """Spawn train_classifier.py as a non-blocking background subprocess."""
+    try:
+        script_path = Path(__file__).parent.parent.parent / "scripts" / "train_classifier.py"
+        if not script_path.exists():
+            # Fallback: try VPS container path
+            script_path = Path("/app/scripts/train_classifier.py")
+        env = os.environ.copy()
+        env.setdefault("PYTHONPATH", str(Path(__file__).parent.parent.parent))
+        subprocess.Popen(
+            [sys.executable or "python3", str(script_path)],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass  # Non-blocking; ignore failures silently
 
 
 @dataclass
@@ -187,10 +217,21 @@ def handle_correction_submission(session_id: str,
 
     path = save_corrections(session_id, dim_corrections, role_corrections)
 
+    # Increment correction counter and trigger retraining at threshold
+    global _correction_count
+    with _correction_lock:
+        _correction_count += len(dim_corrections) + len(role_corrections)
+        retraining_triggered = False
+        if _correction_count >= _correction_threshold:
+            _correction_count = 0
+            retraining_triggered = True
+            _trigger_retraining()
+
     return {
         "session_id": session_id,
         "corrections_saved": len(dim_corrections) + len(role_corrections),
         "path": str(path),
+        "retraining_triggered": retraining_triggered,
         "message": f"Saved {len(dim_corrections)} dimension + {len(role_corrections)} line corrections",
     }
 

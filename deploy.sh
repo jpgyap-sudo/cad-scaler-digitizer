@@ -8,10 +8,10 @@ echo "=== Pulling latest code ==="
 git pull
 
 echo "=== Setting up PostgreSQL ML tables ==="
-su - postgres -c "psql -d cad_reference_library -f /opt/cad-digitizer/backend-python/scripts/create_ml_tables.sql" 2>/dev/null || true
+su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_ml_tables.sql" 2>/dev/null || true
 
 echo "=== Setting up PostgreSQL monitoring tables ==="
-su - postgres -c "psql -d cad_reference_library -f /opt/cad-digitizer/backend-python/scripts/create_monitoring_tables.sql" 2>/dev/null || true
+su - postgres -c "psql -d cad_digitizer -f /opt/cad-digitizer/backend-python/scripts/create_monitoring_tables.sql" 2>/dev/null || true
 
 echo "=== Rebuilding Docker containers ==="
 OPENAI_API_KEY=$(cat .env | grep OPENAI_API_KEY | cut -d= -f2-)
@@ -22,8 +22,8 @@ PYTHONPATH=/opt/cad-digitizer/backend-python python3 -m pytest /opt/cad-digitize
 PYTHONPATH=/opt/cad-digitizer/backend-python python3 /opt/cad-digitizer/backend-python/tests/test_dxf_exporter.py
 
 echo "=== Training ML model ==="
-pip3 install -q scikit-learn skl2onnx onnxruntime 2>/dev/null || true
-PYTHONPATH=/opt/cad-digitizer/backend-python python3 /opt/cad-digitizer/backend-python/scripts/train_classifier.py
+docker exec cad-python-worker pip install -q scikit-learn skl2onnx onnxruntime 2>/dev/null || true
+docker exec -e PYTHONPATH=/app cad-python-worker python /app/scripts/train_classifier.py
 
 echo "=== Verifying API ==="
 sleep 3
