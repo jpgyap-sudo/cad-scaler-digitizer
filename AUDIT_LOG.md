@@ -1,5 +1,70 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (later) — Claude (Sonnet 4.6) — Production DB was missing almost its entire custom schema
+
+**Status:** FIXED, applied live to production Postgres (user-approved).
+
+**Finding:** the live `cad_reference_library` Postgres database only had the 3
+Prisma-managed tables (`GeometryProfile`, `ProductReference`, `ReferenceAsset`).
+**None** of the 10 tables in `scripts/db-init/01-init-schema.sql` existed —
+`digitizer_sessions`, `digitizer_results`, `feedback_learnings`,
+`proportion_ledger`, `drawing_history`, `validation_results`,
+`training_exports`, `product_families`, `chat_sessions`, `comparison_results`.
+Postgres only runs `docker-entrypoint-initdb.d` scripts on first volume
+creation — this volume predates the schema file (or predates it being
+updated), so it never ran.
+
+**Worse:** `app/backend/brain_sync.py` ("Central Brain" cross-photo learning:
+`record_proportion`/`get_proportion_estimate`/`record_drawing`/
+`record_correction`/`record_material`/`get_material_suggestions` — all
+genuinely called from live routes in `routes.py`, confirmed via grep) depends
+on a **second, separate, never-applied** schema file:
+`backend-python/scripts/create_ml_tables.sql`. That file defines
+`component_proportions` (the proportion-ledger table - didn't exist anywhere),
+plus `furniture_corrections`, `material_library`, `style_presets`, AND its own
+versions of `chat_sessions`/`drawing_history` with **different, incompatible
+column names** than `01-init-schema.sql`'s versions of the same table names.
+
+Every single call to `record_proportion()` / `get_proportion_estimate()` etc.
+has been silently failing since this feature was built — `brain_sync.py`'s
+`_execute()` catches all exceptions and only `print()`s them to container
+stdout (line 55-68), never surfaced anywhere a human would see it. The
+"cross-photo proportion blending" logic built and tested earlier this session
+(`_ledger_blend()` in routes.py, weighted by `sample_count`) has **never**
+actually had real prior data to blend with — every call fell through to "no
+prior data" silently, every time, indefinitely.
+
+**Fix applied (in this order, both user-approved):**
+1. Ran `scripts/db-init/01-init-schema.sql` → created the missing 10 tables.
+2. Discovered the `chat_sessions`/`drawing_history` schema conflict (verified
+   both tables were still empty — created minutes earlier — before touching
+   them). `DROP TABLE chat_sessions, drawing_history;` then ran
+   `backend-python/scripts/create_ml_tables.sql`, which recreates both with
+   the columns `brain_sync.py` actually expects, plus adds
+   `component_proportions`, `furniture_corrections`, `material_library`,
+   `style_presets`.
+3. Verified live: `get_proportion_estimate()` now returns cleanly (`None`,
+   since the table is empty — no error) instead of throwing a swallowed
+   `relation does not exist` error.
+
+**Verify before assuming any "Central Brain" feature is dead:** check both
+schema files (`scripts/db-init/01-init-schema.sql` at repo root AND
+`backend-python/scripts/create_ml_tables.sql`) actually got applied to
+whatever Postgres instance you're pointed at — `\dt` in psql, don't trust the
+SQL files' existence as proof the tables exist.
+
+**Separate, still-unresolved gap:** `app/backend/style_presets.py` (JSON
+files in `memory/user_preferences/presets/`) and `brain_sync.py`'s
+`save_preset`/`load_preset`/`list_presets`/`delete_preset` (Postgres
+`style_presets` table) are two **completely independent** implementations of
+the same feature. Routes.py's `/preset` endpoints use only the file-based one
+(`app/backend/style_presets.py`) — `brain_sync.py`'s preset functions are
+dead code, never imported into routes.py. Not fixed; just documented so
+nobody "fixes" the Postgres path thinking it's the active one.
+
+---
+
+
 This file exists because multiple agents/sessions are committing to this repo
 concurrently (sometimes within minutes of each other), and several fixes have
 been silently undone or duplicated as a result. **Read this before touching
