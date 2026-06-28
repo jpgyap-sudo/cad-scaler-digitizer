@@ -16,6 +16,7 @@ from app.backend.geometry_reconstructor import reconstruct_geometry, reconstruct
 from app.backend.geometry_cleanup import process_constraints
 from app.backend.dimension_validator import autocorrect_dimensions, validate_scale
 from app.backend.furniture_classifier import classify_furniture, normalize_furniture_type
+from app.backend.template_selector import select_template, load_templates
 from app.backend.leader_dimension_classifier import classify_drawing_annotations
 from app.backend.furniture_component_segmenter import segment_furniture
 from app.backend.correction_api import submit_corrections, get_corrections, reset_corrections
@@ -30,6 +31,8 @@ from app.backend.dxf_exporter import (
     save_wardrobe, save_reception_counter, save_bed_headboard,
     save_asymmetric_pedestal_table, save_oval_pedestal_table,
     save_console_table, save_office_desk,
+    save_armchair, save_bar_stool, save_bench_chaise,
+    save_ottoman, save_rug, save_stone_slab, save_wall_panel,
 )
 from app.resource_engine.template_loader import TemplateGraphLoader
 from app.resource_engine.template_resolver import TemplateResolver
@@ -292,6 +295,63 @@ def _extract_pedestal_dims(corrected_dims):
     return top_dia, base_dia, neck_dia
 
 
+def _schema_from_template(ftype):
+    """DYNAMIC component schema builder that reads template JSON files.
+    Generates the component schema from required_dimensions + parts in the
+    template definition. Falls back to None if template not found, allowing
+    the caller to fall back to hardcoded _component_schema().
+    """
+    try:
+        templates = load_templates()
+        for t in templates:
+            if t.get("template_id") == ftype:
+                schema = []
+                required = [d.replace("_", " ") for d in t.get("required_dimensions", [])]
+                for part in t.get("parts", []):
+                    pname = part["name"]
+                    dims = []
+                    for rdim in required:
+                        for kw in rdim.split():
+                            if kw in pname or pname in rdim:
+                                dims.append({
+                                    "key": rdim.replace(" ", "_") + "_cm",
+                                    "label": rdim.title(),
+                                    "min": 5,
+                                    "max": 300,
+                                    "step": 1,
+                                    "unit": "cm"
+                                })
+                    if not dims:
+                        dims.append({
+                            "key": f"{pname}_cm",
+                            "label": pname.replace("_", " ").title(),
+                            "min": 5,
+                            "max": 200,
+                            "step": 1,
+                            "unit": "cm"
+                        })
+                    schema.append({
+                        "name": pname,
+                        "label": pname.replace("_", " ").title(),
+                        "dims": dims,
+                        "material": {"key": pname, "default": "Default material"}
+                    })
+                # Add overall section
+                schema.append({
+                    "name": "overall",
+                    "label": "Overall",
+                    "dims": [{"key": d.replace(" ", "_") + "_cm",
+                              "label": d.title(),
+                              "min": 5, "max": 300, "step": 1, "unit": "cm"}
+                             for d in required[:3]]
+                })
+                if schema:
+                    return schema
+    except Exception:
+        pass
+    return None
+
+
 def _component_schema(f_type):
     """Return editable component schema for a furniture type.
     Each section has a name (matching the DXF/SVG layer), a human label,
@@ -483,6 +543,10 @@ def _component_schema(f_type):
             {"name": "overall", "label": "Overall", "dims": [
                 {"key": "overall_height_cm", "label": "Height", "min": 70, "max": 80, "step": 1, "unit": "cm"}]},
         ]
+    # Fallback to dynamic schema builder from template JSON
+    dynamic = _schema_from_template(f_type)
+    if dynamic:
+        return dynamic
     return None
 
 
@@ -521,6 +585,14 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
             'oval_pedestal_table': ['length_cm', 'depth_cm', 'overall_height_cm'],
             'console_table': ['length_cm', 'depth_cm', 'overall_height_cm'],
             'office_desk': ['length_cm', 'depth_cm', 'overall_height_cm'],
+            # New 25-template types
+            'armchair_lounge': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'bar_stool': ['diameter_or_width_cm', 'overall_height_cm'],
+            'bench_chaise': ['length_cm', 'depth_cm', 'overall_height_cm'],
+            'ottoman_pouf': ['width_cm', 'depth_cm', 'overall_height_cm'],
+            'rug_rectangular': ['length_cm', 'width_cm'],
+            'stone_slab_rectangular': ['length_cm', 'width_cm'],
+            'wall_panel_fluted': ['width_cm', 'overall_height_cm'],
         }
         critical_keys = critical_overrides.get(f_type, list(schema_keys)[:3])
 
@@ -864,6 +936,77 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         h = real_h or _dim(['h', 'height'], 120.0)
         try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+    elif f_type == 'armchair_lounge':
+        w = real_w or _dim(['w', 'width'], 70.0)
+        h = real_h or _dim(['h', 'height'], 90.0)
+        d = _dim(['d', 'depth'], 75.0)
+        sh = _dim(['seat_height', 'sh'], 45.0)
+        try: save_armchair(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, seat_height_cm=sh, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'width_cm': round(w, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h, 1), 'seat_height_cm': round(sh, 1),
+        }
+    elif f_type == 'bar_stool':
+        w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 40.0)
+        h = real_h or _dim(['h', 'height'], 75.0)
+        sh = _dim(['seat_height', 'sh'], 65.0)
+        try: save_bar_stool(str(dxf_path), diameter_or_width_cm=w, height_cm=h, seat_height_cm=sh, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'diameter_or_width_cm': round(w, 1), 'overall_height_cm': round(h, 1),
+            'seat_height_cm': round(sh, 1),
+        }
+    elif f_type == 'bench_chaise':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 140.0)
+        h = real_h or _dim(['h', 'height'], 85.0)
+        d = _dim(['d', 'depth'], 55.0)
+        sh = _dim(['seat_height', 'sh'], 45.0)
+        try: save_bench_chaise(str(dxf_path), length_cm=l, depth_cm=d, height_cm=h, seat_height_cm=sh, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h, 1), 'seat_height_cm': round(sh, 1),
+        }
+    elif f_type == 'ottoman_pouf':
+        w = real_w or _dim(['w', 'width'], 55.0)
+        h = real_h or _dim(['h', 'height'], 40.0)
+        d = _dim(['d', 'depth'], 55.0)
+        try: save_ottoman(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'width_cm': round(w, 1), 'depth_cm': round(d, 1),
+            'overall_height_cm': round(h, 1),
+        }
+    elif f_type == 'rug_rectangular':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 160.0)
+        w = _dim(['w2', 'width', 'd', 'depth'], 120.0) if not real_w else l * 0.75
+        ph = _dim(['pile_height', 'pile'], 1.0)
+        try: save_rug(str(dxf_path), length_cm=l, width_cm=w, pile_height_mm=ph, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'width_cm': round(w, 1),
+        }
+    elif f_type == 'stone_slab_rectangular':
+        l = real_w or _dim(['l', 'length', 'w', 'width'], 200.0)
+        w = _dim(['w2', 'width', 'd', 'depth'], 100.0) if not real_w else l * 0.5
+        t = _dim(['thickness', 't'], 2.0)
+        try: save_stone_slab(str(dxf_path), length_cm=l, width_cm=w, thickness_cm=t, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'length_cm': round(l, 1), 'width_cm': round(w, 1), 'thickness_cm': round(t, 1),
+        }
+    elif f_type == 'wall_panel_fluted':
+        w = real_w or _dim(['w', 'width'], 120.0)
+        h = real_h or _dim(['h', 'height'], 240.0)
+        t = _dim(['thickness', 't'], 2.0)
+        ss = _dim(['slat_spacing', 'spacing'], 10.0)
+        try: save_wall_panel(str(dxf_path), width_cm=w, height_cm=h, thickness_cm=t, slat_spacing_mm=ss, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {
+            'width_cm': round(w, 1), 'overall_height_cm': round(h, 1),
+            'thickness_cm': round(t, 1), 'slat_spacing_mm': round(ss, 1),
+        }
     else:
         # Fallback: if unknown type but dimensions available, try rectangular_table
         fb_w = real_w or _dim(['w', 'width'], 0)
@@ -1346,6 +1489,46 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         opencv_type = opencv_classifier.get('type', 'generic_2d_furniture')
         opencv_conf = opencv_classifier.get('confidence', 0.3)
 
+        # ===== Template Selector — pick best specific template using OCR + shapes =====
+        template_selection = None
+        try:
+            # Build evidence dict from OCR hints + detected shapes
+            detected_shapes = []
+            if constrained.get('circles'): detected_shapes.append('circle')
+            if constrained.get('rects'): detected_shapes.append('rectangle')
+            if lines: detected_shapes.append('line')
+            text_lower = " ".join(ocr_lines).lower()
+            template_evidence = {
+                "title": ai_result.get("product_name", "") if isinstance(ai_result, dict) else "",
+                "category": ai_result.get("category", ftype) if isinstance(ai_result, dict) else ftype,
+                "tags": ocr_lines[:5],
+                "detected_shapes": detected_shapes,
+                "detected_components": [],
+                "aspect_ratio": 1.0,
+            }
+            if constrained['lines']:
+                xs = [p[0] for ln in constrained['lines'] for p in ln]
+                ys = [p[1] for ln in constrained['lines'] for p in ln]
+                if xs and ys:
+                    w = max(xs) - min(xs)
+                    h = max(ys) - min(ys)
+                    if h > 0: template_evidence["aspect_ratio"] = w / h
+
+            # Detect known component keywords in OCR text
+            component_kws = {"tabletop", "seat", "backrest", "leg", "base", "armrest",
+                            "drawer", "door", "shelf", "panel", "cushion", "frame"}
+            for kw in component_kws:
+                if kw in text_lower:
+                    template_evidence["detected_components"].append(kw)
+
+            template_selection = select_template(template_evidence)
+            # Apply visual_signature hints to classifier confidence
+            if template_selection and template_selection.get("confidence", 0) > 0.5:
+                opencv_conf = max(opencv_conf, template_selection["confidence"] * 0.5)
+        except Exception as e:
+            print(f"[Hybrid] Template selector failed (non-fatal): {e}")
+        # ===== End Template Selector =====
+
         # ===== Phase 3a-b: Cloud Vision + Resource Engine Pipeline (parallel track) =====
         phase3_result = None
         try:
@@ -1392,7 +1575,11 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                        'reception_counter', 'bed_headboard', 'oval_pedestal_table',
                        'console_table', 'office_desk', 'side_table', 'lounge_chair',
                        'nightstand', 'bed', 'asymmetric_pedestal_table', 'sideboard',
-                       'tv_console'}
+                       'tv_console',
+                       # New 25-template types
+                       'armchair_lounge', 'bar_stool', 'bench_chaise',
+                       'ottoman_pouf', 'rug_rectangular', 'stone_slab_rectangular',
+                       'wall_panel_fluted'}
         if furniture_type: ftype = normalize_furniture_type(furniture_type)
         elif raw_ai_type:
             ftype = normalize_furniture_type(raw_ai_type)
@@ -1502,6 +1689,16 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 "drawing_notes": template_graph_result.get("drawing_notes"),
             }
 
+        # Look up template confirmation prompt
+        template_prompt = None
+        try:
+            for t in load_templates():
+                if t.get("template_id") == ftype:
+                    template_prompt = t.get("confirmation_prompt")
+                    break
+        except Exception:
+            pass
+
         return JSONResponse({
             'job_id': job_id, 'dxf_file': dxf_name,
             'download': f'/api/download/{dxf_name}',
@@ -1510,9 +1707,11 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'component_schema': (dispatch_extra or {}).get('component_schema'),
             'template_graph': template_response,
             'template_warnings': (template_graph_result or {}).get('warnings', []),
+            'template_selection': template_selection,
             'furniture': {'type': ftype, 'confidence': max(conf, 0.5), 'hybrid': True,
                           'needs_confirmation': max(conf, 0.5) < CLASSIFIER_CONFIRM_THRESHOLD,
-                          'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h)},
+                          'missing_dimensions': _compute_missing_dimensions(ftype, merged_dims, real_w, real_h),
+                          'template_prompt': template_prompt},
             'detected': {'lines': len(constrained['lines']), 'circles': len(constrained['circles']),
                          'rectangles': len(constrained.get('rects', [])),
                          'dimensions': merged_dims, 'ocr_lines': ocr_lines[:20]},

@@ -37,7 +37,7 @@ def normalize_furniture_type(ftype: str) -> str:
         "bed": "bed_headboard",
         "chair": "chair",
         "dining_chair": "dining_chair",
-        "armchair": "chair",
+        "armchair": "armchair_lounge",
         "coffee_table": "coffee_table",
         "coffee_table_round": "coffee_table",
         "reception_counter": "reception_counter",
@@ -76,6 +76,23 @@ def normalize_furniture_type(ftype: str) -> str:
         "bedside": "nightstand",
         "bed": "bed",
         "platform_bed": "bed",
+        # New types for 25-template HomeU upgrade
+        "armchair_lounge": "armchair_lounge",
+        "bar_stool": "bar_stool",
+        "bench": "bench_chaise",
+        "chaise": "bench_chaise",
+        "bench_chaise": "bench_chaise",
+        "ottoman": "ottoman_pouf",
+        "pouf": "ottoman_pouf",
+        "ottoman_pouf": "ottoman_pouf",
+        "rug": "rug_rectangular",
+        "carpet": "rug_rectangular",
+        "rug_rectangular": "rug_rectangular",
+        "stone_slab": "stone_slab_rectangular",
+        "stone_slab_rectangular": "stone_slab_rectangular",
+        "wall_panel": "wall_panel_fluted",
+        "slat_panel": "wall_panel_fluted",
+        "wall_panel_fluted": "wall_panel_fluted",
         "sideboard": "sideboard",
         "buffet": "sideboard",
         "credenza": "sideboard",
@@ -125,6 +142,12 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     has_cabinet = any(s in text for s in ["cabinet", "wardrobe", "closet", "drawer", "shelf"])
     has_bed = any(s in text for s in ["bed", "headboard", "mattress"])
     has_chair = any(s in text for s in ["chair", "stool", "seat", "armchair"])
+    has_stool = any(s in text for s in ["bar stool", "counter stool"])
+    has_bench = any(s in text for s in ["bench", "chaise", "bed bench"])
+    has_ottoman = any(s in text for s in ["ottoman", "pouf", "poof"])
+    has_rug = any(s in text for s in ["rug", "carpet", "mat", "runner"])
+    has_stone = any(s in text for s in ["stone", "slab", "marble", "granite", "quartz", "sintered"])
+    has_wall_panel = any(s in text for s in ["wall panel", "slat", "fluted panel", "acoustic panel", "fluted"])
 
     ftype = "generic_2d_furniture"
     confidence = 0.30
@@ -152,6 +175,16 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     # Priority 0d: Asymmetric pedestal table — two offset pedestals of different sizes
     elif (has_asymmetric and has_table) or (has_pedestal and has_table and "rect" in text and "pedestal" in text):
         ftype, confidence = "asymmetric_pedestal_table", 0.80
+
+    # Priority 0e: Wall panel — repeating vertical elements
+    elif has_wall_panel:
+        ftype, confidence = "wall_panel_fluted", 0.75
+    # Priority 0f: Rug — flat rectangle, textile
+    elif has_rug:
+        ftype, confidence = "rug_rectangular", 0.80
+    # Priority 0g: Stone slab — material keywords
+    elif has_stone:
+        ftype, confidence = "stone_slab_rectangular", 0.80
 
     # Priority 0: an explicit "pedestal" label is decisive for a round
     # pedestal table — a drawing that says "TEXTURED PEDESTAL BASE" with a
@@ -194,7 +227,17 @@ def classify_furniture(ocr_lines: list, circles: list, lines: list, rects: list 
     # Priority 6: Chair — small, or text keywords
     elif has_chair or (len(rects) >= 2 and len(lines) >= 6):
         ftype, confidence = "chair", 0.80 if has_chair else 0.40
-    
+
+    # Priority 6b: Bar stool — tall seat, small footprint
+    elif has_stool:
+        ftype, confidence = "bar_stool", 0.80 if has_stool else 0.40
+    # Priority 6c: Bench — long seat, wide aspect ratio
+    elif has_bench or (aspect_ratio > 2.5 and len(rects) >= 1):
+        ftype, confidence = "bench_chaise", 0.80 if has_bench else 0.35
+    # Priority 6d: Ottoman — low, no back
+    elif has_ottoman or ("low" in text and "seat" in text):
+        ftype, confidence = "ottoman_pouf", 0.80 if has_ottoman else 0.35
+
     # Priority 7: Table mentioned without other clues
     elif has_table:
         ftype, confidence = "rectangular_table", 0.40

@@ -1,0 +1,32 @@
+{
+  "schema_version": "homeu-template-registry-v1",
+  "source": "homeu.ph categories and visible collection/product names",
+  "template_count": 25,
+  "templates": [
+    "coffee_table_rectangular_4_leg",
+    "coffee_table_round_pedestal",
+    "coffee_table_round_nesting_set",
+    "coffee_table_organic_blob",
+    "coffee_table_glass_wire_mesh",
+    "coffee_table_block_plinth",
+    "side_table_round",
+    "side_table_rectangular",
+    "dining_table_rectangular_4_leg",
+    "dining_table_round_pedestal",
+    "console_table_slim",
+    "sofa_straight_2_3_seat",
+    "sofa_sectional_l_shape",
+    "armchair_lounge",
+    "dining_chair",
+    "bar_stool",
+    "ottoman_pouf",
+    "bench_chaise",
+    "sideboard_2_4_door",
+    "tv_cabinet_low",
+    "nightstand_bedside_drawer",
+    "bed_frame_upholstered",
+    "rug_rectangle",
+    "wall_panel_fluted",
+    "stone_slab_rectangular"
+  ]
+}

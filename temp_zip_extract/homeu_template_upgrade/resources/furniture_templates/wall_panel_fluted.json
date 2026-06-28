@@ -1,0 +1,69 @@
+{
+  "schema_version": "homeu-template-graph-v1",
+  "template_id": "wall_panel_fluted",
+  "category": "wall_panel",
+  "keywords": [
+    "wall panel",
+    "slat",
+    "fluted",
+    "solid wood slat"
+  ],
+  "views": [
+    "front",
+    "side",
+    "section"
+  ],
+  "required_dimensions": [
+    "width_cm",
+    "height_cm",
+    "thickness_cm",
+    "slat_spacing_mm"
+  ],
+  "optional_dimensions": [
+    "material_thickness_mm",
+    "edge_radius_mm",
+    "leg_profile_mm",
+    "clearance_mm",
+    "hardware_spacing_mm"
+  ],
+  "parts": [
+    {
+      "name": "panel_body",
+      "required": true
+    },
+    {
+      "name": "flutes_or_slats",
+      "required": true
+    }
+  ],
+  "visual_signature": {
+    "positive": [
+      "vertical-repeating-strips",
+      "panel"
+    ],
+    "negative": []
+  },
+  "aspect_ratio_hint": {
+    "min": 0.2,
+    "max": 1.5
+  },
+  "layer_map": {
+    "OUTLINE": "visible exterior edges",
+    "HIDDEN": "hidden/internal edges",
+    "CENTER": "centerlines and symmetry axes",
+    "DIMENSION": "dimension entities",
+    "TEXT": "labels and notes",
+    "MATERIAL": "wood/stone/glass/fabric areas",
+    "HARDWARE": "screws/feet/brackets",
+    "CONSTRUCTION": "temporary inference geometry"
+  },
+  "generation_rules": [
+    "Generate TOP view first from footprint.",
+    "Generate FRONT elevation from width and height.",
+    "Generate SIDE elevation from depth and height.",
+    "Keep component bounding boxes separate before merging outlines.",
+    "Reject template if mandatory parts are missing or impossible."
+  ],
+  "confirmation_prompt": "Confirm product type: wall panel fluted?",
+  "notes": ""
+}

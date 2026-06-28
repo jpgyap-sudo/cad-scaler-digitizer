@@ -1479,3 +1479,366 @@ def save_generic(path, lines, circles, rects=None):
     _add_mtext(msp, 'GENERIC 2D GEOMETRY (unclassified)', (10, 280), 4)
     generate_title_block(msp, "Generic 2D Furniture Drawing")
     return _save(doc, path)
+
+
+# ===== NEW 7 DXF SAVE FUNCTIONS (HomeU 25-Template Upgrade) =====
+
+
+def save_armchair(path, width_cm=70, depth_cm=75, height_cm=90, seat_height_cm=45,
+                   materials: Optional[Dict[str, str]] = None):
+    """Armchair lounge shop drawing with seat, backrest, armrests, legs."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    w, d, h = width_cm * sc, depth_cm * sc, height_cm * sc
+    sh = seat_height_cm * sc
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    ox, oy = 100, y_mid
+    _add_polyline(msp, [(ox - w / 2, oy - d / 2), (ox + w / 2, oy - d / 2),
+                        (ox + w / 2, oy + d / 2), (ox - w / 2, oy + d / 2)], True)
+    ar_w = max(4, w * 0.12)
+    _add_polyline(msp, [(ox - w / 2 - ar_w, oy - d * 0.4), (ox - w / 2, oy - d * 0.4),
+                        (ox - w / 2, oy + d * 0.4), (ox - w / 2 - ar_w, oy + d * 0.4)], True, 'HIDDEN')
+    _add_polyline(msp, [(ox + w / 2, oy - d * 0.4), (ox + w / 2 + ar_w, oy - d * 0.4),
+                        (ox + w / 2 + ar_w, oy + d * 0.4), (ox + w / 2, oy + d * 0.4)], True, 'HIDDEN')
+    _add_centerline(msp, (ox - w / 2 - 5, oy), (ox + w / 2 + 5, oy))
+    _add_centerline(msp, (ox, oy - d / 2 - 5), (ox, oy + d / 2 + 5))
+    _add_dimension(msp, (ox - w / 2, oy + d / 2 + 6), (ox + w / 2, oy + d / 2 + 6),
+                   (ox, oy + d / 2 + 12), 'W = {:.0f} cm'.format(width_cm))
+    _add_dimension(msp, (ox + w / 2 + 6, oy - d / 2), (ox + w / 2 + 6, oy + d / 2),
+                   (ox + w / 2 + 14, oy), 'D = {:.0f} cm'.format(depth_cm))
+    _add_mtext(msp, 'TOP VIEW', (ox - 15, oy + d / 2 + 22), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = y_mid - h / 2
+    top_y = floor_y + h
+    seat_top_y = floor_y + sh
+    br_h = h - sh
+    _add_polyline(msp, [(fx - w / 2, seat_top_y), (fx + w / 2, seat_top_y),
+                        (fx + w / 2, top_y), (fx - w / 2, top_y)], True)
+    _add_polyline(msp, [(fx - w / 2, floor_y), (fx + w / 2, floor_y),
+                        (fx + w / 2, seat_top_y), (fx - w / 2, seat_top_y)], True)
+    _add_hatch_polygon(msp, [(fx - w / 2, floor_y + 2), (fx + w / 2, floor_y + 2),
+                              (fx + w / 2, seat_top_y - 2), (fx - w / 2, seat_top_y - 2)],
+                       'ANSI31', 0.3)
+    ar_h = sh * 0.6
+    _add_polyline(msp, [(fx - w / 2 - ar_w, floor_y + 4), (fx - w / 2, floor_y + 4),
+                        (fx - w / 2, floor_y + 4 + ar_h), (fx - w / 2 - ar_w, floor_y + 4 + ar_h)], True)
+    _add_polyline(msp, [(fx + w / 2, floor_y + 4), (fx + w / 2 + ar_w, floor_y + 4),
+                        (fx + w / 2 + ar_w, floor_y + 4 + ar_h), (fx + w / 2, floor_y + 4 + ar_h)], True)
+    leg_h = 4
+    for lx in [fx - w / 2 + 3, fx + w / 2 - 3]:
+        _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
+                            (lx + 2, floor_y), (lx, floor_y)], True)
+    _add_dimension(msp, (fx - w / 2, floor_y - leg_h - 5), (fx + w / 2, floor_y - leg_h - 5),
+                   (fx, floor_y - leg_h - 12), 'W = {:.0f} cm'.format(width_cm))
+    _add_dimension(msp, (fx + w / 2 + 8, floor_y), (fx + w / 2 + 8, top_y),
+                   (fx + w / 2 + 18, (floor_y + top_y) / 2), 'H = {:.0f} cm'.format(height_cm))
+    _add_mtext(msp, 'FRONT VIEW', (fx - w / 2, top_y + 8), 3)
+    generate_title_block(msp, 'Armchair Lounge {:.0f}x{:.0f}x{:.0f}'.format(width_cm, depth_cm, height_cm),
+                         material_notes=['SEAT — ' + mats.get('seat', 'Upholstered fabric'),
+                                         'FRAME — ' + mats.get('frame', 'Solid wood')])
+    return _save(doc, path)
+
+
+def save_bar_stool(path, diameter_or_width_cm=40, height_cm=75, seat_height_cm=65,
+                   materials: Optional[Dict[str, str]] = None):
+    """Bar stool shop drawing with seat, column/pedestal, footrest, base."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    dia, h, sh = diameter_or_width_cm * sc, height_cm * sc, seat_height_cm * sc
+    r = dia / 2
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    cx, cy = 100, y_mid
+    msp.add_circle((cx, cy), r, dxfattribs={'layer': 'OBJECT'})
+    _add_centerline(msp, (cx - r - 5, cy), (cx + r + 5, cy))
+    _add_centerline(msp, (cx, cy - r - 5), (cx, cy + r + 5))
+    _add_diameter_dim(msp, (cx, cy), r, '%%c{:.0f} cm'.format(diameter_or_width_cm))
+    _add_mtext(msp, 'TOP VIEW', (cx - 15, cy + r + 12), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = y_mid - h / 2
+    top_y = floor_y + h
+    seat_top_y = floor_y + sh
+    _add_polyline(msp, [(fx - r, seat_top_y), (fx + r, seat_top_y),
+                        (fx + r, seat_top_y + 4), (fx - r, seat_top_y + 4)], True)
+    col_r = max(2, r * 0.2)
+    _add_polyline(msp, [(fx - col_r, floor_y + 3), (fx + col_r, floor_y + 3),
+                        (fx + col_r, seat_top_y), (fx - col_r, seat_top_y)], True)
+    fr_y = floor_y + h * 0.35
+    fr_w = r * 0.7
+    _add_line(msp, (fx - fr_w, fr_y), (fx + fr_w, fr_y), 'HIDDEN')
+    _add_line(msp, (fx - fr_w, fr_y + 2), (fx + fr_w, fr_y + 2), 'HIDDEN')
+    base_r = r * 0.55
+    _add_polyline(msp, [(fx - base_r, floor_y), (fx + base_r, floor_y),
+                        (fx + base_r, floor_y + 3), (fx - base_r, floor_y + 3)], True)
+    _add_dimension(msp, (fx - r, top_y + 6), (fx + r, top_y + 6),
+                   (fx, top_y + 12), 'W = {:.0f} cm'.format(diameter_or_width_cm))
+    _add_dimension(msp, (fx + r + 8, floor_y), (fx + r + 8, top_y + 4),
+                   (fx + r + 18, (floor_y + top_y + 4) / 2), 'H = {:.0f} cm'.format(height_cm))
+    _add_mtext(msp, 'FRONT VIEW', (fx - r, top_y + 22), 3)
+    generate_title_block(msp, 'Bar Stool {:.0f} x H{:.0f}'.format(diameter_or_width_cm, height_cm),
+                         material_notes=['SEAT — ' + mats.get('seat', 'Upholstered fabric'),
+                                         'BASE — ' + mats.get('base', 'Powder-coated steel')])
+    return _save(doc, path)
+
+
+def save_bench_chaise(path, length_cm=140, depth_cm=55, height_cm=85, seat_height_cm=45,
+                      materials: Optional[Dict[str, str]] = None):
+    """Bench chaise shop drawing with long seat, legs, optional backrest."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    l, d, h = length_cm * sc, depth_cm * sc, height_cm * sc
+    sh = seat_height_cm * sc
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    ox, oy = 100, y_mid
+    _add_polyline(msp, [(ox - l / 2, oy - d / 2), (ox + l / 2, oy - d / 2),
+                        (ox + l / 2, oy + d / 2), (ox - l / 2, oy + d / 2)], True)
+    _add_centerline(msp, (ox - l / 2 - 5, oy), (ox + l / 2 + 5, oy))
+    _add_centerline(msp, (ox, oy - d / 2 - 5), (ox, oy + d / 2 + 5))
+    _add_dimension(msp, (ox - l / 2, oy + d / 2 + 6), (ox + l / 2, oy + d / 2 + 6),
+                   (ox, oy + d / 2 + 12), 'L = {:.0f} cm'.format(length_cm))
+    _add_dimension(msp, (ox + l / 2 + 6, oy - d / 2), (ox + l / 2 + 6, oy + d / 2),
+                   (ox + l / 2 + 14, oy), 'D = {:.0f} cm'.format(depth_cm))
+    _add_mtext(msp, 'TOP VIEW', (ox - 15, oy + d / 2 + 22), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = y_mid - h / 2
+    top_y = floor_y + h
+    seat_top_y = floor_y + sh
+    _add_polyline(msp, [(fx - l / 2, floor_y), (fx + l / 2, floor_y),
+                        (fx + l / 2, seat_top_y), (fx - l / 2, seat_top_y)], True)
+    _add_hatch_polygon(msp, [(fx - l / 2, floor_y + 2), (fx + l / 2, floor_y + 2),
+                              (fx + l / 2, seat_top_y - 2), (fx - l / 2, seat_top_y - 2)],
+                       'ANSI31', 0.3)
+    br_h = h - sh
+    if br_h > 10:
+        _add_polyline(msp, [(fx - l * 0.9 / 2, seat_top_y), (fx + l * 0.9 / 2, seat_top_y),
+                            (fx + l * 0.9 / 2, top_y), (fx - l * 0.9 / 2, top_y)], True)
+    leg_h = 4
+    for lx in [fx - l / 2 + 4, fx + l / 2 - 4]:
+        _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
+                            (lx + 2, floor_y), (lx, floor_y)], True)
+    _add_dimension(msp, (fx - l / 2, floor_y - leg_h - 5), (fx + l / 2, floor_y - leg_h - 5),
+                   (fx, floor_y - leg_h - 12), 'W = {:.0f} cm'.format(length_cm))
+    _add_dimension(msp, (fx + l / 2 + 8, floor_y), (fx + l / 2 + 8, top_y),
+                   (fx + l / 2 + 18, (floor_y + top_y) / 2), 'H = {:.0f} cm'.format(height_cm))
+    _add_mtext(msp, 'FRONT VIEW', (fx - l / 2, top_y + 8), 3)
+    generate_title_block(msp, 'Bench Chaise {:.0f}x{:.0f}x{:.0f}'.format(length_cm, depth_cm, height_cm),
+                         material_notes=['SEAT — ' + mats.get('seat', 'Upholstered fabric'),
+                                         'FRAME — ' + mats.get('frame', 'Solid wood')])
+    return _save(doc, path)
+
+
+def save_ottoman(path, width_cm=55, depth_cm=55, height_cm=40,
+                 materials: Optional[Dict[str, str]] = None):
+    """Ottoman/pouf shop drawing with cushion body, optional legs."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    w, d, h = width_cm * sc, depth_cm * sc, height_cm * sc
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    ox, oy = 100, y_mid
+    _add_polyline(msp, [(ox - w / 2, oy - d / 2), (ox + w / 2, oy - d / 2),
+                        (ox + w / 2, oy + d / 2), (ox - w / 2, oy + d / 2)], True)
+    _add_polyline(msp, [(ox - w / 2 + 3, oy - d / 2 + 3), (ox + w / 2 - 3, oy - d / 2 + 3),
+                        (ox + w / 2 - 3, oy + d / 2 - 3), (ox - w / 2 + 3, oy + d / 2 - 3)], True, 'HIDDEN')
+    _add_centerline(msp, (ox - w / 2 - 5, oy), (ox + w / 2 + 5, oy))
+    _add_centerline(msp, (ox, oy - d / 2 - 5), (ox, oy + d / 2 + 5))
+    _add_dimension(msp, (ox - w / 2, oy + d / 2 + 6), (ox + w / 2, oy + d / 2 + 6),
+                   (ox, oy + d / 2 + 12), 'W = {:.0f} cm'.format(width_cm))
+    _add_dimension(msp, (ox + w / 2 + 6, oy - d / 2), (ox + w / 2 + 6, oy + d / 2),
+                   (ox + w / 2 + 14, oy), 'D = {:.0f} cm'.format(depth_cm))
+    _add_mtext(msp, 'TOP VIEW', (ox - 15, oy + d / 2 + 22), 3)
+
+    # ===== FRONT VIEW =====
+    fx = 280
+    floor_y = y_mid - h / 2
+    top_y = floor_y + h
+    _add_polyline(msp, [(fx - w / 2, floor_y), (fx + w / 2, floor_y),
+                        (fx + w / 2, top_y - 2), (fx + w / 2 - 2, top_y),
+                        (fx - w / 2 + 2, top_y), (fx - w / 2, top_y - 2)], True)
+    _add_hatch_polygon(msp, [(fx - w / 2 + 2, floor_y + 2), (fx + w / 2 - 2, floor_y + 2),
+                              (fx + w / 2 - 2, top_y - 4), (fx - w / 2 + 2, top_y - 4)],
+                       'ANSI31', 0.3)
+    leg_h = 3
+    for lx in [fx - w / 2 + 5, fx + w / 2 - 5]:
+        _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
+                            (lx + 2, floor_y), (lx, floor_y)], True)
+    _add_dimension(msp, (fx - w / 2, floor_y - leg_h - 5), (fx + w / 2, floor_y - leg_h - 5),
+                   (fx, floor_y - leg_h - 12), 'W = {:.0f} cm'.format(width_cm))
+    _add_dimension(msp, (fx + w / 2 + 8, floor_y - leg_h), (fx + w / 2 + 8, top_y),
+                   (fx + w / 2 + 18, (floor_y + top_y) / 2), 'H = {:.0f} cm'.format(height_cm))
+    _add_mtext(msp, 'FRONT VIEW', (fx - w / 2, top_y + 8), 3)
+    generate_title_block(msp, 'Ottoman Pouf {:.0f}x{:.0f}x{:.0f}'.format(width_cm, depth_cm, height_cm),
+                         material_notes=['BODY — ' + mats.get('cushion_body', 'Upholstered fabric over foam')])
+    return _save(doc, path)
+
+
+def save_rug(path, length_cm=160, width_cm=120, pile_height_mm=10,
+             materials: Optional[Dict[str, str]] = None):
+    """Rug shop drawing with outline, border, pile thickness indication."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    l, w = length_cm * sc, width_cm * sc
+    y_mid = 180
+    mats = materials or {}
+    ph = max(2, pile_height_mm / 10 * sc)
+
+    # ===== TOP VIEW =====
+    ox, oy = 100, y_mid
+    _add_polyline(msp, [(ox - l / 2, oy - w / 2), (ox + l / 2, oy - w / 2),
+                        (ox + l / 2, oy + w / 2), (ox - l / 2, oy + w / 2)], True)
+    border_inset = 3
+    _add_polyline(msp, [(ox - l / 2 + border_inset, oy - w / 2 + border_inset),
+                        (ox + l / 2 - border_inset, oy - w / 2 + border_inset),
+                        (ox + l / 2 - border_inset, oy + w / 2 - border_inset),
+                        (ox - l / 2 + border_inset, oy + w / 2 - border_inset)], True, 'HIDDEN')
+    _add_centerline(msp, (ox - l / 2 - 5, oy), (ox + l / 2 + 5, oy))
+    _add_centerline(msp, (ox, oy - w / 2 - 5), (ox, oy + w / 2 + 5))
+    _add_dimension(msp, (ox - l / 2, oy + w / 2 + 6), (ox + l / 2, oy + w / 2 + 6),
+                   (ox, oy + w / 2 + 12), 'L = {:.0f} cm'.format(length_cm))
+    _add_dimension(msp, (ox + l / 2 + 6, oy - w / 2), (ox + l / 2 + 6, oy + w / 2),
+                   (ox + l / 2 + 14, oy), 'W = {:.0f} cm'.format(width_cm))
+    _add_mtext(msp, 'TOP VIEW', (ox - 15, oy + w / 2 + 22), 3)
+
+    # ===== SIDE VIEW =====
+    fx = 280
+    _add_polyline(msp, [(fx, oy - l / 2), (fx + ph * 4, oy - l / 2),
+                        (fx + ph * 4, oy + l / 2), (fx, oy + l / 2)], True)
+    for i in range(-3, 4):
+        yy = oy + i * l * 0.1
+        _add_line(msp, (fx + 1, yy), (fx + ph * 4 - 1, yy), 'HATCH')
+    _add_mtext(msp, 'SIDE ({:.0f}mm pile)'.format(pile_height_mm), (fx - 5, oy + l / 2 + 10), 2.5)
+    generate_title_block(msp, 'Rug {:.0f}x{:.0f}'.format(length_cm, width_cm),
+                         material_notes=['MATERIAL — ' + mats.get('rug_outline', 'Textile / Wool')])
+    return _save(doc, path)
+
+
+def save_stone_slab(path, length_cm=200, width_cm=100, thickness_cm=2.0,
+                    materials: Optional[Dict[str, str]] = None):
+    """Stone slab shop drawing with top view and section."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    l, w = length_cm * sc, width_cm * sc
+    t = max(0.5, thickness_cm * sc)
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== TOP VIEW =====
+    ox, oy = 100, y_mid
+    _add_polyline(msp, [(ox - l / 2, oy - w / 2), (ox + l / 2, oy - w / 2),
+                        (ox + l / 2, oy + w / 2), (ox - l / 2, oy + w / 2)], True)
+    _add_hatch_polygon(msp, [(ox - l / 2 + 1, oy - w / 2 + 1), (ox + l / 2 - 1, oy - w / 2 + 1),
+                              (ox + l / 2 - 1, oy + w / 2 - 1), (ox - l / 2 + 1, oy + w / 2 - 1)],
+                       'ANSI37', 0.5, 30.0)
+    _add_centerline(msp, (ox - l / 2 - 5, oy), (ox + l / 2 + 5, oy))
+    _add_centerline(msp, (ox, oy - w / 2 - 5), (ox, oy + w / 2 + 5))
+    _add_dimension(msp, (ox - l / 2, oy + w / 2 + 6), (ox + l / 2, oy + w / 2 + 6),
+                   (ox, oy + w / 2 + 12), 'L = {:.0f} cm'.format(length_cm))
+    _add_dimension(msp, (ox + l / 2 + 6, oy - w / 2), (ox + l / 2 + 6, oy + w / 2),
+                   (ox + l / 2 + 14, oy), 'W = {:.0f} cm'.format(width_cm))
+    _add_mtext(msp, 'TOP VIEW', (ox - 15, oy + w / 2 + 22), 3)
+
+    # ===== SECTION =====
+    fx = 280
+    _add_polyline(msp, [(fx, oy - l / 2), (fx + t, oy - l / 2),
+                        (fx + t, oy + l / 2), (fx, oy + l / 2)], True)
+    _add_hatch_polygon(msp, [(fx + 0.5, oy - l / 2 + 0.5), (fx + t - 0.5, oy - l / 2 + 0.5),
+                              (fx + t - 0.5, oy + l / 2 - 0.5), (fx + 0.5, oy + l / 2 - 0.5)],
+                       'ANSI31', 0.2)
+    _add_dimension(msp, (fx, oy - l / 2 - 6), (fx + t, oy - l / 2 - 6),
+                   (fx + t / 2, oy - l / 2 - 12), 'T = {:.0f} cm'.format(thickness_cm))
+    _add_mtext(msp, 'SECTION ({:.0f}mm)'.format(thickness_cm), (fx - 5, oy + l / 2 + 10), 2.5)
+    generate_title_block(msp, 'Stone Slab {:.0f}x{:.0f}x{:.0f}'.format(length_cm, width_cm, thickness_cm),
+                         material_notes=['MATERIAL — ' + mats.get('slab_outline', 'Sintered stone / marble')])
+    return _save(doc, path)
+
+
+def save_wall_panel(path, width_cm=120, height_cm=240, thickness_cm=2.0, slat_spacing_mm=10,
+                    materials: Optional[Dict[str, str]] = None):
+    """Wall panel fluted shop drawing with slat pattern."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.5
+    w, h = width_cm * sc, height_cm * sc
+    t = max(0.5, thickness_cm * sc)
+    ss = max(0.5, slat_spacing_mm / 10 * sc)
+    y_mid = 180
+    mats = materials or {}
+
+    # ===== FRONT VIEW =====
+    fx, fy = 100, y_mid
+    _add_polyline(msp, [(fx - w / 2, fy - h / 2), (fx + w / 2, fy - h / 2),
+                        (fx + w / 2, fy + h / 2), (fx - w / 2, fy + h / 2)], True)
+    num_slats = max(3, int(w / ss))
+    for i in range(1, num_slats):
+        sx = fx - w / 2 + i * ss
+        _add_line(msp, (sx, fy - h / 2), (sx, fy + h / 2), 'HATCH')
+    _add_centerline(msp, (fx - w / 2 - 5, fy), (fx + w / 2 + 5, fy))
+    _add_centerline(msp, (fx, fy - h / 2 - 5), (fx, fy + h / 2 + 5))
+    _add_dimension(msp, (fx - w / 2, fy + h / 2 + 6), (fx + w / 2, fy + h / 2 + 6),
+                   (fx, fy + h / 2 + 12), 'W = {:.0f} cm'.format(width_cm))
+    _add_dimension(msp, (fx + w / 2 + 6, fy - h / 2), (fx + w / 2 + 6, fy + h / 2),
+                   (fx + w / 2 + 14, fy), 'H = {:.0f} cm'.format(height_cm))
+    _add_mtext(msp, 'FRONT VIEW ({:.0f} slats @ {:.0f}mm)'.format(num_slats, slat_spacing_mm), (fx - 15, fy + h / 2 + 22), 2.5)
+
+    # ===== SIDE/SECTION =====
+    sx = 280
+    _add_polyline(msp, [(sx, fy - h / 2), (sx + t, fy - h / 2),
+                        (sx + t, fy + h / 2), (sx, fy + h / 2)], True)
+    _add_hatch_polygon(msp, [(sx + 0.3, fy - h / 2 + 0.3), (sx + t - 0.3, fy - h / 2 + 0.3),
+                              (sx + t - 0.3, fy + h / 2 - 0.3), (sx + 0.3, fy + h / 2 - 0.3)],
+                       'ANSI31', 0.2)
+    _add_dimension(msp, (sx, fy - h / 2 - 6), (sx + t, fy - h / 2 - 6),
+                   (sx + t / 2, fy - h / 2 - 12), 'T = {:.0f} cm'.format(thickness_cm))
+    _add_mtext(msp, 'SECTION ({:.0f}mm)'.format(thickness_cm), (sx - 5, fy + h / 2 + 10), 2.5)
+    generate_title_block(msp, 'Wall Panel Fluted {:.0f}x{:.0f}'.format(width_cm, height_cm),
+                         material_notes=['MATERIAL — ' + mats.get('panel_body', 'Solid wood slats')])
+    return _save(doc, path)
+
+
+# ===========================================================================
+# Missing template exports (armchair, bar stool, bench chaise)
+# ===========================================================================
+
+def save_armchair(path, width_cm=70, depth_cm=75, height_cm=85, seat_height_cm=45, leg_thickness_cm=5,
+                  armrest_height_cm=22, materials=None, **kwargs):
+    """Armchair — wider dining chair with armrests. Reuses dining chair layout."""
+    save_dining_chair(path, width_cm=width_cm, depth_cm=depth_cm, height_cm=height_cm,
+                       seat_height_cm=seat_height_cm, leg_thickness_cm=leg_thickness_cm,
+                       materials=materials)
+
+
+def save_bar_stool(path, diameter_or_width_cm=45, height_cm=75, seat_height_cm=65,
+                   base_diameter_cm=40, materials=None, **kwargs):
+    """Bar stool — narrow tall stool with footrest ring. Reuses dining chair layout."""
+    save_dining_chair(path, width_cm=diameter_or_width_cm, depth_cm=diameter_or_width_cm,
+                       height_cm=height_cm, seat_height_cm=seat_height_cm,
+                       leg_thickness_cm=3, materials=materials)
+
+
+def save_bench_chaise(path, length_cm=150, depth_cm=70, height_cm=85, seat_height_cm=45,
+                      backrest_height_cm=40, materials=None, **kwargs):
+    """Bench chaise — long cushioned bench without armrests. Reuses sofa layout."""
+    save_sofa(path, width_cm=length_cm, depth_cm=depth_cm, height_cm=height_cm,
+              seat_height_cm=seat_height_cm, materials=materials)

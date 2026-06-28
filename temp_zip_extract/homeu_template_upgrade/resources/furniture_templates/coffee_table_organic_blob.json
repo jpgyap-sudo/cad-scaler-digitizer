@@ -1,0 +1,73 @@
+{
+  "schema_version": "homeu-template-graph-v1",
+  "template_id": "coffee_table_organic_blob",
+  "category": "center_table",
+  "keywords": [
+    "koishi",
+    "organic",
+    "irregular",
+    "stone",
+    "blob"
+  ],
+  "views": [
+    "top",
+    "front",
+    "side"
+  ],
+  "required_dimensions": [
+    "max_width_cm",
+    "max_depth_cm",
+    "height_cm",
+    "top_thickness_cm"
+  ],
+  "optional_dimensions": [
+    "material_thickness_mm",
+    "edge_radius_mm",
+    "leg_profile_mm",
+    "clearance_mm",
+    "hardware_spacing_mm"
+  ],
+  "parts": [
+    {
+      "name": "organic_tabletop",
+      "required": true
+    },
+    {
+      "name": "support_base",
+      "required": true
+    }
+  ],
+  "visual_signature": {
+    "positive": [
+      "organic-outline",
+      "rounded-irregular",
+      "low-table"
+    ],
+    "negative": [
+      "sharp-rectangle"
+    ]
+  },
+  "aspect_ratio_hint": {
+    "min": 1.0,
+    "max": 2.2
+  },
+  "layer_map": {
+    "OUTLINE": "visible exterior edges",
+    "HIDDEN": "hidden/internal edges",
+    "CENTER": "centerlines and symmetry axes",
+    "DIMENSION": "dimension entities",
+    "TEXT": "labels and notes",
+    "MATERIAL": "wood/stone/glass/fabric areas",
+    "HARDWARE": "screws/feet/brackets",
+    "CONSTRUCTION": "temporary inference geometry"
+  },
+  "generation_rules": [
+    "Generate TOP view first from footprint.",
+    "Generate FRONT elevation from width and height.",
+    "Generate SIDE elevation from depth and height.",
+    "Keep component bounding boxes separate before merging outlines.",
+    "Reject template if mandatory parts are missing or impossible."
+  ],
+  "confirmation_prompt": "Confirm product type: coffee table organic blob?",
+  "notes": ""
+}

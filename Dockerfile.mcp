@@ -13,8 +13,8 @@ RUN npm install --omit=dev
 COPY mcp-server/ ./
 
 EXPOSE 3003
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=5s \
-  CMD wget -qO- http://localhost:3003/health --timeout=5 || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=15s \
+  CMD wget -qO- http://localhost:3003/health --timeout=5 2>/dev/null | grep -q '"ok":true' || exit 1
 ENV NODE_ENV=production
 
 # SSE transport for Docker — listens on port 3003

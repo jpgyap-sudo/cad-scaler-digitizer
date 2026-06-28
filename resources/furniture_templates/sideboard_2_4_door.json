@@ -1,0 +1,81 @@
+{
+  "schema_version": "homeu-template-graph-v1",
+  "template_id": "sideboard_2_4_door",
+  "category": "sideboard",
+  "keywords": [
+    "sideboard",
+    "imari",
+    "cabinet",
+    "modern sideboard"
+  ],
+  "views": [
+    "front",
+    "top",
+    "side",
+    "section"
+  ],
+  "required_dimensions": [
+    "width_cm",
+    "depth_cm",
+    "height_cm",
+    "door_count",
+    "carcass_thickness_cm"
+  ],
+  "optional_dimensions": [
+    "material_thickness_mm",
+    "edge_radius_mm",
+    "leg_profile_mm",
+    "clearance_mm",
+    "hardware_spacing_mm"
+  ],
+  "parts": [
+    {
+      "name": "carcass",
+      "required": true
+    },
+    {
+      "name": "doors",
+      "required": true
+    },
+    {
+      "name": "legs_or_plinth",
+      "required": false
+    },
+    {
+      "name": "shelves",
+      "required": false
+    }
+  ],
+  "visual_signature": {
+    "positive": [
+      "box-cabinet",
+      "doors",
+      "storage",
+      "horizontal-casegood"
+    ],
+    "negative": []
+  },
+  "aspect_ratio_hint": {
+    "min": 2.0,
+    "max": 5.5
+  },
+  "layer_map": {
+    "OUTLINE": "visible exterior edges",
+    "HIDDEN": "hidden/internal edges",
+    "CENTER": "centerlines and symmetry axes",
+    "DIMENSION": "dimension entities",
+    "TEXT": "labels and notes",
+    "MATERIAL": "wood/stone/glass/fabric areas",
+    "HARDWARE": "screws/feet/brackets",
+    "CONSTRUCTION": "temporary inference geometry"
+  },
+  "generation_rules": [
+    "Generate TOP view first from footprint.",
+    "Generate FRONT elevation from width and height.",
+    "Generate SIDE elevation from depth and height.",
+    "Keep component bounding boxes separate before merging outlines.",
+    "Reject template if mandatory parts are missing or impossible."
+  ],
+  "confirmation_prompt": "Confirm product type: sideboard 2 4 door?",
+  "notes": ""
+}

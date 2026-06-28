@@ -1,0 +1,7 @@
+{
+  "type": "wall_panel_fluted",
+  "width_cm": 120,
+  "height_cm": 240,
+  "thickness_cm": 2.0,
+  "slat_spacing_mm": 10
+}

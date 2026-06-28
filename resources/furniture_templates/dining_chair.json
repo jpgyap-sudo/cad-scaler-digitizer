@@ -1,0 +1,73 @@
+{
+  "schema_version": "homeu-template-graph-v1",
+  "template_id": "dining_chair",
+  "category": "dining_chair",
+  "keywords": [
+    "dining chair",
+    "fern"
+  ],
+  "views": [
+    "top",
+    "front",
+    "side"
+  ],
+  "required_dimensions": [
+    "width_cm",
+    "depth_cm",
+    "height_cm",
+    "seat_height_cm"
+  ],
+  "optional_dimensions": [
+    "material_thickness_mm",
+    "edge_radius_mm",
+    "leg_profile_mm",
+    "clearance_mm",
+    "hardware_spacing_mm"
+  ],
+  "parts": [
+    {
+      "name": "seat",
+      "required": true
+    },
+    {
+      "name": "backrest",
+      "required": true
+    },
+    {
+      "name": "legs",
+      "required": true
+    }
+  ],
+  "visual_signature": {
+    "positive": [
+      "single-seat",
+      "upright-back",
+      "four-legs",
+      "dining-height"
+    ],
+    "negative": []
+  },
+  "aspect_ratio_hint": {
+    "min": 0.7,
+    "max": 1.3
+  },
+  "layer_map": {
+    "OUTLINE": "visible exterior edges",
+    "HIDDEN": "hidden/internal edges",
+    "CENTER": "centerlines and symmetry axes",
+    "DIMENSION": "dimension entities",
+    "TEXT": "labels and notes",
+    "MATERIAL": "wood/stone/glass/fabric areas",
+    "HARDWARE": "screws/feet/brackets",
+    "CONSTRUCTION": "temporary inference geometry"
+  },
+  "generation_rules": [
+    "Generate TOP view first from footprint.",
+    "Generate FRONT elevation from width and height.",
+    "Generate SIDE elevation from depth and height.",
+    "Keep component bounding boxes separate before merging outlines.",
+    "Reject template if mandatory parts are missing or impossible."
+  ],
+  "confirmation_prompt": "Confirm product type: dining chair?",
+  "notes": ""
+}
