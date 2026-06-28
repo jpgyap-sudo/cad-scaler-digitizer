@@ -1,5 +1,47 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — reference-ratio solver also never activated; recurring pattern identified
+
+**Status:** DOCUMENTED. Not fixed (investigation-only pass per user instruction).
+
+`app/backend/reference_ratio_solver.py` (`solve_missing_dimensions`/
+`get_reference_ratios`, genuinely called from live routes — confirmed via
+grep, unlike `match_detected_to_reference` in the same file, which is
+imported at routes.py:27 but **never called anywhere** — dead import) uses
+`DEFAULT_RATIOS`, a hardcoded dict of typical furniture proportions, NOT the
+live `ProductReference`/`GeometryProfile` Postgres tables the crawler
+populates. It optionally merges in `resources/calibration_ledger.json` if
+present — **that file does not exist.**
+
+It's supposed to be produced by `scripts/auto_calibrate_from_crawled.py`
+("THE GENIUS INSIGHT" — runs digitize on each of 259 cataloged products with
+known ground-truth dimensions, computes per-type correction factors, writes
+the ledger). The input data is real and substantial:
+`resources/product_catalog/_registry.json` genuinely has 259 entries. The
+script has clearly **never been run** — its only output file doesn't exist
+anywhere in the repo or on the VPS.
+
+### Pattern across this whole audit
+
+Every "learning loop" found so far follows the same shape: real, often
+well-designed logic + real input data sitting ready, but the **one
+connecting step that would activate it** (a DB table, a cron install, a
+one-time batch script run) was never completed:
+
+| Loop | Logic exists? | Data exists? | Activated? |
+|---|---|---|---|
+| Proportion ledger (`component_proportions`) | Yes, well-designed | N/A (accumulates from use) | **Now yes** (table fixed this session) |
+| Comparison scoring (`comparison_results`) | Yes (scoring formula has its own bug, see above) | N/A | **Now yes** (table fixed this session) |
+| Auto-calibration (`digitizer_parameters` + cron) | Yes, self-provisioning | Now yes (comparison_results populated) | **No** — cron never installed |
+| Reference ratio ledger (`calibration_ledger.json`) | Yes | Yes — 259 real cataloged products | **No** — batch script never run |
+
+Worth treating as one decision rather than four separate ones: is someone
+going to run `auto_calibrate_from_crawled.py` once and install the cron, or
+should these be re-architected to trigger automatically (e.g. off the queue
+worker, after N digitizations) instead of depending on someone remembering
+to run a script / install a cron entry by hand?
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — auto-calibration loop: well-designed, self-healing, but never actually activated
 
 **Status:** DOCUMENTED. Not a code bug — an operational gap (missing cron
