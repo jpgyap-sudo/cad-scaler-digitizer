@@ -1,5 +1,61 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — SECURITY: real OpenAI key in plaintext frontend env files + client-side calling pattern
+
+**Status:** FLAGGED, HIGH PRIORITY. Not fixed — rotating/removing a live API
+key is the user's call, not something to do silently mid-audit. Confirmed
+NOT currently exposed via the live production site (see below), but the
+underlying pattern is a real vulnerability if ever deployed any other way.
+
+**What's there:** `frontend/.env` and `frontend/.env.production` both set
+`VITE_OPENAI_API_KEY` to a real, live-looking OpenAI key (matches the key
+seen earlier this session in the legacy `cad-digitizer-api` container's
+environment). `frontend/services/ai.ts` and `frontend/services/agent.ts`
+both read `import.meta.env.VITE_OPENAI_API_KEY` and call
+`https://api.openai.com/v1/chat/completions` **directly from the browser**.
+`agent.ts` even logs the key prefix to the browser console
+(`console.log(... API_KEY.substring(0, 8) ...)`).
+
+Any env var prefixed `VITE_` is intentionally public by Vite's design — it
+gets statically inlined into the built JS bundle, readable by anyone who
+opens dev tools or downloads the bundle file. An OpenAI key embedded this
+way is fully extractable by any visitor and could be used to run up
+unlimited charges on the account or for unrelated purposes.
+
+**Why this isn't currently live on `cad.abcx124.xyz`:** `.dockerignore`
+correctly excludes `**/.env` and `**/.env.*` from the Docker build context,
+so `Dockerfile.frontend`'s `npm run build` (the one that actually produces
+what's deployed) never sees these files — `import.meta.env.VITE_OPENAI_API_KEY`
+resolves to `undefined` in the real deployed bundle. Verified this is also
+not a git-history leak: `git log --all -- frontend/.env frontend/.env.production`
+returns nothing — these files have never been committed.
+
+**But:** the key still sits in cleartext on disk in 2 local files right now,
+and I found it because a stray local (non-Docker) `npm run build` baked it
+into an untracked `frontend/dist/` folder — confirming the leak path is real
+whenever anyone builds the frontend outside the Docker pipeline (local
+testing, a different host, a different deploy method, accidentally sharing
+`dist/`). The architecture itself — client-side code calling OpenAI directly
+with an embedded key — is the root problem, not just this one instance of
+it; the *server-side* OpenAI integration in `python-worker` already exists
+and does this correctly (key never leaves the server). `ai.ts`/`agent.ts`
+look like an older/parallel implementation that should probably be removed
+entirely in favor of the server-side path, not just have its key swapped.
+
+**Confirmed NOT dead code:** `App.tsx:22` imports `runCadAgent`,
+`runCadVerifier`, `runCadCorrector` from `agent.ts`, and calls all three from
+an active user-triggered flow (`App.tsx` ~line 159-170). This is a live,
+reachable feature path, not legacy/unused code — strengthens the case for
+actually removing it rather than just rotating the key and leaving the
+pattern in place.
+
+**Recommend:** rotate this key regardless (it's been in 2 plaintext files,
+can't fully rule out other exposure I haven't checked — e.g. IDE
+auto-sync, backup tools, other local clones), and decide whether
+`ai.ts`/`agent.ts`'s direct-from-browser OpenAI calls are still used by
+anything live or can be deleted outright.
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — Qdrant similarity search: data side is genuinely live, no UI entry point
 
 **Status:** DOCUMENTED. Not a bug — a missing frontend feature.
