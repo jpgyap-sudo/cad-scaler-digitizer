@@ -370,6 +370,25 @@ const App: React.FC = () => {
     }));
   }, [cadEngineResult]);
 
+  /** Read accumulated line role corrections from sessionStorage so they survive
+   *  across correction requests (instead of being overwritten with '[]'). */
+  function getAccumulatedRoleCorrections(): string {
+    try {
+      const raw = sessionStorage.getItem('cad_line_role_corrections');
+      if (!raw) return '[]';
+      const pairs: [string, string][] = JSON.parse(raw);
+      return JSON.stringify(pairs.map(([lineId, correctedRole]) => ({
+        session_id: cadEngineResult?.job_id || '',
+        line_id: lineId,
+        original_role: '',
+        corrected_role: correctedRole,
+        is_locked: true,
+      })));
+    } catch {
+      return '[]';
+    }
+  }
+
   const handleCorrectValue = useCallback(async (text: string, newValue: number) => {
     if (!cadEngineResult?.job_id) return;
     try {
@@ -385,7 +404,7 @@ const App: React.FC = () => {
             corrected_value_cm: newValue,
             is_locked: true,
           }]),
-          line_role_corrections: '[]',
+          line_role_corrections: getAccumulatedRoleCorrections(),
         }),
       });
       if (res.ok) {
@@ -414,7 +433,7 @@ const App: React.FC = () => {
             corrected_value_cm: dim.value_cm,
             is_locked: true,
           }]),
-          line_role_corrections: '[]',
+          line_role_corrections: getAccumulatedRoleCorrections(),
         }),
       });
       setCorrectionCount(c => c + 1);

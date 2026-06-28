@@ -3608,26 +3608,6 @@ async def update_parameter(payload: dict):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
-@router.get("/sections/predict")
-async def predict_sections(furniture_type: str = Query(...),
-                            width_cm: float = Query(default=0),
-                            depth_cm: float = Query(default=0),
-                            height_cm: float = Query(default=0)):
-    """Predict shop drawing sections for a furniture type based on dimensions.
-    Returns which views to generate and their component layout.
-    This wires the section_predictor module into the API (WG-2 fix)."""
-    try:
-        from app.backend.section_predictor import predict_drawing_sections
-        params = {}
-        if width_cm > 0: params['width_cm'] = width_cm
-        if depth_cm > 0: params['depth_cm'] = depth_cm
-        if height_cm > 0: params['overall_height_cm'] = height_cm
-        result = predict_drawing_sections(furniture_type, params)
-        return JSONResponse(result)
-    except Exception as e:
-        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
-
-
 @router.get("/benchmark/run")
 async def benchmark_run():
     """Run the accuracy benchmark against all fixture specs.

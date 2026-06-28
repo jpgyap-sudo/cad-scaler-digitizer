@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-06-27T03:25:00.000Z",
-  "total_fixtures": 12,
+  "timestamp": "2026-06-28T07:10:00.000Z",
+  "total_fixtures": 13,
   "fixtures": [
     {
       "name": "fabric-sofa-105x92x87",
@@ -73,6 +73,12 @@
       "type": "sofa",
       "path": "fixtures/sofa/spec.json",
       "reference_image": "fixtures/sofa/reference.jpg"
+    },
+    {
+      "name": "asymmetric-pedestal-table-180x90x75",
+      "type": "asymmetric_pedestal_table",
+      "path": "fixtures/asymmetric-pedestal-table-180x90x75/spec.json",
+      "reference_image": ""
     }
   ]
 }

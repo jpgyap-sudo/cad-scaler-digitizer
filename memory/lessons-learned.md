@@ -3722,3 +3722,307 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: remove unsupported volume size quotas blocking docker compose up
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 97daddbd475a70839b43c404849ef1b3262da2ca
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 97daddbd475a70839b43c404849ef1b3262da2ca
+**Files:** 
+
+**Summary:**
+Commit: fix: remove unsupported volume size quotas blocking docker compose up
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: remove unsupported volume size quotas blocking docker compose up*
+
+#### Lesson Learned
+
+Commit: fix: remove unsupported volume size quotas blocking docker compose up
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: qdrant healthcheck and Redis wait-check broken on the new stack
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7cdea60edc52dfaf2d2ef0fbf8d093b85dedcb50
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 7cdea60edc52dfaf2d2ef0fbf8d093b85dedcb50
+**Files:** 
+
+**Summary:**
+Commit: fix: qdrant healthcheck and Redis wait-check broken on the new stack
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: qdrant healthcheck and Redis wait-check broken on the new stack*
+
+#### Lesson Learned
+
+Commit: fix: qdrant healthcheck and Redis wait-check broken on the new stack
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: 23 gap fixes — isometric view, SVG previews, nginx routing, healthchecks
+
+Date: 2026-06-27
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5faed823aaf391a9a24249a335e27e6fcda2fc6e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 5faed823aaf391a9a24249a335e27e6fcda2fc6e
+**Files:** 
+
+**Summary:**
+Commit: fix: 23 gap fixes — isometric view, SVG previews, nginx routing, healthchecks
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: 23 gap fixes — isometric view, SVG previews, nginx routing, healthchecks*
+
+#### Lesson Learned
+
+Commit: fix: 23 gap fixes — isometric view, SVG previews, nginx routing, healthchecks
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: all 7 bugs fixed — range parsing, dedup, 403 retry, cleanup, dead-letter
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 923efb519bf81c2ad858af2d325ad3f4b5d50ba6
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 923efb519bf81c2ad858af2d325ad3f4b5d50ba6
+**Files:** 
+
+**Summary:**
+Commit: fix: all 7 bugs fixed — range parsing, dedup, 403 retry, cleanup, dead-letter
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: all 7 bugs fixed — range parsing, dedup, 403 retry, cleanup, dead-letter*
+
+#### Lesson Learned
+
+Commit: fix: all 7 bugs fixed — range parsing, dedup, 403 retry, cleanup, dead-letter
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: analytics tab + parameter sliders
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 8b164dbabd9bbb0b68c1abbb05b75ccce1901c12
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 8b164dbabd9bbb0b68c1abbb05b75ccce1901c12
+**Files:** 
+
+**Summary:**
+Commit: fix: analytics tab + parameter sliders
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: analytics tab + parameter sliders*
+
+#### Lesson Learned
+
+Commit: fix: analytics tab + parameter sliders
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: systematic bias correction factor clamped (0.3-1.7), hints display
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit e4e4fe72e654117528850b18c45029ae5380f329
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** e4e4fe72e654117528850b18c45029ae5380f329
+**Files:** 
+
+**Summary:**
+Commit: fix: systematic bias correction factor clamped (0.3-1.7), hints display
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: systematic bias correction factor clamped (0.3-1.7), hints display*
+
+#### Lesson Learned
+
+Commit: fix: systematic bias correction factor clamped (0.3-1.7), hints display
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: engineering template sliders never rendered for any of the 18 templates
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit fe0b89dd26c23733e31b85193663c425c67735aa
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** fe0b89dd26c23733e31b85193663c425c67735aa
+**Files:** 
+
+**Summary:**
+Commit: fix: engineering template sliders never rendered for any of the 18 templates
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: engineering template sliders never rendered for any of the 18 templates*
+
+#### Lesson Learned
+
+Commit: fix: engineering template sliders never rendered for any of the 18 templates
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add missing ResourcesPage.tsx that broke the frontend build entirely
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 809474cbb4bd69b90f7e4c7b6f07c9437fcc3865
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 809474cbb4bd69b90f7e4c7b6f07c9437fcc3865
+**Files:** 
+
+**Summary:**
+Commit: fix: add missing ResourcesPage.tsx that broke the frontend build entirely
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add missing ResourcesPage.tsx that broke the frontend build entirely*
+
+#### Lesson Learned
+
+Commit: fix: add missing ResourcesPage.tsx that broke the frontend build entirely
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

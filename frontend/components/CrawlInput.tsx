@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb } from "lucide-react";
+import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb, Maximize2 } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
@@ -213,15 +213,31 @@ export default function CrawlInput() {
 
           {/* SVG Preview */}
           {result.preview_svg && (
-            <div>
-              <p className="text-xs font-medium text-gray-700 mb-1">CAD Preview</p>
-              <img
-                src={result.preview_svg.startsWith("/") ? result.preview_svg : ENGINE_BASE + result.preview_svg}
-                alt="CAD Preview"
-                className="w-full border border-gray-200 rounded-lg bg-white"
-                style={{ maxHeight: "200px", objectFit: "contain" } as React.CSSProperties}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+            <div className="bg-white border border-gray-200 rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-semibold text-gray-700">CAD Preview</p>
+                <a
+                  href={result.preview_svg.startsWith("/") ? result.preview_svg : ENGINE_BASE + result.preview_svg}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[10px] text-indigo-500 hover:text-indigo-700"
+                >
+                  <Maximize2 size={10} /> Open full size
+                </a>
+              </div>
+              <a
+                href={result.preview_svg.startsWith("/") ? result.preview_svg : ENGINE_BASE + result.preview_svg}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src={result.preview_svg.startsWith("/") ? result.preview_svg : ENGINE_BASE + result.preview_svg}
+                  alt="CAD Preview"
+                  className="w-full border border-gray-100 rounded bg-white"
+                  style={{ maxHeight: "350px", objectFit: "contain", cursor: "zoom-in" } as React.CSSProperties}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              </a>
             </div>
           )}
 
