@@ -1,5 +1,5 @@
 import React from "react";
-import { Globe, Image, FileDown, CheckCircle2, BarChart3, BookOpen, ArrowRight, Zap } from "lucide-react";
+import { Globe, Image, FileDown, CheckCircle2, BarChart3, BookOpen, ArrowRight, Zap, Cpu, Bot, Layers, Play, Crosshair } from "lucide-react";
 
 const STEPS = [
   {
@@ -77,8 +77,71 @@ export default function WorkflowGuide() {
         ))}
       </div>
 
+      {/* Engine Modes */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mt-4">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <Cpu size={16} className="text-indigo-500" />
+          Digitizer Engine Modes
+        </h3>
+        <p className="text-xs text-gray-500 mb-3">
+          The Upload tab offers four engine modes that control how the product photo is digitized:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Cpu size={14} className="text-gray-600" />
+              <span className="text-xs font-semibold text-gray-700">OpenCV</span>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-relaxed">
+              Pure edge detection pipeline. <strong>cv2.Canny</strong> detects edges using configurable thresholds (canny_low, canny_high).
+              Lines are extracted via Hough Transform, circles via HoughCircles. OCR extracts written dimensions from the image using Tesseract.
+              Fast but requires clear product photos with visible dimensions. Used as the baseline for all other modes.
+            </p>
+          </div>
+
+          <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Crosshair size={14} className="text-indigo-600" />
+              <span className="text-xs font-semibold text-indigo-700">Hybrid</span>
+            </div>
+            <p className="text-[10px] text-indigo-500 leading-relaxed">
+              <strong>Default mode.</strong> Combines OpenCV edge detection with cloud-based AI vision (OpenAI GPT-4o / Google Vision).
+              The AI classifies furniture type, detects major dimensions, and identifies measurement labels.
+              OpenCV handles precise line/edge extraction. Results are merged: AI provides context + correction,
+              OpenCV provides pixel-level accuracy. Falls back gracefully if cloud API is unavailable.
+            </p>
+          </div>
+
+          <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Bot size={14} className="text-purple-600" />
+              <span className="text-xs font-semibold text-purple-700">Smart AI</span>
+            </div>
+            <p className="text-[10px] text-purple-500 leading-relaxed">
+              Cloud-first approach. Sends the full photo to OpenAI GPT-4o with computer vision.
+              The AI analyzes the image end-to-end: identifies furniture type, detects all dimensions,
+              estimates scale from reference objects, and returns a structured dimension JSON.
+              OpenCV is used as a fallback for edge refinement only. Requires <code className="bg-purple-100 px-1 rounded">OPENAI_API_KEY</code>.
+            </p>
+          </div>
+
+          <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Play size={14} className="text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-700">Pipeline</span>
+            </div>
+            <p className="text-[10px] text-emerald-500 leading-relaxed">
+              Full multi-stage orchestration pipeline. Runs Cloud Vision (AI) → CAD Kernel (OpenCV + annotation extraction)
+              → Template matching → DXF/PDF export. Each stage is independently monitored and can be retried on failure.
+              The pipeline result includes intermediate outputs (annotated image, primitives, scene graph) for debugging and transparency.
+              Best quality but slowest (takes ~2-3 minutes per product).
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Summary */}
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-lg p-4 mt-6">
+      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-lg p-4 mt-4">
         <div className="flex items-start gap-3">
           <Zap size={18} className="text-indigo-500 mt-0.5 shrink-0" />
           <div>
