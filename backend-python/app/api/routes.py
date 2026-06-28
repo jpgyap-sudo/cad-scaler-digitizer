@@ -1533,6 +1533,73 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         return JSONResponse({"error": f"Hybrid failed: {e}", "trace": traceback.format_exc()}, status_code=500)
 
 
+# =============================================================================
+# Smart Auto Workflow — single endpoint, no mode selection
+# =============================================================================
+
+@router.post("/digitize/smart")
+async def digitize_smart(
+    file: UploadFile = File(...),
+    real_width_cm: str = Form(None),
+    real_height_cm: str = Form(None),
+    furniture_type: str = Form(None),
+    confirmation_answers: str = Form(None),
+):
+    """
+    One excellent workflow.
+    User never chooses OpenCV/Hybrid/AI/Pipeline.
+    Backend decides route and returns confirmation questions only when needed.
+    """
+    import json
+
+    answers = {}
+    if confirmation_answers:
+        try:
+            answers = json.loads(confirmation_answers)
+        except Exception:
+            answers = {}
+
+    # Apply confirmation answers as hard overrides.
+    if answers.get("furniture_type"):
+        furniture_type = answers["furniture_type"]
+
+    # First pass: use hybrid when OpenAI key exists, otherwise normal digitize.
+    if OPENAI_API_KEY:
+        response = await digitize_hybrid(file, real_width_cm, real_height_cm, furniture_type)
+    else:
+        response = await digitize(file, real_width_cm, real_height_cm, furniture_type)
+
+    try:
+        payload = json.loads(response.body.decode("utf-8"))
+    except Exception:
+        return response
+
+    furniture = payload.get("furniture") or {}
+    detected = payload.get("detected") or {}
+    dims = detected.get("dimensions") or []
+    lines_count = int(detected.get("lines") or 0)
+
+    from app.backend.smart_workflow import build_smart_metadata
+
+    real_w = _parse_float(real_width_cm)
+    real_h = _parse_float(real_height_cm)
+
+    payload["smart_workflow"] = build_smart_metadata(
+        has_openai_key=bool(OPENAI_API_KEY),
+        furniture_type=furniture.get("type") or "generic_2d_furniture",
+        furniture_confidence=float(furniture.get("confidence") or 0),
+        dimensions=dims,
+        lines_count=lines_count,
+        real_width_cm=real_w,
+        real_height_cm=real_h,
+        ocr_lines=detected.get("ocr_lines") or [],
+    )
+
+    payload["furniture"]["needs_confirmation"] = payload["smart_workflow"]["needs_confirmation"]
+
+    return JSONResponse(payload)
+
+
 @router.post("/digitize/resolve")
 async def digitize_resolve(furniture_type: str = Form(...),
                             length_cm: float = Form(0), depth_cm: float = Form(0),
@@ -1735,20 +1802,37 @@ def preview_svg(filename: str):
     if svg_path.exists(): return FileResponse(svg_path, media_type="image/svg+xml; charset=utf-8")
     dxf_path = OUT / safe
     if dxf_path.exists():
-        import ezdxf, re
+        import ezdxf, re, json
         try:
+            # Read sidecar JSON for furniture type and dimensions (FIX: was hardcoded round_pedestal)
+            json_sidecar = Path(str(dxf_path).replace('.dxf', '.json'))
+            ftype = "round_pedestal_table"
+            resolved = {}
+            if json_sidecar.exists():
+                try:
+                    sidecar = json.loads(json_sidecar.read_text(encoding='utf-8'))
+                    ftype = sidecar.get('furniture_type', 'round_pedestal_table')
+                    known = sidecar.get('known_dimensions', {})
+                    est = sidecar.get('estimated_components', {})
+                    resolved.update(known)
+                    resolved.update(est)
+                except Exception:
+                    pass
             doc = ezdxf.readfile(str(dxf_path))
-            from app.backend.drawing_builders import build_round_pedestal_model
             from app.backend.svg_exporter import drawing_to_svg
-            top_dia, height = 80.0, 70.0
-            for e in doc.modelspace():
-                if e.dxftype() == "DIMENSION":
-                    txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
-                    nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
-                    val = float(nums[0]) if nums else None
-                    if val and ("%%c" in txt or "dia" in txt.lower()): top_dia = val
-                    if val and ("H" in txt or "height" in txt.lower()): height = val
-            model = build_round_pedestal_model(top_dia, height)
+            # Fallback: try to extract dimensions from DXF DIMENSION entities
+            if not resolved.get('top_diameter_cm') and not resolved.get('width_cm'):
+                top_dia, height = 80.0, 70.0
+                for e in doc.modelspace():
+                    if e.dxftype() == "DIMENSION":
+                        txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                        nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                        val = float(nums[0]) if nums else None
+                        if val and ("%%c" in txt or "dia" in txt.lower()): top_dia = val
+                        if val and ("H" in txt or "height" in txt.lower()): height = val
+                resolved['top_diameter_cm'] = top_dia
+                resolved['overall_height_cm'] = height
+            model = _build_svg_model(ftype, resolved, None, None, None)
             svg = drawing_to_svg(model)
             with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
             return FileResponse(svg_path, media_type="image/svg+xml; charset=utf-8")
@@ -1855,6 +1939,25 @@ async def adjust_dimensions(dxf_file: str = Form(...),
                 sidecar_materials = sidecar.get('materials', {})
             except Exception as e:
                 print(f"[Adjust] sidecar load failed: {e}")
+
+        # Build merged_dims from sidecar + form overrides (FIX: was undefined)
+        merged_dims = {}
+        merged_dims.update(known)
+        merged_dims.update(est)
+        param_overrides = {
+            'top_diameter_cm': top_diameter_cm,
+            'overall_height_cm': overall_height_cm,
+            'base_diameter_cm': base_diameter_cm,
+            'neck_diameter_cm': neck_diameter_cm,
+            'collar_diameter_cm': collar_diameter_cm,
+            'top_thickness_cm': top_thickness_cm,
+            'width_cm': width_cm,
+            'depth_cm': depth_cm,
+            'leg_thickness_cm': leg_thickness_cm,
+        }
+        for k, v in param_overrides.items():
+            if v is not None:
+                merged_dims[k] = float(v)
 
         save_fn, build_fn = _get_adjust_fn(ftype)
         if save_fn is None or build_fn is None:
@@ -2432,19 +2535,33 @@ def view_drawing(filename: str):
     if not svg_path.exists():
         dxf_path = OUT / safe.replace('.svg', '.dxf')
         if dxf_path.exists():
-            from app.backend.drawing_builders import build_round_pedestal_model
+            import ezdxf, re, json
             from app.backend.svg_exporter import drawing_to_svg
-            import ezdxf, re
+            # Read sidecar for furniture type (FIX: was hardcoded round_pedestal)
+            json_sidecar = Path(str(dxf_path).replace('.dxf', '.json'))
+            ftype = "round_pedestal_table"
+            resolved = {}
+            if json_sidecar.exists():
+                try:
+                    sidecar = json.loads(json_sidecar.read_text(encoding='utf-8'))
+                    ftype = sidecar.get('furniture_type', 'round_pedestal_table')
+                    resolved.update(sidecar.get('known_dimensions', {}))
+                    resolved.update(sidecar.get('estimated_components', {}))
+                except Exception:
+                    pass
             doc = ezdxf.readfile(str(dxf_path))
-            top_dia, height = 80.0, 70.0
-            for e in doc.modelspace():
-                if e.dxftype() == "DIMENSION":
-                    txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
-                    nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
-                    val = float(nums[0]) if nums else None
-                    if val and ("%%c" in txt or "dia" in txt.lower()): top_dia = val
-                    if val and ("H" in txt or "height" in txt.lower()): height = val
-            model = build_round_pedestal_model(top_dia, height)
+            if not resolved.get('top_diameter_cm') and not resolved.get('width_cm'):
+                top_dia, height = 80.0, 70.0
+                for e in doc.modelspace():
+                    if e.dxftype() == "DIMENSION":
+                        txt = (e.dxf.text if hasattr(e.dxf, "text") else "") or ""
+                        nums = re.findall(r'(\d+(?:\.\d+)?)', txt)
+                        val = float(nums[0]) if nums else None
+                        if val and ("%%c" in txt or "dia" in txt.lower()): top_dia = val
+                        if val and ("H" in txt or "height" in txt.lower()): height = val
+                resolved['top_diameter_cm'] = top_dia
+                resolved['overall_height_cm'] = height
+            model = _build_svg_model(ftype, resolved, None, None, None)
             svg = drawing_to_svg(model)
             with open(str(svg_path), 'w', encoding='utf-8') as f: f.write(svg)
     if not svg_path.exists(): return JSONResponse({"error": "Drawing not found"}, status_code=404)
@@ -3487,5 +3604,82 @@ async def update_parameter(payload: dict):
         from app.services.training_feedback import _parameter_state
         _parameter_state[param_key] = param_value
         return JSONResponse({"status": "ok", "param_key": param_key, "param_value": param_value})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/sections/predict")
+async def predict_sections(furniture_type: str = Query(...),
+                            width_cm: float = Query(default=0),
+                            depth_cm: float = Query(default=0),
+                            height_cm: float = Query(default=0)):
+    """Predict shop drawing sections for a furniture type based on dimensions.
+    Returns which views to generate and their component layout.
+    This wires the section_predictor module into the API (WG-2 fix)."""
+    try:
+        from app.backend.section_predictor import predict_drawing_sections
+        params = {}
+        if width_cm > 0: params['width_cm'] = width_cm
+        if depth_cm > 0: params['depth_cm'] = depth_cm
+        if height_cm > 0: params['overall_height_cm'] = height_cm
+        result = predict_drawing_sections(furniture_type, params)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+@router.get("/benchmark/run")
+async def benchmark_run():
+    """Run the accuracy benchmark against all fixture specs.
+    Returns per-fixture accuracy scores and overall summary.
+    This endpoint was missing from the API routes (WG-2 fix)."""
+    try:
+        from app.backend.accuracy_benchmark import run_accuracy_benchmark
+        result = run_accuracy_benchmark()
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+@router.get("/benchmark/fixtures")
+async def benchmark_list_fixtures():
+    """List all available benchmark fixtures with their metadata."""
+    try:
+        from app.backend.accuracy_benchmark import load_fixtures
+        fixtures = load_fixtures()
+        return JSONResponse({
+            "fixtures": [
+                {
+                    "name": f.name,
+                    "furniture_type": f.furniture_type,
+                    "dimensions": [d.to_dict() if hasattr(d, 'to_dict') else {
+                        "tag": d.tag, "value_cm": d.value_cm, "tolerance_pct": d.tolerance_pct
+                    } for d in f.dimensions],
+                    "has_expected_dxf": f.expected_dxf_path is not None,
+                }
+                for f in fixtures
+            ],
+            "total": len(fixtures),
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.post("/benchmark/run")
+async def benchmark_run_with_params(max_fixtures: int = Form(0)):
+    """Run benchmark with optional limit on number of fixtures.
+    When max_fixtures is 0 (default), all fixtures are used."""
+    try:
+        from app.backend.accuracy_benchmark import run_accuracy_benchmark, load_fixtures
+        all_fixtures = load_fixtures()
+        if max_fixtures > 0 and max_fixtures < len(all_fixtures):
+            fixtures = all_fixtures[:max_fixtures]
+        else:
+            fixtures = all_fixtures
+        result = run_accuracy_benchmark()
+        result["fixtures_loaded"] = len(all_fixtures)
+        result["fixtures_used"] = len(fixtures)
+        result["fixtures_limited"] = len(fixtures) < len(all_fixtures)
+        return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)

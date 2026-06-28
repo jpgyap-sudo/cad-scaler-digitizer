@@ -460,3 +460,35 @@ export async function digitizeUnified(
 
   return res.json();
 }
+
+// ──── Smart Auto Workflow ────
+
+export type SmartWorkflowMeta = {
+  workflow: "smart_auto";
+  internal_route: "opencv" | "hybrid" | "ai" | "pipeline";
+  ai_used_or_recommended: boolean;
+  route_reasons: string[];
+  confidence: { furniture: number; dimensions: number; scale: number; };
+  needs_confirmation: boolean;
+  confirmation_questions: Array<{
+    id: string; type: string; severity: string; title: string; message: string;
+    options: Array<{ label: string; value: string }>;
+    default_value?: string; required?: boolean; affects_dxf?: boolean;
+  }>;
+};
+
+export async function digitizeSmartAuto(
+  file: File,
+  opts?: { realWidthCm?: number; realHeightCm?: number; furnitureType?: string; answers?: Record<string, string>; }
+): Promise<DigitizeResult> {
+  const form = new FormData();
+  form.append("file", file);
+  if (opts?.realWidthCm) form.append("real_width_cm", String(opts.realWidthCm));
+  if (opts?.realHeightCm) form.append("real_height_cm", String(opts.realHeightCm));
+  if (opts?.furnitureType) form.append("furniture_type", String(opts.furnitureType));
+  if (opts?.answers) form.append("confirmation_answers", JSON.stringify(opts.answers));
+  const base = getEngineBase();
+  const res = await fetch(`${base}/digitize/smart`, { method: "POST", body: form });
+  if (!res.ok) { const err = await res.text(); throw new Error(`Smart Auto failed (${res.status}): ${err}`); }
+  return res.json();
+}
