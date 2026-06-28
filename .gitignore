@@ -25,3 +25,5 @@ playwright-report/
 frontend/.env
 frontend/.env.production
 frontend/.env.*
+
+backend-python/.env
