@@ -3361,8 +3361,8 @@ async def list_comparison_results(limit: int = 20):
                 "edge_overlap": round(r[3], 3) if r[3] else 0,
                 "entity_match": round(r[4], 3) if r[4] else 0,
                 "dim_dev_pct": round(r[5], 1) if r[5] else 0,
-                "error_count": len(json.loads(r[6] or "[]")),
-                "created_at": str(r[9]),
+                "error_count": len(r[6]) if isinstance(r[6], list) else 0,
+                "created_at": str(r[8]),
             }
             for r in rows
         ])
@@ -3449,5 +3449,43 @@ async def cleanup_old_comparisons(days: int = 90):
         conn.close()
         logger.info(f"Cleanup: deleted {deleted} comparisons, {deleted2} validation results older than {days} days")
         return JSONResponse({"deleted_comparisons": deleted, "deleted_validations": deleted2, "retention_days": days})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.post("/calibration/parameters/update")
+async def update_parameter(payload: dict):
+    """Manually update a digitizer parameter via slider control.
+    
+    Body: { param_key: string, param_value: number }
+    The parameter is saved to digitizer_parameters table and takes
+    effect on the next digitize call.
+    """
+    param_key = payload.get("param_key", "")
+    param_value = payload.get("param_value")
+    if not param_key or param_value is None:
+        return JSONResponse({"error": "Missing param_key or param_value"}, status_code=400)
+    try:
+        import psycopg2, os, json
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO digitizer_parameters (param_key, param_value, updated_at)
+            VALUES (%s, %s::jsonb, NOW())
+            ON CONFLICT (param_key) DO UPDATE SET param_value = %s::jsonb, updated_at = NOW()
+        """, (param_key, json.dumps(param_value), json.dumps(param_value)))
+        conn.commit()
+        cur.close()
+        conn.close()
+        # Also update in-memory cache
+        from app.services.training_feedback import _parameter_state
+        _parameter_state[param_key] = param_value
+        return JSONResponse({"status": "ok", "param_key": param_key, "param_value": param_value})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)

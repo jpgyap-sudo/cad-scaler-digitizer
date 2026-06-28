@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Settings, RefreshCw, Loader2 } from "lucide-react";
+import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Settings, RefreshCw, Loader2, SlidersHorizontal } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
@@ -45,7 +45,7 @@ export default function CalibrationPage() {
 
   const load = () => {
     setLoading(true);
-    fetch(`${ENGINE_BASE}/api/calibration/report`)
+      fetch(`${ENGINE_BASE}/calibration/report`)
       .then((r) => r.json())
       .then((data) => { setReport(data); setLoading(false); })
       .catch(() => setLoading(false));
@@ -56,7 +56,7 @@ export default function CalibrationPage() {
   const applyCorrections = async () => {
     setApplying(true);
     try {
-      const r = await fetch(`${ENGINE_BASE}/api/calibration/apply`, { method: "POST" });
+      const r = await fetch(`${ENGINE_BASE}/calibration/apply`, { method: "POST" });
       const data = await r.json();
       alert(`Applied ${data.hints_applied} corrections`);
       load();
@@ -107,6 +107,22 @@ export default function CalibrationPage() {
           <p className="text-xs font-medium text-amber-600 mt-1 capitalize">{report.recommended_action.replace(/_/g, " ")}</p>
         </div>
       </div>
+
+      {/* Parameter Sliders */}
+      <details className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <summary className="px-4 py-2.5 flex items-center gap-2 cursor-pointer hover:bg-gray-50 text-xs font-semibold text-gray-700">
+          <SlidersHorizontal size={14} /> Digitizer Parameters (manual override)
+        </summary>
+        <div className="px-4 pb-4 pt-2 space-y-3 border-t border-gray-100">
+          <SliderControl label="Canny Low Threshold" paramKey="canny_low" min={10} max={150} step={5} svg={report.current_parameters} />
+          <SliderControl label="Canny High Threshold" paramKey="canny_high" min={50} max={400} step={10} svg={report.current_parameters} />
+          <SliderControl label="Min Contour Area" paramKey="min_contour_area" min={5} max={200} step={5} svg={report.current_parameters} />
+          <SliderControl label="Edge Dilation Kernel" paramKey="edge_dilation_kernel" min={1} max={11} step={2} svg={report.current_parameters} />
+          <SliderControl label="Scale Correction (Width)" paramKey="scale_correction_width_cm" min={0.5} max={1.5} step={0.05} svg={report.current_parameters} />
+          <SliderControl label="Scale Correction (Height)" paramKey="scale_correction_overall_height_cm" min={0.5} max={1.5} step={0.05} svg={report.current_parameters} />
+          <SliderControl label="OCR Confidence Threshold" paramKey="ocr_confidence_threshold" min={0.1} max={1.0} step={0.05} svg={report.current_parameters} />
+        </div>
+      </details>
 
       {/* Error counts */}
       {Object.keys(report.comparison_stats.error_counts).length > 0 && (
@@ -196,6 +212,50 @@ export default function CalibrationPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SliderControl({ label, paramKey, min, max, step, svg }: {
+  label: string; paramKey: string; min: number; max: number; step: number; svg: Record<string, number>;
+}) {
+  const [value, setValue] = useState(svg[paramKey] ?? 50);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setValue(svg[paramKey] ?? 50); }, [svg, paramKey]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await fetch(`${ENGINE_BASE}/calibration/parameters/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ param_key: paramKey, param_value: value }),
+      });
+    } catch {}
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-xs text-gray-600">{label}</label>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-indigo-600 w-12 text-right">{value}</span>
+          <button onClick={save} disabled={saving} className="text-[9px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 disabled:opacity-50">
+            {saving ? "..." : "Set"}
+          </button>
+        </div>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => setValue(parseFloat(e.target.value))}
+        className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-500"
+      />
     </div>
   );
 }
