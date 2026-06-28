@@ -50,10 +50,37 @@ Net effect: what a user downloads for a coffee table still doesn't match
 what the in-browser preview now shows. Same fix pattern as the preview side
 (see commit `7e4e234`) needs porting to `dxf_exporter.py`.
 
-**Open question for whoever picks this up:** is "Front only" intentional for
-cabinet/sofa/wardrobe/etc. (a deliberate simplicity choice for that furniture
-class) or also a gap? Not yet investigated — view count parity with
-rectangular_table's 4-view treatment hasn't been audited type-by-type.
+### Finding 3 (follow-up investigation, same session): "Front only" types never visually dimension depth at all — confirmed real gap, not a design choice
+
+Checked `save_cabinet`, `save_sofa`, `save_dining_chair`, `save_wardrobe`
+directly: all four accept `depth_cm` as a real parameter, print it into the
+title block text (e.g. "Cabinet 100x50x180"), but **never call
+`_add_dimension()` for it** — only Width and Height get drawn dimension
+lines. There is no Top or Side view to show depth geometrically either
+(that's Finding 2's table above). `save_bed_headboard` is arguably a
+legitimate exception — it doesn't even accept `depth_cm` (headboards are
+thin flat panels, ~5cm "depth" is really just thickness; a side view of that
+wouldn't be very useful) — but cabinet/sofa/dining_chair/wardrobe have
+substantial depths (45-90cm) that genuinely matter for manufacturing.
+
+**Confirmed user-facing symptom:** the frontend's `_component_schema()`
+(`routes.py` ~line 370+) exposes a working "Depth" slider for cabinet and
+sofa (and presumably dining_chair/wardrobe — not individually re-checked,
+same code pattern). A user can drag it, the value reaches `save_cabinet()`/
+`save_sofa()` as a real argument — **but the rendered drawing looks
+identical for any depth value**, since nothing ever visualizes it. Anyone
+testing "does the depth slider do anything" would see no.
+
+**Real fix** (not yet done, scoped but not started): add a Top View (for
+cabinet/sofa/wardrobe — shows width × depth footprint) or Side View (for
+dining_chair — shows depth × height profile) to each `save_*` function in
+`dxf_exporter.py`, with a real `_add_dimension()` call for depth. Same
+pattern needs to land in the matching `build_*_model()` SVG builders in
+`drawing_builders.py` too, given Finding 2 already shows those two files
+drift out of sync with each other if only one gets fixed. ~5 functions ×
+2 files = up to 10 edits. User has not yet decided whether to do this now,
+do a subset, or leave it logged for later — asked, awaiting decision as of
+this entry.
 
 ---
 
