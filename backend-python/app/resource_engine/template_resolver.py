@@ -227,6 +227,7 @@ class TemplateResolver:
                 "product_type": tpl.get("product_type", ""),
                 "family": tpl.get("family", ""),
                 "parameter_count": len(tpl.get("parameters", [])),
+                "parameters": tpl.get("parameters", []),
                 "component_count": len(tpl.get("components", [])),
                 "required_views": tpl.get("required_views", []),
             })

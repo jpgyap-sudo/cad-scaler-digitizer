@@ -3,8 +3,8 @@ import { BookOpen, Ruler, Loader2, Search, SlidersHorizontal, Play } from "lucid
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
-interface TemplateParam { min?: number; max?: number; default?: number }
-interface Template { id: string; name: string; family: string; parameters: Record<string, TemplateParam> }
+interface TemplateParam { name: string; min_value?: number; max_value?: number; default?: number; description?: string }
+interface Template { id: string; name: string; family: string; product_type: string; parameters: TemplateParam[] }
 
 function TemplateSvg({ family, name }: { family: string; name: string }) {
   const size = 90;
@@ -247,7 +247,7 @@ export default function TemplatesPage() {
                 </summary>
                 <div className="px-3 pb-3 pt-0 border-t border-gray-100">
                   <p className="text-[9px] text-gray-400 font-mono mt-1.5 mb-1">{t.id}</p>
-                  {t.parameters && Object.keys(t.parameters).length > 0 && (
+                  {t.parameters && t.parameters.length > 0 && (
                     <TemplateSliders template={t} />
                   )}
                 </div>
@@ -263,16 +263,15 @@ export default function TemplatesPage() {
 }
 
 function TemplateSliders({ template }: { template: Template }) {
-  const params = template.parameters;
-  const keys = Object.keys(params).slice(0, 6);
+  const params = template.parameters.slice(0, 6);
   const [values, setValues] = useState<Record<string, number>>({});
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const init: Record<string, number> = {};
-    for (const [k, p] of Object.entries(params)) {
-      init[k] = p.default ?? (p.min ?? 0 + (p.max ?? 100)) / 2;
+    for (const p of params) {
+      init[p.name] = p.default ?? ((p.min_value ?? 0) + (p.max_value ?? 100)) / 2;
     }
     setValues(init);
   }, [template.id]);
@@ -280,9 +279,9 @@ function TemplateSliders({ template }: { template: Template }) {
   const suggest = async () => {
     setLoading(true);
     const searchParams = new URLSearchParams();
-    searchParams.set("furniture_type", template.id);
+    searchParams.set("furniture_type", template.product_type);
     for (const [k, v] of Object.entries(values)) {
-      if (k.includes("length") || k.includes("width")) searchParams.set("width_cm", String(v / 10));
+      if (k.includes("length") || k.includes("width") || k === "diameter_mm") searchParams.set("width_cm", String(v / 10));
       if (k.includes("height")) searchParams.set("height_cm", String(v / 10));
       if (k.includes("depth")) searchParams.set("depth_cm", String(v / 10));
     }
@@ -297,20 +296,19 @@ function TemplateSliders({ template }: { template: Template }) {
   return (
     <div className="px-1 pt-1 space-y-2">
       <div className="space-y-1.5">
-        {keys.map((key) => {
-          const p = params[key];
-          const minV = p.min ?? 0;
-          const maxV = p.max ?? 500;
+        {params.map((p) => {
+          const minV = p.min_value ?? 0;
+          const maxV = p.max_value ?? 500;
           const stepV = Math.max(1, (maxV - minV) / 50);
           return (
-            <div key={key}>
+            <div key={p.name}>
               <div className="flex items-center justify-between text-[10px]">
-                <span className="text-gray-500 truncate">{key.replace(/_/g, " ")}</span>
-                <span className="text-indigo-600 font-semibold w-14 text-right">{values[key] ?? minV}mm</span>
+                <span className="text-gray-500 truncate">{p.name.replace(/_/g, " ")}</span>
+                <span className="text-indigo-600 font-semibold w-14 text-right">{values[p.name] ?? minV}mm</span>
               </div>
               <input type="range" min={minV} max={maxV} step={stepV}
-                value={values[key] ?? minV}
-                onChange={(e) => setValues({ ...values, [key]: parseFloat(e.target.value) })}
+                value={values[p.name] ?? minV}
+                onChange={(e) => setValues({ ...values, [p.name]: parseFloat(e.target.value) })}
                 className="w-full h-1 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-500" />
             </div>
           );
