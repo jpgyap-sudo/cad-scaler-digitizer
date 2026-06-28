@@ -294,6 +294,20 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                                 result["depth_cm"] = d
                                 result["overall_height_cm"] = h
 
+                        # Pattern A5: {W}x{D}x{H}{H}mm — compact with H prefix "2370x1060xH820mm"
+                        if "width_cm" not in result:
+                            m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*[Hh](\d+\.?\d*)\s*(cm|mm)?', opts_text, re.I)
+                            if m:
+                                w = float(m.group(1))
+                                d = float(m.group(2))
+                                h = float(m.group(3))
+                                unit = m.group(4) if m.lastindex >= 4 and m.group(4) else "cm"
+                                if unit == "mm":
+                                    w, d, h = w / 10, d / 10, h / 10
+                                result["width_cm"] = w
+                                result["depth_cm"] = d
+                                result["overall_height_cm"] = h
+
                         # Pattern C: {W}x{D} (mm|cm) — 2 values like "2000 x 1000mm"
                         if "width_cm" not in result:
                             m = re.search(r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(cm|mm)?', opts_text, re.I)
@@ -336,17 +350,21 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             result["sizes"] = []
                         result["sizes"].append({"width": w, "length": l, "height": h})
 
-                    # Pattern 2: W x D x H or W x L x H (with optional (H)(L)(W) labels)
-                    dims = re.findall(r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([HWL]\))?\s*(cm|mm)?', all_text, re.I)
-                    for d in dims:
-                        w, d2, h = float(d[0]), float(d[1]), float(d[2])
-                        unit = d[3] if len(d) > 3 and d[3] else "cm"
-                        if unit == "mm":
-                            w, d2, h = w / 10, d2 / 10, h / 10
-                        if "width_cm" not in result:
-                            result["width_cm"] = w
-                            result["depth_cm"] = d2
-                            result["overall_height_cm"] = h
+                    # Pattern 2: W x D x H or W x L x H (with optional (H)(L)(W) labels or H prefix)
+                    for pattern in [
+                        r'(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*x\s*(\d+\.?\d*(?:-\d+\.?\d*)?)\s*(?:\([HWL]\))?\s*(cm|mm)?',
+                        r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*[Hh](\d+\.?\d*)\s*(cm|mm)?',
+                    ]:
+                        dims = re.findall(pattern, all_text, re.I)
+                        for d in dims:
+                            w, d2, h = float(d[0]), float(d[1]), float(d[2])
+                            unit = d[3] if len(d) > 3 and d[3] else "cm"
+                            if unit == "mm":
+                                w, d2, h = w / 10, d2 / 10, h / 10
+                            if "width_cm" not in result:
+                                result["width_cm"] = w
+                                result["depth_cm"] = d2
+                                result["overall_height_cm"] = h
 
                     # Pattern 3: W/H/D labels in body_html
                     for label, key in [("width", "width_cm"), ("height", "overall_height_cm"),
