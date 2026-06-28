@@ -652,7 +652,7 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
 
 
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None,
-                         materials=None):
+                         materials=None, real_d=None):
     print(f"[DISPATCH] Exporter: {f_type}")
 
     def _dim(tags, default):
@@ -861,8 +861,10 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     elif f_type == 'coffee_table':
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
-        try: save_coffee_table(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
+        d = real_d or _dim(['d', 'depth'], 60.0)
+        try: save_coffee_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type in ('dining_chair', 'chair'):
         w = real_w or _dim(['w', 'width', 'seat'], 45.0)
         h = real_h or _dim(['h', 'height'], 90.0)
@@ -1443,7 +1445,8 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
 
 @router.post("/digitize/hybrid")
 async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = Form(None),
-                           real_height_cm: str = Form(None), furniture_type: str = Form(None)):
+                           real_height_cm: str = Form(None), real_depth_cm: str = Form(None),
+                           furniture_type: str = Form(None)):
     if not OPENAI_API_KEY:
         return JSONResponse({"error": "OPENAI_API_KEY required"}, status_code=400)
     try:
@@ -1604,6 +1607,35 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         except Exception as e:
             print(f"[Hybrid] Template selector failed (non-fatal): {e}")
         # ===== End Template Selector =====
+
+        # ===== Phase 2 — 3-Stage Product Classifier (parallel track) =====
+        product_classifier_result = None
+        try:
+            from app.backend.product_classifier import classify_product
+
+            # Build text and shape evidence from OCR + detected geometry
+            classifier_text = " ".join(ocr_lines) if ocr_lines else ""
+            if ai_result and isinstance(ai_result, dict):
+                classifier_text += " " + ai_result.get("product_name", "")
+                classifier_text += " " + ai_result.get("category", "")
+
+            classifier_shapes = []
+            if constrained.get("circles"): classifier_shapes.append("circle")
+            if constrained.get("rects"): classifier_shapes.append("rectangle")
+            # Check for oval from OCR
+            if any("oval" in t.lower() or "ellipse" in t.lower() for t in ocr_lines):
+                classifier_shapes.append("oval")
+
+            classifier_components = template_evidence.get("detected_components", [])
+
+            product_classifier_result = classify_product(
+                text=classifier_text,
+                detected_shapes=classifier_shapes,
+                detected_components=classifier_components,
+            )
+        except Exception as e:
+            print(f"[Hybrid] 3-Stage classifier failed (non-fatal): {e}")
+        # ===== End 3-Stage Product Classifier =====
 
         # ===== Phase 3a-b: Cloud Vision + Resource Engine Pipeline (parallel track) =====
         phase3_result = None
@@ -1799,6 +1831,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             'template_proposal': template_proposal_result,
             'uncertainty_questions': uncertainty_questions,
             'cad_intelligence': cad_intel_result,
+            'product_classifier': product_classifier_result,
             'image_quality': image_quality,
             'warnings': (scale_warns + dim_warns + (dispatch_extra or {}).get('proportion_warnings', [])
                          + (template_graph_result or {}).get('warnings', [])
@@ -4054,3 +4087,123 @@ async def products_family(family_name: str):
         return JSONResponse({"family": family_name, "visual_dna": dna, "members": members, "count": len(members)})
     except Exception as e:
         return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — SVG Skeleton Preview (lightweight geometry preview)
+# ---------------------------------------------------------------------------
+
+@router.get("/skeleton/{family_name}")
+async def skeleton_preview(
+    family_name: str,
+    width_cm: float = Query(100, description="Width in cm"),
+    depth_cm: float = Query(None, description="Depth in cm"),
+    height_cm: float = Query(None, description="Height in cm"),
+):
+    """Generate lightweight SVG skeleton preview for a product family.
+
+    This is a "validate the geometry before committing" step — simple
+    outline/contour drawing with labeled components and centerlines.
+    """
+    try:
+        from app.backend.svg_skeleton import generate_skeleton
+
+        dims = {"width_cm": width_cm}
+        if depth_cm: dims["depth_cm"] = depth_cm
+        if height_cm: dims["height_cm"] = height_cm
+
+        svg = generate_skeleton(family_name, dims)
+        return Response(content=svg, media_type="image/svg+xml")
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+@router.get("/products/dna/{handle}")
+async def product_dna_detail(handle: str):
+    """Get enriched per-product DNA for a specific product handle."""
+    try:
+        from app.backend.product_search import load_product_dna
+        dna = load_product_dna()
+        entry = dna.get(handle)
+        if not entry:
+            # Try fuzzy handle match
+            for h, e in dna.items():
+                if handle in h or h in handle:
+                    entry = e
+                    break
+        if not entry:
+            return JSONResponse({"error": f"Product '{handle}' not found in DNA"}, status_code=404)
+        return JSONResponse(entry)
+    except Exception as e:
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
+
+
+# =============================================================================
+# Furniture Engineering Agent — reverse engineering analysis
+# =============================================================================
+
+@router.get("/engineer/families")
+async def list_engineering_families():
+    """List all furniture families and types with engineering specifications."""
+    from app.services.engineering_agent import FURNITURE_FAMILIES
+    return JSONResponse({"families": {k: list(v.keys()) for k, v in FURNITURE_FAMILIES.items()}})
+
+
+@router.post("/engineer/analyze")
+async def analyze_furniture(payload: dict):
+    """Reverse-engineer a furniture product and generate engineering specs.
+    
+    Body: { product_id, furniture_type, page_dimensions, detected_dimensions }
+    Returns complete engineering analysis with BOM, materials, joinery, layers.
+    """
+    from app.services.engineering_agent import analyze_product, persist_analysis
+    product_id = payload.get("product_id", "unknown")
+    furniture_type = payload.get("furniture_type", "furniture")
+    page_dimensions = payload.get("page_dimensions")
+    detected_dimensions = payload.get("detected_dimensions")
+    analysis = analyze_product(product_id, furniture_type, page_dimensions, detected_dimensions)
+    persist_analysis(analysis)
+    return JSONResponse(analysis.to_dict())
+
+
+@router.get("/engineer/analyses")
+async def list_analyses(limit: int = 20):
+    """List recent engineering analyses from the knowledge base."""
+    try:
+        import psycopg2, os
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT product_id, furniture_type, family, created_at FROM engineering_analyses ORDER BY created_at DESC LIMIT %s", (limit,))
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return JSONResponse([{"product_id": r[0], "furniture_type": r[1], "family": r[2], "created_at": str(r[3])} for r in rows])
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/engineer/knowledge/{furniture_type}")
+async def get_engineering_knowledge(furniture_type: str):
+    """Get stored engineering knowledge for a furniture type."""
+    try:
+        import psycopg2, os, json
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT materials_json, joinery_json, confidence_scores_json FROM engineering_analyses WHERE furniture_type = %s ORDER BY created_at DESC LIMIT 20", (furniture_type,))
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        if not rows: return JSONResponse({"error": "No analyses found"}, status_code=404)
+        return JSONResponse({"furniture_type": furniture_type, "sample_count": len(rows), "materials": [json.loads(r[0]) for r in rows if r[0]]})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)

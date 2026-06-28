@@ -154,6 +154,25 @@ const TOOL_DEFS = [
     description: "Delete comparison results older than N days.",
     inputSchema: { type: "object", properties: { days: { type: "number", default: 90 } } },
   },
+  {
+    name: "engineering_analyze",
+    description: "Reverse-engineer a furniture product. Returns complete engineering analysis with bill of materials, materials, joinery, structural analysis, and CAD layer recommendations. Provide product_id, furniture_type, and optional page_dimensions.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        product_id: { type: "string", description: "Product identifier" },
+        furniture_type: { type: "string", description: "dining_table, sofa, coffee_table, desk, cabinet, chair, bed, armchair" },
+        page_dimensions: { type: "object", description: "{width_cm, depth_cm, overall_height_cm} from product page" },
+        detected_dimensions: { type: "object", description: "Detected dimensions from digitizer" },
+      },
+      required: ["product_id", "furniture_type"],
+    },
+  },
+  {
+    name: "list_engineering_families",
+    description: "List all furniture families and types with engineering specifications.",
+    inputSchema: { type: "object", properties: {} },
+  },
 ];
 
 const TOOL_HANDLERS = {
@@ -192,6 +211,8 @@ const TOOL_HANDLERS = {
     return { comparison_stats: cal.comparison_stats, systematic_biases: cal.systematic_biases, correction_hints: cal.correction_hints?.length || 0, current_parameters: paramsList };
   },
   async cleanup_old_comparisons(args) { return post(`${PY_API}/api/calibration/cleanup`, { days: args.days || 90 }); },
+  async engineering_analyze(args) { return post(`${PY_API}/api/engineer/analyze`, { product_id: args.product_id, furniture_type: args.furniture_type, page_dimensions: args.page_dimensions, detected_dimensions: args.detected_dimensions }); },
+  async list_engineering_families() { return get(`${PY_API}/api/engineer/families`); },
 };
 
 // ── Create MCP Server ──────────────────────────────────────────────

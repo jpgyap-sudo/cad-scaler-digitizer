@@ -5,6 +5,7 @@ Searches 259 Shopify product templates by:
   - Text keywords (title, handle, tags, family)
   - Combined visual + text scoring
   - Qdrant semantic embeddings (if available)
+  - Learned product boosting (Phase 7 self-learning)
 """
 from __future__ import annotations
 
@@ -25,24 +26,32 @@ logger = logging.getLogger("product_search")
 CATALOG_DIR = Path(__file__).resolve().parents[3] / "resources" / "product_catalog"
 REGISTRY_PATH = CATALOG_DIR / "_registry.json"
 DNA_INDEX_PATH = CATALOG_DIR / "visual_dna_index.json"
+PRODUCT_DNA_PATH = CATALOG_DIR / "product_dna.json"
 LEARNED_PATH = CATALOG_DIR / "learned_products.jsonl"
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 QDRANT_COLLECTION = "product_templates"
 
 # ---------------------------------------------------------------------------
-# Visual DNA dimension encoding
+# Visual DNA dimension encoding (26 → 32D upgrade for Phase 7)
 # ---------------------------------------------------------------------------
 TOP_SHAPES = ["rectangular", "round", "oval", "square", "irregular", "organic"]
 BASE_TYPES = ["legs", "pedestal", "plinth", "wall_mounted", "floor", "ceiling"]
 LEG_TYPES = ["four_leg", "single_pedestal", "dual_pedestal", "sled_base", "plinth", "no_legs", "cylindrical", "tapered"]
+EDGE_PROFILES = ["bullnose", "square", "beveled", "rounded", "tapered", "flared"]
+SYMMETRY_TYPES = ["bilateral", "radial", "asymmetric", "irregular"]
+MATERIAL_PRIMARY = ["wood", "metal", "stone", "fabric", "glass", "leather", "textile", "plastic"]
 CATEGORIES = [
     "sofa", "chair", "table", "lighting", "storage", "material",
     "rug", "pillow", "panel", "fan", "ottoman", "seating", "bed",
     "support", "furniture",
 ]
 
-VECTOR_SIZE = 26
+# 26 original + 6 new = 32D
+VECTOR_SIZE = 32
+
+# Learned product boost
+LEARNED_BOOST_FACTOR = 0.15
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +97,83 @@ def invalidate_cache() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Enriched product DNA (Phase 7)
+# ---------------------------------------------------------------------------
+
+def load_product_dna() -> Dict[str, Any]:
+    """Load per-product enriched DNA (259 products)."""
+    if PRODUCT_DNA_PATH.exists():
+        try:
+            return json.loads(PRODUCT_DNA_PATH.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.warning(f"Failed to load product DNA: {e}")
+    return {}
+
+
+def _load_learned_products() -> List[Dict[str, Any]]:
+    """Load learned products from JSONL."""
+    if not LEARNED_PATH.exists():
+        return []
+    learned: list[dict] = []
+    try:
+        for line in LEARNED_PATH.read_text(encoding="utf-8").strip().split("\n"):
+            line = line.strip()
+            if line:
+                learned.append(json.loads(line))
+    except Exception as e:
+        logger.warning(f"Failed to load learned products: {e}")
+    return learned
+
+
+def boost_learned_products(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Boost scores for results that match learned products.
+
+    For each result, checks if a learned product with similar DNA exists.
+    If yes, adds a `learned_boost` field and increases confidence by 0.15.
+    """
+    learned = _load_learned_products()
+    if not learned:
+        return results
+
+    # Build a lookup: learned family names → count
+    learned_families: dict[str, int] = {}
+    for entry in learned:
+        family = entry.get("template_family", entry.get("family", ""))
+        if family:
+            learned_families[family] = learned_families.get(family, 0) + 1
+
+    if not learned_families:
+        return results
+
+    boosted = []
+    for r in results:
+        family = r.get("family", "")
+        handle = r.get("handle", "")
+        # Check if any learned product shares this family or has matching title
+        boost = 0.0
+        for entry in learned:
+            lf = entry.get("template_family", entry.get("family", ""))
+            lh = entry.get("handle", "")
+            lt = entry.get("title", "").lower()
+            rt = r.get("title", "").lower() if r.get("title") else ""
+            # Boost if family matches or title keywords overlap
+            if lf and lf == family:
+                boost = max(boost, LEARNED_BOOST_FACTOR)
+            if lt and rt and (lt in rt or rt in lt):
+                boost = max(boost, LEARNED_BOOST_FACTOR)
+            if lh and handle and (lh == handle or handle in lh):
+                boost = max(boost, LEARNED_BOOST_FACTOR * 1.5)
+
+        if boost > 0:
+            r["learned_boost"] = round(boost, 4)
+            r["score"] = round(min(r.get("score", 0) + boost, 1.0), 4)
+            r["reason"] = r.get("reason", "") + f" +learned_boost({boost})"
+        boosted.append(r)
+
+    return boosted
+
+
+# ---------------------------------------------------------------------------
 # Vector helpers
 # ---------------------------------------------------------------------------
 
@@ -114,10 +200,11 @@ def _one_hot(value: str, options: List[str], dims: int) -> List[float]:
 
 
 def build_visual_dna_vector(features: Dict[str, Any]) -> List[float]:
-    """Build a 26D vector from analysis features or DNA index entry.
+    """Build a 32D vector from analysis features or DNA index entry.
 
     Feature keys: top_shape, base_type, leg_type, symmetry, category,
-                  components, materials, tags
+                  components, materials, tags, edge_profile, leg_count,
+                  thickness_profile, material_primary
     """
     vec: list[float] = []
 
@@ -150,6 +237,36 @@ def build_visual_dna_vector(features: Dict[str, Any]) -> List[float]:
     # Dim 25: archetype score (normalized from DNA entry)
     arch = features.get("archetype_score", 0.5)
     vec.append(min(float(arch), 1.0))
+
+    # NEW DIMENSIONS (26-31) — Phase 7 enriched DNA fields
+    # Dim 26: edge_profile one-hot (6 options -> 2D compressed)
+    edge = str(features.get("edge_profile", "")).lower().strip()
+    edge_vec = _one_hot(edge, EDGE_PROFILES, 2)
+    vec.extend(edge_vec)
+    # Dim 28: leg_count normalized (max 8)
+    lc = features.get("leg_count", 0)
+    if isinstance(lc, (int, float)):
+        vec.append(min(float(lc) / 8.0, 1.0))
+    else:
+        vec.append(0.0)
+    # Dim 29: thickness_profile (slim=0.0, medium=0.5, thick=1.0)
+    thick = str(features.get("thickness_profile", "medium")).lower().strip()
+    thick_map = {"slim": 0.0, "thin": 0.0, "medium": 0.5, "thick": 1.0}
+    vec.append(thick_map.get(thick, 0.5))
+    # Dim 30: material_primary one-hot (8 options -> 1D compressed)
+    mat_primary = str(features.get("material_primary", "")).lower().strip()
+    mat_vec = _one_hot(mat_primary, MATERIAL_PRIMARY, 1)
+    vec.extend(mat_vec)
+    # Dim 31: bounding_ratio aspect ratio (width/depth from ratio string)
+    br = str(features.get("bounding_ratio", "1.65:1:0.42"))
+    try:
+        parts = br.split(":")
+        w_ratio = float(parts[0])
+        d_ratio = float(parts[1]) if len(parts) > 1 else 1.0
+        aspect = w_ratio / d_ratio if d_ratio > 0 else 1.65
+        vec.append(min(aspect / 5.0, 1.0))  # normalize: max aspect ~5
+    except (ValueError, IndexError):
+        vec.append(0.33)
 
     # Pad to VECTOR_SIZE
     while len(vec) < VECTOR_SIZE:
@@ -204,9 +321,12 @@ def search_by_visual_dna(
 
     Returns top_k matches sorted descending, each with:
       family, score, reason, count, items, svg_skeleton
+
+    Uses 32D vectors (Phase 7 enriched DNA) and applies learned product boosting.
     """
     catalog = load_catalog()
     dna_index = catalog.get("dna_index", {})
+    product_dna = load_product_dna()
 
     query_vec = build_visual_dna_vector(analysis_features)
 
@@ -221,7 +341,24 @@ def search_by_visual_dna(
             "components": dna_entry.get("component_graph", []),
             "materials": dna_entry.get("materials", []),
             "archetype_score": dna_entry.get("archetype_score", 0.5),
+            # Enriched DNA fields from product_dna.json (Phase 7)
+            "edge_profile": dna_entry.get("edge_profile", ""),
+            "leg_count": dna_entry.get("leg_count", 0),
+            "thickness_profile": dna_entry.get("thickness_profile", "medium"),
+            "material_primary": dna_entry.get("material_primary", ""),
+            "bounding_ratio": dna_entry.get("bounding_ratio", "1.65:1:0.42"),
         }
+        # If no enriched fields in dna_index, try product_dna
+        if not dna_features.get("edge_profile"):
+            for handle, pentry in product_dna.items():
+                if pentry.get("template_family", "") == family or pentry.get("visual_dna_family", "") == family:
+                    dna_features["edge_profile"] = pentry.get("edge_profile", "")
+                    dna_features["leg_count"] = pentry.get("leg_count", 0)
+                    dna_features["thickness_profile"] = pentry.get("thickness_profile", "medium")
+                    dna_features["material_primary"] = pentry.get("material_primary", "")
+                    dna_features["bounding_ratio"] = pentry.get("bounding_ratio", "1.65:1:0.42")
+                    break
+
         dna_vec = build_visual_dna_vector(dna_features)
         sim = cosine_similarity(query_vec, dna_vec)
         scored.append((sim, family, dna_entry))
@@ -251,8 +388,16 @@ def search_by_visual_dna(
                 "symmetry": entry.get("symmetry"),
                 "category_hint": entry.get("category_hint"),
                 "materials": entry.get("materials"),
+                "edge_profile": dna_features.get("edge_profile"),
+                "leg_count": dna_features.get("leg_count"),
+                "thickness_profile": dna_features.get("thickness_profile"),
+                "material_primary": dna_features.get("material_primary"),
+                "bounding_ratio": dna_features.get("bounding_ratio"),
             },
         })
+
+    # Phase 7: Boost results that match learned products
+    results = boost_learned_products(results)
 
     return results
 

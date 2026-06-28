@@ -1,0 +1,271 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "LEGO-like furniture component library for assembly from product DNA",
+    "created": "2026-06-28",
+    "sources": ["product_dna.json", "visual_dna_index.json", "furniture_classifier.py"]
+  },
+  "tops": {
+    "round_tabletop": {
+      "shape": "circle",
+      "params": ["diameter"],
+      "svg_front": "<ellipse cx=\"200\" cy=\"30\" rx=\"100\" ry=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_top": "<circle cx=\"200\" cy=\"100\" r=\"120\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"80\" y1=\"100\" x2=\"320\" y2=\"100\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/>",
+      "svg_side": "<rect x=\"100\" y=\"10\" width=\"200\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Circular tabletop for round dining and coffee tables",
+      "typical_thickness_cm": 3.0
+    },
+    "oval_tabletop": {
+      "shape": "ellipse",
+      "params": ["length", "depth"],
+      "svg_front": "<ellipse cx=\"200\" cy=\"30\" rx=\"150\" ry=\"15\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_top": "<ellipse cx=\"200\" cy=\"100\" rx=\"160\" ry=\"80\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"40\" y1=\"100\" x2=\"360\" y2=\"100\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/><line x1=\"200\" y1=\"20\" x2=\"200\" y2=\"180\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/>",
+      "svg_side": "<rect x=\"60\" y=\"10\" width=\"280\" height=\"18\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Oval/elliptical tabletop for oval dining and coffee tables",
+      "typical_thickness_cm": 3.0
+    },
+    "rectangular_tabletop": {
+      "shape": "rect",
+      "params": ["width", "depth"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_top": "<rect x=\"30\" y=\"30\" width=\"340\" height=\"140\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"30\" y1=\"100\" x2=\"370\" y2=\"100\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/><line x1=\"200\" y1=\"30\" x2=\"200\" y2=\"170\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/>",
+      "svg_side": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "description": "Standard rectangular tabletop for dining and console tables",
+      "typical_thickness_cm": 3.0
+    },
+    "square_tabletop": {
+      "shape": "rect",
+      "params": ["width"],
+      "svg_front": "<rect x=\"80\" y=\"10\" width=\"240\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_top": "<rect x=\"60\" y=\"30\" width=\"280\" height=\"140\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"60\" y1=\"100\" x2=\"340\" y2=\"100\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/><line x1=\"200\" y1=\"30\" x2=\"200\" y2=\"170\" stroke=\"#2563eb\" stroke-width=\"0.8\" stroke-dasharray=\"6,4\"/>",
+      "svg_side": "<rect x=\"80\" y=\"10\" width=\"240\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "description": "Square tabletop for side tables and small coffee tables",
+      "typical_thickness_cm": 3.0
+    },
+    "organic_tabletop": {
+      "shape": "custom",
+      "params": ["width", "depth"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"8\"/>",
+      "svg_top": "<path d=\"M 60,100 Q 80,30 200,30 Q 320,30 340,100 Q 320,170 200,170 Q 80,170 60,100 Z\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"18\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "description": "Organic/freeform shaped tabletop with smooth curves",
+      "typical_thickness_cm": 3.0
+    }
+  },
+  "bases_pedestals": {
+    "single_cylindrical": {
+      "shape": "rect",
+      "params": ["diameter", "height"],
+      "svg_front": "<rect x=\"160\" y=\"20\" width=\"80\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<circle cx=\"200\" cy=\"30\" r=\"40\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"160\" y=\"20\" width=\"80\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Single cylindrical pedestal base",
+      "typical_height_cm": 70.0
+    },
+    "twin_pedestal": {
+      "shape": "custom",
+      "params": ["left_dia", "right_dia", "offset"],
+      "svg_front": "<rect x=\"80\" y=\"20\" width=\"50\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\" rx=\"4\"/><rect x=\"270\" y=\"20\" width=\"50\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<circle cx=\"105\" cy=\"30\" r=\"25\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/><circle cx=\"295\" cy=\"30\" r=\"25\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"120\" y=\"20\" width=\"160\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "description": "Twin (dual) pedestal base with offset cylinders",
+      "typical_height_cm": 70.0
+    },
+    "four_leg": {
+      "shape": "custom",
+      "params": ["thickness", "height"],
+      "svg_front": "<rect x=\"55\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/><rect x=\"133\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/><rect x=\"255\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/><rect x=\"333\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/>",
+      "svg_top": "<rect x=\"50\" y=\"5\" width=\"10\" height=\"10\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"0.8\"/><rect x=\"140\" y=\"5\" width=\"10\" height=\"10\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"0.8\"/><rect x=\"250\" y=\"5\" width=\"10\" height=\"10\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"0.8\"/><rect x=\"340\" y=\"5\" width=\"10\" height=\"10\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"0.8\"/>",
+      "svg_side": "<rect x=\"80\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/><rect x=\"308\" y=\"20\" width=\"12\" height=\"150\" fill=\"#ccc\" stroke=\"#999\" stroke-width=\"1\"/>",
+      "description": "Four independent legs at corners",
+      "typical_height_cm": 70.0
+    },
+    "drum": {
+      "shape": "rect",
+      "params": ["diameter", "height"],
+      "svg_front": "<rect x=\"120\" y=\"20\" width=\"160\" height=\"150\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_top": "<circle cx=\"200\" cy=\"30\" r=\"80\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"120\" y=\"20\" width=\"160\" height=\"150\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "description": "Drum/pedestal base — wide cylindrical support",
+      "typical_height_cm": 60.0
+    },
+    "cross": {
+      "shape": "custom",
+      "params": ["width", "depth"],
+      "svg_front": "<polygon points=\"60,170 120,20 140,20 200,170\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1\"/><polygon points=\"200,170 260,20 280,20 340,170\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1\"/>",
+      "svg_top": "<line x1=\"30\" y1=\"30\" x2=\"370\" y2=\"170\" stroke=\"#999\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"370\" y1=\"30\" x2=\"30\" y2=\"170\" stroke=\"#999\" stroke-width=\"4\" stroke-linecap=\"round\"/>",
+      "svg_side": "<polygon points=\"60,170 140,20 260,20 340,170\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1\"/>",
+      "description": "X-cross base (two crossing beams)",
+      "typical_height_cm": 65.0
+    },
+    "cone": {
+      "shape": "trapezoid",
+      "params": ["top_dia", "bot_dia", "height"],
+      "svg_front": "<polygon points=\"170,20 230,20 260,170 140,170\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_top": "<circle cx=\"200\" cy=\"30\" r=\"25\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<polygon points=\"170,20 230,20 260,170 140,170\" fill=\"#e0e0e0\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "description": "Conical tapered pedestal base",
+      "typical_height_cm": 65.0
+    },
+    "plinth": {
+      "shape": "rect",
+      "params": ["width", "depth", "height"],
+      "svg_front": "<rect x=\"60\" y=\"20\" width=\"280\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_top": "<rect x=\"60\" y=\"20\" width=\"280\" height=\"160\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"60\" y=\"20\" width=\"280\" height=\"150\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "description": "Full-width plinth base (solid rectangular base)",
+      "typical_height_cm": 15.0
+    }
+  },
+  "legs": {
+    "metal_round": {
+      "shape": "rect",
+      "params": ["diameter", "height"],
+      "svg_front": "<rect x=\"185\" y=\"20\" width=\"30\" height=\"150\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "svg_top": "<circle cx=\"200\" cy=\"30\" r=\"15\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "svg_side": "<rect x=\"185\" y=\"20\" width=\"30\" height=\"150\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "description": "Round metal leg (chrome or painted)",
+      "typical_height_cm": 40.0
+    },
+    "metal_square": {
+      "shape": "rect",
+      "params": ["width", "height"],
+      "svg_front": "<rect x=\"180\" y=\"20\" width=\"40\" height=\"150\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "svg_top": "<rect x=\"180\" y=\"20\" width=\"40\" height=\"40\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "svg_side": "<rect x=\"180\" y=\"20\" width=\"40\" height=\"150\" fill=\"#d0d0d0\" stroke=\"#777\" stroke-width=\"1\"/>",
+      "description": "Square metal leg (brushed steel or black)",
+      "typical_height_cm": 40.0
+    },
+    "wood_tapered": {
+      "shape": "trapezoid",
+      "params": ["top_width", "bot_width", "height"],
+      "svg_front": "<polygon points=\"175,20 225,20 215,170 185,170\" fill=\"#d4a574\" stroke=\"#8b6914\" stroke-width=\"1\"/>",
+      "svg_top": "<rect x=\"175\" y=\"20\" width=\"50\" height=\"50\" fill=\"#d4a574\" stroke=\"#8b6914\" stroke-width=\"1\"/>",
+      "svg_side": "<polygon points=\"175,20 225,20 215,170 185,170\" fill=\"#d4a574\" stroke=\"#8b6914\" stroke-width=\"1\"/>",
+      "description": "Tapered wooden leg (wider at top, narrower at bottom)",
+      "typical_height_cm": 40.0
+    },
+    "sled": {
+      "shape": "custom",
+      "params": ["width", "depth", "height"],
+      "svg_front": "<path d=\"M 60,170 L 60,30 L 340,30 L 340,170\" fill=\"none\" stroke=\"#777\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"120\" y1=\"170\" x2=\"120\" y2=\"50\" stroke=\"#777\" stroke-width=\"2\"/><line x1=\"280\" y1=\"170\" x2=\"280\" y2=\"50\" stroke=\"#777\" stroke-width=\"2\"/>",
+      "svg_top": "<rect x=\"40\" y=\"40\" width=\"320\" height=\"120\" fill=\"none\" stroke=\"#777\" stroke-width=\"2\" rx=\"10\"/>",
+      "svg_side": "<path d=\"M 30,170 L 30,30 L 370,30 L 370,170\" fill=\"none\" stroke=\"#777\" stroke-width=\"3\" stroke-linecap=\"round\"/>",
+      "description": "Sled base (U-shaped metal frame)",
+      "typical_height_cm": 40.0
+    },
+    "wire": {
+      "shape": "custom",
+      "params": ["thickness", "height"],
+      "svg_front": "<line x1=\"120\" y1=\"20\" x2=\"120\" y2=\"170\" stroke=\"#999\" stroke-width=\"2\"/><line x1=\"280\" y1=\"20\" x2=\"280\" y2=\"170\" stroke=\"#999\" stroke-width=\"2\"/><line x1=\"120\" y1=\"170\" x2=\"100\" y2=\"180\" stroke=\"#999\" stroke-width=\"2\"/><line x1=\"280\" y1=\"170\" x2=\"300\" y2=\"180\" stroke=\"#999\" stroke-width=\"2\"/>",
+      "svg_top": "<circle cx=\"120\" cy=\"30\" r=\"4\" fill=\"#999\"/><circle cx=\"280\" cy=\"30\" r=\"4\" fill=\"#999\"/>",
+      "svg_side": "<line x1=\"120\" y1=\"20\" x2=\"120\" y2=\"170\" stroke=\"#999\" stroke-width=\"2\"/>",
+      "description": "Wire leg (thin metal rod bent into shape)",
+      "typical_height_cm": 40.0
+    },
+    "cantilever": {
+      "shape": "custom",
+      "params": ["width", "depth", "height"],
+      "svg_front": "<path d=\"M 60,170 L 60,40 Q 60,20 200,20 Q 340,20 340,40 L 340,170\" fill=\"none\" stroke=\"#777\" stroke-width=\"3\" stroke-linecap=\"round\"/>",
+      "svg_top": "<rect x=\"40\" y=\"40\" width=\"320\" height=\"120\" fill=\"none\" stroke=\"#777\" stroke-width=\"2\" rx=\"5\"/>",
+      "svg_side": "<path d=\"M 30,170 L 30,30 Q 30,10 200,10\" fill=\"none\" stroke=\"#777\" stroke-width=\"3\" stroke-linecap=\"round\"/>",
+      "description": "Cantilever frame (single bent tube forming base and back)",
+      "typical_height_cm": 40.0
+    }
+  },
+  "backrests": {
+    "straight": {
+      "shape": "rect",
+      "params": ["width", "height"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"120\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_side": "<rect x=\"150\" y=\"10\" width=\"40\" height=\"120\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Straight upright backrest (dining chair style)",
+      "typical_height_cm": 45.0
+    },
+    "curved": {
+      "shape": "custom",
+      "params": ["width", "height", "radius"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"120\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"10\"/>",
+      "svg_side": "<path d=\"M 170,130 Q 170,10 200,10 Q 230,10 230,130\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "svg_top": "<path d=\"M 40,30 Q 200,5 360,30\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\"/>",
+      "description": "Curved/ergonomic backrest with lumbar support",
+      "typical_height_cm": 50.0
+    },
+    "slatted": {
+      "shape": "custom",
+      "params": ["width", "height", "slat_count"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"120\" fill=\"none\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/><line x1=\"60\" y1=\"10\" x2=\"60\" y2=\"130\" stroke=\"#8b6914\" stroke-width=\"4\"/><line x1=\"120\" y1=\"10\" x2=\"120\" y2=\"130\" stroke=\"#8b6914\" stroke-width=\"4\"/><line x1=\"180\" y1=\"10\" x2=\"180\" y2=\"130\" stroke=\"#8b6914\" stroke-width=\"4\"/><line x1=\"240\" y1=\"10\" x2=\"240\" y2=\"130\" stroke=\"#8b6914\" stroke-width=\"4\"/><line x1=\"300\" y1=\"10\" x2=\"300\" y2=\"130\" stroke=\"#8b6914\" stroke-width=\"4\"/>",
+      "svg_side": "<rect x=\"150\" y=\"10\" width=\"40\" height=\"120\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f0f0f0\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/><line x1=\"60\" y1=\"10\" x2=\"60\" y2=\"30\" stroke=\"#8b6914\" stroke-width=\"3\"/><line x1=\"120\" y1=\"10\" x2=\"120\" y2=\"30\" stroke=\"#8b6914\" stroke-width=\"3\"/><line x1=\"180\" y1=\"10\" x2=\"180\" y2=\"30\" stroke=\"#8b6914\" stroke-width=\"3\"/><line x1=\"240\" y1=\"10\" x2=\"240\" y2=\"30\" stroke=\"#8b6914\" stroke-width=\"3\"/><line x1=\"300\" y1=\"10\" x2=\"300\" y2=\"30\" stroke=\"#8b6914\" stroke-width=\"3\"/>",
+      "description": "Slatted backrest with vertical wood slats",
+      "typical_height_cm": 45.0
+    },
+    "upholstered": {
+      "shape": "rect",
+      "params": ["width", "height"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"120\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/><line x1=\"40\" y1=\"30\" x2=\"360\" y2=\"30\" stroke=\"#ddd\" stroke-width=\"0.5\"/><line x1=\"40\" y1=\"50\" x2=\"360\" y2=\"50\" stroke=\"#ddd\" stroke-width=\"0.5\"/><line x1=\"40\" y1=\"70\" x2=\"360\" y2=\"70\" stroke=\"#ddd\" stroke-width=\"0.5\"/><line x1=\"40\" y1=\"90\" x2=\"360\" y2=\"90\" stroke=\"#ddd\" stroke-width=\"0.5\"/><line x1=\"40\" y1=\"110\" x2=\"360\" y2=\"110\" stroke=\"#ddd\" stroke-width=\"0.5\"/>",
+      "svg_side": "<rect x=\"150\" y=\"10\" width=\"40\" height=\"120\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "svg_top": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"20\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "description": "Fully upholstered padded backrest with button tufting lines",
+      "typical_height_cm": 50.0
+    }
+  },
+  "arms": {
+    "padded_arm": {
+      "shape": "rect",
+      "params": ["width", "height"],
+      "svg_front": "<rect x=\"10\" y=\"20\" width=\"40\" height=\"80\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/><rect x=\"350\" y=\"20\" width=\"40\" height=\"80\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "svg_top": "<rect x=\"10\" y=\"10\" width=\"40\" height=\"30\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/><rect x=\"350\" y=\"10\" width=\"40\" height=\"30\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "svg_side": "<rect x=\"10\" y=\"20\" width=\"40\" height=\"80\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"6\"/>",
+      "description": "Padded upholstered armrest",
+      "typical_width_cm": 8.0
+    },
+    "track_arm": {
+      "shape": "rect",
+      "params": ["width", "height"],
+      "svg_front": "<rect x=\"15\" y=\"10\" width=\"35\" height=\"90\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/><rect x=\"350\" y=\"10\" width=\"35\" height=\"90\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_top": "<rect x=\"15\" y=\"10\" width=\"35\" height=\"30\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/><rect x=\"350\" y=\"10\" width=\"35\" height=\"30\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "svg_side": "<rect x=\"15\" y=\"10\" width=\"35\" height=\"90\" fill=\"#e8e8e8\" stroke=\"#555\" stroke-width=\"1.5\"/>",
+      "description": "Track arm (flat, slightly lower profile)",
+      "typical_width_cm": 6.0
+    },
+    "no_arm": {
+      "shape": "none",
+      "params": [],
+      "svg_front": "",
+      "svg_top": "",
+      "svg_side": "",
+      "description": "No armrests (armless design)"
+    }
+  },
+  "seats": {
+    "bench_seat": {
+      "shape": "rect",
+      "params": ["width", "depth"],
+      "svg_front": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"30\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<rect x=\"40\" y=\"10\" width=\"320\" height=\"80\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_side": "<rect x=\"150\" y=\"10\" width=\"40\" height=\"30\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Long bench-style seat (multiple persons)",
+      "typical_depth_cm": 45.0
+    },
+    "chair_seat": {
+      "shape": "rect",
+      "params": ["width", "depth"],
+      "svg_front": "<rect x=\"50\" y=\"10\" width=\"300\" height=\"25\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_top": "<rect x=\"50\" y=\"10\" width=\"300\" height=\"80\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "svg_side": "<rect x=\"150\" y=\"10\" width=\"100\" height=\"25\" fill=\"#f5f5f5\" stroke=\"#333\" stroke-width=\"1.5\" rx=\"4\"/>",
+      "description": "Single-person chair seat",
+      "typical_depth_cm": 40.0
+    },
+    "cushion": {
+      "shape": "rect",
+      "params": ["width", "depth", "thickness"],
+      "svg_front": "<rect x=\"40\" y=\"5\" width=\"320\" height=\"35\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"8\"/>",
+      "svg_top": "<rect x=\"40\" y=\"5\" width=\"320\" height=\"90\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"8\"/>",
+      "svg_side": "<rect x=\"150\" y=\"5\" width=\"100\" height=\"35\" fill=\"#f0eae0\" stroke=\"#666\" stroke-width=\"1.5\" rx=\"8\"/>",
+      "description": "Plush padded cushion with rounded corners",
+      "typical_thickness_cm": 10.0
+    }
+  }
+}
