@@ -1,5 +1,43 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — auto-calibration loop: well-designed, self-healing, but never actually activated
+
+**Status:** DOCUMENTED. Not a code bug — an operational gap (missing cron
+install). Low risk either way since it self-heals once comparison data exists.
+
+Traced the full chain: `app/backend/vision.py` already calls
+`get_canny_thresholds()` from `app/services/digitizer_config.py` instead of
+hardcoding OpenCV values — genuinely well-architected, designed so adjusted
+parameters take effect on the next `/digitize` call without a restart.
+`get_param()`/`_load_from_db()` read from a `digitizer_parameters` table that
+**doesn't exist** — but unlike the other missing tables in this log,
+`training_feedback.py`'s `save_parameter_state()` has its own inline
+`CREATE TABLE IF NOT EXISTS digitizer_parameters (...)`, so it self-provisions
+on first successful calibration write. It just never fired, because
+`comparison_results` (now fixed, see entries above) was empty/non-existent
+the whole time — no error data, nothing to calibrate from. `get_param()`'s
+read path already fails gracefully (catches the missing-table exception,
+falls back to `_DEFAULTS`, never crashes digitize) — this part doesn't need
+a code fix.
+
+**What's actually missing:** `scripts/daily-analysis.sh` is a real,
+functional script that queries `comparison_results`, computes trends, and
+calls `POST /api/calibration/apply` automatically — but only if its
+documented cron entry (`0 2 * * * /opt/cad-digitizer/scripts/daily-analysis.sh`)
+is actually installed. Checked the VPS: **it isn't.** `crontab -l` shows only
+unrelated SuperRoo entries; `/var/log/cad-reports` (the script's own output
+dir) doesn't exist, confirming it has never run. So: calibration is
+self-correcting in design, but in practice has only ever run if someone
+manually hit `/calibration/apply` — never on its own.
+
+**Not fixed yet** — installing a cron job on shared production
+infrastructure is exactly the kind of change that should get explicit
+sign-off first (same reasoning as the DB schema changes above), not bundled
+into a docs-only audit pass. Flagging for a decision: install the cron as
+documented, or trigger calibration differently (e.g. from the queue worker
+after N comparisons accumulate)?
+
+
 ## 2026-06-29 (later still) — Claude (Sonnet 4.6) — comparison_agent overall_score is misleading + coffee table DXF still missing a view
 
 **Status:** DOCUMENTED, NOT YET FIXED.
