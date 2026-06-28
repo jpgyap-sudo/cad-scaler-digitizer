@@ -1982,17 +1982,73 @@ async def digitize_unified(file: UploadFile = File(...),
         try: os.remove(str(img_path))
         except: pass
 
+        # Determine furniture type for downstream phases
+        _ftype = unified.product_type.value if unified.product_type else "generic"
+
+        # ===== PHASE 7: Wrap in Canonical Furniture Graph =====
+        try:
+            from app.backend.cfg import CanonicalFurnitureGraph
+            cfg = CanonicalFurnitureGraph.from_pipeline_result(
+                unified_result=unified,
+                furniture_type=_ftype,
+                overall_dims={k: v.value * 10 for k, v in unified.dimensions.items()} if unified.dimensions else {}
+            )
+            cfg_dict = cfg.to_dict()
+        except Exception as e:
+            print(f"[Unified] CFG failed (non-fatal): {e}")
+            cfg_dict = None
+
+        # ===== PHASE 8: SelfCritic Auto-Correction Loop =====
+        self_critic_result = None
+        try:
+            # Save a copy of the original image before deletion for self-critic
+            _sc_img = str(img_path)
+            if cfg_dict and Path(_sc_img).exists():
+                from app.backend.self_critic import SelfCritic
+                critic = SelfCritic(gap_threshold=0.05, max_iterations=3)
+                from app.backend.drawing_builders import build_generic_model
+                temp_model = build_generic_model()
+                sc_result = critic.run(temp_model, _sc_img)
+                self_critic_result = {
+                    "iterations": sc_result.iterations,
+                    "gap_score": round(sc_result.gap_score, 4),
+                    "converged": sc_result.converged,
+                    "repairs_applied": sc_result.repairs_applied,
+                }
+                if cfg_dict and 'confidence_map' in cfg_dict:
+                    cfg_dict['confidence_map']['self_critic_score'] = 1.0 - sc_result.gap_score
+        except Exception as e:
+            print(f"[Unified] SelfCritic failed (non-fatal): {e}")
+            self_critic_result = {"error": str(e)}
+
+        # ===== PHASE 9: Progressive Confidence Gate =====
+        # Determine if confidence is high enough to auto-generate
+        avg_conf = 0.0
+        if cfg_dict and cfg_dict.get('confidence_map'):
+            vals = [v for v in cfg_dict['confidence_map'].values() if isinstance(v, (int, float))]
+            avg_conf = sum(vals) / len(vals) if vals else 0.0
+        
+        confidence_gate = {
+            "average_confidence": round(avg_conf, 3),
+            "auto_generated": avg_conf >= 0.50,
+            "needs_review": avg_conf < 0.70,
+            "critical_fields": [],
+        }
+        # Flag any critical fields with low confidence
+        if cfg_dict and cfg_dict.get('provenance'):
+            for field, prov in cfg_dict['provenance'].items():
+                if isinstance(prov, dict) and prov.get('confidence', 1.0) < 0.50:
+                    confidence_gate["critical_fields"].append(field)
+
         # Generate DXF from dispatch if template was resolved
         dxf_name = None
         download_path = None
         preview_svg = None
         if unified.template_graph and unified.template_graph.get("template", {}).get("id"):
             try:
-                # Export DXF using the existing save_* dispatch
-                ftype = unified.product_type.value if unified.product_type else "generic"
                 dxf_name = f"{job_id}_unified.dxf"
                 dxf_path = OUT / dxf_name
-                dispatch_extra = _dispatch_furniture(ftype, dxf_path,
+                dispatch_extra = _dispatch_furniture(_ftype, dxf_path,
                     [{"tag": k, "value_cm": v.value} for k, v in unified.dimensions.items()],
                     None, None)
                 download_path = f"/api/download/{dxf_name}"
@@ -2003,7 +2059,7 @@ async def digitize_unified(file: UploadFile = File(...),
                     svg_name = f"{job_id}_unified.svg"
                     svg_path = OUT / svg_name
                     resolved = (dispatch_extra or {}).get('resolved_dimensions') or {}
-                    model = _build_svg_model(ftype, resolved, None, None, dispatch_extra)
+                    model = _build_svg_model(_ftype, resolved, None, None, dispatch_extra)
                     with open(str(svg_path), 'w', encoding='utf-8') as f2:
                         f2.write(drawing_to_svg(model))
                     preview_svg = f"/api/preview/svg/{dxf_name}"
@@ -2014,6 +2070,9 @@ async def digitize_unified(file: UploadFile = File(...),
 
         response = unified.to_api_dict()
         response["job_id"] = job_id
+        response["cfg"] = cfg_dict
+        response["self_critic"] = self_critic_result
+        response["confidence_gate"] = confidence_gate
         response["dxf_file"] = dxf_name
         response["download"] = download_path
         response["preview_svg"] = preview_svg
