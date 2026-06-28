@@ -10,6 +10,7 @@
 
 | Time (TZ) | Agent | Commit | Update | Type |
 |-----------|-------|--------|--------|------|
+| 06:38 +08 | SuperRoo | `31a30f8` | **Populated UPDATES_LOG.md** with full 40+ entry commit history from 2026-06-28 | DOCS |
 | 06:34 +08 | SuperRoo | `6d95734` | Docs: log comparison_agent score-weighting bug + coffee table DXF view gap | DOCS |
 | 06:32 +08 | SuperRoo | `cc25b32` | **UPDATES_LOG.md** created — persistent agent update log with commit tracking, known issues, usage guide | FEATURE |
 | 06:30 +08 | SuperRoo | `3f74959` | **Self-calibration loop**: crawler → ratio solver. `scripts/auto_calibrate_from_crawled.py` writes `calibration_ledger.json`; `reference_ratio_solver` reads it at runtime. 259 products feed ALL digitizations. | FEATURE |
