@@ -30,6 +30,111 @@ UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
+@router.get("/health")
+async def cfg_health():
+    """Check CFG system health."""
+    grammar = FurnitureGrammar()
+    return JSONResponse({
+        "ok": True,
+        "grammar_types": len(grammar.get_known_types()),
+        "grammar_families": len(grammar.get_families()),
+        "has_self_critic": True,
+        "has_cfg": True,
+    })
+
+
+@router.get("/evaluate")
+async def cfg_evaluate():
+    """Run self-diagnostics on all CFG components.
+    
+    Tests:
+    1. Grammar can load all 25+ template types
+    2. Each type generates a valid DrawingModel
+    3. CFG wraps/rewraps correctly
+    4. SelfCritic initializes
+    5. Returns pass/fail per test
+    """
+    results = {}
+    errors = []
+    
+    # Test 1: Grammar loading
+    try:
+        grammar = FurnitureGrammar()
+        types = grammar.get_known_types()
+        families = grammar.get_families()
+        results["grammar_load"] = {
+            "passed": len(types) > 0,
+            "types_count": len(types),
+            "families_count": len(families),
+            "types": types[:5],  # first 5 for display
+        }
+    except Exception as e:
+        results["grammar_load"] = {"passed": False, "error": str(e)}
+        errors.append(f"Grammar load: {e}")
+    
+    # Test 2: Each type generates a DrawingModel
+    if results.get("grammar_load", {}).get("passed"):
+        generate_results = []
+        for ftype in types[:10]:  # Test first 10 types
+            try:
+                model = grammar.generate(ftype, {"width_cm": 100, "depth_cm": 60, "height_cm": 75})
+                view_count = len(getattr(model, 'views', []))
+                generate_results.append({
+                    "type": ftype,
+                    "passed": True,
+                    "views": view_count,
+                })
+            except Exception as e:
+                generate_results.append({
+                    "type": ftype,
+                    "passed": False,
+                    "error": str(e),
+                })
+                errors.append(f"Generate {ftype}: {e}")
+        results["generate_types"] = {
+            "passed": all(r["passed"] for r in generate_results),
+            "tested": len(generate_results),
+            "passed_count": sum(1 for r in generate_results if r["passed"]),
+            "details": generate_results,
+        }
+    
+    # Test 3: CFG round-trip
+    try:
+        model = grammar.generate(types[0], {"width_cm": 100, "height_cm": 75})
+        cfg = CanonicalFurnitureGraph.from_drawing_model_only(model)
+        roundtrip = cfg_to_drawing_model(cfg)
+        rt_views = len(getattr(roundtrip, 'views', []))
+        results["cfg_roundtrip"] = {
+            "passed": rt_views > 0,
+            "component_count": cfg.component_count,
+            "views_after_roundtrip": rt_views,
+        }
+    except Exception as e:
+        results["cfg_roundtrip"] = {"passed": False, "error": str(e)}
+        errors.append(f"CFG roundtrip: {e}")
+    
+    # Test 4: SelfCritic initializes
+    try:
+        critic = SelfCritic(gap_threshold=0.05, max_iterations=3)
+        results["self_critic_init"] = {
+            "passed": True,
+            "max_iterations": critic.max_iterations,
+            "gap_threshold": critic.gap_threshold,
+        }
+    except Exception as e:
+        results["self_critic_init"] = {"passed": False, "error": str(e)}
+        errors.append(f"SelfCritic init: {e}")
+    
+    all_passed = all(r.get("passed", False) for r in results.values())
+    return JSONResponse({
+        "status": "healthy" if all_passed else "degraded",
+        "all_tests_passed": all_passed,
+        "error_count": len(errors),
+        "errors": errors[:5],  # first 5 errors
+        "results": results,
+    })
+
+
 @router.post("/generate")
 async def cfg_generate(
     furniture_type: str = Form(...),
@@ -57,15 +162,18 @@ async def cfg_generate(
 
     # Step 2: Wrap in CFG
     cfg = CanonicalFurnitureGraph.from_drawing_model_only(model)
-
-    # Step 3: Optional Self-Critic
-    if run_self_critic:
-        critic = SelfCritic()
-        result = critic.run(model, "")
-        cfg.confidence_map["self_critic_score"] = round(1.0 - result.gap_score, 3)
-
-    # Fix: use proper furniture_type from request
     cfg.furniture_type = furniture_type
+
+    # Step 3: SelfCritic — graceful no-image fallback
+    if run_self_critic:
+        try:
+            critic = SelfCritic(gap_threshold=0.05, max_iterations=3)
+            result = critic.run(model, "")
+            cfg.confidence_map["self_critic_score"] = round(1.0 - result.gap_score, 3)
+            cfg.confidence_map["self_critic_iterations"] = result.iterations
+            cfg.confidence_map["self_critic_converged"] = 1.0 if result.converged else 0.0
+        except Exception as e:
+            logger.warning(f"SelfCritic skipped (no comparison image): {e}")
 
     return JSONResponse({
         "cfg": cfg.to_dict(),

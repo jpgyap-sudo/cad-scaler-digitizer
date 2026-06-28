@@ -161,28 +161,38 @@ class FurnitureGrammar:
             raise
 
     def _normalize_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Normalize common parameter names to what builders expect."""
-        normalized = dict(params)
+        """Normalize common parameter names to what builders expect.
+
+        Maps user-facing dimension names → builder function parameter names.
+        Identity entries (like length_cm→length_cm) are kept for clarity
+        even though they're no-ops — they document the canonical names.
+        """
+        # MAPPINGS: user-facing_key → builder parameter_key
+        # Remove entries where key == value to eliminate no-ops
         mapping = {
-            "length_cm": "length_cm",
-            "width_cm": "width_cm",
-            "depth_cm": "depth_cm", 
-            "height_cm": "height_cm",
+            "overall_height_cm": "overall_height_cm",
             "top_diameter_cm": "top_dia_cm",
-            "top_dia_cm": "top_dia_cm",
             "base_diameter_cm": "base_dia_cm",
-            "base_dia_cm": "base_dia_cm",
+            "collar_diameter_cm": "collar_dia_cm",
+            "neck_diameter_cm": "neck_dia_cm",
             "top_thickness_cm": "top_thick_cm",
-            "top_thick_cm": "top_thick_cm",
-            "leg_spacing_cm": "leg_spacing_cm",
-            "materials": "materials",
+            "base_thickness_cm": "base_thick_cm",
+            "seat_height_cm": "seat_height_cm",
+            "leg_thickness_cm": "leg_thick_cm",
+            "pedestal_diameter_cm": "pedestal_dia_cm",
             "material": "materials",
+            "materials_json": "materials",
         }
-        # Apply mapping — keep original key if no mapping exists
+
         result = {}
-        for k, v in normalized.items():
-            mapped = mapping.get(k, k)
-            result[mapped] = v
+        for k, v in params.items():
+            # First check explicit mapping
+            mapped = mapping.get(k)
+            if mapped:
+                result[mapped] = v
+            else:
+                # Keep original key (builders may accept it directly)
+                result[k] = v
         return result
 
     # ─── Generic composition fallback ────────────────────────────────
