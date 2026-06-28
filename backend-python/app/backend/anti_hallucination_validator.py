@@ -243,6 +243,11 @@ def validate_entities(
 
 # Public API
 
+def validate_drawing(*args, **kwargs):
+    """Alias for validate_furniture_drawing — used by self_critic module."""
+    return validate_furniture_drawing(*args, **kwargs)
+
+
 def validate_furniture_drawing(
     furniture_type: str,
     entity_confidences: Optional[Dict[str, Any]] = None,

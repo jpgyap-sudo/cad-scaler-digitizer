@@ -838,9 +838,9 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
             dia, extra.get('resolved_dimensions', {}))
 
     elif f_type == 'rectangular_table':
-        w = real_w or _dim(['w', 'width'], 120.0)
+        w = real_w or _dim(['w', 'width', 'length'], 120.0)
         h = real_h or _dim(['h', 'height'], 70.0)
-        d = _dim(['d', 'depth'], 80.0)
+        d = real_d or _dim(['d', 'depth'], 80.0)
         lt = _dim(['leg', 'thickness'], 6.0)
         try: save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, leg_thickness_cm=lt)
         except Exception: save_generic(str(dxf_path), [], [], [])

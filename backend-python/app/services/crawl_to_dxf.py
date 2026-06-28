@@ -571,10 +571,12 @@ async def crawl_and_digitize(
         elif page_dims.get("height_cm"):
             real_h = page_dims["height_cm"]
         # Also extract depth for hybrid dispatch
+        # Map length_cm to depth_cm when available (common for tables: width x length)
         if page_dims.get("depth_cm"):
             real_d = page_dims["depth_cm"]
         elif page_dims.get("length_cm"):
             real_d = page_dims["length_cm"]
+            page_dims["depth_cm"] = real_d  # make available to dispatch
 
         # Shape detection from page URL slug — remaps generic types to specific templates
         _slug = urlparse(page_url).path.rstrip("/").split("/")[-1].lower() if page_url else ""
