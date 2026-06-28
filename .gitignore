@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+temp_*/
 .env.local
 .env.production
 .env.*.local

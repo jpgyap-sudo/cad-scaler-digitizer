@@ -390,6 +390,13 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
                             if key not in result:
                                 result[key] = val
 
+                    # Pattern 3b: mm(L) x mm(W) x mm(H) in body_html
+                    m3b = re.search(r'(\d+\.?\d*)\s*mm\s*\(L\)\s*x\s*(\d+\.?\d*)\s*mm\s*\(W\)\s*x\s*(\d+\.?\d*)\s*mm\s*\(H\)', all_text, re.I)
+                    if m3b and "width_cm" not in result:
+                        result["width_cm"] = float(m3b.group(2)) / 10  # W
+                        result["length_cm"] = float(m3b.group(1)) / 10  # L
+                        result["overall_height_cm"] = float(m3b.group(3)) / 10  # H
+
         except Exception as e:
             logger.warning(f"Failed to fetch product json: {e}")
 

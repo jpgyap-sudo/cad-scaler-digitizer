@@ -4238,7 +4238,12 @@ async def visual_shape_compare(payload: dict):
             "dxf_shape_classification": dxf_shape,
             "recommendation": (
                 "Shape matches template" if shape_match > 0.7 else
-                "Shape mismatch: detected circles but DXF has none — check round_pedestal template dispatch"
+                f"Shape mismatch: image={detected_shape}, DXF={dxf_shape}. "
+                f"Image has {true_circle_count} circles (after filtering), " + (
+                    "DXF has none — check if round_pedestal template should be used" if dxf_entity_counts["circle"] == 0 and true_circle_count > 5 else
+                    "DXF circles found — shape may still be incorrect" if dxf_entity_counts["circle"] > 0 else
+                    "Try using --category=table to trigger table templates"
+                )
             ),
         })
     
