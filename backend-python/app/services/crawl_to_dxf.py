@@ -552,7 +552,7 @@ async def crawl_and_digitize(
 
     async with httpx.AsyncClient(timeout=120) as client:
         digitize_resp = await client.post(
-            f"{API_BASE}/api/digitize",
+            f"{API_BASE}/api/digitize/hybrid",
             files=files,
             data=params,
         )
@@ -566,8 +566,17 @@ async def crawl_and_digitize(
     preview_svg = digitized.get("preview_svg")
     download_url = digitized.get("download")
 
-    # Extract dimensions from digitize result
+    # Extract dimensions from digitize result. Neither /api/digitize nor
+    # /api/digitize/hybrid ever returned detected_width_cm/detected_height_cm/
+    # dimensions at the top level (both put resolved dimensions under
+    # resolved_dimensions) - this lookup always found nothing and
+    # detected_dims silently stayed empty.
     detected_dims = {}
+    resolved = digitized.get("resolved_dimensions")
+    if isinstance(resolved, dict):
+        for k, v in resolved.items():
+            if isinstance(v, (int, float)) and v > 0:
+                detected_dims[k] = float(v)
     if digitized.get("detected_width_cm"):
         detected_dims["width_cm"] = float(digitized["detected_width_cm"])
     if digitized.get("detected_height_cm"):
