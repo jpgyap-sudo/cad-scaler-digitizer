@@ -1,0 +1,20 @@
+# =============================================================================
+# MCP Server — ChatGPT can connect to control the CAD digitizer
+# =============================================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install only production dependencies (mcp sdk + axios)
+COPY mcp-server/package.json ./
+RUN npm install --omit=dev
+
+# Copy server source
+COPY mcp-server/ ./
+
+EXPOSE 3003
+ENV NODE_ENV=production
+
+# Health endpoint via HTTP (separate from MCP stdio)
+# The MCP protocol uses stdio, but we add a tiny HTTP server for healthchecks
+CMD ["node", "server.js"]

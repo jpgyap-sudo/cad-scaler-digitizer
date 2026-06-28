@@ -1,0 +1,36 @@
+{
+  "name": "wardrobe-120x60x200",
+  "furniture_type": "wardrobe",
+  "source": "generated",
+  "category": "wardrobe",
+  "parameters": {
+    "name": "wardrobe-120x60x200",
+    "w": 120,
+    "d": 60,
+    "h": 200,
+    "type": "wardrobe",
+    "top_thickness_cm": 2,
+    "panel_thickness_cm": 1.8
+  },
+  "dimensions": [
+    {"tag": "width", "value_cm": 120, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 60, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 200, "tolerance_pct": 5}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["cabinet_plan"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["doors", "frame"]},
+    {"name": "side_elevation", "required": true, "views": ["side"], "components": ["cabinet_side"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "materials": [
+    "engineered wood",
+    "melamine",
+    "solid wood"
+  ],
+  "notes": "Fixture for wardrobe-120x60x200"
+}

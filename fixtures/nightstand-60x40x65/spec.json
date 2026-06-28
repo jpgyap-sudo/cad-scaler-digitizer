@@ -1,0 +1,34 @@
+{
+  "name": "nightstand-60x40x65",
+  "furniture_type": "cabinet",
+  "source": "generated",
+  "category": "nightstand",
+  "parameters": {
+    "name": "nightstand-60x40x65",
+    "w": 60,
+    "d": 40,
+    "h": 65,
+    "type": "nightstand"
+  },
+  "dimensions": [
+    {"tag": "width", "value_cm": 60, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 40, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 65, "tolerance_pct": 5}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["cabinet_plan"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["drawers", "frame"]},
+    {"name": "side_elevation", "required": true, "views": ["side"], "components": ["cabinet_side"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "materials": [
+    "engineered wood",
+    "melamine",
+    "solid wood"
+  ],
+  "notes": "Fixture for nightstand-60x40x65 — cabinet type, nightstand variant"
+}

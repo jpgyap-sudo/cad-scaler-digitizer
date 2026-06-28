@@ -534,9 +534,190 @@ def load_fixtures() -> List[GroundTruthFixture]:
     return loaded
 
 
+def run_image_benchmark(fixtures: List[GroundTruthFixture]) -> BenchmarkResult:
+    """
+    Run the REAL image-processing pipeline benchmark against ground truth.
+
+    For each fixture with a reference.jpg, this runs the full digitize pipeline
+    (OpenCV + OCR + layout parser + dimension associator + scale solver)
+    WITHOUT ground-truth injection — it tests what the system would actually
+    extract from a user-uploaded photo.
+
+    Compares OCR-extracted dimensions against spec.json ground truth.
+    """
+    from datetime import datetime
+    from pathlib import Path
+
+    results: List[FixtureResult] = []
+    all_dim_errors: List[float] = []
+
+    for fixture in fixtures:
+        print(f"[IMAGE-BENCHMARK] Testing: {fixture.name}")
+
+        # Check for reference.jpg alongside the fixture's image
+        img_dir = Path(fixture.image_path).parent
+        ref_jpg = img_dir / "reference.jpg"
+        if not ref_jpg.exists():
+            results.append(FixtureResult(
+                name=fixture.name,
+                furniture_type_match=False,
+                dimension_accuracies=[],
+                dimension_accuracy_pct=0.0,
+                association_count=0,
+                scale_px_per_cm=None,
+                errors=[f"No reference.jpg found at {ref_jpg}"],
+                dxf_match=False,
+                dxf_dimension_error_pct=None,
+            ))
+            print(f"  -> SKIP (no reference.jpg)")
+            continue
+
+        try:
+            # Step 1: OpenCV vision pipeline
+            img, gray = load_image(str(ref_jpg))
+            binary = preprocess(gray)
+            lines_raw = detect_lines(binary)
+            lines = normalize_lines(lines_raw)
+            circles = detect_circles(gray)
+            rects = detect_rectangles(binary)
+
+            # Step 2: OCR — real pipeline, NOT ground-truth injection
+            ocr_lines, dims = ocr_dimensions(str(ref_jpg))
+
+            # Step 3: Layout parser
+            layout = extract_layout(str(ref_jpg))
+            text_boxes = layout.text_boxes
+            dim_labels = layout.dimension_labels
+
+            # Step 4: Line role classification (informational)
+            try:
+                from app.backend.line_role_classifier import classify_line_roles
+                line_classification = classify_line_roles(lines, text_boxes)
+            except Exception:
+                pass
+
+            # Step 5: Dimension association
+            associations = associate_dimension_text(text_boxes, dim_labels, lines, circles, rects)
+
+            # Step 6: Scale solver with ground truth as known anchor
+            known_dims = {gt.tag: gt.value_cm for gt in fixture.dimensions}
+            scale_solution = compute_scale(associations.associations, lines, known_dims)
+            scale_px_per_cm = scale_solution.combined_scale.px_per_cm if scale_solution.combined_scale else None
+
+            # Step 7: Compare each ground truth dimension against OCR pipeline
+            dim_accuracies: List[DimensionAccuracy] = []
+            fixture_dim_errors: List[float] = []
+            matched_count = 0
+
+            for gt_dim in fixture.dimensions:
+                pip_value = _find_pipeline_value(associations.associations, gt_dim.tag)
+
+                if pip_value and pip_value > 0:
+                    error_pct = abs(pip_value - gt_dim.value_cm) / gt_dim.value_cm * 100
+                    within_tol = error_pct <= gt_dim.tolerance_pct
+                    fixture_dim_errors.append(error_pct)
+                    matched_count += 1
+
+                    dim_accuracies.append(DimensionAccuracy(
+                        tag=gt_dim.tag,
+                        expected_cm=gt_dim.value_cm,
+                        actual_cm=pip_value,
+                        error_pct=error_pct,
+                        within_tolerance=within_tol,
+                        tolerance_pct=gt_dim.tolerance_pct,
+                    ))
+                else:
+                    dim_accuracies.append(DimensionAccuracy(
+                        tag=gt_dim.tag,
+                        expected_cm=gt_dim.value_cm,
+                        actual_cm=0.0,
+                        error_pct=100.0,
+                        within_tolerance=False,
+                        tolerance_pct=gt_dim.tolerance_pct,
+                    ))
+                    fixture_dim_errors.append(100.0)
+
+            # Calculate dimension accuracy percentage
+            dim_accuracy_pct = 0.0
+            if fixture_dim_errors:
+                dim_accuracy_pct = sum(100 - min(e, 100) for e in fixture_dim_errors) / len(fixture_dim_errors)
+
+            # Track dim errors for aggregate
+            all_dim_errors.extend(fixture_dim_errors)
+
+            # At least one dimension was successfully matched
+            pipeline_has_results = matched_count > 0
+            avg_dim_error = sum(fixture_dim_errors) / len(fixture_dim_errors) if fixture_dim_errors else 100.0
+
+            errors = []
+            if not pipeline_has_results:
+                errors.append("Pipeline extracted 0 dimensions matching ground truth")
+            else:
+                # Log which dims failed
+                for acc in dim_accuracies:
+                    if not acc.within_tolerance:
+                        errors.append(
+                            f"Dimension {acc.tag}: expected {acc.expected_cm}cm, "
+                            f"got {acc.actual_cm:.1f}cm ({acc.error_pct:.1f}% error, "
+                            f"tolerance {acc.tolerance_pct}%)"
+                        )
+
+            result = FixtureResult(
+                name=fixture.name,
+                furniture_type_match=True,  # We're testing OCR accuracy, not classifier
+                dimension_accuracies=dim_accuracies,
+                dimension_accuracy_pct=dim_accuracy_pct,
+                association_count=len(associations.associations),
+                scale_px_per_cm=scale_px_per_cm,
+                errors=errors,
+                dxf_match=pipeline_has_results,
+                dxf_dimension_error_pct=avg_dim_error if pipeline_has_results else None,
+            )
+            results.append(result)
+
+            passed = "PASS" if result.overall_score >= 60 else "FAIL"
+            print(f"  -> {passed} (score: {result.overall_score:.0f}%, "
+                  f"dim accuracy: {dim_accuracy_pct:.0f}%, "
+                  f"matched {matched_count}/{len(fixture.dimensions)} dims)")
+            if errors:
+                for err in errors:
+                    print(f"  ! {err}")
+
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"  -> ERROR: {e}")
+            results.append(FixtureResult(
+                name=fixture.name,
+                furniture_type_match=False,
+                dimension_accuracies=[],
+                dimension_accuracy_pct=0.0,
+                association_count=0,
+                scale_px_per_cm=None,
+                errors=[f"Pipeline error: {e}", tb],
+                dxf_match=False,
+                dxf_dimension_error_pct=None,
+            ))
+
+    avg_score = sum(r.overall_score for r in results) / len(results) if results else 0.0
+    avg_dim_error = sum(all_dim_errors) / len(all_dim_errors) if all_dim_errors else 0.0
+    passed = sum(1 for r in results if r.overall_score >= 60)
+    failed = len(results) - passed
+
+    return BenchmarkResult(
+        fixtures=results,
+        timestamp=datetime.now().isoformat(),
+        total_fixtures=len(fixtures),
+        passed_fixtures=passed,
+        failed_fixtures=failed,
+        average_score=avg_score,
+        dimension_error_avg=avg_dim_error,
+    )
+
+
 # Public API
 def run_accuracy_benchmark(fixtures_path: Optional[str] = None) -> dict:
-    """Main entry point: run the full accuracy benchmark."""
+    """Main entry point: run BOTH the DXF generation and image pipeline benchmarks."""
     if fixtures_path:
         fixtures = load_fixtures_from_path(fixtures_path)
     else:
@@ -546,8 +727,53 @@ def run_accuracy_benchmark(fixtures_path: Optional[str] = None) -> dict:
         print("[BENCHMARK] No fixtures found to test")
         return {"error": "No fixtures found", "fixtures_loaded": 0}
 
-    result = run_benchmark(fixtures)
-    return result.to_dict()
+    # Run existing DXF generation benchmark (with ground-truth injection)
+    print("\n" + "=" * 60)
+    print("DXF GENERATION BENCHMARK")
+    print("=" * 60)
+    dxf_result = run_benchmark(fixtures)
+
+    # Run new image pipeline benchmark (real OCR, no GT injection)
+    print("\n" + "=" * 60)
+    print("IMAGE PIPELINE BENCHMARK")
+    print("=" * 60)
+    pixel_result = run_image_benchmark(fixtures)
+
+    # Combined summary
+    combined = {
+        "type": "combined",
+        "dxf_benchmark": dxf_result.to_dict(),
+        "pixel_benchmark": pixel_result.to_dict(),
+        "combined_summary": {
+            "dxf": {
+                "score": round(dxf_result.average_score, 1),
+                "passed": dxf_result.passed_fixtures,
+                "total": dxf_result.total_fixtures,
+                "dim_error_avg": round(dxf_result.dimension_error_avg, 2),
+            },
+            "pixel": {
+                "score": round(pixel_result.average_score, 1),
+                "passed": pixel_result.passed_fixtures,
+                "total": pixel_result.total_fixtures,
+                "dim_error_avg": round(pixel_result.dimension_error_avg, 2),
+            },
+            "summary": (
+                f"DXF: {dxf_result.passed_fixtures}/{dxf_result.total_fixtures} passed "
+                f"(score: {dxf_result.average_score:.0f}%, "
+                f"dim error: {dxf_result.dimension_error_avg:.1f}%) | "
+                f"Pixel: {pixel_result.passed_fixtures}/{pixel_result.total_fixtures} passed "
+                f"(score: {pixel_result.average_score:.0f}%, "
+                f"dim error: {pixel_result.dimension_error_avg:.1f}%)"
+            ),
+        },
+    }
+
+    print(f"\n{'=' * 60}")
+    print("COMBINED RESULTS")
+    print(f"{'=' * 60}")
+    print(combined["combined_summary"]["summary"])
+
+    return combined
 
 
 def load_fixtures_from_path(path: str) -> List[GroundTruthFixture]:

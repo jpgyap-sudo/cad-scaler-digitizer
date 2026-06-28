@@ -1,6 +1,6 @@
 {
   "timestamp": "2026-06-28T07:10:00.000Z",
-  "total_fixtures": 13,
+  "total_fixtures": 20,
   "fixtures": [
     {
       "name": "fabric-sofa-105x92x87",
@@ -78,6 +78,48 @@
       "name": "asymmetric-pedestal-table-180x90x75",
       "type": "asymmetric_pedestal_table",
       "path": "fixtures/asymmetric-pedestal-table-180x90x75/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "wardrobe-120x60x200",
+      "type": "wardrobe",
+      "path": "fixtures/wardrobe-120x60x200/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "reception-counter-180x60x110",
+      "type": "reception_counter",
+      "path": "fixtures/reception-counter-180x60x110/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "office-desk-140x60x75",
+      "type": "office_desk",
+      "path": "fixtures/office-desk-140x60x75/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "oval-pedestal-table-180x100x75",
+      "type": "oval_pedestal_table",
+      "path": "fixtures/oval-pedestal-table-180x100x75/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "console-table-120x40x75",
+      "type": "console_table",
+      "path": "fixtures/console-table-120x40x75/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "coffee-table-100x60x45",
+      "type": "coffee_table",
+      "path": "fixtures/coffee-table-100x60x45/spec.json",
+      "reference_image": ""
+    },
+    {
+      "name": "nightstand-60x40x65",
+      "type": "cabinet",
+      "path": "fixtures/nightstand-60x40x65/spec.json",
       "reference_image": ""
     }
   ]

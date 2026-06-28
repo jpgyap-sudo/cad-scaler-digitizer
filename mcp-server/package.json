@@ -1,0 +1,14 @@
+{
+  "name": "cad-digitizer-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP server for ChatGPT to connect to and control the CAD Scaler Digitizer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.8.0",
+    "axios": "^1.7.2"
+  }
+}

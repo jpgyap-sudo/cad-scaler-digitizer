@@ -1,0 +1,32 @@
+{
+  "name": "coffee-table-100x60x45",
+  "furniture_type": "coffee_table",
+  "source": "generated",
+  "category": "coffee table",
+  "parameters": {
+    "name": "coffee-table-100x60x45",
+    "w": 100,
+    "d": 60,
+    "h": 45,
+    "type": "coffee_table"
+  },
+  "dimensions": [
+    {"tag": "width", "value_cm": 100, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 60, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 45, "tolerance_pct": 5}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["tabletop_plan", "leg_positions"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["tabletop", "legs"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation"
+  ],
+  "materials": [
+    "solid wood",
+    "glass",
+    "metal"
+  ],
+  "notes": "Fixture for coffee-table-100x60x45"
+}

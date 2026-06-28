@@ -4178,3 +4178,79 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: standardize DXF layers (OBJECT/DIMENSION/LEADER/CENTERLINE/MTEXT/HATCH) across all helpers
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 22809a6b04c3419fc259d1bdc5c0b2ad387da3cb
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 22809a6b04c3419fc259d1bdc5c0b2ad387da3cb
+**Files:** backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/layer_manager.py,backend-python/app/services/crawl_to_dxf.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+
+**Summary:**
+Commit: fix: standardize DXF layers (OBJECT/DIMENSION/LEADER/CENTERLINE/MTEXT/HATCH) across all helpers
+Files: backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/layer_manager.py,backend-python/app/services/crawl_to_dxf.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: standardize DXF layers (OBJECT/DIMENSION/LEADER/CENTERLINE/MTEXT/HATCH) across all helpers*
+
+#### Lesson Learned
+
+Commit: fix: standardize DXF layers (OBJECT/DIMENSION/LEADER/CENTERLINE/MTEXT/HATCH) across all helpers
+Files: backend-python/app/backend/dxf_exporter.py,backend-python/app/backend/layer_manager.py,backend-python/app/services/crawl_to_dxf.py,memory/extension-bugs.jsonl,memory/lesson-index.jsonl,memory/lessons-learned.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: body_html dimension extraction — mm units, H-prefix, (H) labels
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c43ce0d23fea61c098d87fd69c246b0504101163
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** c43ce0d23fea61c098d87fd69c246b0504101163
+**Files:** 
+
+**Summary:**
+Commit: fix: body_html dimension extraction — mm units, H-prefix, (H) labels
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: body_html dimension extraction — mm units, H-prefix, (H) labels*
+
+#### Lesson Learned
+
+Commit: fix: body_html dimension extraction — mm units, H-prefix, (H) labels
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

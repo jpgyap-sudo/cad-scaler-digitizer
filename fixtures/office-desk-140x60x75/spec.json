@@ -1,0 +1,34 @@
+{
+  "name": "office-desk-140x60x75",
+  "furniture_type": "office_desk",
+  "source": "generated",
+  "category": "office desk",
+  "parameters": {
+    "name": "office-desk-140x60x75",
+    "w": 140,
+    "d": 60,
+    "h": 75,
+    "type": "office_desk"
+  },
+  "dimensions": [
+    {"tag": "width", "value_cm": 140, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 60, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 75, "tolerance_pct": 3}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["tabletop_plan", "leg_positions"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["tabletop", "legs", "modesty_panel"]},
+    {"name": "side_elevation", "required": true, "views": ["side"], "components": ["tabletop", "leg_side"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "materials": [
+    "engineered wood",
+    "melamine",
+    "metal"
+  ],
+  "notes": "Fixture for office-desk-140x60x75"
+}

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "cad-digitizer": {
+      "description": "CAD Scaler Digitizer — crawl product URLs, generate DXFs, validate against reference geometry, and track calibration",
+      "command": "node",
+      "args": [
+        "C:\\Users\\user\\Desktop\\autocad-scaler-digitizer-upgraded\\mcp-server\\server.js"
+      ],
+      "env": {
+        "PYTHON_WORKER_URL": "http://localhost:8001",
+        "NODE_API_URL": "http://localhost:4000"
+      }
+    }
+  }
+}

@@ -2694,6 +2694,22 @@ async def list_benchmark_fixtures():
     })
 
 
+@router.get("/benchmark/pixel")
+async def run_pixel_benchmark_endpoint():
+    """Run the real image-processing pipeline benchmark.
+    
+    For each fixture with a reference.jpg, runs the full digitize pipeline
+    (OpenCV + OCR + layout parser + dimension associator + scale solver)
+    WITHOUT ground-truth injection, comparing OCR-extracted dimensions
+    against spec.json ground truth.
+    
+    Returns per-fixture accuracy scores, aggregate metrics, and a combined
+    summary alongside the DXF generation benchmark.
+    """
+    result = run_accuracy_benchmark()
+    return JSONResponse(result)
+
+
 # ===== SECTION PREDICTOR =====
 
 @router.get("/sections/predict")

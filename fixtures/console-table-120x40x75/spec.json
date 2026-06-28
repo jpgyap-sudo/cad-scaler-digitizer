@@ -1,0 +1,34 @@
+{
+  "name": "console-table-120x40x75",
+  "furniture_type": "console_table",
+  "source": "generated",
+  "category": "console table",
+  "parameters": {
+    "name": "console-table-120x40x75",
+    "w": 120,
+    "d": 40,
+    "h": 75,
+    "type": "console_table"
+  },
+  "dimensions": [
+    {"tag": "width", "value_cm": 120, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 40, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 75, "tolerance_pct": 3}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["tabletop_plan", "leg_positions"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["tabletop", "legs"]},
+    {"name": "side_elevation", "required": true, "views": ["side"], "components": ["tabletop", "leg_side"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "materials": [
+    "solid wood",
+    "metal",
+    "engineered wood"
+  ],
+  "notes": "Fixture for console-table-120x40x75"
+}

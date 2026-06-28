@@ -1,0 +1,36 @@
+{
+  "name": "oval-pedestal-table-180x100x75",
+  "furniture_type": "oval_pedestal_table",
+  "source": "generated",
+  "category": "oval pedestal table",
+  "parameters": {
+    "name": "oval-pedestal-table-180x100x75",
+    "l": 180,
+    "d": 100,
+    "h": 75,
+    "type": "oval_pedestal_table",
+    "top_thickness_cm": 3,
+    "pedestal_diameter_cm": 40
+  },
+  "dimensions": [
+    {"tag": "length", "value_cm": 180, "tolerance_pct": 5},
+    {"tag": "depth", "value_cm": 100, "tolerance_pct": 5},
+    {"tag": "height", "value_cm": 75, "tolerance_pct": 3},
+    {"tag": "top_thickness", "value_cm": 3, "tolerance_pct": 15},
+    {"tag": "pedestal_diameter", "value_cm": 40, "tolerance_pct": 10}
+  ],
+  "sections": [
+    {"name": "top_view", "required": true, "views": ["top"], "components": ["oval_tabletop_plan", "pedestal_footprint"]},
+    {"name": "front_elevation", "required": true, "views": ["front"], "components": ["tabletop", "pedestal_column", "base"]}
+  ],
+  "shop_drawing_sections": [
+    "top_view",
+    "front_elevation"
+  ],
+  "materials": [
+    "engineered stone",
+    "solid wood",
+    "brushed stainless steel"
+  ],
+  "notes": "Fixture for oval-pedestal-table-180x100x75"
+}
