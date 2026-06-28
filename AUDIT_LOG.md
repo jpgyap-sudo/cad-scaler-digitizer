@@ -1,5 +1,104 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (deep-dive audit) — Claude (Sonnet 4.6) — full crawl-to-dxf trace on a real URL (Melina Coffee Table): variant data ignored, classification reliability regressed for this image, shape bug has concrete real-world impact
+
+**Status:** DOCUMENTED. Not fixed (investigation-only).
+
+User asked for a complete audit of `crawl_to_dxf.py` against a real URL:
+`https://homeu.ph/products/melina-coffee-table?_pos=4&_psq=mel&_ss=e&_v=1.0`.
+
+### 1. Photo/data extraction — correct by coincidence, not by design
+
+Fetched the real page HTML directly. It has Shopify's structured
+`variants` JSON embedded right in the page (no extra request needed):
+
+```
+Variant 1: "1200x1200xH350mm" (Square, 120x120x35cm) → image MEDINA.jpg
+Variant 2: "1400x800xH350mm" (Rectangular, 140x80x35cm) → image viber_image_2021-04-15...jpg
+```
+
+Our crawler ignores this structured data entirely. `crawl_for_image()` scores
+images by filename pattern; `extract_dimensions_from_page()` regexes free
+text for dimension-shaped strings — two **independent, uncoordinated**
+passes. For this product they happened to both land on Variant 1 (image +
+dims both correct for the Square option), but that's luck: nothing ties the
+selected image to the selected dimension text. If the regex had matched the
+second bullet ("1400x800") while the image scorer still picked `MEDINA.jpg`
+(Variant 1's photo), we'd have silently shipped mismatched image+dimensions
+with no way to detect it. **Real fix:** parse `variants` JSON directly when
+present (it's strictly more reliable than regex) and treat each variant as
+a separate option with its own correctly-paired image+dimensions, instead of
+collapsing the page to one guessed answer.
+
+Materials: page says "Stone top + metal base" / "White artificial marble
+top". Our AI output said `{"tabletop": "marble", "legs": "powder-coated
+steel"}` — tabletop is a reasonable match, but "powder-coated steel" is an
+invented specific finish; the page never says powder-coated. Minor, but
+illustrates the AI is willing to state specifics it doesn't have evidence
+for rather than say "metal, finish unspecified."
+
+### 2. Classification reliability has visibly degraded for this exact image
+
+Earlier this session, this image classified correctly as `coffee_table`
+multiple times (that's how the depth/view fixes earlier in this log got
+verified). Re-tested live just now: **8 consecutive calls, same image,
+same params → 8/8 returned `generic_2d_furniture`**, not `coffee_table`.
+Not a regression in our code — checked `git show` for the most recent
+routes.py commit (`5b81a02`, "wire CFG + SelfCritic into digitize/unified"),
+confirmed it only touches the separate `/digitize/unified` endpoint, not
+`/digitize/hybrid`. This is the AI vision classification itself
+becoming unreliable for this specific image between sessions — same
+known non-determinism flagged earlier in this project's history, now
+caught concretely: when classification lands on `coffee_table`, the
+depth/view fixes from earlier in this log work correctly; when it lands
+on `generic_2d_furniture` (currently the consistent outcome for this
+image), the entire pipeline degrades to unclassified raw-circle-noise
+output regardless of any downstream fix. **The downstream fixes are real
+and verified — the bottleneck is classification reliability, which no
+amount of fixing routes.py's dispatch logic addresses.**
+
+### 3. DXF quality, verified deterministically (bypassing classification luck)
+
+Called `build_coffee_table_model()` (SVG preview) and `save_coffee_table()`
+(actual DXF download) directly in the live container with this product's
+real dimensions (120×120×35):
+
+- SVG preview: `['TOP VIEW', 'FRONT VIEW']` — has both (per the earlier fix
+  in this log).
+- **Actual downloadable DXF: `['TOP VIEW']` only** — the FRONT VIEW fix
+  from earlier in this log only ever landed in the SVG preview builder,
+  confirmed still not ported to `dxf_exporter.py`'s `save_coffee_table()`.
+  Same gap as documented earlier, now reproduced against this exact product.
+- Tabletop entity type: `CIRCLE` (confirmed via direct DXF entity
+  inspection) — wrong shape; this product is square/rectangular, never
+  round, in either variant.
+- **Concrete impact of the circle bug for Variant 2 specifically:** the
+  diameter dimension label is computed as `min(width_cm, depth_cm)`. For
+  the Square variant (120×120) this accidentally reads correctly (Ø120 —
+  width and depth happen to be equal). For the **Rectangular variant
+  (140×80)**, the same code would draw a circle labeled **Ø80cm** — not just
+  the wrong shape, an actively wrong number a manufacturer could build
+  from, silently dropping the 140cm dimension entirely with no indication
+  it's missing.
+
+### What would most improve this specific pipeline, in priority order
+
+1. Fix classification reliability (or add a deterministic fallback/retry +
+   confidence floor before accepting `generic_2d_furniture` for an image
+   that scores reasonably on OpenCV signals) — everything else is wasted
+   effort if this keeps misfiring.
+2. Use Shopify's structured `variants` JSON when present instead of
+   independent regex/image-scoring passes — straightforward, more
+   reliable, and lets the product correctly offer multiple size options
+   instead of guessing one.
+3. Port the FRONT VIEW fix to `dxf_exporter.py` (SVG/DXF parity, flagged
+   earlier in this log).
+4. Add real shape detection (round vs. rectangular vs. square) instead of
+   `build_coffee_table_model` always drawing a circle — demonstrated above
+   to produce an actively wrong dimension label, not just a stylistic
+   mismatch, for any non-square coffee table.
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — SECURITY: python-worker has zero auth, zero rate limiting, and an open SSRF vector
 
 **Status:** FLAGGED, HIGH PRIORITY. Not fixed (investigation-only, and this
