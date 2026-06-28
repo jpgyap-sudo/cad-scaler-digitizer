@@ -1,5 +1,32 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — Qdrant similarity search: data side is genuinely live, no UI entry point
+
+**Status:** DOCUMENTED. Not a bug — a missing frontend feature.
+
+Different shape from the other findings above: `generate_and_index_embedding()`
+genuinely runs automatically (non-fatal try/except at `routes.py` ~line 1075)
+after every successful digitize that goes through `_dispatch_furniture()`,
+indexing the generated DXF's geometry into Qdrant for future similarity
+search. **Verified live data accumulating**: `GET
+http://104.248.225.250:16333/collections/cad_geometry` → `points_count: 9`
+right now, from real digitize calls this session.
+
+The retrieval side (`GET /products/search/similar`, `GET
+/products/search/semantic` → `app/backend/product_search.py` →
+`embedding_service.search_similar()`) is also fully implemented and would
+work if called. **Nothing in the frontend calls either endpoint** — grepped
+all of `frontend/` for `products/search`, zero hits. So: real accumulating
+data, real working search code, zero way for an actual user to trigger a
+"find similar furniture" search through the app. Lowest-effort genuinely
+useful feature to surface in this whole audit, if someone wants to wire up
+a UI for it — the hard part (indexing pipeline) already works.
+
+Also noted in passing: `indexed_vectors_count: 0` despite `points_count: 9` —
+expected at this scale (HNSW indexing has a minimum threshold before it
+kicks in; full-scan search works fine for low point counts), not a bug.
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — reference-ratio solver also never activated; recurring pattern identified
 
 **Status:** DOCUMENTED. Not fixed (investigation-only pass per user instruction).
