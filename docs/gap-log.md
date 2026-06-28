@@ -297,3 +297,100 @@ full pipeline: Cloud Vision (OpenAI/Gemini) → ResourceIntelligenceEngine
 → TemplateResolver → ValidationPipeline → FusionPipeline → OutputPipeline.
 Wired into `/digitize/hybrid` as a parallel analysis track returning
 `phase3` in the API response.
+
+---
+
+## Recent Updates (2026-06-29)
+
+### 14. MCP server for ChatGPT integration (2026-06-29, commit `ad8d1ef`)
+**CLOSED**: `mcp-server/server.js` with 13 tools exposed via SSE (port 3003) 
+and stdio (ChatGPT Desktop). Tools: crawl_product_url, batch_crawl, 
+list_templates, suggest_template, validate_dimensions, compare_digitization,
+get_calibration_report, apply_corrections, update_parameter,
+get_current_parameters, get_comparison_results, get_analytics,
+cleanup_old_comparisons. Docker healthcheck + resolver-based dynamic DNS.
+
+### 15. Template graph path resolution fixed (2026-06-29, commit `36191f6`)
+**CLOSED**: `template_loader.py` TEMPLATE_DIR used wrong parent count 
+(4→3 parents). Same bug existed in `product_search.py`, `svg_skeleton.py`, 
+`template_selector.py`, `component_assembler.py`, `product_classifier.py` — 
+all fixed from `parents[3]` to `parents[2]`. Root `resources/` now mounted 
+in Dockerfile via `COPY resources/ /app/resources/`. 18 template graphs 
+load correctly.
+
+### 16. Furniture Engineering Agent (2026-06-29, commit `b58f4ef`)
+**CLOSED**: `engineering_agent.py` — complete engineering analysis with 
+BOM, materials database, joinery standards, ergonomic references, 
+component templates, structural analysis, and CAD layer recommendations. 
+Web endpoint `POST /engineer/analyze`. MCP tools: `engineering_analyze`, 
+`list_engineering_families`. DB table `engineering_analyses` with full schema.
+
+### 17. All 5 architecture phases integrated and verified (2026-06-29)
+**CLOSED**: 
+- **Phase 1** (per-product DNA): Classifier returns `rectangular_dining_table` 
+  (71% confidence) with per-product edge/thickness/ratio fields.
+- **Phase 2** (family→subtype→template): `FAMILY_CATEGORIES` super-category 
+  fallback added. Family classification cascades from specific→generic.
+- **Phase 3** (SVG skeleton): Lightweight skeleton wired into crawl-to-dxf 
+  result. `skeleton_svg` field returned alongside DXF.
+- **Phase 5** (component library): 18 template graphs loadable. Engineer BOM 
+  generation works with 6 furniture families.
+- **Phase 7** (self-learning): Auto-calibration triggers every 3rd comparison. 
+  Product DNA enrichment from validated results.
+
+### 18. Nginx 502 error fixed with dynamic DNS resolution (2026-06-29, commit `ad8d1ef`)
+**CLOSED**: Root cause: Nginx cached upstream IP at startup. When python-worker 
+was recreated (IP changed), Nginx tried old IP → "Connection refused" → 502. 
+Fix: Added `resolver 127.0.0.11 valid=10s` + replaced upstream blocks with 
+`$variable` proxy_pass for dynamic DNS resolution every 10s.
+
+### 19. Visual shape quality comparison endpoint (2026-06-29, commit `db8ea5c`)
+**CLOSED**: `POST /visual/compare` — Hu moment shape comparison, HoughCircles 
+circle detection with false positive filtering, DXF entity classification 
+(round/rectangular/mixed), and visual quality scoring. Shape match score 
+between product photo and DXF template.
+
+### 20. Accuracy benchmark: 10/10 products with dimensions (2026-06-29, commit `db8ea5c`)
+**CLOSED**: `scripts/accuracy-benchmark.py` tests 10 known HomeU products 
+against ground truth. Results: 92.3% avg validation, 10.5% avg dim deviation, 
+10/10 with DXF. Supports `--json`, `--csv` for CI/VPS integration.
+
+### 21. Dimension extraction: median height + W/L/H labels (2026-06-29, commit `feafb78`)
+**CLOSED**:
+- Glenn sofa height 2cm→82cm: When multiple size variants have inconsistent 
+  heights, median is selected (was last parsed). Outlier detected when height 
+  <30% of median.
+- Evon bed: Added `(W)(L)(H)` label matching in Pattern A. Format 
+  `1960(W)x2300(L)x1020(H)mm` → 196x230x102cm correctly.
+- Vivaldi table: `length_cm` now mapped to `depth_cm`. DXF title: 
+  `80x80x75`→`80x140x75`. ✅
+
+### 22. Shape-based template dispatch (2026-06-29, commit `f1407c6`)
+**CLOSED**: Round/oval tables with `category=table` now dispatch to 
+`round_pedestal_table` via slug-based shape detection. Keywords: 
+`round`, `oval`, `square`, `pedestal` in URL slug trigger correct template. 
+Round DXF now has 2+ circles (was 0). Rectangular DXF has 0 circles. ✅
+
+### 23. CFG canonical import + self_critic validation fixed (2026-06-29, commit `90be31f`)
+**CLOSED**: 
+- `cfg/__init__.py`: Added `CanonicalFurnitureGraph` export (caused 
+  `ImportError` on worker startup via `cfg.router → self_critic` chain).
+- `anti_hallucination_validator.py`: Added `validate_drawing()` alias for 
+  `self_critic.loop` (which imports this name). Was `ImportError` crash.
+
+### 24. DXF shape diversification (2026-06-29, commit `db8ea5c` → current)
+**CLOSED**:
+- Round pedestal table: Added concentric circles for neck ring + pedestal 
+  column in top view (was single circle). DXF now has 2+ circles, enabling 
+  shape match detection.
+- Vivaldi table dispatch: `real_d` (from `real_depth_cm`) used in 
+  `rectangular_table` dispatch before falling back to OCR or default 80cm.
+- Isometric view added to all rectangular table DXFs (4 views total: 
+  top, front, side, isometric). 87 entities.
+
+### 25. Stale code cleanup (2026-06-29, commit `ccc2e52`)
+**CLOSED**: Removed 18 duplicate template graph files from 
+`backend-python/resources/` (moved to root `resources/`). Removed `skills/` 
+directory (superseded by `.agents/skills/`). Removed `scratch/` scripts. 
+Removed `cad.abcx124.xyz.conf`. Removed 8 stale `temp_batch*/` directories. 
+Added `temp_*/` to `.gitignore`.
