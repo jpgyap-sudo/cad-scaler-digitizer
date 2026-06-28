@@ -171,9 +171,15 @@ export default function CalibrationPage() {
             <div key={i} className="flex items-start gap-2 py-1.5 border-b border-gray-50 last:border-0">
               <Settings size={12} className="text-gray-400 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-700">
-                  {h.parameter}: {h.current_value} → <span className="font-semibold text-indigo-600">{h.suggested_value}</span>
-                </p>
+                {h.type === "parameter_adjustment" ? (
+                  <p className="text-xs text-gray-700">
+                    {h.parameter}: {h.current_value} → <span className="font-semibold text-indigo-600">{h.suggested_value}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-700">
+                    Scale {h.dimension}: ×{h.correction_factor} ({h.avg_deviation_pct}% deviation)
+                  </p>
+                )}
                 <p className="text-[10px] text-gray-400">{h.reason}</p>
               </div>
               <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${h.confidence > 0.5 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>

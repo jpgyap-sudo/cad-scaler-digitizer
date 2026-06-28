@@ -175,14 +175,16 @@ def aggregate_comparison_errors(
         for dim_key, deviations in result["errors_by_dimension"].items():
             if len(deviations) >= 3:
                 avg_dev = sum(deviations) / len(deviations)
-                if avg_dev > 20:
+                if abs(avg_dev) > 15:
                     direction = "overestimated" if avg_dev > 0 else "underestimated"
+                    # Clamp correction factor to reasonable range (0.3-1.7)
+                    raw_factor = 1.0 - min(max(avg_dev, -70), 70) / 100
                     result["systematic_biases"].append({
                         "dimension": dim_key,
                         "avg_deviation_pct": round(avg_dev, 1),
                         "direction": direction,
                         "sample_count": len(deviations),
-                        "correction_factor": round(1.0 - avg_dev / 100, 3),
+                        "correction_factor": round(max(0.3, min(1.7, raw_factor)), 3),
                         "confidence": min(1.0, len(deviations) / 10),
                     })
 
