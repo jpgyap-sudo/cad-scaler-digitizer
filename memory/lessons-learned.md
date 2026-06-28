@@ -4368,3 +4368,41 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: Nginx 502 error — dynamic DNS resolution for upstream containers
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ad8d1ef877a95cad915f02fd7bcb3e2a8449069e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** ad8d1ef877a95cad915f02fd7bcb3e2a8449069e
+**Files:** 
+
+**Summary:**
+Commit: fix: Nginx 502 error — dynamic DNS resolution for upstream containers
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: Nginx 502 error — dynamic DNS resolution for upstream containers*
+
+#### Lesson Learned
+
+Commit: fix: Nginx 502 error — dynamic DNS resolution for upstream containers
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
