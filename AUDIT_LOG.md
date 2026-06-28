@@ -1,5 +1,53 @@
 # Audit Log — Multi-Agent Coordination
 
+## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — SECURITY: python-worker has zero auth, zero rate limiting, and an open SSRF vector
+
+**Status:** FLAGGED, HIGH PRIORITY. Not fixed (investigation-only, and this
+is exactly the kind of change — adding auth/rate-limiting to a publicly
+reachable service — that needs explicit sign-off, not a silent mid-audit
+patch).
+
+Three compounding gaps, all empirically confirmed (not just read from
+source):
+
+1. **No authentication anywhere in python-worker.** Grepped `app/main.py`
+   and `app/api/routes.py` for any auth check (`x-api-key`, `AUTH_TOKEN`,
+   `Depends(...)`, `HTTPBearer`, etc.) — zero hits. Contrast with
+   `backend-node/src/server.ts`, which DOES enforce `x-api-key` globally.
+   Empirically confirmed all session: every `/digitize`, `/digitize/hybrid`,
+   `/crawl-to-dxf` call I made this entire audit worked with zero auth
+   headers, because there's nothing to check them.
+
+2. **No rate limiting anywhere** — checked `nginx.conf` (`limit_req`/
+   `limit_req_zone`: none) and the FastAPI app (`slowapi`/similar: none).
+
+3. **Open SSRF in `crawl_to_dxf.py`.** `crawl_for_image()` and
+   `extract_dimensions_from_page()` call `httpx.AsyncClient(...,
+   follow_redirects=True).get(page_url, ...)` directly on whatever `url`
+   the request body supplies — zero validation against private/internal
+   addresses (no check for `169.254.169.254` cloud metadata, `localhost`,
+   docker-network-internal hostnames like `postgres`/`redis`/`node-api`, or
+   private CIDR ranges). `follow_redirects=True` everywhere this pattern
+   appears (3 call sites) means even a future naive domain-string blocklist
+   would be bypassable via redirect — any real fix needs to validate the
+   resolved IP at connection time, not the URL string.
+
+**Combined impact:** anyone on the public internet can call
+`POST /py-api/digitize/hybrid` directly to run up real OpenAI billing with
+no rate limit, or call `POST /py-api/crawl-to-dxf` with an internal URL to
+probe/exfiltrate from the docker-internal network (postgres, redis, node-api,
+cloud metadata endpoints if hosted on a cloud VM) — and *also* run up OpenAI
+billing per call, since that endpoint chains into `/digitize/hybrid`
+internally.
+
+**Recommend:** add the same `x-api-key`-style gate node-api already has (or
+put python-worker behind the same nginx layer with auth enforced there),
+add nginx-level `limit_req` at minimum as a stopgap, and add an allowlist/
+denylist check on resolved IPs (not just the URL string) before any
+server-initiated fetch in `crawl_to_dxf.py`. Flagging severity/urgency to
+the user explicitly given this is live on a public domain right now.
+
+
 ## 2026-06-29 (continued audit) — Claude (Sonnet 4.6) — CFG/Grammar/SelfCritic (1000+ lines, substantial) only reachable via a non-default mode; matching dead endpoint pair on the other "mode"
 
 **Status:** DOCUMENTED. Not fixed (investigation-only).
