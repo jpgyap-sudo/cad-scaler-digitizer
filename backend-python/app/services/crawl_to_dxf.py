@@ -460,12 +460,15 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
     # Method 3: Generic size patterns from any text source
     _match_dims_in_text("", result)  # ensures helper is called at least once
 
-    # Sanity: for non-round products, width should be >= depth/length.
-    # If extracted width is smaller than depth/length (e.g. D×W×H order on
-    # console tables), swap them so the larger value is width.
+    # Sanity: for non-square products where width is unreasonably small
+    # (< 50% of depth/length), swap. This handles D×W×H order on console
+    # tables (e.g. "40 x 120 x 75" → width=40→wrong) without affecting
+    # correctly-extracted W×L×H products (e.g. "80 x 140" → width=80→correct
+    # because 80 > 140*0.5=70).
     rw = result.get("width_cm", 0)
+    rh = result.get("overall_height_cm", 0)
     rd = result.get("depth_cm", 0) or result.get("length_cm", 0)
-    if rw and rd and rw < rd:
+    if rw and rd and rh and rw < rd and rw < rh * 0.5:
         result["width_cm"], result["depth_cm"] = rd, rw
         if result.get("length_cm") and result["length_cm"] == rd:
             result["length_cm"] = rw
