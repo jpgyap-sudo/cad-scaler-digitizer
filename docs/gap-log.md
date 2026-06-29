@@ -253,6 +253,98 @@ meaningful results. This is the critical path item.
 
 **Fix reference:** Phase A in `plans/cross-pollination-architecture.md`.
 
+### 26. Furniture-type classification is non-deterministic, not just inaccurate (2026-06-29)
+**GAP:** The same Melina test photo classified as `round_pedestal_table`,
+then generic `coffee_table`, then `oval_pedestal_table` across back-to-back
+identical calls — purely from Gemini's call-to-call variance, with no input
+change. A deterministic override was added for one specific ambiguity (round
+vs oval, when pedestal-diameter tags are present), but this doesn't
+generalize: rectangular vs square table, chair vs armchair, sofa vs
+sectional, and any other shape ambiguity have no equivalent safety net and
+will still flip unpredictably between calls.
+
+**Why this matters:** Confidence scores (e.g. "confidence: 1.0") are
+meaningless if a re-run of the identical input can produce a different,
+equally-confident answer. Any feature built on top of `furniture.type`
+inherits this instability.
+
+**Fix reference:** Either (a) extend the deterministic-override pattern to
+other shape-ambiguous families using detected geometry/tags as the tie-
+breaker instead of the AI's category-label guess, or (b) call the
+classifier N times and take a majority vote before committing to a type,
+or (c) wire the 3-Stage Product Classifier's `family`/`subtype` output
+(see #27) into the final decision instead of relying on a single vision
+call's text output.
+
+### 27. 3-Stage Product Classifier runs but has no data behind it (2026-06-29)
+**GAP:** `classify_product()` in `product_classifier.py` previously never
+executed at all (see Closed #32 below). Now that it runs, it immediately
+logs `Registry not found`, `DNA index not found` (×2), `No known families
+loaded`, `Product DNA not found` — its required files
+(`resources/product_catalog/visual_dna_index.json`, `product_dna.json`)
+don't exist in the deployed image. The classifier is alive but inert: it
+returns `{family: "unknown", family_confidence: 0.0, subtypes: [], matches:
+[]}` for every call.
+
+**Why this matters:** This is the exact "computed but never wired to
+anything real" pattern found repeatedly elsewhere in this codebase
+(`resources/` categories, `scene_graph`). Fixing the variable-ordering bug
+that let it start running was necessary but not sufficient - without real
+DNA data it adds nothing to classification quality yet.
+
+**Fix reference:** Either populate `visual_dna_index.json`/`product_dna.json`
+from the 259-product catalog (`resources/product_catalog/_registry.json`,
+same source already proposed for `auto_calibrate_from_crawled.py` in
+`plans/resource-library-auto-sync-proposal.md`), or formally retire this
+classifier rather than leave it silently inert.
+
+### 28. Single point of failure on Gemini for all vision OCR + classification (2026-06-29)
+**GAP:** `OPENAI_API_KEY` is confirmed dead (HTTP 401, not rotated - only
+routed around). Every vision-dependent path (dimension OCR, furniture-type
+classification, the new Gemini-traced silhouette/hero-view feature) now
+depends entirely on Gemini. If Gemini has an outage, rate-limits hard, or
+the key is revoked, there is no second AI vision provider to fall back to -
+every path degrades straight to the much weaker Tesseract-only OCR with no
+furniture-type classification at all (just the OpenCV shape heuristic).
+Gemini has already been observed timing out / rate-limiting under load this
+session (retry logic with backoff was added by a concurrent fix, but that
+masks the symptom rather than removing the single-provider dependency).
+
+**Fix reference:** Either get a working `OPENAI_API_KEY` so OpenAI-first-
+then-Gemini is a genuine two-provider fallback chain again (not "OpenAI
+always fails, Gemini is actually primary"), or explicitly document Gemini
+as the sole vision provider and size rate limits/retries accordingly.
+
+### 29. No regression tests for dimension/classification extraction (2026-06-29)
+**GAP:** The same bare-substring tag-matching bug (`'h' in tag` matching
+`width`/`length`/`thickness`; `'d' in tag` matching `base_dia`/`neck_dia`)
+was found independently in **three separate places** in `routes.py` during
+one debugging session, plus a near-identical regex bug
+(`(?:W|Width)`/`(?:H|Height)` matching substrings inside unrelated words
+like "min-width" or "homeu.ph") in `crawl_to_dxf.py`. Finding the same
+pattern repeated this many times in one pass strongly suggests more
+undiscovered instances exist elsewhere. Nothing currently prevents any of
+these from being silently reintroduced by a future edit.
+
+**Fix reference:** Add a small fixture-based regression suite: a handful of
+known test images (e.g. the Melina drawing) with asserted expected
+`furniture.type` and `resolved_dimensions`, run on every deploy. Cheap to
+build, would have caught every bug fixed this session immediately instead
+of needing a live manual audit.
+
+### 30. Concurrent deploys to the same VPS with no coordination (2026-06-29)
+**GAP:** Multiple agent sessions were observed deploying to
+`/opt/cad-digitizer` in parallel during this session - commits appeared on
+`origin/master` that weren't pushed by this session, and the
+`cad-python-worker` container was found already rebuilt/recreated by another
+process mid-task more than once. There is no deploy lock, no "who's
+deploying right now" signal, and no protection against one session's
+rebuild silently overwriting another's in-flight changes.
+
+**Fix reference:** A simple file-based or Redis-based deploy lock on the VPS
+(refuse to `docker compose build`/`up` if another deploy started within the
+last N minutes, or queue it) would remove this risk cheaply.
+
 ## Closed gaps
 
 ### 1. Materials now applied to ALL furniture types (2026-06-27)
@@ -404,3 +496,41 @@ Round DXF now has 2+ circles (was 0). Rectangular DXF has 0 circles. ✅
 directory (superseded by `.agents/skills/`). Removed `scratch/` scripts. 
 Removed `cad.abcx124.xyz.conf`. Removed 8 stale `temp_batch*/` directories. 
 Added `temp_*/` to `.gitignore`.
+
+### 31. OpenAI key dead (HTTP 401) - Gemini fallback added for vision OCR + classification (2026-06-29, commits `b90b79e`, `9cbc2a8`)
+**CLOSED**: Live-verified root cause of wrong dimensions on a real test
+drawing - `OPENAI_API_KEY` fails auth on every call. Added `_gemini_ocr_sync()`
+(same tag taxonomy as the OpenAI path) as a fallback in `ocr.py`, and a
+matching Gemini fallback for the furniture-type classifier in
+`digitize_hybrid()`/`digitize_unified()` (previously OpenAI-only with zero
+fallback at all). Verified live: dimension OCR and furniture-type
+classification both now succeed via Gemini when OpenAI 401s. See gap #28
+for the remaining single-provider-dependency risk this introduces.
+
+### 32. Two classification subsystems were dead code due to variable-ordering bugs (2026-06-29, commits `d04b5f3`, `c1a3685`)
+**CLOSED**: `select_template()` and the 3-Stage Product Classifier
+(`classify_product()`) had never executed successfully in production -
+both referenced `ftype`/`template_evidence`/`real_w`/`materials` on their
+first line, all of which were only assigned 80-120 lines further down in
+`digitize_hybrid()`, guaranteeing an `UnboundLocalError` on every call,
+silently swallowed by each block's own `except`. Moved the `ftype`
+resolution (+ a new deterministic pedestal-geometry override, see gap #26)
+and `real_w`/`real_h`/`real_d`/`materials` parsing earlier in the function.
+Confirmed live: all four "cannot access local variable" log lines are gone.
+Also fixed the same bare-substring tag-matching bug (`'h' in tag` matching
+`width`/`thickness`) in three separate places found while tracing this -
+see gap #29 for the regression-test gap this points to.
+
+### 33. Dimension-extraction regex matched CSS code and a phone number (2026-06-29, commit `a38d489`)
+**CLOSED**: `extract_dimensions_from_page()`'s non-Shopify fallback path
+produced "769cm" width AND height for a real product, traced to two
+distinct regex bugs: (1) `<style>`/`<script>` block *content* wasn't
+stripped before regex-matching, so a CSS media query
+(`@media (min-width: 769px)`) got read as a width label; (2)
+`(?:H|Height)` had no word boundary and matched the bare "h" inside an
+email domain ("...@homeu.ph"), then captured a nearby phone number as a
+9.5-billion-cm height. Fixed by stripping style/script content first,
+adding `\b` word boundaries + a bounded whitespace gap to all W/H/D/L
+label patterns, and adding a safe "180x90x75cm"-style WxDxH pattern to the
+fallback path (this is where the product's real dimensions were sitting,
+in plain visible text).
