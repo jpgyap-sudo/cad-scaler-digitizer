@@ -327,11 +327,13 @@ Return ONLY this JSON. No markdown, no explanation."""
   <rect width="400" height="300" fill="#ffffff"/>
   <g stroke="#1f2937" stroke-width="2" fill="none">{svg}</g></svg>"""
 
-        # Build dxf_coords: merge all components into one flat array for hero view
-        # (separate front/side/top could be used later for multi-view DXF generation)
+        # Build dxf_coords: [[x1,y1],[x2,y2],...] from all views for hero view
         dxf_flat = []
         for view_data in views.values():
-            dxf_flat.extend(view_data)
+            # view_data is flat [x1,y1,x2,y2,...] — convert to [[x1,y1],[x2,y2],...]
+            flat_pts = list(view_data)
+            for i in range(0, len(flat_pts) - 1, 2):
+                dxf_flat.append([flat_pts[i], flat_pts[i+1]])
 
         if not dxf_flat and svg:
             # Fallback: extract polyline from SVG path data
