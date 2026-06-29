@@ -73,8 +73,114 @@ def _render_to_jpeg_b64(img: Any, quality: int = 85) -> str:
 
 
 import hashlib
+import re
 
-_SILHOUETTE_CACHE: dict[str, str] = {}  # md5 of image_url → SVG string
+_SILHOUETTE_CACHE: dict[str, tuple[str, str]] = {}  # md5 → (svg, dxf_polyline_json)
+
+
+def _silhouette_cache_key(md5: str) -> tuple[bool, str, str]:
+    """Check cache. Returns (cached, svg, dxf_coords)."""
+    if md5 in _SILHOUETTE_CACHE:
+        svg, coords = _SILHOUETTE_CACHE[md5]
+        return True, svg, coords
+    return False, "", ""
+
+
+def _svg_to_dxf_polyline(svg_text: str) -> str:
+    """Extract M/L/C/Q path commands from SVG and approximate as polyline vertices.
+    
+    Returns JSON string of [[x1,y1],[x2,y2],...] suitable for DXF POLYLINE.
+    Curves (C, Q, S) are sampled at ~10 segments each.
+    """
+    paths = re.findall(r'd="([^"]+)"', svg_text, re.I)
+    if not paths:
+        return "[]"
+
+    points = []
+    for d in paths:
+        tokens = re.findall(r'[MmLlCcQqSsZz]|-?\d+(?:\.\d+)?|-?\d+\.\d+', d)
+        i = 0
+        current_x = current_y = 0.0
+        start_x = start_y = 0.0
+
+        while i < len(tokens):
+            cmd = tokens[i]
+            i += 1
+
+            if cmd == 'M':
+                if i + 1 < len(tokens):
+                    current_x = float(tokens[i]); current_y = float(tokens[i + 1])
+                    start_x, start_y = current_x, current_y
+                    points.append([current_x, current_y])
+                    i += 2
+            elif cmd == 'm':
+                if i + 1 < len(tokens):
+                    current_x += float(tokens[i]); current_y += float(tokens[i + 1])
+                    start_x, start_y = current_x, current_y
+                    points.append([current_x, current_y])
+                    i += 2
+            elif cmd == 'L':
+                if i + 1 < len(tokens):
+                    current_x = float(tokens[i]); current_y = float(tokens[i + 1])
+                    points.append([current_x, current_y])
+                    i += 2
+            elif cmd == 'l':
+                if i + 1 < len(tokens):
+                    current_x += float(tokens[i]); current_y += float(tokens[i + 1])
+                    points.append([current_x, current_y])
+                    i += 2
+            elif cmd in ('C', 'c', 'Q', 'q', 'S', 's'):
+                # Approximate curve with line segments
+                if cmd == 'C' and i + 5 < len(tokens):
+                    cp1x, cp1y = float(tokens[i]), float(tokens[i+1])
+                    cp2x, cp2y = float(tokens[i+2]), float(tokens[i+3])
+                    end_x = float(tokens[i+4]); end_y = float(tokens[i+5])
+                    _add_cubic_approx(points, current_x, current_y, cp1x, cp1y, cp2x, cp2y, end_x, end_y)
+                    current_x, current_y = end_x, end_y
+                    i += 6
+                elif cmd == 'c' and i + 5 < len(tokens):
+                    cp1x = current_x + float(tokens[i]); cp1y = current_y + float(tokens[i+1])
+                    cp2x = current_x + float(tokens[i+2]); cp2y = current_y + float(tokens[i+3])
+                    end_x = current_x + float(tokens[i+4]); end_y = current_y + float(tokens[i+5])
+                    _add_cubic_approx(points, current_x, current_y, cp1x, cp1y, cp2x, cp2y, end_x, end_y)
+                    current_x, current_y = end_x, end_y
+                    i += 6
+                elif cmd == 'Q' and i + 3 < len(tokens):
+                    cpx, cpy = float(tokens[i]), float(tokens[i+1])
+                    end_x = float(tokens[i+2]); end_y = float(tokens[i+3])
+                    _add_quad_approx(points, current_x, current_y, cpx, cpy, end_x, end_y)
+                    current_x, current_y = end_x, end_y
+                    i += 4
+                elif cmd == 'q' and i + 3 < len(tokens):
+                    cpx = current_x + float(tokens[i]); cpy = current_y + float(tokens[i+1])
+                    end_x = current_x + float(tokens[i+2]); end_y = current_y + float(tokens[i+3])
+                    _add_quad_approx(points, current_x, current_y, cpx, cpy, end_x, end_y)
+                    current_x, current_y = end_x, end_y
+                    i += 4
+                else:
+                    break
+            elif cmd == 'Z' or cmd == 'z':
+                if points and len(points) > 1 and (abs(points[-1][0] - start_x) > 0.01 or abs(points[-1][1] - start_y) > 0.01):
+                    points.append([start_x, start_y])
+
+    import json
+    return json.dumps(points)
+
+
+def _add_cubic_approx(pts, x0, y0, x1, y1, x2, y2, x3, y3, steps=10):
+    for t in range(1, steps + 1):
+        s = t / steps
+        sx = (1-s)**3 * x0 + 3*(1-s)**2*s * x1 + 3*(1-s)*s**2 * x2 + s**3 * x3
+        sy = (1-s)**3 * y0 + 3*(1-s)**2*s * y1 + 3*(1-s)*s**2 * y2 + s**3 * y3
+        pts.append([sx, sy])
+
+
+def _add_quad_approx(pts, x0, y0, x1, y1, x2, y2, steps=8):
+    for t in range(1, steps + 1):
+        s = t / steps
+        sx = (1-s)**2 * x0 + 2*(1-s)*s * x1 + s**2 * x2
+        sy = (1-s)**2 * y0 + 2*(1-s)*s * y1 + s**2 * y2
+        pts.append([sx, sy])
 
 
 async def generate_silhouette_svg(
@@ -83,39 +189,55 @@ async def generate_silhouette_svg(
     width_cm: float = 100,
     height_cm: float = 80,
 ) -> dict:
-    """Generate a clean SVG silhouette of the product using Gemini 2.5 Flash.
+    """Generate SVG silhouette + DXF-compatible polyline coordinates.
 
-    Gemini traces the product outline from the photo and returns an SVG path.
-    The result is cached by image MD5 to avoid re-calls for the same image.
-
+    Gemini traces the product outline from the photo and returns:
+    1. An SVG for frontend display
+    2. A polyline vertex list for DXF HERO VIEW
+    
     Returns:
-        {"svg": "<svg>...</svg>", "cached": False, "error": None}
+        {"svg": "<svg>...", "dxf_coords": "[[x,y],...]", "cached": bool, "error": str}
     """
     if not GEMINI_API_KEY:
-        return {"svg": "", "error": "GEMINI_API_KEY not configured"}
+        return {"svg": "", "dxf_coords": "[]", "error": "GEMINI_API_KEY not configured"}
 
-    # Check cache
     md5 = hashlib.md5(image_data).hexdigest()
-    cached = _SILHOUETTE_CACHE.get(md5)
+    cached, cached_svg, cached_coords = _silhouette_cache_key(md5)
     if cached:
-        return {"svg": cached, "cached": True, "error": None}
+        return {"svg": cached_svg, "dxf_coords": cached_coords, "cached": True, "error": None}
 
     try:
-        import base64
         b64 = base64.b64encode(image_data).decode()
 
-        prompt = f"""You are a product outline tracer. Given a photo of a {furniture_type or "furniture product"}, trace its outermost silhouette and return ONLY valid SVG markup (no markdown, no explanation).
+        prompt = f"""You are a product outline tracer. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outermost silhouette.
 
-The SVG must be:
-- 400x300 viewBox
-- White background (#ffffff)
-- A single <path> or group of <path> elements in dark gray (#1f2937) with stroke-width=2, fill=none
-- Only the OUTERMOST contour(s) of the main product (ignore background items, shadows, small accessories)
-- Use relative/absolute bezier curves (M, C, Q, L, Z) for smooth contour tracing
-- The product should be centered and scaled to fill roughly 80% of the viewport
-- If there are multiple separate components visible (e.g. 4 legs, a tabletop, a backrest), trace each as its own <path> in the same group
+Return ONLY valid JSON (no markdown) with two fields:
+1. "svg": SVG markup of the traced outline.
+2. "dxf_polylines": an array of arrays, each containing [x,y] vertex coordinates forming one closed polyline for each visible component.
 
-Return ONLY the raw SVG markup. No html wrapping, no markdown."""
+RULES for the SVG:
+- 400x300 viewBox, white background
+- <path> in dark gray stroke="#1f2937" stroke-width="2" fill="none"
+- Use M, C, Q, L, Z commands for smooth tracing
+- Product centered, ~80% of viewport
+- Multiple visible components = multiple <path>s
+
+RULES for dxf_polylines:
+- Coordinates in the same 400x300 coordinate space as the SVG
+- Each component is a separate array of [x,y] vertices
+- First and last vertex of each array should be nearly identical (closed shape)
+- Approximate curves as short segments (not actual bezier curves)
+- Include ALL visible parts: tabletop, legs, backrest, armrests, etc.
+- Scale so the product fills roughly 80% of the [-200,200] range on each axis,
+  centered at (0,0) for the DXF view
+
+Example response format:
+{{
+  "svg": "<svg viewBox='0 0 400 300'...>...</svg>",
+  "dxf_polylines": [[[-150,80],[-120,60],...,[-150,80]], [[-80,-40],[-60,-60],...,[-80,-40]]]
+}}
+
+Return ONLY the JSON object, no markdown, no explanation."""
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
         payload = {
@@ -129,13 +251,13 @@ Return ONLY the raw SVG markup. No html wrapping, no markdown."""
             resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
 
         if resp.status_code != 200:
-            return {"svg": "", "error": f"Gemini HTTP {resp.status_code}"}
+            return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {resp.status_code}"}
 
         text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         if not text:
-            return {"svg": "", "error": "Empty Gemini response"}
+            return {"svg": "", "dxf_coords": "[]", "error": "Empty Gemini response"}
 
-        # Extract SVG from response (handle markdown wrapping)
+        # Parse JSON from response
         cleaned = text.strip()
         if cleaned.startswith("```"):
             cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
@@ -143,19 +265,33 @@ Return ONLY the raw SVG markup. No html wrapping, no markdown."""
             cleaned = cleaned.rstrip()[:-3]
         cleaned = cleaned.strip()
 
-        # Ensure it's valid SVG
-        if "<svg" not in cleaned.lower():
-            cleaned = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
-  <rect width="400" height="300" fill="#ffffff"/>
-  <g transform="translate(10, 10)">{cleaned}</g>
-</svg>"""
+        import json as json_mod
+        parsed = json_mod.loads(cleaned)
 
-        _SILHOUETTE_CACHE[md5] = cleaned
-        return {"svg": cleaned, "cached": False, "error": None}
+        svg = parsed.get("svg", "")
+        dxf_polylines = parsed.get("dxf_polylines", [])
+
+        # SVG fallback wrapper
+        if svg and "<svg" not in svg.lower():
+            svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <rect width="400" height="300" fill="#ffffff"/>
+  <g stroke="#1f2937" stroke-width="2" fill="none">{svg}</g></svg>"""
+
+        # Flatten multiple polylines into one coord array for DXF
+        dxf_flat = []
+        for poly in dxf_polylines:
+            if isinstance(poly, list) and len(poly) > 1:
+                dxf_flat.extend(poly)
+                dxf_flat.append(poly[0])  # close
+
+        dxf_coords = json_mod.dumps(dxf_flat)
+
+        _SILHOUETTE_CACHE[md5] = (svg, dxf_coords)
+        return {"svg": svg, "dxf_coords": dxf_coords, "cached": False, "error": None}
 
     except Exception as e:
         logger.error(f"[DXFVerifier] Silhouette SVG failed: {e}")
-        return {"svg": "", "error": str(e)}
+        return {"svg": "", "dxf_coords": "[]", "error": str(e)}
 
 
 def _parse_gemini_response(response_text: str) -> dict:

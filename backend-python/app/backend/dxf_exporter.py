@@ -1742,6 +1742,74 @@ def save_sectional(path, width_cm=280, depth_cm=95, height_cm=82, chaise_length_
     return _save(doc, path)
 
 
+def save_hero_view(path, hero_coords_json="[]", width_cm=100, height_cm=80,
+                   sc=1.0, materials=None, visibility=None):
+    """Add a HERO VIEW traced from the product photo, scaled to match parametric FRONT VIEW.
+    
+    hero_coords_json: JSON [[x1,y1],...] from Gemini in 400x300 SVG space.
+    width_cm, height_cm: real dimensions the FRONT VIEW was generated at.
+    sc: the scale factor used by save_rectangular_table / save_cabinet etc.
+    
+    The hero outline is positioned at the same origin as the FRONT VIEW and
+    scaled to the same dimensions, so it directly overlays the parametric geometry.
+    """
+    import json, math
+    coords = json.loads(hero_coords_json) if isinstance(hero_coords_json, str) else hero_coords_json
+    if not coords or len(coords) < 3:
+        return
+
+    try:
+        doc = ezdxf.readfile(path)
+        msp = doc.modelspace()
+    except Exception:
+        doc = setup_doc()
+        msp = doc.modelspace()
+
+    # Find where the FRONT VIEW sits in the DXF — look for MTEXT "FRONT VIEW"
+    front_x, front_y, front_w, front_h = 50.0, 30.0, width_cm * sc, height_cm * sc
+    for e in msp:
+        if e.dxftype() == 'MTEXT' and 'FRONT VIEW' in e.plain_text():
+            front_x = e.dxf.insert[0]
+            front_y = e.dxf.insert[1] - front_h - 10
+            front_w = width_cm * sc
+            front_h = height_cm * sc
+            break
+
+    # Hero view sits to the right of FRONT VIEW
+    ox = front_x + front_w + 25
+    oy = front_y
+
+    # Compute scale: map Gemini's SVG viewbox coords (400x300) to the
+    # same real-world scale as the parametric FRONT VIEW
+    xs = [p[0] for p in coords]
+    ys = [p[1] for p in coords]
+    if not xs or not ys:
+        return
+    gem_cx, gem_cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+    gem_w, gem_h = max(xs) - min(xs), max(ys) - min(ys)
+    if gem_w < 1 or gem_h < 1:
+        return
+
+    scale = min(front_w / gem_w, front_h / gem_h) * 0.85
+
+    vertices = []
+    for px, py in coords:
+        vx = ox + front_w / 2 + (px - gem_cx) * scale
+        vy = oy + (py - gem_cy) * scale
+        vertices.append((vx, vy))
+
+    _add_polyline(msp, vertices, True, 'OBJECT')
+    _add_mtext(msp, 'HERO VIEW (photo traced)', (ox, oy + front_h + 5), 2.5)
+
+    # Dimension: show the scaled width/height
+    _add_dimension(msp, (ox, oy - 5), (ox + front_w * 0.85, oy - 5),
+                   (ox + front_w * 0.85 / 2, oy - 11), f'W = {width_cm:g} cm')
+    _add_dimension(msp, (ox + front_w * 0.85 + 5, oy), (ox + front_w * 0.85 + 5, oy + front_h * 0.85),
+                   (ox + front_w * 0.85 + 14, oy + front_h * 0.85 / 2), f'H = {height_cm:g} cm')
+
+    return _save(doc, path)
+
+
 def save_armchair(path, width_cm=70, depth_cm=75, height_cm=90, seat_height_cm=45,
                    materials: Optional[Dict[str, str]] = None):
     """Armchair lounge shop drawing with seat, backrest, armrests, legs."""
