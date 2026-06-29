@@ -22,6 +22,7 @@ import tempfile
 from datetime import datetime
 from typing import Any, Optional
 from dataclasses import dataclass, field, asdict
+import base64
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -76,6 +77,11 @@ class ComparisonResult:
     image_height: int = 0
     dxf_width_mm: float = 0.0
     dxf_height_mm: float = 0.0
+    cloud_verified: bool = False       # Whether cloud verification was performed
+    cloud_shape_match: float = 0.0     # 0.0-1.0 does the DXF shape match the product photo?
+    cloud_component_score: float = 0.0 # 0.0-1.0 are all visible components captured?
+    cloud_proportion_score: float = 0.0# 0.0-1.0 are proportions of components correct?
+    cloud_issues: list[str] = field(default_factory=list)
     created_at: str = ""
 
     def to_dict(self) -> dict:
@@ -94,6 +100,11 @@ class ComparisonResult:
             "entity_counts": self.entity_counts,
             "image_dimensions": {"width": self.image_width, "height": self.image_height},
             "dxf_dimensions_mm": {"width": self.dxf_width_mm, "height": self.dxf_height_mm},
+            "cloud_verified": self.cloud_verified,
+            "cloud_shape_match": round(self.cloud_shape_match, 3),
+            "cloud_component_score": round(self.cloud_component_score, 3),
+            "cloud_proportion_score": round(self.cloud_proportion_score, 3),
+            "cloud_issues": self.cloud_issues[:10],
             "created_at": self.created_at,
         }
 
@@ -600,6 +611,121 @@ def _compare_resolved_dims(page_dims: dict, resolved: dict) -> tuple[list, float
     return comparisons, avg_dev
 
 
+def verify_with_gemini(product_image: Any, dxf_raster: Any,
+                        furniture_type: str, page_dimensions: dict) -> dict:
+    """Send both images to Gemini 2.5 Flash for semantic DXF verification.
+    
+    Gemini looks at the product photo and the DXF side-by-side and answers:
+    1. Does the DXF shape match the product? (shape_match 0-1)
+    2. Are all visible components captured? (component_score 0-1)
+    3. Are proportions correct? (proportion_score 0-1)
+    4. What specific issues exist?
+    
+    This is fundamentally different from pixel-based comparison — Gemini
+    understands both representations (photo and line drawing) and compares
+    their MEANING, not their pixels.
+    """
+    import cv2
+    import numpy as np
+    import httpx
+    import json as json_mod
+
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    model = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
+    if not api_key:
+        return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
+                "issues": ["GEMINI_API_KEY not configured"], "performed": False}
+
+    try:
+        # Render both images to JPEG bytes
+        h, w = product_image.shape[:2]
+        dxf_resized = cv2.resize(dxf_raster, (w, h))
+
+        _, prod_buf = cv2.imencode('.jpg', product_image, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        _, dxf_buf = cv2.imencode('.jpg', dxf_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+
+        prod_b64 = base64.b64encode(prod_buf.tobytes()).decode()
+        dxf_b64 = base64.b64encode(dxf_buf.tobytes()).decode()
+
+        dims_hint = ""
+        if page_dimensions:
+            w = page_dimensions.get("width_cm", 0)
+            d = page_dimensions.get("depth_cm", 0) or page_dimensions.get("length_cm", 0)
+            h = page_dimensions.get("overall_height_cm", 0)
+            if w and h:
+                dims_hint = f"Reported dimensions: {w:.0f}×{d:.0f}×{h:.0f}cm (width×depth×height)."
+
+        prompt = f"""You are a CAD quality inspector. Compare the PRODUCT PHOTO (first image) against the DXF LINE DRAWING (second image).
+
+Furniture type: {furniture_type or "unknown"}
+{dims_hint}
+
+Judge the DXF on these criteria and return ONLY valid JSON (no markdown):
+
+{{
+  "shape_match": <0.0-1.0: does the DXF outline match the product's shape? 1.0=perfect outline>,
+  "component_score": <0.0-1.0: does the DXF capture all visible components (legs, back, arms, shelves, drawers, etc.)?>,
+  "proportion_score": <0.0-1.0: are the proportions of each component correct relative to the whole?>,
+  "issues": [<list of specific discrepancies as strings, max 5>],
+  "explanation": "<brief summary of the biggest issue or 'DXF matches product correctly'>"
+}}"""
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        payload = {
+            "contents": [{"parts": [
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/jpeg", "data": prod_b64}},
+                {"inline_data": {"mime_type": "image/jpeg", "data": dxf_b64}},
+            ]}]
+        }
+
+        async def _call():
+            async with httpx.AsyncClient(timeout=30) as c:
+                r = await c.post(url, params={"key": api_key}, json=payload)
+                return r
+
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            resp = httpx.post(url, params={"key": api_key}, json=payload, timeout=30)
+        else:
+            resp = asyncio.run(_call())
+
+        if resp.status_code != 200:
+            return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
+                    "issues": [f"Gemini HTTP {resp.status_code}"], "performed": False}
+
+        raw = resp.json()
+        text = raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        if not text:
+            return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
+                    "issues": ["Empty Gemini response"], "performed": False}
+
+        # Parse JSON from response (handle markdown wrapping)
+        cleaned = text.strip()
+        if cleaned.startswith("```"): cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
+        if cleaned.rstrip().endswith("```"): cleaned = cleaned.rstrip()[:-3]
+        cleaned = cleaned.strip()
+
+        result = json_mod.loads(cleaned)
+        return {
+            "shape_match": min(1.0, max(0.0, float(result.get("shape_match", 0.5)))),
+            "component_score": min(1.0, max(0.0, float(result.get("component_score", 0.5)))),
+            "proportion_score": min(1.0, max(0.0, float(result.get("proportion_score", 0.5)))),
+            "issues": result.get("issues", [])[:5],
+            "explanation": result.get("explanation", ""),
+            "performed": True,
+        }
+
+    except Exception as e:
+        return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
+                "issues": [f"Gemini verification error: {e}"], "performed": False}
+
+
 # ---------------------------------------------------------------------------
 # Main comparison entry point
 # ---------------------------------------------------------------------------
@@ -720,25 +846,58 @@ def compare_digitization(
                     source="dimension",
                 )))
 
+    # Cloud verification via Gemini 2.5 Flash
+    # (runs async — if it fails, cloud scores default to 0.5 and overall is unaffected)
+    try:
+        if dxf_raster is not None and original_img is not None:
+            cloud = verify_with_gemini(original_img, dxf_raster, furniture_type or "", page_dimensions)
+            result.cloud_verified = cloud.get("performed", False)
+            result.cloud_shape_match = cloud.get("shape_match", 0.5)
+            result.cloud_component_score = cloud.get("component_score", 0.5)
+            result.cloud_proportion_score = cloud.get("proportion_score", 0.5)
+            result.cloud_issues = cloud.get("issues", [])
+            if cloud.get("explanation"):
+                result.errors.append(asdict(ComparisonError(
+                    error_type="gemini_verification",
+                    severity="info" if result.cloud_shape_match > 0.7 else "major",
+                    description=cloud["explanation"],
+                    score_impact=0.0,
+                    source="gemini_verification",
+                )))
+    except Exception as e:
+        logger.warning(f"[ComparisonAgent] Gemini verification failed: {e}")
+
     # Compute overall weighted score
-    # Signals: shape_class (30%), dimension accuracy (40%), proportions (15%),
-    #          view completeness (10%), entity match (5%).
-    # No pixel-level comparison — all signals come from structured pipeline data.
+    # When cloud verification ran, blend it in with 30% weight.
     has_page_dims = bool(page_dimensions and (page_dimensions.get("width_cm") or page_dimensions.get("overall_height_cm")))
-    ftype = (furniture_type or "").lower()
 
     if has_page_dims:
         dim_score = max(0.0, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
     else:
         dim_score = 0.5
 
-    overall = (
-        result.shape_class_score * 0.30
-        + dim_score * 0.40
-        + result.proportion_score * 0.15
-        + result.view_score * 0.10
-        + result.entity_match_score * 0.05
-    )
+    if result.cloud_verified:
+        cloud_shape = result.cloud_shape_match
+        cloud_component = result.cloud_component_score
+        cloud_prop = result.cloud_proportion_score
+        cloud_avg = cloud_shape * 0.4 + cloud_component * 0.35 + cloud_prop * 0.25
+
+        overall = (
+            result.shape_class_score * 0.15
+            + dim_score * 0.25
+            + result.proportion_score * 0.05
+            + result.view_score * 0.05
+            + result.entity_match_score * 0.05
+            + cloud_avg * 0.45
+        )
+    else:
+        overall = (
+            result.shape_class_score * 0.30
+            + dim_score * 0.40
+            + result.proportion_score * 0.15
+            + result.view_score * 0.10
+            + result.entity_match_score * 0.05
+        )
 
     total_penalty = sum(e["score_impact"] for e in result.errors)
     overall = max(0.0, overall - total_penalty * 0.02)
@@ -756,6 +915,7 @@ def compare_digitization(
         f"[ComparisonAgent] {product_id}: score={overall:.3f} "
         f"(shape={result.shape_class_score:.3f}, dim_dev={result.dimension_deviation_pct:.1f}%, "
         f"prop={result.proportion_score:.3f}, view={result.view_score:.3f}, ent={result.entity_match_score:.3f}) "
+        f"cloud={result.cloud_verified} cloud_shape={result.cloud_shape_match:.3f} "
         f"errors={len(result.errors)}"
     )
 

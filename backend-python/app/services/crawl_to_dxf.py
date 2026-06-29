@@ -795,10 +795,14 @@ async def crawl_and_digitize(
                         "entity_match_score": _comp_result.entity_match_score,
                         "view_score": _comp_result.view_score,
                         "dimension_deviation_pct": _comp_result.dimension_deviation_pct,
+                        "cloud_verified": _comp_result.cloud_verified,
+                        "cloud_shape_match": _comp_result.cloud_shape_match,
+                        "cloud_issues": _comp_result.cloud_issues[:5],
                         "error_count": len(_comp_result.errors),
                     }
                     logger.info(
                         f"[CrawlToDXF] Auto-comparison: score={_comp_result.overall_score:.3f}, "
+                        f"cloud={_comp_result.cloud_verified} "
                         f"errors={len(_comp_result.errors)}"
                     )
         except Exception as e:
