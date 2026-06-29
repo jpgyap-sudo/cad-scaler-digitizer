@@ -2756,40 +2756,46 @@ FURNITURE_ADJUST_DISPATCH = {}
 def _get_adjust_fn(furniture_type: str):
     key = furniture_type
     if key not in FURNITURE_ADJUST_DISPATCH:
-        try:
-            from app.backend.dxf_exporter import (
-                save_round_pedestal_table, save_rectangular_table,
-                save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
-                save_wardrobe, save_reception_counter, save_bed_headboard,
-                save_asymmetric_pedestal_table, save_oval_pedestal_table,
-                save_console_table, save_office_desk,
-            )
-            from app.backend.drawing_builders import (
-                build_round_pedestal_model, build_rectangular_table_model,
-                build_cabinet_model, build_sofa_model, build_coffee_table_model,
-                build_dining_chair_model, build_wardrobe_model,
-                build_reception_counter_model, build_bed_headboard_model,
-                build_asymmetric_pedestal_model, build_oval_pedestal_model,
-                build_console_table_model, build_office_desk_model,
-            )
-            FURNITURE_ADJUST_DISPATCH.update({
-                'round_pedestal_table': (save_round_pedestal_table, build_round_pedestal_model),
-                'rectangular_table': (save_rectangular_table, build_rectangular_table_model),
-                'cabinet': (save_cabinet, build_cabinet_model),
-                'sofa': (save_sofa, build_sofa_model),
-                'coffee_table': (save_coffee_table, build_coffee_table_model),
-                'dining_chair': (save_dining_chair, build_dining_chair_model),
-                'chair': (save_dining_chair, build_dining_chair_model),
-                'wardrobe': (save_wardrobe, build_wardrobe_model),
-                'reception_counter': (save_reception_counter, build_reception_counter_model),
-                'bed_headboard': (save_bed_headboard, build_bed_headboard_model),
-                'asymmetric_pedestal_table': (save_asymmetric_pedestal_table, build_asymmetric_pedestal_model),
-                'oval_pedestal_table': (save_oval_pedestal_table, build_oval_pedestal_model),
-                'console_table': (save_console_table, build_console_table_model),
-                'office_desk': (save_office_desk, build_office_desk_model),
-            })
-        except ImportError as e:
-            print(f"[Adjust] Import failed: {e}")
+        from importlib import import_module
+        _dxf = import_module('app.backend.dxf_exporter')
+        _bld = import_module('app.backend.drawing_builders')
+        _pairs = [
+            (('save_round_pedestal_table', 'build_round_pedestal_model'), 'round_pedestal_table'),
+            (('save_rectangular_table', 'build_rectangular_table_model'), 'rectangular_table'),
+            (('save_cabinet', 'build_cabinet_model'), 'cabinet'),
+            (('save_sofa', 'build_sofa_model'), 'sofa'),
+            (('save_coffee_table', 'build_coffee_table_model'), 'coffee_table'),
+            (('save_dining_chair', 'build_dining_chair_model'), 'dining_chair'),
+            (('save_dining_chair', 'build_dining_chair_model'), 'chair'),
+            (('save_wardrobe', 'build_wardrobe_model'), 'wardrobe'),
+            (('save_reception_counter', 'build_reception_counter_model'), 'reception_counter'),
+            (('save_bed_headboard', 'build_bed_headboard_model'), 'bed_headboard'),
+            (('save_asymmetric_pedestal_table', 'build_asymmetric_pedestal_model'), 'asymmetric_pedestal_table'),
+            (('save_oval_pedestal_table', 'build_oval_pedestal_model'), 'oval_pedestal_table'),
+            (('save_console_table', 'build_console_table_model'), 'console_table'),
+            (('save_office_desk', 'build_office_desk_model'), 'office_desk'),
+            (('save_coffee_table', 'build_coffee_table_model'), 'coffee_table_round'),
+            (('save_sectional', 'build_sofa_model'), 'sectional'),
+            (('save_armchair', 'build_sofa_model'), 'armchair_lounge'),
+            (('save_bar_stool', 'build_dining_chair_model'), 'bar_stool'),
+            (('save_bench_chaise', 'build_sofa_model'), 'bench_chaise'),
+            (('save_ottoman', 'build_coffee_table_model'), 'ottoman_pouf'),
+            (('save_rug', 'build_rectangular_table_model'), 'rug_rectangular'),
+            (('save_stone_slab', 'build_rectangular_table_model'), 'stone_slab_rectangular'),
+            (('save_wall_panel', 'build_wardrobe_model'), 'wall_panel_fluted'),
+            (('save_lounge_chair', 'build_sofa_model'), 'lounge_chair'),
+            (('save_sideboard', 'build_cabinet_model'), 'sideboard'),
+            (('save_tv_console', 'build_cabinet_model'), 'tv_console'),
+            (('save_generic', 'build_generic_model'), 'furniture'),
+        ]
+        for (sname, bname), ftype in _pairs:
+            try:
+                _sf = getattr(_dxf, sname, None)
+                _bf = getattr(_bld, bname, None)
+                if _sf and _bf:
+                    FURNITURE_ADJUST_DISPATCH[ftype] = (_sf, _bf)
+            except Exception:
+                pass
     return FURNITURE_ADJUST_DISPATCH.get(key, (None, None))
 
 
