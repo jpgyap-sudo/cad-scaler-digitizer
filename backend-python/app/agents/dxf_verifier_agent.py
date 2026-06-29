@@ -233,15 +233,15 @@ SVG LAYOUT (1200x300):
 - panels[3] x=920-1180 (w=280 h=260) = ISOMETRIC — draw at (950, 20), with 260px height available
 - Each panel has a thin #e5e7eb line divider at x=295, x=605, x=905
 
-ISOMETRIC CONSTRUCTION RULES (CRITICAL):
-- The front face of the isometric must MATCH the front view shape (same width/height ratio)
-- Use estimated_proportions: width_px, depth_px, height_px to scale the isometric
-- Draw the product as a box: front face (width × height), depth edges going up-right at ~30°, top face (width × depth) as parallelogram
-- For tables: show tabletop as parallelogram, legs as vertical lines at the 4 corners, front legs solid, back legs dashed
-- For sofas: show seat cushion, backrest, armrests with depth edges visible
-- The isometric should look like a 3D technical illustration: front face is a true shape, side face shows depth
-- Hidden/back edges: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3,2" — fill="none"
-- Visible front edges: stroke="#1f2937" stroke-width="2" — fill="none"
+ISOMETRIC CONSTRUCTION (most important rule):
+- The isometric must look like a 3D projection of the product
+- Front face of isometric = same shape as the front view panel
+- Depth edges go up-right at approximately 30 degrees
+- Top face is a parallelogram (width x depth)
+- Hidden/back edges use dashed style
+- For tables: parallelogram tabletop with 4 vertical legs
+- For chairs: seat + backrest with depth
+- For cabinets: box with depth visible
 
 SVG RULES:
 - Each component is its OWN <path> with data-name, data-view, data-confidence attributes
