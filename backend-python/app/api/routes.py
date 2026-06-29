@@ -872,7 +872,12 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
             sr = {
                 'pedestal_diameter_cm': base_dia if base_dia else dia * 0.55,
                 'neck_diameter_cm': neck_dia if neck_dia else dia * 0.28,
-                'top_thickness_cm': 4.0,
+                # Was hardcoded to 4.0 unconditionally - never read the
+                # actual OCR'd "thickness"/"top_thickness" tagged value even
+                # when one was detected (confirmed live: Gemini OCR tagged
+                # the drawing's real 2cm top thickness, but the response
+                # still showed 4.0 until this read was added).
+                'top_thickness_cm': _dim(['top_thickness', 'thickness'], 4.0),
             }
             extra['resolved_dimensions'] = {
                 'top_diameter_cm': round(dia, 1), 'overall_height_cm': round(height, 1),
