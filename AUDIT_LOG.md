@@ -465,6 +465,71 @@ class of mismatch — both are reasonable semantic mappings (a side table
 genuinely is a small rectangular table; a nightstand genuinely is a
 small cabinet), no equivalent bug found there.
 
+### 17. Re-audit of fix commit `1dc78f9` (claims to close #11/#6/#9): #11 is a half-fix — crash stopped, feature still doesn't work; #6 and #9 verified correct
+**Date:** 2026-06-29
+**Status:** #11 PARTIALLY FIXED (crash only) — #6 FIXED — #9 PARTIALLY FIXED (reachable now, response shapes still wrong)
+
+**#11 (visibility crash) — half-fixed, re-opening the functional half.**
+The commit adds a `visibility` parameter and a `_component_visible()`
+helper to `build_round_pedestal_model`, `build_oval_pedestal_model`,
+`build_asymmetric_pedestal_model` (`drawing_builders.py`). This
+genuinely stops the `TypeError` — confirmed the parameter now exists, so
+`build_fn(**save_kwargs)` no longer crashes. **But `_component_visible()`
+is defined and never called** — verified by counting occurrences of
+`_component_visible(` in each function's full body: exactly 1 in each
+(the `def` line itself), zero actual call sites gating any
+`polygons.append`/etc. So: toggle a component's visibility off on a
+round/oval/asymmetric pedestal table, the request no longer 500s, but
+the component is still drawn regardless — the original feature gap
+(visibility toggle has no effect) is unchanged, just no longer crashes.
+**Remaining fix:** wrap the relevant `front_view.polygons.append(...)` /
+`top_view.circles.append(...)` calls in `if _component_visible("name"):`
+checks, the same way `build_rectangular_table_model`/`build_cabinet_model`/
+`build_sofa_model` already do it (those are the reference implementation
+— go copy the pattern from there).
+
+**#6 (slider error surfacing) — verified fixed.** Checked
+`SliderPanel.tsx`'s current `applyDims()` — now checks `data.error` after
+`resp.json()` and sets an `errorMsg` state rendered as an inline red
+banner. Confirmed the condition is no longer just `if (data.preview_svg)`
+silently doing nothing on error.
+
+**#9 (brain endpoints UI) — correction: both endpoints are now called
+(reachability is genuinely fixed), but neither response shape matches
+what the frontend reads, so real data still won't display.** Initial
+grep for the literal string `"brain/proportions"` found nothing — that
+was a false negative, the code builds the URL via an `apiUrl(path)`
+template helper (`apiUrl('proportions')`/`apiUrl('materials')`), confirmed
+present on reading the full file. Both fetches do fire. But:
+- `GET /brain/proportions` (verified live) returns
+  `{"estimate": null, "note": "Not enough data yet"}` or
+  `{"estimate": {...}}` — a **single point lookup** for one
+  `(furniture_type, anchor_dimension, anchor_value, component)` tuple,
+  using its default query params since `BrainStats.tsx` calls it with no
+  params at all. The frontend does
+  `if (prop?.proportions) setProportions(prop.proportions)` — there is no
+  `proportions` key in the actual response, ever, so this branch never
+  fires regardless of how much real data accumulates.
+- `GET /brain/materials` (verified live) returns
+  `{"component": "tabletop", "suggestions": [...]}`. The frontend does
+  `if (mat) setMaterials(mat)` — sets the **entire response object**
+  (including the literal keys `"component"` and `"suggestions"`) as the
+  `materials` state, then renders `Object.entries(materials)` as if each
+  entry were a learned material. Once `suggestions` is ever non-empty,
+  this would render `component: tabletop` and `suggestions: [...]` as two
+  garbled "materials" rows, not real per-material data.
+- **Currently invisible because both are empty** (no real learned data
+  yet) — `0 proportions, 0 materials` happens to look plausible by
+  coincidence. This will visibly break (always shows 0/garbled,
+  regardless of real counts) the moment either table has real rows.
+- **Fix:** either change the endpoints to return what a "browse
+  everything learned" UI actually needs (a list, not a single-tuple
+  lookup for proportions; a clean array for materials, not the wrapper
+  object), or change `BrainStats.tsx` to call them with real, meaningful
+  parameters per furniture type and read the actual response shape
+  (`estimate`/`suggestions`) correctly instead of assuming a `proportions`
+  array that was never going to exist.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
