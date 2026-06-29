@@ -200,6 +200,20 @@ endpoint).
 **Fix is UI-only** — both backend endpoints already work; this needs a
 frontend call site, not backend changes.
 
+### 10. `cad_intelligence` (structured entity extraction + confidence scoring) computed in the default flow, included in every response, never read by the frontend
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** LOW-MEDIUM — doesn't break anything, but a real per-entity
+confidence signal is computed on every digitize and thrown away client-side
+**Evidence:** `routes.py:1513-1630` (inside `/digitize/hybrid`, the default
+engine mode) runs `run_cad_intelligence_pipeline()`, builds `CadEntity`
+objects with confidence scores, and includes the full result as
+`cad_intelligence` in the response (`routes.py:1793`). Grepped frontend for
+`cad_intelligence` — one hit, a comment in `cadEngine.ts:403`, no actual
+field read anywhere in `App.tsx` or any component. Same shape as findings
+#9/CFG above: real computation in the critical path, silently discarded
+on arrival.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
