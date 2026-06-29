@@ -817,10 +817,10 @@ async def crawl_and_digitize(
         if _w > 0:
             import httpx as _httpx2
             # Try Gemini-powered silhouette first (needs image bytes)
-            if image_data:
+            if img_bytes:
                 from app.agents.dxf_verifier_agent import generate_silhouette_svg
                 _gemini_result = await generate_silhouette_svg(
-                    image_data=image_data,
+                    image_data=img_bytes,
                     furniture_type=_f_type,
                     width_cm=_w,
                     height_cm=_h,
