@@ -1,0 +1,14 @@
+{
+  "type": "round_pedestal_table",
+  "name": "Round Pedestal Table",
+  "views": ["top", "front"],
+  "required_dimensions": ["top_diameter_cm", "overall_height_cm"],
+  "optional_dimensions": ["base_diameter_cm", "neck_diameter_cm", "top_thickness_cm"],
+  "recognition_clues": [
+    "circle in top view",
+    "DIA label in OCR",
+    "front elevation with pedestal base",
+    "table or round label in text"
+  ],
+  "cad_entities": ["CIRCLE", "LINE", "CENTERLINE", "DIMENSION", "TEXT"]
+}

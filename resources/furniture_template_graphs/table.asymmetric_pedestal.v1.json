@@ -1,0 +1,144 @@
+{
+  "id": "table.asymmetric_pedestal.v1",
+  "name": "Asymmetric dual pedestal table",
+  "product_type": "asymmetric_pedestal_table",
+  "family": "table",
+  "parameters": [
+    {
+      "name": "length_mm",
+      "default": 1800,
+      "min_value": 1200,
+      "max_value": 3200,
+      "description": "Table length"
+    },
+    {
+      "name": "depth_mm",
+      "default": 900,
+      "min_value": 600,
+      "max_value": 1500,
+      "description": "Table depth"
+    },
+    {
+      "name": "height_mm",
+      "default": 750,
+      "min_value": 720,
+      "max_value": 780,
+      "description": "Table height"
+    },
+    {
+      "name": "top_thickness_mm",
+      "default": 30,
+      "min_value": 15,
+      "max_value": 50,
+      "description": "Top slab thickness"
+    },
+    {
+      "name": "large_pedestal_diameter_mm",
+      "default": 400,
+      "min_value": 300,
+      "max_value": 500,
+      "description": "Large pedestal diameter"
+    },
+    {
+      "name": "small_pedestal_diameter_mm",
+      "default": 220,
+      "min_value": 150,
+      "max_value": 300,
+      "description": "Small pedestal diameter"
+    },
+    {
+      "name": "left_pedestal_x_mm",
+      "default": -300,
+      "min_value": -800,
+      "max_value": 0,
+      "description": "Left pedestal X offset from center"
+    },
+    {
+      "name": "right_pedestal_x_mm",
+      "default": 250,
+      "min_value": 0,
+      "max_value": 800,
+      "description": "Right pedestal X offset from center"
+    },
+    {
+      "name": "pedestal_height_mm",
+      "default": 720,
+      "min_value": 400,
+      "max_value": 760,
+      "description": "Pedestal column height"
+    }
+  ],
+  "components": [
+    {
+      "id": "top",
+      "role": "top",
+      "shape": "rectangular_slab",
+      "material_role": "top",
+      "parameter_map": {
+        "length_mm": "length_mm",
+        "depth_mm": "depth_mm",
+        "thickness_mm": "top_thickness_mm"
+      }
+    },
+    {
+      "id": "large_pedestal",
+      "role": "support",
+      "shape": "cylinder",
+      "material_role": "base",
+      "parameter_map": {
+        "diameter_mm": "large_pedestal_diameter_mm",
+        "height_mm": "pedestal_height_mm",
+        "x_mm": "left_pedestal_x_mm"
+      }
+    },
+    {
+      "id": "small_pedestal",
+      "role": "support",
+      "shape": "cylinder",
+      "material_role": "base",
+      "parameter_map": {
+        "diameter_mm": "small_pedestal_diameter_mm",
+        "height_mm": "pedestal_height_mm",
+        "x_mm": "right_pedestal_x_mm"
+      }
+    },
+    {
+      "id": "hidden_frame",
+      "role": "joinery",
+      "shape": "rectangular_steel_frame",
+      "visible": false,
+      "material_role": "steel",
+      "parameter_map": {
+        "length_mm": "length_mm",
+        "depth_mm": "depth_mm"
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "id": "height_range",
+      "description": "Table height must be between 720-780mm",
+      "expression": "720 <= height_mm <= 780",
+      "severity": "warning"
+    },
+    {
+      "id": "pedestal_ratio",
+      "description": "Large pedestal must be larger than small pedestal",
+      "expression": "large_pedestal_diameter_mm > small_pedestal_diameter_mm",
+      "severity": "error"
+    }
+  ],
+  "required_views": [
+    "top",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "required_details": [
+    "pedestal_mounting_detail",
+    "hidden_frame_detail"
+  ],
+  "drawing_notes": [
+    "SHOW ASYMMETRIC PEDESTAL POSITIONS.",
+    "SHOW HIDDEN STEEL FRAME UNDER STONE TOP."
+  ]
+}

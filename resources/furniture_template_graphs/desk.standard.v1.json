@@ -1,0 +1,107 @@
+{
+  "id": "desk.standard.v1",
+  "name": "Office desk with modesty panel",
+  "product_type": "office_desk",
+  "family": "desk",
+  "parameters": [
+    {
+      "name": "length_mm",
+      "default": 1400,
+      "min_value": 900,
+      "max_value": 2000,
+      "description": "Desk length"
+    },
+    {
+      "name": "depth_mm",
+      "default": 600,
+      "min_value": 500,
+      "max_value": 800,
+      "description": "Desk depth"
+    },
+    {
+      "name": "height_mm",
+      "default": 750,
+      "min_value": 720,
+      "max_value": 780,
+      "description": "Desk height"
+    },
+    {
+      "name": "top_thickness_mm",
+      "default": 25,
+      "min_value": 15,
+      "max_value": 40,
+      "description": "Top thickness"
+    },
+    {
+      "name": "leg_size_mm",
+      "default": 40,
+      "min_value": 25,
+      "max_value": 60,
+      "description": "Leg cross-section"
+    },
+    {
+      "name": "modesty_panel_height_mm",
+      "default": 150,
+      "min_value": 100,
+      "max_value": 300,
+      "description": "Modesty panel height"
+    }
+  ],
+  "components": [
+    {
+      "id": "top",
+      "role": "top",
+      "shape": "rectangular_slab",
+      "material_role": "top",
+      "parameter_map": {
+        "length_mm": "length_mm",
+        "depth_mm": "depth_mm",
+        "thickness_mm": "top_thickness_mm"
+      }
+    },
+    {
+      "id": "legs",
+      "role": "support",
+      "shape": "rectangular_prism",
+      "quantity": 4,
+      "material_role": "base",
+      "parameter_map": {
+        "size_mm": "leg_size_mm"
+      }
+    },
+    {
+      "id": "modesty_panel",
+      "role": "modesty",
+      "shape": "rectangular_panel",
+      "material_role": "casework",
+      "parameter_map": {
+        "height_mm": "modesty_panel_height_mm"
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "id": "depth_min",
+      "description": "Desk depth must be at least 500mm",
+      "expression": "depth_mm >= 500",
+      "severity": "error"
+    },
+    {
+      "id": "height_range",
+      "description": "Desk height must be between 720-780mm",
+      "expression": "720 <= height_mm <= 780",
+      "severity": "warning"
+    }
+  ],
+  "required_views": [
+    "top",
+    "front_elevation",
+    "side_elevation"
+  ],
+  "required_details": [
+    "modesty_panel_detail"
+  ],
+  "drawing_notes": [
+    "OFFICE DESK \u2014 SHOW MODESTY PANEL AND CABLE MANAGEMENT."
+  ]
+}

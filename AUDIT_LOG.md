@@ -170,6 +170,36 @@ top of `digitizer_sessions`/`digitizer_results`/`feedback_learnings`/
 up now, or whether they're legacy/aspirational and safe to drop. Don't
 assume they're load-bearing just because they exist in the schema.
 
+### 9. `/brain/*` family: 1 of 3 endpoints reachable from the UI; the proportion-ledger fix from earlier in this audit still has no visibility surface
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** MEDIUM — the data now accumulates correctly (per the schema
+fix earlier this audit) but a user/operator has no way to ever see what
+the proportion ledger has learned, and material suggestions never reach
+an editing UI
+**Evidence:** Three endpoints exist: `GET /brain/report` (`routes.py:2818`),
+`GET /brain/proportions` (`routes.py:2823`), `GET /brain/materials`
+(`routes.py:2831`). Grepped frontend for all three — only `/brain/report`
+is called, from `BrainStats.tsx:18`, which **is** rendered in `App.tsx`
+(confirmed reachable, not orphaned). `/brain/proportions` and
+`/brain/materials` have zero frontend callers.
+**What this means concretely:** `get_intelligence_report()` (backing
+`/brain/report`) queries `furniture_corrections`/`material_library` —
+both real, both populated since the schema fix earlier this audit — so
+the stats panel users actually see is genuinely live and correct. But the
+*specific* proportion-ledger numbers (`component_proportions` —
+per-furniture-type base/neck/collar ratios with sample counts) that
+`_ledger_blend()` reads and writes on every round-pedestal-table digitize
+have no endpoint a user ever reaches; `/brain/proportions` exists to
+serve exactly this and is wired correctly on the backend, just never
+called. Material suggestions (`get_material_suggestions()`, backing
+`/brain/materials`) are similarly fully implemented and never surfaced
+in the material-editing UI (`SliderPanel.tsx`'s material fields are
+plain text inputs with no suggestion/autocomplete wired to this
+endpoint).
+**Fix is UI-only** — both backend endpoints already work; this needs a
+frontend call site, not backend changes.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
