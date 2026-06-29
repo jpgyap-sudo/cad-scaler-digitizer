@@ -248,11 +248,28 @@ Return ONLY the JSON object, no markdown, no explanation."""
         }
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-        async with httpx.AsyncClient(timeout=_timeout) as client:
-            resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
-
-        if resp.status_code != 200:
-                return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {resp.status_code}"}
+        _max_retries = int(os.environ.get("GEMINI_RETRIES", "3"))
+        resp = None
+        for attempt in range(_max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=_timeout) as client:
+                    resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+                if resp.status_code == 200:
+                    break
+                if resp.status_code not in (429, 500, 502, 503):
+                    break  # non-retryable error
+                if attempt < _max_retries - 1:
+                    import asyncio as _aio
+                    await _aio.sleep(2 ** attempt)
+            except Exception:
+                if attempt < _max_retries - 1:
+                    import asyncio as _aio
+                    await _aio.sleep(2 ** attempt)
+                else:
+                    raise
+        if resp is None or resp.status_code != 200:
+            code = resp.status_code if resp else "no_response"
+            return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {code}"}
 
         text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         if not text:
