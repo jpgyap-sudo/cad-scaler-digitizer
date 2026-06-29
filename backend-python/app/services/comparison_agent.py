@@ -467,9 +467,13 @@ def compare_dimensions(
     Returns:
         tuple of (dimension_comparisons list, average_deviation_pct)
     """
-    if resolved_dimensions:
-        return _compare_resolved_dims(page_dims, resolved_dimensions)
+    if resolved_dimensions is not None and isinstance(resolved_dimensions, dict):
+        if any(resolved_dimensions.values()):
+            return _compare_resolved_dims(page_dims, resolved_dimensions)
     
+    # Legacy DXF bounding box comparison (fallback)
+    comparisons = []
+    deviations = []
     import ezdxf
     
     try:
