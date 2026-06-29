@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, TrendingUp, Package, Wrench } from 'lucide-react';
+import { Brain, TrendingUp, Package, Wrench, BarChart3 } from 'lucide-react';
 
 interface BrainReport {
   corrections_by_type: { type: string; count: number; avg_ratio: number }[];
@@ -8,20 +8,31 @@ interface BrainReport {
   recent_drawings: { type: string; file: string; quality: number; time: string }[];
 }
 
+interface ProportionEntry {
+  furniture_type: string; param: string; ratio: number; sample_count: number;
+}
+
 const BrainStats: React.FC<{ className?: string }> = ({ className = '' }) => {
   const [report, setReport] = useState<BrainReport | null>(null);
+  const [proportions, setProportions] = useState<ProportionEntry[]>([]);
+  const [materials, setMaterials] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     const base = import.meta.env.VITE_CAD_ENGINE_URL || '';
-    const apiUrl = base.startsWith('http')
-      ? `${base}/api/brain/report`
-      : `${window.location.origin}/py-api/brain/report`;
-    fetch(apiUrl)
-      .then(r => r.json())
-      .then(setReport)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const apiUrl = (path: string) =>
+      (base.startsWith('http') ? `${base}/api/brain/${path}` : `${window.location.origin}/py-api/brain/${path}`);
+
+    Promise.all([
+      fetch(apiUrl('report')).then(r => r.json()).catch(() => null),
+      fetch(apiUrl('proportions')).then(r => r.json()).catch(() => ({ proportions: [] })),
+      fetch(apiUrl('materials')).then(r => r.json()).catch(() => ({})),
+    ]).then(([rep, prop, mat]) => {
+      if (rep) setReport(rep);
+      if (prop?.proportions) setProportions(prop.proportions);
+      if (mat) setMaterials(mat);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return null;
@@ -29,7 +40,7 @@ const BrainStats: React.FC<{ className?: string }> = ({ className = '' }) => {
   const totalCorrections = (report?.corrections_by_type || []).reduce((s, c) => s + c.count, 0);
   const totalDrawings = (report?.recent_drawings || []).length;
   const topMaterial = report?.top_materials?.[0];
-  const hasData = totalCorrections > 0 || totalDrawings > 0;
+  const hasData = totalCorrections > 0 || totalDrawings > 0 || proportions.length > 0;
 
   return (
     <div className={className}>
@@ -63,10 +74,33 @@ const BrainStats: React.FC<{ className?: string }> = ({ className = '' }) => {
             </div>
           )}
 
-          {(report?.confident_proportions?.length ?? 0) > 0 && (
-            <div className="text-[10px] text-slate-400">
-              <Wrench size={12} className="inline mr-1" />
-              {report!.confident_proportions!.length} proportion(s) learned
+          <button onClick={() => setShowDetails(!showDetails)}
+            className="w-full flex items-center justify-center gap-1 py-1 text-[9px] text-slate-400 hover:text-slate-600 bg-slate-50 rounded">
+            <BarChart3 size={10} />
+            {showDetails ? 'Hide' : 'Show'} learned data ({proportions.length} proportions, {Object.keys(materials).length} materials)
+          </button>
+
+          {showDetails && proportions.length > 0 && (
+            <div className="text-[9px] text-slate-500 space-y-1 bg-slate-50 rounded p-2">
+              <p className="font-semibold text-slate-600 mb-1">Learned Proportions</p>
+              {proportions.slice(0, 10).map((p, i) => (
+                <div key={i} className="flex justify-between">
+                  <span>{p.furniture_type} / {p.param}</span>
+                  <span className="text-slate-400">{p.ratio.toFixed(3)} ({p.sample_count} samples)</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showDetails && Object.keys(materials).length > 0 && (
+            <div className="text-[9px] text-slate-500 space-y-1 bg-slate-50 rounded p-2">
+              <p className="font-semibold text-slate-600 mb-1">Learned Materials</p>
+              {Object.entries(materials).slice(0, 8).map(([key, val]: [string, any]) => (
+                <div key={key} className="flex justify-between">
+                  <span>{key}</span>
+                  <span className="text-slate-400">{val.count || val}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

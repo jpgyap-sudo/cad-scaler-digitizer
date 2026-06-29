@@ -32,6 +32,7 @@ def build_round_pedestal_model(
     material_notes: Optional[List[str]] = None,
     materials: Optional[Dict[str, str]] = None,
     profile: str = "cylinder",
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build a complete DrawingModel for a round pedestal table."""
     now = datetime.now().strftime('%Y-%m-%d')
@@ -55,6 +56,10 @@ def build_round_pedestal_model(
     col_bot = col_top - collar_h
     ped_bot = col_bot - ped_h
     base_bot = floor_y
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     # fx (FRONT VIEW's horizontal center) used to be a fixed 160 regardless of
     # top_dia_cm. The TOP VIEW circle (radius tv_r, below) sits to its left;
     # for any top_dia_cm bigger than the value this constant was tuned for,
@@ -344,6 +349,7 @@ def build_oval_pedestal_model(
     top_thick_cm: float = 3.0, pedestal_dia_cm: float = 40.0,
     client: str = "", project: str = "Furniture Shop Drawing",
     materials: Optional[Dict[str, str]] = None,
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for an oval/elliptical pedestal table."""
     import math
@@ -353,6 +359,10 @@ def build_oval_pedestal_model(
     w2, d2 = w / 2, d / 2; y_mid = 180.0
     mats = materials or {}
     tx, ty = 100.0, y_mid
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     # TOP VIEW
     tv = View(name="TOP VIEW")
     oval_pts = []
@@ -503,6 +513,7 @@ def build_asymmetric_pedestal_model(
     left_ped_x_cm: float = 30.0, right_ped_x_cm: float = -25.0, overhang_cm: float = 20.0,
     base_plate_cm: float = 5.0, client: str = "", project: str = "Furniture Shop Drawing",
     materials: Optional[Dict[str, str]] = None,
+    visibility: Optional[Dict[str, bool]] = None,
 ) -> DrawingModel:
     """Build DrawingModel for an asymmetric cylindrical pedestal dining table.
     
@@ -512,6 +523,10 @@ def build_asymmetric_pedestal_model(
     """
     now = datetime.now().strftime('%Y-%m-%d')
     sc = 0.35
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
     w = length_cm * sc
     d = depth_cm * sc
     h = height_cm * sc

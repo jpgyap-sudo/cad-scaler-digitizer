@@ -76,6 +76,7 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [baseShape, setBaseShape] = useState<BaseShape | null>(null);
   const [flashKey, setFlashKey] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [flashSection, setFlashSection] = useState<string | null>(null);
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -157,6 +158,12 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
 
       const resp = await fetch(apiUrl, { method: 'POST', body: formData });
       const data = await resp.json();
+      if (data.error) {
+        console.error('Adjust API error:', data.error);
+        setErrorMsg(data.error);
+        return;
+      }
+      setErrorMsg(null);
       if (data.preview_svg) {
         onAdjusted(data.dimensions, data.preview_svg);
       }
@@ -328,9 +335,10 @@ const SliderPanel: React.FC<SliderPanelProps> = ({
         disabled={loading}
         className="mt-3 w-full flex items-center justify-center space-x-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
       >
-        {loading ? <Loader2 size={14} className="animate-spin" /> : <Sliders size={14} />}
-        <span>{loading ? 'Updating...' : 'Apply & Preview'}</span>
+      {loading ? <Loader2 size={14} className="animate-spin" /> : <Sliders size={14} />}
+        Apply & Preview
       </button>
+      {errorMsg && <p className="mt-2 text-[10px] text-red-500 bg-red-50 rounded px-2 py-1">{errorMsg}</p>}
     </div>
   );
 };
