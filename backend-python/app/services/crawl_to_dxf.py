@@ -664,6 +664,8 @@ async def crawl_and_digitize(
     # classifier and its rectangular/round/oval table templates. Let the
     # classifier run on the actual image instead.
     params = {}
+    if furniture_type:
+        params["furniture_type"] = furniture_type
     if real_width_cm:
         params["real_width_cm"] = str(real_width_cm)
     if real_h:
