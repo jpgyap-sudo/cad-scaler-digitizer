@@ -233,6 +233,44 @@ def _add_leader(msp, text, start_point, end_point, height=3):
         pass
 
 
+def _add_isometric_box(msp, x, y, w, d, h, layer='OBJECT'):
+    """Draw a 3D isometric box (parallelepiped) at position (x, y) in 2D
+    isometric projection using the standard CAD 2:1 ratio.
+    Returns a list of polyline handles for the visible faces.
+    """
+    dx = w * 0.866
+    dy = d * 0.289
+    pts = []
+    # Bottom face vertices (clockwise)
+    b0 = (x, y)
+    b1 = (x + dx, y + dy)
+    b2 = (x + dx, y + h + dy)
+    b3 = (x, y + h)
+    # Top face vertices
+    t0 = (x + dx, y + dy)
+    t1 = (x + 2*dx, y + 2*dy)
+    t2 = (x + 2*dx, y + h + 2*dy)
+    t3 = (x + dx, y + h + dy)
+    # Back face vertices
+    back_t0 = (x + 2*dx, y + 2*dy)
+    back_t1 = (x + 2*dx + dx, y + 2*dy + dy)
+    back_t2 = (x + 2*dx + dx, y + h + 2*dy + dy)
+    back_t3 = (x + 2*dx, y + h + 2*dy)
+    # Front face
+    _add_polyline(msp, [b3, b0, b1, t0, t3], True, layer)
+    pts.append(('front', b3, b0, b1, t0, t3))
+    # Right face (hidden edges as HIDDEN)
+    _add_polyline(msp, [b1, b2, t2, t0], True, 'HIDDEN')
+    pts.append(('right', b1, b2, t2, t0))
+    # Top face
+    _add_polyline(msp, [t3, t0, t1, t2], True, layer)
+    pts.append(('top', t3, t0, t1, t2))
+    # Visible vertical edges
+    for p, q in [(b0, b3), (b1, t0), (b0, b1), (b3, t3)]:
+        _add_line(msp, p, q, layer)
+    return pts
+
+
 # ========= TEMPLATES =========
 
 def save_round_pedestal_table(path, top_dia_cm=80, height_cm=70,
@@ -694,6 +732,28 @@ def save_cabinet(path, width_cm=100, depth_cm=50, height_cm=180,
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
+    # === TOP VIEW (plan) ===
+    tv_w = width_cm * sc
+    tv_d = depth_cm * sc
+    tv_x = fx + w + 50
+    tv_y = top_y + 30
+    _add_polyline(msp, [(tv_x, tv_y), (tv_x + tv_w, tv_y),
+                        (tv_x + tv_w, tv_y + tv_d), (tv_x, tv_y + tv_d)], True)
+    _add_centerline(msp, (tv_x + tv_w / 2, tv_y - 5), (tv_x + tv_w / 2, tv_y + tv_d + 5))
+    _add_centerline(msp, (tv_x - 5, tv_y + tv_d / 2), (tv_x + tv_w + 5, tv_y + tv_d / 2))
+    _add_dimension(msp, (tv_x, tv_y + tv_d + 6), (tv_x + tv_w, tv_y + tv_d + 6),
+                   (tv_x + tv_w / 2, tv_y + tv_d + 12), f'W = {width_cm:g} cm')
+    _add_dimension(msp, (tv_x + tv_w + 6, tv_y), (tv_x + tv_w + 6, tv_y + tv_d),
+                   (tv_x + tv_w + 14, tv_y + tv_d / 2), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'TOP VIEW', (tv_x, tv_y + tv_d + 22), 3)
+
+    # === ISOMETRIC VIEW ===
+    iso_x = tv_x + tv_w + 30
+    iso_y = floor_y
+    iso_d = depth_cm * sc
+    _add_isometric_box(msp, iso_x, iso_y, w * 1.2, iso_d * 1.2, h * 1.2)
+    _add_mtext(msp, 'ISOMETRIC VIEW', (iso_x, iso_y + h * 1.2 + 10), 3)
+
     # === SIDE VIEW (depth) ===
     sv_w = depth_cm * sc
     sx = fx + w + 40
@@ -760,6 +820,28 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45,
     _add_dimension(msp, (fx, floor_y - 8), (fx + w, floor_y - 8),
                    (fx + w / 2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
+
+    # === TOP VIEW (plan) ===
+    tv_w = width_cm * sc
+    tv_d = depth_cm * sc
+    tv_x = fx + w + 50
+    tv_y = top_y + 30
+    _add_polyline(msp, [(tv_x, tv_y), (tv_x + tv_w, tv_y),
+                        (tv_x + tv_w, tv_y + tv_d), (tv_x, tv_y + tv_d)], True)
+    _add_centerline(msp, (tv_x + tv_w / 2, tv_y - 5), (tv_x + tv_w / 2, tv_y + tv_d + 5))
+    _add_centerline(msp, (tv_x - 5, tv_y + tv_d / 2), (tv_x + tv_w + 5, tv_y + tv_d / 2))
+    _add_dimension(msp, (tv_x, tv_y + tv_d + 6), (tv_x + tv_w, tv_y + tv_d + 6),
+                   (tv_x + tv_w / 2, tv_y + tv_d + 12), f'W = {width_cm:g} cm')
+    _add_dimension(msp, (tv_x + tv_w + 6, tv_y), (tv_x + tv_w + 6, tv_y + tv_d),
+                   (tv_x + tv_w + 14, tv_y + tv_d / 2), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'TOP VIEW', (tv_x, tv_y + tv_d + 22), 3)
+
+    # === ISOMETRIC VIEW ===
+    iso_x = tv_x + tv_w + 30
+    iso_y = floor_y
+    iso_d = depth_cm * sc
+    _add_isometric_box(msp, iso_x, iso_y, w * 1.2, iso_d * 1.2, h * 1.2)
+    _add_mtext(msp, 'ISOMETRIC VIEW', (iso_x, iso_y + h * 1.2 + 10), 3)
 
     # === SIDE VIEW (depth) ===
     sv_w = depth_cm * sc
@@ -979,6 +1061,28 @@ def save_wardrobe(path, width_cm=120, depth_cm=60, height_cm=200, _validation_re
                    (fx + w2, floor_y - 14), f'W = {width_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
 
+    # === TOP VIEW (plan) ===
+    tv_w = width_cm * sc
+    tv_d = depth_cm * sc
+    tv_x = fx + w + 40
+    tv_y = top_y + 30
+    _add_polyline(msp, [(tv_x, tv_y), (tv_x + tv_w, tv_y),
+                        (tv_x + tv_w, tv_y + tv_d), (tv_x, tv_y + tv_d)], True)
+    _add_centerline(msp, (tv_x + tv_w / 2, tv_y - 5), (tv_x + tv_w / 2, tv_y + tv_d + 5))
+    _add_centerline(msp, (tv_x - 5, tv_y + tv_d / 2), (tv_x + tv_w + 5, tv_y + tv_d / 2))
+    _add_dimension(msp, (tv_x, tv_y + tv_d + 6), (tv_x + tv_w, tv_y + tv_d + 6),
+                   (tv_x + tv_w / 2, tv_y + tv_d + 12), f'W = {width_cm:g} cm')
+    _add_dimension(msp, (tv_x + tv_w + 6, tv_y), (tv_x + tv_w + 6, tv_y + tv_d),
+                   (tv_x + tv_w + 14, tv_y + tv_d / 2), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'TOP VIEW', (tv_x, tv_y + tv_d + 22), 3)
+
+    # === ISOMETRIC VIEW ===
+    iso_x = tv_x + tv_w + 30
+    iso_y = floor_y
+    iso_d = depth_cm * sc
+    _add_isometric_box(msp, iso_x, iso_y, w * 1.2, iso_d * 1.2, h * 1.2)
+    _add_mtext(msp, 'ISOMETRIC VIEW', (iso_x, iso_y + h * 1.2 + 10), 3)
+
     # === SIDE VIEW (depth) ===
     sv_w = depth_cm * sc
     sx = fx + w + 30
@@ -1177,7 +1281,7 @@ def save_oval_pedestal_table(path, length_cm=180, depth_cm=100, height_cm=75,
     _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
                    (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
     _add_dimension(msp, (fx - pd_r, ped_bot - 5), (fx + pd_r, ped_bot - 5),
-                   (fx, ped_bot - 11), f'Ø{pedestal_dia_cm * 10:g} mm')
+                   (fx, ped_bot - 11), f'Ø{pedestal_dia_cm:g} cm')
     _add_dimension(msp, (fx - w2 - 10, tab_bot), (fx - w2 - 10, top_y),
                    (fx - w2 - 18, (tab_bot + top_y) / 2), f'T = {top_thick_cm * 10:g} mm')
     # Material leader
@@ -1346,7 +1450,7 @@ def save_office_desk(path, length_cm=140, depth_cm=60, height_cm=75,
     _add_dimension(msp, (fx - w2, floor_y - 8), (fx + w2, floor_y - 8),
                    (fx, floor_y - 14), f'W = {length_cm * 10:g} mm')
     _add_dimension(msp, (panel_l, mp_bot - 5), (panel_r, mp_bot - 5),
-                   ((panel_l + panel_r) / 2, mp_bot - 11), f'MH = {modesty_panel_h_cm * 10:g} mm')
+                   ((panel_l + panel_r) / 2, mp_bot - 11), f'MH = {modesty_panel_h_cm:g} cm')
     _add_mtext(msp, 'FRONT VIEW', (fx - w2, top_y + 10), 3)
 
     # ===== SIDE VIEW =====
@@ -1619,7 +1723,7 @@ def save_armchair(path, width_cm=70, depth_cm=75, height_cm=90, seat_height_cm=4
                         (fx - w / 2, floor_y + 4 + ar_h), (fx - w / 2 - ar_w, floor_y + 4 + ar_h)], True)
     _add_polyline(msp, [(fx + w / 2, floor_y + 4), (fx + w / 2 + ar_w, floor_y + 4),
                         (fx + w / 2 + ar_w, floor_y + 4 + ar_h), (fx + w / 2, floor_y + 4 + ar_h)], True)
-    leg_h = 4
+    leg_h = max(4, h * 0.06)
     for lx in [fx - w / 2 + 3, fx + w / 2 - 3]:
         _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
                             (lx + 2, floor_y), (lx, floor_y)], True)
@@ -1658,8 +1762,9 @@ def save_bar_stool(path, diameter_or_width_cm=40, height_cm=75, seat_height_cm=6
     floor_y = y_mid - h / 2
     top_y = floor_y + h
     seat_top_y = floor_y + sh
+    seat_thick = max(3, h * 0.06)
     _add_polyline(msp, [(fx - r, seat_top_y), (fx + r, seat_top_y),
-                        (fx + r, seat_top_y + 4), (fx - r, seat_top_y + 4)], True)
+                        (fx + r, seat_top_y + seat_thick), (fx - r, seat_top_y + seat_thick)], True)
     col_r = max(2, r * 0.2)
     _add_polyline(msp, [(fx - col_r, floor_y + 3), (fx + col_r, floor_y + 3),
                         (fx + col_r, seat_top_y), (fx - col_r, seat_top_y)], True)
@@ -1718,7 +1823,7 @@ def save_bench_chaise(path, length_cm=140, depth_cm=55, height_cm=85, seat_heigh
     if br_h > 10:
         _add_polyline(msp, [(fx - l * 0.9 / 2, seat_top_y), (fx + l * 0.9 / 2, seat_top_y),
                             (fx + l * 0.9 / 2, top_y), (fx - l * 0.9 / 2, top_y)], True)
-    leg_h = 4
+    leg_h = max(4, h * 0.06)
     for lx in [fx - l / 2 + 4, fx + l / 2 - 4]:
         _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
                             (lx + 2, floor_y), (lx, floor_y)], True)
@@ -1767,7 +1872,7 @@ def save_ottoman(path, width_cm=55, depth_cm=55, height_cm=40,
     _add_hatch_polygon(msp, [(fx - w / 2 + 2, floor_y + 2), (fx + w / 2 - 2, floor_y + 2),
                               (fx + w / 2 - 2, top_y - 4), (fx - w / 2 + 2, top_y - 4)],
                        'ANSI31', 0.3)
-    leg_h = 3
+    leg_h = max(3, h * 0.08)
     for lx in [fx - w / 2 + 5, fx + w / 2 - 5]:
         _add_polyline(msp, [(lx, floor_y - leg_h), (lx + 2, floor_y - leg_h),
                             (lx + 2, floor_y), (lx, floor_y)], True)

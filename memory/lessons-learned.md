@@ -4786,3 +4786,231 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] docs: feature test report — 5 products at 92.2% avg, all fixes verified
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 9e2a5e031b24bb6729631960a899a5cf0d4b5317
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 9e2a5e031b24bb6729631960a899a5cf0d4b5317
+**Files:** 
+
+**Summary:**
+Commit: docs: feature test report — 5 products at 92.2% avg, all fixes verified
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: feature test report — 5 products at 92.2% avg, all fixes verified*
+
+#### Lesson Learned
+
+Commit: docs: feature test report — 5 products at 92.2% avg, all fixes verified
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: full crawl-to-dxf trace on a real URL (Melina) - variant data ignored, classification reliability regressed, circl
+
+Date: 2026-06-28
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 86d54f14b8b1ae2b7e54426cf911c19fc410cd43
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 86d54f14b8b1ae2b7e54426cf911c19fc410cd43
+**Files:** 
+
+**Summary:**
+Commit: docs: full crawl-to-dxf trace on a real URL (Melina) - variant data ignored, classification reliability regressed, circle bug has concrete real-world impact
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: full crawl-to-dxf trace on a real URL (Melina) - variant data ignored, classification reliability regressed, circle bug has concrete real-world impact*
+
+#### Lesson Learned
+
+Commit: docs: full crawl-to-dxf trace on a real URL (Melina) - variant data ignored, classification reliability regressed, circle bug has concrete real-world impact
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: classification reliability — 'table' → 'rectangular_table' instead of 'generic_2d_furniture'
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ed3a766aff0036232dafbfd61c48137388ea8322
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** ed3a766aff0036232dafbfd61c48137388ea8322
+**Files:** 
+
+**Summary:**
+Commit: fix: classification reliability — 'table' → 'rectangular_table' instead of 'generic_2d_furniture'
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: classification reliability — 'table' → 'rectangular_table' instead of 'generic_2d_furniture'*
+
+#### Lesson Learned
+
+Commit: fix: classification reliability — 'table' → 'rectangular_table' instead of 'generic_2d_furniture'
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: refine /adjust fix - reuse FURNITURE_ADJUST_DISPATCH, don't hand-write 7 branches
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 934336a66c72bbe3fecd6938c2e8abb5a5846e49
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 934336a66c72bbe3fecd6938c2e8abb5a5846e49
+**Files:** 
+
+**Summary:**
+Commit: docs: refine /adjust fix - reuse FURNITURE_ADJUST_DISPATCH, don't hand-write 7 branches
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: refine /adjust fix - reuse FURNITURE_ADJUST_DISPATCH, don't hand-write 7 branches*
+
+#### Lesson Learned
+
+Commit: docs: refine /adjust fix - reuse FURNITURE_ADJUST_DISPATCH, don't hand-write 7 branches
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: classification fix logged — 'table' now dispatches to rectangular_table (commit ed3a766)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 70004185efe7ef0a6d66bbd201238b5c44082ca7
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 70004185efe7ef0a6d66bbd201238b5c44082ca7
+**Files:** AUDIT_LOG.md
+
+**Summary:**
+Commit: docs: classification fix logged — 'table' now dispatches to rectangular_table (commit ed3a766)
+Files: AUDIT_LOG.md
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: classification fix logged — 'table' now dispatches to rectangular_table (commit ed3a766)*
+
+#### Lesson Learned
+
+Commit: docs: classification fix logged — 'table' now dispatches to rectangular_table (commit ed3a766)
+Files: AUDIT_LOG.md
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: update audit — classification fix resolves issues 2-4 (not bugs, were misattribution)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3cc0477a653dfac5bcd01470cfe7f0b85241f6ea
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 3cc0477a653dfac5bcd01470cfe7f0b85241f6ea
+**Files:** 
+
+**Summary:**
+Commit: docs: update audit — classification fix resolves issues 2-4 (not bugs, were misattribution)
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: update audit — classification fix resolves issues 2-4 (not bugs, were misattribution)*
+
+#### Lesson Learned
+
+Commit: docs: update audit — classification fix resolves issues 2-4 (not bugs, were misattribution)
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
