@@ -348,84 +348,141 @@ def compare_entities(
 def compare_dimensions(
     page_dims: dict[str, float],
     dxf_path: str,
+    resolved_dimensions: Optional[dict] = None,
 ) -> tuple[list, float]:
-    """Compare page-extracted dimensions against DXF bounding box.
+    """Compare page-extracted dimensions against resolved pipeline dimensions or DXF bbox.
     
-    Args:
-        page_dims: Dimensions extracted from product page (width_cm, height_cm, etc.)
-        dxf_path: Path to the DXF file
+    When resolved_dimensions are available (from pipeline output), uses those —
+    they represent the actual real-world dimensions in cm. Falls back to DXF
+    bounding box comparison (legacy) when resolved_dimensions aren't available.
     
     Returns:
-        (dimension_comparisons, avg_deviation_pct)
+        tuple of (dimension_comparisons list, average_deviation_pct)
     """
+    if resolved_dimensions:
+        return _compare_resolved_dims(page_dims, resolved_dimensions)
+    
+    import ezdxf
+    
+    try:
+        doc = ezdxf.readfile(dxf_path)
+    except Exception:
+        return [], 0.0
+    
+    msp = doc.modelspace()
+    min_x = float('inf')
+    min_y = float('inf')
+    max_x = float('-inf')
+    max_y = float('-inf')
+    
+    for entity in msp:
+        if entity.dxftype() == 'LINE':
+            min_x = min(min_x, entity.dxf.start.x, entity.dxf.end.x)
+            max_x = max(max_x, entity.dxf.start.x, entity.dxf.end.x)
+            min_y = min(min_y, entity.dxf.start.y, entity.dxf.end.y)
+            max_y = max(max_y, entity.dxf.start.y, entity.dxf.end.y)
+        elif entity.dxftype() == 'LWPOLYLINE':
+            try:
+                pts = list(entity.get_points())
+                for p in pts:
+                    min_x = min(min_x, p[0])
+                    max_x = max(max_x, p[0])
+                    min_y = min(min_y, p[1])
+                    max_y = max(max_y, p[1])
+            except Exception:
+                continue
+        elif entity.dxftype() == 'CIRCLE':
+            cx, cy = entity.dxf.center.x, entity.dxf.center.y
+            r = entity.dxf.radius
+            min_x = min(min_x, cx - r)
+            max_x = max(max_x, cx + r)
+            min_y = min(min_y, cy - r)
+            max_y = max(max_y, cy + r)
+    
+    if math.isinf(min_x):
+        return [], 0.0
+    
+    dxf_w = max_x - min_x
+    dxf_h = max_y - min_y
+    
+    page_w = page_dims.get("width_cm", 0)
+    page_h = page_dims.get("overall_height_cm", 0)
+    page_d = page_dims.get("depth_cm", 0)
+    page_l = page_dims.get("length_cm", 0)
+    
+    if page_w and dxf_w:
+        page_w_mm = page_w * 10
+        dev = abs(page_w_mm - dxf_w) / max(page_w_mm, 1) * 100
+        deviations.append(dev)
+        comparisons.append({
+            "dimension": "width",
+            "page_value_cm": round(page_w, 1),
+            "dxf_value_mm": round(dxf_w, 1),
+            "deviation_pct": round(dev, 1),
+            "passed": dev <= 15,
+        })
+    
+    if page_h and dxf_h:
+        page_h_mm = page_h * 10
+        dev = abs(page_h_mm - dxf_h) / max(page_h_mm, 1) * 100
+        deviations.append(dev)
+        comparisons.append({
+            "dimension": "height",
+            "page_value_cm": round(page_h, 1),
+            "dxf_value_mm": round(dxf_h, 1),
+            "deviation_pct": round(dev, 1),
+            "passed": dev <= 15,
+        })
+    
+    page_depth = page_d or page_l
+    if page_depth:
+        if dxf_w and dxf_h:
+            dxf_depth = dxf_w
+            page_depth_mm = page_depth * 10
+            dev = abs(page_depth_mm - dxf_depth) / max(page_depth_mm, 1) * 100
+            deviations.append(dev)
+            comparisons.append({
+                "dimension": "depth",
+                "page_value_cm": round(page_depth, 1),
+                "dxf_value_mm": round(dxf_depth, 1),
+                "deviation_pct": round(dev, 1),
+                "passed": dev <= 15,
+            })
+    
+    avg_dev = sum(deviations) / max(len(deviations), 1) if deviations else 0.0
+    return comparisons, avg_dev
+
+
+def _compare_resolved_dims(page_dims: dict, resolved: dict) -> tuple[list, float]:
+    """Compare page dimensions against resolved pipeline dimensions (real cm, not DXF coords)."""
     comparisons = []
     deviations = []
 
-    try:
-        import ezdxf
-        doc = ezdxf.readfile(dxf_path)
-        msp = doc.modelspace()
+    dim_pairs = [
+        ("width_cm", "width", ["width_cm", "top_diameter_cm"]),
+        ("overall_height_cm", "height", ["overall_height_cm", "height_cm"]),
+        ("depth_cm", "depth", ["depth_cm", "length_cm"]),
+    ]
 
-        # Get DXF bounding box
-        min_x = min_y = float("inf")
-        max_x = max_y = float("-inf")
-        for e in msp:
-            try:
-                if e.dxftype() == "LINE":
-                    start, end = e.dxf.start, e.dxf.end
-                    min_x = min(min_x, start.x, end.x)
-                    max_x = max(max_x, start.x, end.x)
-                    min_y = min(min_y, start.y, end.y)
-                    max_y = max(max_y, start.y, end.y)
-                elif e.dxftype() in ("CIRCLE", "ARC"):
-                    cx, cy = e.dxf.center
-                    r = float(e.dxf.radius)
-                    min_x = min(min_x, cx - r)
-                    max_x = max(max_x, cx + r)
-                    min_y = min(min_y, cy - r)
-                    max_y = max(max_y, cy + r)
-            except Exception:
-                continue
+    for page_key, dim_label, resolved_keys in dim_pairs:
+        page_val = page_dims.get(page_key, 0)
+        resolved_val = 0
+        for rk in resolved_keys:
+            rv = resolved.get(rk, 0)
+            if rv and isinstance(rv, (int, float)):
+                resolved_val = float(rv)
+                break
 
-        if math.isinf(min_x):
-            return comparisons, 0.0
-
-        dxf_w = max_x - min_x
-        dxf_h = max_y - min_y
-
-        # Compare page dimensions vs DXF dimensions
-        page_w = page_dims.get("width_cm", 0)
-        page_h = page_dims.get("overall_height_cm", 0)
-        page_d = page_dims.get("depth_cm", 0)
-        page_l = page_dims.get("length_cm", 0)
-
-        if page_w and dxf_w:
-            # DXF is in mm, page dims are in cm — convert to same unit (mm)
-            page_w_mm = page_w * 10
-            dev = abs(page_w_mm - dxf_w) / max(page_w_mm, 1) * 100
+        if page_val and resolved_val:
+            dev = abs(resolved_val - page_val) / max(page_val, 1) * 100
             deviations.append(dev)
             comparisons.append({
-                "dimension": "width",
-                "page_value_cm": round(page_w, 1),
-                "dxf_value_mm": round(dxf_w, 1),
+                "dimension": dim_label,
+                "page_value_cm": round(page_val, 1),
+                "resolved_value_cm": round(resolved_val, 1),
                 "deviation_pct": round(dev, 1),
                 "passed": dev <= 15,
             })
-
-        if page_h and dxf_h:
-            page_h_mm = page_h * 10
-            dev = abs(page_h_mm - dxf_h) / max(page_h_mm, 1) * 100
-            deviations.append(dev)
-            comparisons.append({
-                "dimension": "height",
-                "page_value_cm": round(page_h, 1),
-                "dxf_value_mm": round(dxf_h, 1),
-                "deviation_pct": round(dev, 1),
-                "passed": dev <= 15,
-            })
-
-    except Exception as e:
-        logger.error(f"Dimension comparison failed: {e}")
 
     avg_dev = sum(deviations) / max(len(deviations), 1) if deviations else 0.0
     return comparisons, avg_dev
@@ -443,6 +500,7 @@ def compare_digitization(
     dxf_path: str,
     page_dimensions: Optional[dict] = None,
     detected_entities: Optional[dict] = None,
+    resolved_dimensions: Optional[dict] = None,
 ) -> ComparisonResult:
     """Full comparison pipeline: image vs DXF edge overlay, entity count, dimensions.
     
@@ -522,9 +580,11 @@ def compare_digitization(
     result.entity_counts.update(ent_counts)
     result.errors.extend(ent_errors)
 
-    # Dimension comparison
+    # Dimension comparison (prefer resolved_dimensions for accurate real-world comparison)
     if page_dimensions:
-        dim_comparisons, avg_dev = compare_dimensions(page_dimensions, dxf_path)
+        dim_comparisons, avg_dev = compare_dimensions(
+            page_dimensions, dxf_path, resolved_dimensions=resolved_dimensions,
+        )
         result.dimension_comparisons = dim_comparisons
         result.dimension_deviation_pct = avg_dev
 

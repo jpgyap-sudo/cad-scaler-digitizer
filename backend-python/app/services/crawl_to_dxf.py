@@ -460,6 +460,16 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
     # Method 3: Generic size patterns from any text source
     _match_dims_in_text("", result)  # ensures helper is called at least once
 
+    # Sanity: for non-round products, width should be >= depth/length.
+    # If extracted width is smaller than depth/length (e.g. D×W×H order on
+    # console tables), swap them so the larger value is width.
+    rw = result.get("width_cm", 0)
+    rd = result.get("depth_cm", 0) or result.get("length_cm", 0)
+    if rw and rd and rw < rd:
+        result["width_cm"], result["depth_cm"] = rd, rw
+        if result.get("length_cm") and result["length_cm"] == rd:
+            result["length_cm"] = rw
+
     # Deduplicate sizes array by unique (width, length, height) tuples
     if "sizes" in result and isinstance(result["sizes"], list):
         seen = set()
@@ -725,6 +735,7 @@ async def crawl_and_digitize(
                         image_data=_image_data,
                         dxf_path=_dxf_fullpath,
                         page_dimensions=page_dims if page_dims else None,
+                        resolved_dimensions=detected_dims or None,
                     )
                     log_comparison_to_db(_comp_result)
                     result["comparison"] = {
