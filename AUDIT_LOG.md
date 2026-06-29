@@ -82,6 +82,35 @@ above. The `furniture_intelligence` module independently "knows" a coffee
 table should get 5 views; `dxf_exporter.py` independently gives it 1; they
 never talk to each other.
 
+### 6. Post-generation slider/Apply UI silently does nothing for 7 of 13 furniture types
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** HIGH — affects every type added after the original round/rect
+table templates (coffee_table, cabinet, sofa, dining_chair, wardrobe,
+bed_headboard, reception_counter); user sees zero feedback
+**Evidence:** `/adjust` (`routes.py:2224`) has its own independent
+if/elif furniture-type dispatch (separate from `_dispatch_furniture` used
+at initial generation) covering only `round_pedestal_table`,
+`rectangular_table`, `oval_pedestal_table`, `console_table`,
+`office_desk`, `asymmetric_pedestal_table`. For any other type it correctly
+returns `{"error": "Unsupported type: <ftype>"}, status_code=400`
+(`routes.py:2375`) — the backend is not silently failing here.
+**The real bug is in the frontend**: `SliderPanel.tsx:158-160` does
+`const data = await resp.json(); if (data.preview_svg) { onAdjusted(...) }`
+— no check for `data.error`, no `res.ok` check, no `console.error` for the
+non-network-failure case. A 400 response with a valid JSON error body is
+not a fetch() exception, so the `catch` block never fires either. Net
+result: drag a slider on a coffee table (or cabinet/sofa/etc.), click
+Apply, and **nothing happens with zero indication why** — no error toast,
+no console warning, no visual change. Confirmed by reading the exact
+condition; this is a one-line fix (check `data.error` and surface it)
+once someone decides what the surfaced message should say, but the
+underlying `/adjust` dispatch gap (6 types unsupported) needs the real
+fix — extending its if/elif chain to match `_dispatch_furniture`'s
+coverage, ideally by sharing one dispatch table instead of maintaining
+two independently (this is the same "two parallel implementations drift
+apart" shape as the SVG-preview-vs-DXF-exporter issue above).
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
