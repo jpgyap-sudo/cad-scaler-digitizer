@@ -415,6 +415,143 @@ def classify_product(
 
 
 # ---------------------------------------------------------------------------
+# DNA Enrichment — auto-populate from crawl results
+# ---------------------------------------------------------------------------
+
+def enrich_dna_from_crawl(
+    handle: str,
+    furniture_type: str,
+    family: str,
+    dimensions: dict,
+    skeleton_svg: str = "",
+    hero_view_added: bool = False,
+) -> bool:
+    """Extract visual DNA features from a crawl result and persist to product_dna.json.
+
+    Called after every successful crawl that generated a Gemini silhouette.
+    Populates both product_dna.json and visual_dna_index.json so the
+    3-stage classifier has real data to match against.
+
+    Returns True if enrichment succeeded.
+    """
+    import json
+    import datetime
+
+    if not handle or not furniture_type:
+        return False
+
+    w = dimensions.get("width_cm", 0)
+    d = dimensions.get("depth_cm", 0) or dimensions.get("length_cm", 0)
+    h = dimensions.get("overall_height_cm", 0)
+
+    # Compute visual features from dimensions
+    bounding_ratio = "1:1:1"
+    if w and d and h:
+        # Normalize to depth=1
+        bounding_ratio = f"{w/d:.2f}:1:{h/d:.2f}" if d else "1:1:1"
+
+    w_over_h = round(w / h, 3) if w and h else 0
+    d_over_w = round(d / w, 3) if w and d else 0
+
+    # Determine shape from dimensions
+    if w and d:
+        diff = abs(w - d) / max(w, d)
+        shape = "square" if diff < 0.1 else ("round" if w == d else "rectangle")
+    else:
+        shape = "rectangle"
+
+    # Detect leg count or base type from furniture_type hints
+    is_pedestal = "pedestal" in furniture_type or "round" in furniture_type
+    base_type = "pedestal" if is_pedestal else "legs"
+
+    # Build product_dna entry
+    entry = {
+        "handle": handle,
+        "template_family": furniture_type,
+        "visual_dna_family": family,
+        "product_type": furniture_type,
+        "width_cm": w,
+        "depth_cm": d,
+        "height_cm": h,
+        "bounding_ratio": bounding_ratio,
+        "shape": shape,
+        "base_type": base_type,
+        "top_shape": "circle" if "round" in furniture_type else "rectangle",
+        "leg_count": 1 if is_pedestal else 4,
+        "thickness_profile": "medium",
+        "leg_type": "straight" if not is_pedestal else "pedestal_base",
+        "symmetry": "bilateral",
+        "edge_profile": "square",
+        "archetype_score": 0.85,
+        "skeleton_svg": skeleton_svg[:2000] if skeleton_svg else "",
+        "hero_view_generated": hero_view_added,
+        "updated_at": datetime.datetime.now().isoformat(),
+    }
+
+    # Load existing DNA
+    dna = {}
+    if DNA_PATH.exists():
+        try:
+            dna = json.loads(DNA_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            dna = {}
+
+    dna[handle] = entry
+    try:
+        DNA_PATH.parent.mkdir(parents=True, exist_ok=True)
+        DNA_PATH.write_text(json.dumps(dna, indent=2), encoding="utf-8")
+        logger.info(f"[DNA Enrichment] Saved {handle} → product_dna.json")
+    except Exception as e:
+        logger.warning(f"[DNA Enrichment] Failed to save product_dna.json: {e}")
+        return False
+
+    # Update visual_dna_index.json (one index entry per family)
+    dna_index = {}
+    if DNA_INDEX_PATH.exists():
+        try:
+            dna_index = json.loads(DNA_INDEX_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            dna_index = {}
+
+    # Aggregate all entries for this family to compute average ratios
+    same_family = [v for k, v in dna.items() if v.get("template_family") == furniture_type]
+    if same_family:
+        avg_w = sum(e.get("width_cm", 0) for e in same_family) / len(same_family)
+        avg_d = sum(e.get("depth_cm", 0) for e in same_family) / len(same_family)
+        avg_h = sum(e.get("height_cm", 0) for e in same_family) / len(same_family)
+        avg_ratio = f"{avg_w/avg_d:.2f}:1:{avg_h/avg_d:.2f}" if avg_d else "1.65:1:0.42"
+    else:
+        avg_ratio = bounding_ratio
+
+    dna_index[furniture_type] = {
+        "top_shape": entry["top_shape"],
+        "base_type": entry["base_type"],
+        "leg_type": entry["leg_type"],
+        "symmetry": entry["symmetry"],
+        "category_hint": family,
+        "bounding_ratio": avg_ratio,
+        "component_graph": [],
+        "materials": [],
+        "archetype_score": 0.85,
+        "sample_count": len(same_family),
+        "updated_at": datetime.datetime.now().isoformat(),
+    }
+    try:
+        DNA_INDEX_PATH.write_text(json.dumps(dna_index, indent=2), encoding="utf-8")
+        logger.info(f"[DNA Enrichment] Updated visual_dna_index.json ({furniture_type}: {len(same_family)} samples)")
+    except Exception as e:
+        logger.warning(f"[DNA Enrichment] Failed to save visual_dna_index.json: {e}")
+        return False
+
+    # Clear caches so next classifier call picks up new data
+    global _PRODUCT_DNA_CACHE, _DNA_INDEX_CACHE
+    _PRODUCT_DNA_CACHE = None
+    _DNA_INDEX_CACHE = None
+
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Main / demo
 # ---------------------------------------------------------------------------
 

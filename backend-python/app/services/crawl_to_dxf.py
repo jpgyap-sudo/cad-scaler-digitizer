@@ -825,16 +825,31 @@ async def crawl_and_digitize(
                     width_cm=_w,
                     height_cm=_h,
                 )
-                if _gemini_result.get("svg"):
+                    if _gemini_result.get("svg"):
                     result["skeleton_svg"] = _gemini_result["svg"]
                     result["skeleton_source"] = "gemini"
+                    _h = urlparse(page_url).path.strip("/").split("/")[-1] if page_url else ""
                     # Sync to silhouette gallery
                     try:
                         from app.agents.silhouette_gallery import update_gallery
-                        _h = urlparse(page_url).path.strip("/").split("/")[-1] if page_url else ""
                         update_gallery(_f_type, _gemini_result["svg"],
                                        product_name=_h.replace("-", " ").title(),
                                        handle=_h)
+                    except Exception:
+                        pass
+                    # Enrich DNA catalog (self-filling 3-stage classifier)
+                    try:
+                        from app.backend.product_classifier import enrich_dna_from_crawl
+                        _hero_w = real_width_cm or page_dims.get("width_cm", 100) if page_dims else 100
+                        _hero_h = real_h or page_dims.get("overall_height_cm", 80) if page_dims else 80
+                        enrich_dna_from_crawl(
+                            handle=_h,
+                            furniture_type=_f_type,
+                            family=_f_type.split("_")[0] if "_" in _f_type else _f_type,
+                            dimensions={"width_cm": _hero_w, "depth_cm": _d, "overall_height_cm": _hero_h},
+                            skeleton_svg=_gemini_result["svg"],
+                            hero_view_added=True,
+                        )
                     except Exception:
                         pass
                     # Add HERO VIEW to the DXF (Gemini-traced outline, scale-aligned)
