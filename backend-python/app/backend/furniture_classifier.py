@@ -61,7 +61,8 @@ def normalize_furniture_type(ftype: str) -> str:
         "pedestal_dining_table": "asymmetric_pedestal_table",
         "two_pedestal_table": "asymmetric_pedestal_table",
         "rectangular_pedestal_table": "asymmetric_pedestal_table",
-        "table": "generic_2d_furniture",  # Fallback: "table" alone is too generic
+        "table": "rectangular_table",  # Most tables are rectangular; round/oval slug-detected upstream
+        "generic_2d_furniture": "rectangular_table",  # AI fallback — use rectangular as default
         # New types for 18-template system
         "lounge_chair": "lounge_chair",
         "lounge": "lounge_chair",
