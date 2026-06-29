@@ -255,6 +255,11 @@ the `_component_visible()` pattern already present in
 `build_rectangular_table_model`/`build_cabinet_model`/`build_sofa_model`),
 or wrap `build_fn(**save_kwargs)` in try/except as a stopgap (doesn't fix
 the missing visibility support, just stops the 500).
+**Checked for the same gap on `materials`** (the older, originally-built
+parameter) — confirmed present on all of `build_round_pedestal_model`,
+`build_oval_pedestal_model`, `build_asymmetric_pedestal_model`. The gap is
+specific to `visibility` (added later, inconsistently), not a general
+pattern across every kwarg these functions accept.
 
 ## Priority Order for Remaining Fixes
 
