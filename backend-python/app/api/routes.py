@@ -1620,7 +1620,43 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                         if cleaned.startswith('```'): cleaned = cleaned.split('\n', 1)[-1] if '\n' in cleaned else cleaned[3:]
                         if cleaned.rstrip().endswith('```'): cleaned = cleaned.rstrip()[:-3]
                         ai_result = json.loads(cleaned.strip())
+                else:
+                    print(f"[Hybrid] OpenAI HTTP {r.status_code}: {r.text[:200]}")
         except Exception as e: print(f"[Hybrid] OpenAI error: {e}")
+
+        # Gemini fallback - this whole classification call used to be
+        # OpenAI-only with no fallback at all, so whenever OPENAI_API_KEY
+        # is dead (confirmed live: HTTP 401), ai_result stayed at its empty
+        # default and furniture-type detection silently fell all the way
+        # back to the much weaker OpenCV shape heuristic for EVERY photo,
+        # not just unusual shapes like ovals - this is the actual root
+        # cause an oval pedestal table was classified as round_pedestal_table.
+        if not ai_result.get("furniture_type"):
+            try:
+                from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
+                if _GEMINI_API_KEY:
+                    gemini_prompt = (
+                        VISION_SYSTEM_PROMPT +
+                        "\n\nRespond as a JSON object: {\"furniture_type\":string,"
+                        "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
+                        "\"tag\":string,\"raw\":string}]}"
+                    )
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        gr = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
+                            params={"key": _GEMINI_API_KEY},
+                            json={"contents": [{"parts": [
+                                {"text": gemini_prompt + "\n\nIdentify furniture and extract all dimensions."},
+                                {"inline_data": {"mime_type": mime, "data": b64}},
+                            ]}], "generationConfig": {"responseMimeType": "application/json"}})
+                        if gr.status_code == 200:
+                            gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            ai_result = json.loads(gcontent)
+                            print(f"[Hybrid] Gemini classification: {ai_result.get('furniture_type')}")
+                        else:
+                            print(f"[Hybrid] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
+            except Exception as e:
+                print(f"[Hybrid] Gemini fallback error: {e}")
 
         # ===== Furniture Intelligence Confirmation Loop =====
         furniture_analysis_result = None
@@ -1850,6 +1886,20 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 detected_dims_cm['width_cm'] = real_w
             if real_h and real_h > 0:
                 detected_dims_cm['overall_height_cm'] = real_h
+
+            # NOTE: bare substring checks like 'h' in tag / 'w' in tag / 'd'
+            # in tag are NOT safe here - 'width'/'length'/'thickness' all
+            # contain "h", and 'base_dia'/'neck_dia'/'collar_dia' all
+            # contain "d". With elif order mattering, those used to get
+            # misrouted into overall_height_cm/depth_cm before ever
+            # reaching their real bucket (confirmed live - this is exactly
+            # why a Melina-style photo with a 'base_dia' tag could get its
+            # base diameter siphoned into depth_cm instead). Match on exact
+            # tag or a '_'-delimited prefix/suffix instead.
+            def _tag_is(tag, *names):
+                return tag in names or any(
+                    tag.startswith(n + '_') or tag.endswith('_' + n) for n in names)
+
             for d in merged_dims:
                 tag = d.get('tag', '').lower().strip()
                 val = float(d.get('value_cm', 0))
@@ -1857,20 +1907,24 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                     if tag in ('top_dia', 'dia', 'diameter'):
                         detected_dims_cm['top_diameter_cm'] = val
                         detected_dims_cm['width_cm'] = val
-                    elif any(k in tag for k in ['h', 'height']):
+                    elif _tag_is(tag, 'base_dia', 'pedestal_dia'):
+                        detected_dims_cm['pedestal_dia_cm'] = val
+                    elif _tag_is(tag, 'neck_dia', 'collar_dia'):
+                        pass  # not a detected_dims_cm field - handled via corrected_dims/_dim() elsewhere
+                    elif _tag_is(tag, 'h', 'height'):
                         detected_dims_cm['overall_height_cm'] = val
-                    elif any(k in tag for k in ['w', 'width', 'length']):
+                    elif _tag_is(tag, 'w', 'width', 'length', 'l'):
                         detected_dims_cm['width_cm'] = val
                         detected_dims_cm['length_cm'] = val
-                    elif any(k in tag for k in ['d', 'depth']):
+                    elif _tag_is(tag, 'd', 'depth'):
                         detected_dims_cm['depth_cm'] = val
-                    elif 'leg' in tag or 'thickness' in tag:
+                    elif _tag_is(tag, 'leg', 'thickness', 'leg_thickness'):
                         detected_dims_cm['leg_thickness_cm'] = val
-                    elif 'seat_height' in tag:
+                    elif _tag_is(tag, 'seat_height'):
                         detected_dims_cm['seat_height_cm'] = val
-                    elif 'modesty' in tag or 'panel' in tag:
+                    elif _tag_is(tag, 'modesty', 'panel', 'modesty_panel'):
                         detected_dims_cm['modesty_panel_h_cm'] = val
-                    elif 'ped' in tag:
+                    elif _tag_is(tag, 'ped', 'pedestal'):
                         detected_dims_cm['pedestal_dia_cm'] = val
 
             resolver = _get_template_resolver()
@@ -2153,8 +2207,43 @@ async def digitize_unified(file: UploadFile = File(...),
                         raw = r.json()['choices'][0]['message']['content']
                         try: ai_result = json.loads(raw)
                         except: pass
+                    else:
+                        print(f"[Unified] OpenAI HTTP {r.status_code}: {r.text[:200]}")
             except Exception as e:
                 print(f"[Unified] AI Vision failed (non-fatal): {e}")
+
+        # Gemini fallback when OpenAI is unavailable/failed - see the
+        # matching fallback in digitize_hybrid() for why this matters
+        # (OPENAI_API_KEY has been failing auth - HTTP 401).
+        if not ai_result or not (isinstance(ai_result, dict) and ai_result.get('furniture_type')):
+            try:
+                from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
+                if _GEMINI_API_KEY:
+                    import httpx, base64
+                    with open(img_path, 'rb') as f:
+                        b64 = base64.b64encode(f.read()).decode()
+                    gemini_prompt = (
+                        VISION_SYSTEM_PROMPT +
+                        "\n\nRespond as a JSON object: {\"furniture_type\":string,"
+                        "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
+                        "\"tag\":string,\"raw\":string}]}\n\nIdentify furniture and extract all dimensions."
+                    )
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        gr = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
+                            params={"key": _GEMINI_API_KEY},
+                            json={"contents": [{"parts": [
+                                {"text": gemini_prompt},
+                                {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
+                            ]}], "generationConfig": {"responseMimeType": "application/json"}})
+                        if gr.status_code == 200:
+                            gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            ai_result = json.loads(gcontent)
+                            print(f"[Unified] Gemini classification: {ai_result.get('furniture_type')}")
+                        else:
+                            print(f"[Unified] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
+            except Exception as e:
+                print(f"[Unified] Gemini fallback error: {e}")
 
         # User-provided dimensions
         user_dims = {}
