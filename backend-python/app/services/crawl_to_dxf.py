@@ -773,6 +773,7 @@ async def crawl_and_digitize(
                 if _ir.status_code == 200:
                     _image_data = _ir.content
                     _product_id = urlparse(page_url).path.split("/")[-1] or "unknown"
+                    _ai_type = digitized.get("furniture", {}).get("type") if isinstance(digitized, dict) else None
                     _comp_result = compare_digitization(
                         job_id=_product_id,
                         product_id=_product_id,
@@ -781,13 +782,16 @@ async def crawl_and_digitize(
                         dxf_path=_dxf_fullpath,
                         page_dimensions=page_dims if page_dims else None,
                         resolved_dimensions=detected_dims or None,
+                        furniture_type=furniture_type,
+                        ai_furniture_type=_ai_type,
                     )
                     log_comparison_to_db(_comp_result)
                     result["comparison"] = {
                         "overall_score": _comp_result.overall_score,
-                        "edge_overlap_score": _comp_result.edge_overlap_score,
+                        "shape_class_score": _comp_result.shape_class_score,
+                        "proportion_score": _comp_result.proportion_score,
                         "entity_match_score": _comp_result.entity_match_score,
-                        "shape_score": _comp_result.shape_score,
+                        "view_score": _comp_result.view_score,
                         "dimension_deviation_pct": _comp_result.dimension_deviation_pct,
                         "error_count": len(_comp_result.errors),
                     }

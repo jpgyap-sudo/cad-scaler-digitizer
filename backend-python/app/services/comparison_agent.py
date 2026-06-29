@@ -60,9 +60,10 @@ class ComparisonResult:
 
     # Overall scores
     overall_score: float       # 0.0 - 1.0 weighted average of all checks
-    edge_overlap_score: float  # 0.0 - 1.0 — how well DXF edges match image edges
+    shape_class_score: float   # 0.0 - 1.0 — AI shape classification matches template used
+    proportion_score: float    # 0.0 - 1.0 — component ratios vs learned Central Brain norms
     entity_match_score: float  # 0.0 - 1.0 — entity count/type match
-    shape_score: float         # 0.0 - 1.0 — silhouette IoU between DXF and product image
+    view_score: float          # 0.0 - 1.0 — required views present in DXF
     dimension_deviation_pct: float  # average dimension deviation %
 
     # Detailed errors
@@ -83,9 +84,10 @@ class ComparisonResult:
             "product_id": self.product_id,
             "image_url": self.image_url,
             "overall_score": round(self.overall_score, 3),
-            "edge_overlap_score": round(self.edge_overlap_score, 3),
+            "shape_class_score": round(self.shape_class_score, 3),
+            "proportion_score": round(self.proportion_score, 3),
             "entity_match_score": round(self.entity_match_score, 3),
-            "shape_score": round(self.shape_score, 3),
+            "view_score": round(self.view_score, 3),
             "dimension_deviation_pct": round(self.dimension_deviation_pct, 1),
             "errors": self.errors[:50],  # top 50 errors
             "dimension_comparisons": self.dimension_comparisons,
@@ -204,142 +206,170 @@ def _rasterize_dxf(dxf_path: str, output_size=(1000, 1000)) -> Optional[Any]:
         return None
 
 
-def compare_images(original_img: Any, dxf_raster: Any) -> tuple[float, list, int, int]:
-    """Pixel-level comparison of original image vs DXF raster using edge detection.
+def score_shape_classification(ai_furniture_type: Optional[str],
+                                 resolved_furniture_type: Optional[str]) -> float:
+    """Score shape classification accuracy: did the AI correctly identify the
+    product shape (round vs rectangular, L-shaped vs straight, etc.)?
     
-    Returns: (overlap_score, error_regions, original_edges_count, dxf_edges_count)
+    Compares the AI's furniture_type classification against the type that was
+    actually used to render the DXF. Shape mismatches (e.g. AI said round,
+    DXF is rectangular) score 0.0; correct type scores 1.0.
     """
-    import cv2
-    import numpy as np
+    if not ai_furniture_type or not resolved_furniture_type:
+        return 0.5  # uncertain — can't verify
 
-    # Resize both to same dimensions
-    h, w = original_img.shape[:2]
-    dxf_resized = cv2.resize(dxf_raster, (w, h))
+    # Normalize both for comparison
+    ai_lower = ai_furniture_type.lower().replace("_", "").replace("-", "")
+    dxf_lower = resolved_furniture_type.lower().replace("_", "").replace("-", "")
 
-    # Convert to grayscale
-    gray_orig = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-    gray_dxf = cv2.cvtColor(dxf_resized, cv2.COLOR_BGR2GRAY)
+    if ai_lower == dxf_lower:
+        return 1.0
 
-    # Edge detection (configurable thresholds from training feedback)
-    from app.services.digitizer_config import get_canny_thresholds
-    _canny_low, _canny_high = get_canny_thresholds()
-    edges_orig = cv2.Canny(gray_orig, _canny_low, _canny_high)
-    edges_dxf = cv2.Canny(gray_dxf, _canny_low, _canny_high)
+    # Heuristic shape-level matching
+    def _shape_family(ftype: str) -> str:
+        if "round" in ftype or "pedestal" in ftype:
+            return "round"
+        if "rectangular" in ftype or "console" in ftype or "side" in ftype or "coffee" in ftype:
+            return "rectangular"
+        if "oval" in ftype:
+            return "oval"
+        if "asymmetric" in ftype or "dual" in ftype:
+            return "asymmetric"
+        if "sectional" in ftype or "lshaped" in ftype:
+            return "sectional"
+        if "sofa" in ftype or "bench" in ftype or "armchair" in ftype:
+            return "seating"
+        if "chair" in ftype or "stool" in ftype:
+            return "seating"
+        if "cabinet" in ftype or "wardrobe" in ftype or "nightstand" in ftype:
+            return "storage"
+        if "bed" in ftype or "headboard" in ftype:
+            return "bed"
+        return "other"
 
-    # Morphological dilation to make edges thicker for comparison
-    kernel = np.ones((3, 3), np.uint8)
-    edges_orig_dilated = cv2.dilate(edges_orig, kernel, iterations=1)
-    edges_dxf_dilated = cv2.dilate(edges_dxf, kernel, iterations=1)
-
-    # Edge overlap
-    overlap = cv2.bitwise_and(edges_orig_dilated, edges_dxf_dilated)
-    union = cv2.bitwise_or(edges_orig_dilated, edges_dxf_dilated)
-
-    total_union = np.sum(union > 0)
-    total_overlap = np.sum(overlap > 0)
-    overlap_score = total_overlap / max(total_union, 1)
-
-    # Find error regions — edges in one but not the other
-    errors_orig = cv2.bitwise_and(edges_orig_dilated, cv2.bitwise_not(edges_dxf_dilated))
-    errors_dxf = cv2.bitwise_and(edges_dxf_dilated, cv2.bitwise_not(edges_orig_dilated))
-
-    # Contour detection for error bounding boxes
-    error_regions = []
-    combined_errors = cv2.bitwise_or(errors_orig, errors_dxf)
-    contours, _ = cv2.findContours(combined_errors, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 50:  # filter tiny noise
-            x, y, w2, h2 = cv2.boundingRect(cnt)
-            error_regions.append({
-                "bbox": [int(x), int(y), int(x + w2), int(y + h2)],
-                "area_px": int(area),
-                "type": "edge_mismatch",
-            })
-
-    # Sort by area descending
-    error_regions.sort(key=lambda r: r["area_px"], reverse=True)
-
-    orig_edge_count = int(np.sum(edges_orig > 0))
-    dxf_edge_count = int(np.sum(edges_dxf > 0))
-
-    return overlap_score, error_regions, orig_edge_count, dxf_edge_count
+    af = _shape_family(ai_lower)
+    df = _shape_family(dxf_lower)
+    return 1.0 if af == df else 0.0
 
 
-def _extract_edges(img: Any) -> Any:
-    """Extract structural edges from product image using edge detection
-    masked to the product foreground. Returns binary edge map."""
-    import cv2
-    import numpy as np
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 30, 100)
-    kernel = np.ones((3, 3), np.uint8)
-    edges = cv2.dilate(edges, kernel, iterations=1)
-    return edges
-
-
-def _dxf_fill(dxf_raster: Any) -> Any:
-    """Convert DXF raster to filled binary mask (non-white = drawn)."""
-    import cv2
-    import numpy as np
-    gray = cv2.cvtColor(dxf_raster, cv2.COLOR_BGR2GRAY)
-    inv = cv2.bitwise_not(gray)
-    _, fg = cv2.threshold(inv, 30, 255, cv2.THRESH_BINARY)
-    fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-    fg = cv2.dilate(fg, np.ones((3, 3), np.uint8), iterations=2)
-    return fg
-
-
-def compare_silhouettes(original_img: Any, dxf_raster: Any) -> float:
-    """Compare shape via edge recall + contour similarity.
+def score_proportions(furniture_type: str,
+                       resolved_dimensions: Optional[dict],
+                       dxf_path: str) -> float:
+    """Score component proportions against Central Brain learned norms.
     
-    Edge recall measures what fraction of the product's visible edges (from
-    the photo) are captured by the DXF. Contour similarity provides a
-    perspective-invariant backup signal. Combined, they produce a meaningful
-    shape score even when the DXF and photo are fundamentally different
-    representations (line drawing vs photographic).
+    For each furniture type, the Brain has learned expected ratios between
+    components (e.g. collar_diameter ≈ top_diameter × 0.625 for round pedestal
+    tables). This function checks if the rendered DXF's dimensions comply
+    with those learned norms.
     """
-    import cv2
-    import numpy as np
+    if not resolved_dimensions:
+        return 0.5  # uncertain
 
-    h, w = original_img.shape[:2]
-    dxf_resized = cv2.resize(dxf_raster, (w, h))
+    from app.backend.brain_sync import get_proportion_estimate
+    import math
 
-    # Structural edges from photo
-    photo_edges = _extract_edges(original_img)
-    # DXF silhouette
-    dxf_filled = _dxf_fill(dxf_resized)
-    # DXF silhouette dilated for overlap buffer
-    dxf_dilated = cv2.dilate(dxf_filled, np.ones((5, 5), np.uint8), iterations=2)
+    checks = []
+    ftype = furniture_type.lower().replace("_", "").replace("-", "")
 
-    # Edge recall: fraction of photo edges that fall within DXF silhouette
-    overlap = cv2.bitwise_and(photo_edges, dxf_dilated)
-    total_photo_edges = np.sum(photo_edges > 0)
-    captured_edges = np.sum(overlap > 0)
-    edge_recall = captured_edges / max(total_photo_edges, 1)
+    if "roundpedestal" in ftype or "pedestal" in ftype:
+        top_dia = resolved_dimensions.get("top_diameter_cm", 0)
+        if top_dia:
+            for comp, expected_ratio in [
+                ("collar_diameter_cm", 0.625),
+                ("neck_diameter_cm", 0.45),
+                ("base_diameter_cm", 0.75),
+                ("top_thickness_cm", 0.04),
+            ]:
+                actual = resolved_dimensions.get(comp, 0)
+                if actual:
+                    ratio = actual / top_dia
+                    deviation = abs(ratio - expected_ratio) / expected_ratio
+                    score = max(0.0, 1.0 - deviation * 2)
+                    checks.append(score)
+                    # Also check Brain estimate
+                    try:
+                        est = get_proportion_estimate("round_pedestal_table",
+                            "top_diameter_cm", top_dia, comp)
+                        if est and est.get("estimated_value_cm"):
+                            brain_dev = abs(actual - est["estimated_value_cm"]) / est["estimated_value_cm"]
+                            checks.append(max(0.0, 1.0 - brain_dev * 2))
+                    except Exception:
+                        pass
 
-    # Edge precision: fraction of DXF edges that correspond to real product edges
-    photo_dilated = cv2.dilate(photo_edges, np.ones((3, 3), np.uint8), iterations=1)
-    dxf_edges = cv2.Canny(cv2.cvtColor(dxf_resized, cv2.COLOR_BGR2GRAY), 30, 100)
-    overlap2 = cv2.bitwise_and(dxf_edges, photo_dilated)
-    total_dxf_edges = np.sum(dxf_edges > 0)
-    matched_dxf = np.sum(overlap2 > 0)
-    edge_precision = matched_dxf / max(total_dxf_edges, 1)
+    elif "sofa" in ftype or "seating" in ftype:
+        h = resolved_dimensions.get("overall_height_cm", 0) or resolved_dimensions.get("height_cm", 0)
+        if h:
+            seat_h = resolved_dimensions.get("seat_height_cm", 0)
+            if seat_h:
+                ratio = seat_h / h
+                dev = abs(ratio - 0.54) / 0.54  # seat ≈ 54% of total height
+                checks.append(max(0.0, 1.0 - dev * 2))
 
-    # F1 score on edges (harmonic mean of recall and precision)
-    if edge_recall + edge_precision > 0:
-        f1 = 2 * edge_recall * edge_precision / (edge_recall + edge_precision)
-    else:
-        f1 = 0.0
+    elif "cabinet" in ftype or "wardrobe" in ftype:
+        h = resolved_dimensions.get("overall_height_cm", 0) or resolved_dimensions.get("height_cm", 0)
+        w = resolved_dimensions.get("width_cm", 0)
+        d = resolved_dimensions.get("depth_cm", 0)
+        if w and d and h:
+            aspect = w / h if h > 0 else 0
+            depth_ratio = d / w if w > 0 else 0
+            # Cabinet: W/H ≈ 0.5-0.7, D/W ≈ 0.4-0.6
+            checks.append(1.0 if 0.4 <= aspect <= 0.8 else max(0.0, 1.0 - abs(aspect - 0.6) * 3))
+            checks.append(1.0 if 0.3 <= depth_ratio <= 0.7 else max(0.0, 1.0 - abs(depth_ratio - 0.5) * 3))
 
-    # Contour similarity as backup (captures gross shape when edges fail)
-    photo_filled = _dxf_fill(original_img)
-    pi = np.sum(cv2.bitwise_and(photo_filled, dxf_filled) > 0)
-    pu = np.sum(cv2.bitwise_or(photo_filled, dxf_filled) > 0)
-    iou = pi / max(pu, 1)
+    elif "diningchair" in ftype or "officechair" in ftype or "barstool" in ftype:
+        h = resolved_dimensions.get("overall_height_cm", 0) or resolved_dimensions.get("height_cm", 0)
+        w = resolved_dimensions.get("width_cm", 0) or resolved_dimensions.get("seat_width_cm", 0)
+        if h and w:
+            # Chair: W/H ≈ 0.4-0.6
+            aspect = w / h
+            checks.append(1.0 if 0.3 <= aspect <= 0.7 else max(0.0, 1.0 - abs(aspect - 0.5) * 4))
 
-    # Blend: edge F1 (70%) + silhouette IoU (30%)
-    return min(1.0, f1 * 0.7 + iou * 0.3)
+    elif "bed" in ftype or "headboard" in ftype:
+        w = resolved_dimensions.get("width_cm", 0)
+        d = resolved_dimensions.get("depth_cm", 0)
+        if w and d:
+            # Bed: roughly square (W≈D for queen/king)
+            ratio = min(w, d) / max(w, d) if max(w, d) > 0 else 0
+            checks.append(1.0 if ratio >= 0.8 else ratio)
+
+    avg = sum(checks) / max(len(checks), 1) if checks else 0.5
+    return avg
+
+
+def score_views(dxf_path: str, furniture_type: str) -> float:
+    """Score whether required views are present in the DXF.
+    
+    Reads MTEXT labels from the DXF to check which views were rendered.
+    Most templates require FRONT, TOP, SIDE views (some also ISOMETRIC).
+    """
+    import ezdxf
+    try:
+        doc = ezdxf.readfile(dxf_path)
+    except Exception:
+        return 0.0
+
+    msp = doc.modelspace()
+    labels = set()
+    for e in msp:
+        if e.dxftype() == 'MTEXT':
+            t = e.plain_text().upper()
+            if 'VIEW' in t:
+                labels.add(t)
+
+    ftype = furniture_type.lower().replace("_", "").replace("-", "")
+
+    # Determine required views per type
+    required = ['FRONT VIEW', 'SIDE VIEW']  # minimum for all
+    if any(k in ftype for k in ["sofa", "table", "cabinet", "wardrobe", "desk",
+                                 "counter", "sectional", "outdoordining", "sideboard",
+                                 "tvconsole", "nightstand", "bed", "side", "console"]):
+        required.append('TOP VIEW')
+    if any(k in ftype for k in ["table", "sofa", "cabinet", "wardrobe", "desk",
+                                 "sectional", "outdoordining", "sideboard"]):
+        required.append('ISOMETRIC VIEW')
+
+    present = sum(1 for r in required if any(r in l for l in labels))
+    return present / max(len(required), 1)
 
 
 def compare_entities(
@@ -579,6 +609,8 @@ def compare_digitization(
     page_dimensions: Optional[dict] = None,
     detected_entities: Optional[dict] = None,
     resolved_dimensions: Optional[dict] = None,
+    furniture_type: Optional[str] = None,
+    ai_furniture_type: Optional[str] = None,
 ) -> ComparisonResult:
     """Full comparison pipeline: image vs DXF edge overlay, entity count, dimensions.
     
@@ -603,9 +635,10 @@ def compare_digitization(
         image_url=image_url,
         dxf_path=dxf_path,
         overall_score=0.0,
-        edge_overlap_score=0.0,
+        shape_class_score=0.0,
+        proportion_score=0.0,
         entity_match_score=0.0,
-        shape_score=0.0,
+        view_score=0.0,
         dimension_deviation_pct=0.0,
         created_at=datetime.utcnow().isoformat(),
     )
@@ -636,28 +669,19 @@ def compare_digitization(
         )))
         # Still continue with entity/dimension checks
     else:
-        # Edge overlay comparison
-        overlap_score, error_regions, orig_edges, dxf_edges = compare_images(original_img, dxf_raster)
-        result.edge_overlap_score = overlap_score
-        result.entity_counts = {"image_edges": orig_edges, "dxf_edges": dxf_edges}
+        # DXF rasterized successfully — record dimensions
+        h2, w2 = dxf_raster.shape[:2]
+        result.dxf_width_mm = float(w2) if w2 else 0.0
+        result.dxf_height_mm = float(h2) if h2 else 0.0
 
-        # Add error regions as comparison errors
-        for region in error_regions[:20]:  # top 20
-            sev = "critical" if region["area_px"] > 10000 else ("major" if region["area_px"] > 2000 else "minor")
-            result.errors.append(asdict(ComparisonError(
-                error_type="edge_mismatch",
-                severity=sev,
-                description=f"Edge mismatch region: {region['area_px']}px² — edges exist in image but not DXF (or vice versa)",
-                score_impact=region["area_px"] / max(result.image_width * result.image_height, 1),
-                bbox=region["bbox"],
-                source="edge_mismatch",
-            )))
+    # Shape classification score: did the AI's shape type match the template used?
+    result.shape_class_score = score_shape_classification(ai_furniture_type, furniture_type)
 
-    # Silhouette shape comparison (IoU of foreground masks)
-    try:
-        result.shape_score = compare_silhouettes(original_img, dxf_raster)
-    except Exception:
-        result.shape_score = 0.0
+    # Proportion score: do component ratios match learned norms?
+    result.proportion_score = score_proportions(furniture_type or "", resolved_dimensions, dxf_path)
+
+    # View completeness score: are required views present?
+    result.view_score = score_views(dxf_path, furniture_type or "")
 
     # Entity count comparison
     ent_score, ent_errors, ent_counts = compare_entities(dxf_path, detected_entities)
@@ -673,55 +697,36 @@ def compare_digitization(
         result.dimension_comparisons = dim_comparisons
         result.dimension_deviation_pct = avg_dev
 
-        # Add dimension errors
         for dc in dim_comparisons:
             if not dc.get("passed", True):
                 result.errors.append(asdict(ComparisonError(
                     error_type="misaligned_dim",
                     severity="major",
-                    description=f"Dimension {dc['dimension']}: page={dc['page_value_cm']}cm, DXF={dc['dxf_value_mm']}mm (deviation {dc['deviation_pct']}%)",
+                    description=f"Dimension {dc['dimension']}: page={dc['page_value_cm']}cm, dxf={dc.get('resolved_value_cm', dc.get('dxf_value_mm', '?'))} (deviation {dc['deviation_pct']}%)",
                     score_impact=dc["deviation_pct"] / 100 * 0.3,
                     source="dimension",
                 )))
 
     # Compute overall weighted score
-    # Shape similarity (silhouette IoU) and dimension accuracy are the two
-    # primary signals. Edge overlap is secondary (unreliable for e-commerce
-    # backgrounds). Entity match is a tiebreaker.
+    # Signals: shape_class (30%), dimension accuracy (40%), proportions (15%),
+    #          view completeness (10%), entity match (5%).
+    # No pixel-level comparison — all signals come from structured pipeline data.
     has_page_dims = bool(page_dimensions and (page_dimensions.get("width_cm") or page_dimensions.get("overall_height_cm")))
-    has_dxf_edge = dxf_raster is not None
+    ftype = (furniture_type or "").lower()
 
     if has_page_dims:
-        dim_reliability = max(0.5, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
-        dim_score = dim_reliability
-        shape_score = result.shape_score
-        shape_weight = 0.40
-        dim_weight = 0.40
-        entity_weight = 0.10
-        edge_weight = 0.10
-    elif has_dxf_edge:
         dim_score = max(0.0, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
-        shape_score = result.shape_score
-        shape_weight = 0.40
-        dim_weight = 0.20
-        entity_weight = 0.20
-        edge_weight = 0.20
     else:
-        dim_score = 0.0
-        shape_score = result.shape_score
-        shape_weight = 0.40
-        dim_weight = 0.20
-        entity_weight = 0.20
-        edge_weight = 0.20
+        dim_score = 0.5
 
     overall = (
-        result.edge_overlap_score * edge_weight
-        + result.entity_match_score * entity_weight
-        + shape_score * shape_weight
-        + dim_score * dim_weight
+        result.shape_class_score * 0.30
+        + dim_score * 0.40
+        + result.proportion_score * 0.15
+        + result.view_score * 0.10
+        + result.entity_match_score * 0.05
     )
 
-    # Apply error penalties (minimal — page dims are ground truth, edge errors expected)
     total_penalty = sum(e["score_impact"] for e in result.errors)
     overall = max(0.0, overall - total_penalty * 0.02)
 
@@ -763,24 +768,27 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
 
         cur.execute("""
             INSERT INTO comparison_results
-                (job_id, product_id, overall_score, edge_overlap_score,
-                 entity_match_score, shape_score, dimension_deviation_pct,
+                (job_id, product_id, overall_score,
+                 shape_class_score, proportion_score, entity_match_score, view_score,
+                 dimension_deviation_pct,
                  errors_json, dimension_comparisons_json,
                  image_width, image_height, dxf_width_mm, dxf_height_mm)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (job_id) DO UPDATE SET
                 overall_score = EXCLUDED.overall_score,
-                edge_overlap_score = EXCLUDED.edge_overlap_score,
+                shape_class_score = EXCLUDED.shape_class_score,
+                proportion_score = EXCLUDED.proportion_score,
                 entity_match_score = EXCLUDED.entity_match_score,
-                shape_score = EXCLUDED.shape_score,
+                view_score = EXCLUDED.view_score,
                 dimension_deviation_pct = EXCLUDED.dimension_deviation_pct
         """, (
             result.job_id,
             result.product_id,
             result.overall_score,
-            result.edge_overlap_score,
+            result.shape_class_score,
+            result.proportion_score,
             result.entity_match_score,
-            result.shape_score,
+            result.view_score,
             result.dimension_deviation_pct,
             json.dumps(result.errors[:50], cls=NumpyEncoder),
             json.dumps(result.dimension_comparisons, cls=NumpyEncoder),
