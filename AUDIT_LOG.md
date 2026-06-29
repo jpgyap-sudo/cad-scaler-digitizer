@@ -427,6 +427,34 @@ a real, reasonable SVG, doesn't crash) and is arguably useful (compares
 mislabeled — there's no actual DXF generation or overlay happening, so
 don't go looking for one if debugging this area.
 
+### 16. Same commit, backend half: new `bed` dispatch branch draws a headboard-only panel for what's classified as a full platform bed
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** MEDIUM — affects every product correctly classified as a full
+bed rather than just a headboard
+**Evidence:** `furniture_classifier.py`'s alias map deliberately
+distinguishes two types: `"bed": "bed"` / `"platform_bed": "bed"` (a full
+bed) vs. `"bed_headboard": "bed_headboard"` / `"headboard": "bed_headboard"`
+(just the headboard panel) — these are intentionally different
+classification outputs. But the new `elif f_type == 'bed':` branch added
+in commit `01b7558` (`routes.py:1061`) calls
+`save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h,
+materials=materials)` — **the exact same function** used for the
+`bed_headboard` case. Confirmed via `save_bed_headboard`'s own docstring:
+"Bed headboard with headboard panel, legs, and dimensions" — it draws a
+flat panel + legs, nothing else. Net effect: a product correctly
+classified as a full platform bed (the classifier did its job right)
+gets rendered as just a headboard, with no mattress platform outline,
+footboard, or actual bed footprint — the type distinction is made and
+then discarded one function call later.
+**Fix:** either build a real `save_bed_model`/`build_bed_model` (platform
+outline + headboard + optional footboard, matching the depth dimension
+this branch already computes at line 1062 but never uses for anything
+beyond `resolved_dimensions`), or — if a dedicated bed-frame drawing
+isn't worth building yet — collapse `bed` back into `bed_headboard` in
+the classifier alias map until one exists, so the distinction isn't
+silently made and then lost.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
