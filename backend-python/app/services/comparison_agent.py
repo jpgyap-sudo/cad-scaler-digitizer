@@ -611,15 +611,12 @@ def _compare_resolved_dims(page_dims: dict, resolved: dict) -> tuple[list, float
     return comparisons, avg_dev
 
 
-def verify_with_gemini(product_image: Any, dxf_raster: Any,
-                        furniture_type: str, page_dimensions: dict) -> dict:
-    """Verify DXF via Gemini 2.5 Flash (synchronous wrapper)."""
+async def verify_with_gemini_async(product_image: Any, dxf_raster: Any,
+                                     furniture_type: str, page_dimensions: dict) -> dict:
+    """Verify DXF via Gemini 2.5 Flash (async)."""
     try:
         from app.agents import verify_dxf_with_gemini as _agent_verify
-        import asyncio
-        return asyncio.run(_agent_verify(
-            product_image, dxf_raster, furniture_type, page_dimensions,
-        ))
+        return await _agent_verify(product_image, dxf_raster, furniture_type, page_dimensions)
     except Exception as e:
         logger.warning(f"[ComparisonAgent] Gemini verification failed: {e}")
         return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
@@ -630,7 +627,7 @@ def verify_with_gemini(product_image: Any, dxf_raster: Any,
 # Main comparison entry point
 # ---------------------------------------------------------------------------
 
-def compare_digitization(
+async def compare_digitization(
     job_id: str,
     product_id: str,
     image_url: str,
@@ -750,7 +747,7 @@ def compare_digitization(
     # (runs async — if it fails, cloud scores default to 0.5 and overall is unaffected)
     try:
         if dxf_raster is not None and original_img is not None:
-            cloud = verify_with_gemini(original_img, dxf_raster, furniture_type or "", page_dimensions)
+            cloud = await verify_with_gemini_async(original_img, dxf_raster, furniture_type or "", page_dimensions)
             result.cloud_verified = cloud.get("performed", False)
             result.cloud_shape_match = cloud.get("shape_match", 0.5)
             result.cloud_component_score = cloud.get("component_score", 0.5)

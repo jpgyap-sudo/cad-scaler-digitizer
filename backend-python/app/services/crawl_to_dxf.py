@@ -776,7 +776,7 @@ async def crawl_and_digitize(
                     _image_data = _ir.content
                     _product_id = urlparse(page_url).path.split("/")[-1] or "unknown"
                     _ai_type = digitized.get("furniture", {}).get("type") if isinstance(digitized, dict) else None
-                    _comp_result = compare_digitization(
+                    _comp_result = await compare_digitization(
                         job_id=_product_id,
                         product_id=_product_id,
                         image_url=image_url,

@@ -4204,7 +4204,7 @@ async def compare_digitization(payload: dict):
         return JSONResponse({"error": f"DXF file not found: {dxf_path}"}, status_code=400)
 
     try:
-        result = compare_digitization(
+        result = await compare_digitization(
             job_id=job_id,
             product_id=product_id,
             image_url=image_url,
