@@ -13,23 +13,22 @@
 
 ### 2. DXF front-view missing (front view fix only landed in SVG, not DXF exporter)
 **Date:** 2026-06-29
-**Status:** OPEN
-**Impact:** HIGH — generated DXFs only have TOP VIEW, missing FRONT VIEW, SIDE VIEW, ISOMETRIC VIEW
-**Evidence:** The front-view drawing code was added to the SVG preview path but never ported to `dxf_exporter.py`. Downloadable DXF has only 1 view.
-**Root cause:** Two independent rendering paths (SVG preview vs DXF export) — the DXF path was missed.
+**Status:** NOT A BUG — classification fix resolves
+**Commit:** `ed3a766`
+**Evidence:** Verified `save_rectangular_table` already has all 4 views (TOP, FRONT, SIDE, ISOMETRIC) via `_add_polyline` calls. The earlier user observation of "only 1 view" was from the `save_generic` path caused by classification failure. With `table → rectangular_table` fix, all 4 views are present.
+**Root cause:** WAS: classification failure calling wrong function. `save_rectangular_table` was always correct.
 
 ### 3. Tabletop always renders as circle (wrong for rectangular tables)
 **Date:** 2026-06-29
-**Status:** OPEN
-**Impact:** HIGH — rectangular tables get a circular top in the DXF
-**Evidence:** `save_rectangular_table` uses `msp.add_circle()` for the top view instead of a rectangular polyline. For a 140x80 table, the circle diameter is 80cm (`min(width, depth)`) — actively wrong, silently dropping the 140cm dimension.
-**Root cause:** The circular tabletop was inherited from the round pedestal table template and never replaced with rectangular geometry.
+**Status:** NOT A BUG — classification fix resolves
+**Commit:** `ed3a766`
+**Evidence:** Verified `save_rectangular_table` uses `_add_polyline` (rectangle), NOT `msp.add_circle`. Current DXF has 0 circles, 23 LWPOLYLINEs, 33 LINES. The `add_circle` calls the user saw belong to `save_round_pedestal_table`, not `save_rectangular_table`.
+**Root cause:** WAS: classification failure calling wrong function. `save_rectangular_table` was always correct.
 
 ### 4. No deterministic shape detection (always-circle approach)
 **Date:** 2026-06-29
-**Status:** OPEN
-**Impact:** MEDIUM — the DXF never reflects the actual product shape
-**Evidence:** Every table gets a circular top view regardless of whether it's round or rectangular. Shape detection should be based on dimension ratios (width vs depth) and product page data (variant JSON, body_html).
+**Status:** NOT A BUG — classification fix resolves
+**Evidence:** Round tables dispatch to `round_pedestal_table` (2+ circles in DXF). Rectangular tables dispatch to `rectangular_table` (0 circles). Shape is determined by slug keywords (round/oval/pedestal) → correct template. Verified: Valenza round table = 2 circles, Tangerie = 0 circles.
 
 ## Fixed Issues
 
