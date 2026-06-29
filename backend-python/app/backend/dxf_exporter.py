@@ -1742,19 +1742,197 @@ def save_sectional(path, width_cm=280, depth_cm=95, height_cm=82, chaise_length_
     return _save(doc, path)
 
 
-def save_hero_view(path, hero_coords_json="[]", width_cm=100, height_cm=80,
-                   sc=1.0, materials=None, visibility=None):
-    """Add a HERO VIEW traced from the product photo, scaled to match parametric FRONT VIEW.
+def _read_front_view_bbox(msp) -> tuple[float, float, float, float, float, float]:
+    """Read FRONT VIEW bounding box from existing DXF polylines.
     
-    hero_coords_json: JSON [[x1,y1],...] from Gemini in 400x300 SVG space.
-    width_cm, height_cm: real dimensions the FRONT VIEW was generated at.
-    sc: the scale factor used by save_rectangular_table / save_cabinet etc.
+    Returns (fx, fy, fw, fh, floor_y, top_y) — the front view's origin,
+    width, height in DXF coordinates. Falls back to defaults if not found.
+    """
+    front_origin_x = front_origin_y = None
+    all_x, all_y = [], []
+    for e in msp:
+        if e.dxftype() == 'MTEXT' and 'FRONT VIEW' in e.plain_text():
+            front_origin_x = e.dxf.insert[0]
+            front_origin_y = e.dxf.insert[1]
+        if e.dxftype() == 'LWPOLYLINE':
+            try:
+                for v in e.get_points():
+                    all_x.append(v[0]); all_y.append(v[1])
+            except Exception:
+                pass
+        elif e.dxftype() == 'LINE':
+            try:
+                all_x.append(e.dxf.start.x); all_y.append(e.dxf.start.y)
+                all_x.append(e.dxf.end.x); all_y.append(e.dxf.end.y)
+            except Exception:
+                pass
+        elif e.dxftype() == 'CIRCLE':
+            try:
+                r = e.dxf.radius
+                all_x.append(e.dxf.center.x - r); all_x.append(e.dxf.center.x + r)
+                all_y.append(e.dxf.center.y - r); all_y.append(e.dxf.center.y + r)
+            except Exception:
+                pass
+
+    if front_origin_x is None or not all_x:
+        return (50.0, 30.0, 42.0, 26.25, 30.0, 56.25)
+
+    fx = front_origin_x
+    floor_y = min(all_y)
+    top_y = max(all_y)
+
+    # Width from MTEXT position to rightmost polyline point in bottom area
+    rightmost = max(x for x in all_x if abs(y - floor_y) < 5 for y in [all_y[all_x.index(x)]] if abs(x - fx) < 200) if all_x else max(all_x)
+    fw = max(1.0, rightmost - fx) if rightmost > fx else max(all_x) - min(all_x)
+    fh = max(1.0, top_y - floor_y)
+
+    return (fx, floor_y, fw, fh, floor_y, top_y)
+
+
+def _gemini_svg_to_dxf_splines(svg_text: str) -> list:
+    """Parse SVG path commands from Gemini response and convert to DXF SPLINE fit points.
     
-    The hero outline is positioned at the same origin as the FRONT VIEW and
-    scaled to the same dimensions, so it directly overlays the parametric geometry.
+    Extracts d="..." attributes and converts bezier curves (C, Q, S) to
+    polyline vertices sampled at fine intervals, while preserving straight
+    segments (L, M) as-is. Returns list of [[x1,y1],...] polyline vertex arrays,
+    one per closed contour.
+    """
+    import re, math
+    paths = re.findall(r'd="([^"]+)"', svg_text, re.I)
+    if not paths:
+        return []
+
+    contours = []
+    for d in paths:
+        tokens = re.findall(r'[MmLlCcQqSsZzHhVv]|-?\d+(?:\.\d+)?', d)
+        i = 0
+        cx = cy = sx = sy = 0.0
+        pts = []
+
+        def _next():
+            nonlocal i
+            if i < len(tokens):
+                v = tokens[i]; i += 1
+                return float(v) if v.replace('-','',1).replace('.','',1).isdigit() else v
+            return None
+
+        while i < len(tokens):
+            cmd = tokens[i]; i += 1
+            if cmd == 'M':
+                cx = float(tokens[i]); cy = float(tokens[i+1]); i += 2
+                sx, sy = cx, cy
+                pts.append([cx, cy])
+            elif cmd == 'm':
+                cx += float(tokens[i]); cy += float(tokens[i+1]); i += 2
+                sx, sy = cx, cy
+                pts.append([cx, cy])
+            elif cmd == 'L':
+                cx = float(tokens[i]); cy = float(tokens[i+1]); i += 2
+                pts.append([cx, cy])
+            elif cmd == 'l':
+                cx += float(tokens[i]); cy += float(tokens[i+1]); i += 2
+                pts.append([cx, cy])
+            elif cmd == 'C' and i + 5 < len(tokens):
+                cp1x, cp1y = float(tokens[i]), float(tokens[i+1])
+                cp2x, cp2y = float(tokens[i+2]), float(tokens[i+3])
+                ex, ey = float(tokens[i+4]), float(tokens[i+5])
+                for s in range(1, 13):
+                    t = s / 12
+                    u = 1 - t
+                    px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                    py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                    pts.append([px, py])
+                cx, cy = ex, ey; i += 6
+            elif cmd == 'c' and i + 5 < len(tokens):
+                cp1x = cx + float(tokens[i]); cp1y = cy + float(tokens[i+1])
+                cp2x = cx + float(tokens[i+2]); cp2y = cy + float(tokens[i+3])
+                ex = cx + float(tokens[i+4]); ey = cy + float(tokens[i+5])
+                for s in range(1, 13):
+                    t = s / 12
+                    u = 1 - t
+                    px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                    py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                    pts.append([px, py])
+                cx, cy = ex, ey; i += 6
+            elif cmd == 'S' and i + 3 < len(tokens):
+                cp2x, cp2y = float(tokens[i]), float(tokens[i+1])
+                ex, ey = float(tokens[i+2]), float(tokens[i+3])
+                # Reflection of previous control point
+                if len(pts) >= 2:
+                    prev = pts[-2]
+                    cp1x = cx + (cx - prev[0])
+                    cp1y = cy + (cy - prev[1])
+                else:
+                    cp1x, cp1y = cx, cy
+                for s in range(1, 13):
+                    t = s / 12; u = 1 - t
+                    px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                    py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                    pts.append([px, py])
+                cx, cy = ex, ey; i += 4
+            elif cmd == 's' and i + 3 < len(tokens):
+                cp2x = cx + float(tokens[i]); cp2y = cy + float(tokens[i+1])
+                ex = cx + float(tokens[i+2]); ey = cy + float(tokens[i+3])
+                if len(pts) >= 2:
+                    prev = pts[-2]
+                    cp1x = cx + (cx - prev[0]); cp1y = cy + (cy - prev[1])
+                else:
+                    cp1x, cp1y = cx, cy
+                for s in range(1, 13):
+                    t = s / 12; u = 1 - t
+                    px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                    py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                    pts.append([px, py])
+                cx, cy = ex, ey; i += 4
+            elif cmd in ('Q', 'q') and i + 3 < len(tokens):
+                cpx = float(tokens[i]) if cmd == 'Q' else cx + float(tokens[i])
+                cpy = float(tokens[i+1]) if cmd == 'Q' else cy + float(tokens[i+1])
+                ex = float(tokens[i+2]) if cmd == 'Q' else cx + float(tokens[i+2])
+                ey = float(tokens[i+3]) if cmd == 'Q' else cy + float(tokens[i+3])
+                for s in range(1, 10):
+                    t = s / 9; u = 1 - t
+                    px = u**2*cx + 2*u*t*cpx + t**2*ex
+                    py = u**2*cy + 2*u*t*cpy + t**2*ey
+                    pts.append([px, py])
+                cx, cy = ex, ey; i += 4
+            elif cmd in ('H',):
+                ex = float(tokens[i]); i += 1
+                pts.append([ex, cy]); cx = ex
+            elif cmd in ('h',):
+                ex = cx + float(tokens[i]); i += 1
+                pts.append([ex, cy]); cx = ex
+            elif cmd in ('V',):
+                ey = float(tokens[i]); i += 1
+                pts.append([cx, ey]); cy = ey
+            elif cmd in ('v',):
+                ey = cy + float(tokens[i]); i += 1
+                pts.append([cx, ey]); cy = ey
+            elif cmd in ('Z', 'z'):
+                if pts and (abs(pts[-1][0] - sx) > 0.5 or abs(pts[-1][1] - sy) > 0.5):
+                    pts.append([sx, sy])
+                break
+
+        if len(pts) > 2:
+            contours.append(pts)
+
+    return contours
+
+
+def save_hero_view(path, hero_coords_json="[]", svg_silhouette="",
+                   width_cm=100, height_cm=80, materials=None, visibility=None):
+    """Add a scale-aligned HERO VIEW traced from the product photo.
+    
+    Uses dynamic scale detection — reads the actual FRONT VIEW bounding box
+    from the existing DXF to compute the correct scale, no hardcoded sc needed.
+    Draws the hero outline twice:
+      1. As an OVERLAY (dashed, red) directly on the FRONT VIEW
+      2. As a standalone HERO VIEW (solid) to the right of FRONT VIEW
     """
     import json, math
     coords = json.loads(hero_coords_json) if isinstance(hero_coords_json, str) else hero_coords_json
+    if not coords and svg_silhouette:
+        contours = _gemini_svg_to_dxf_splines(svg_silhouette)
+        coords = contours[0] if contours else []
     if not coords or len(coords) < 3:
         return
 
@@ -1765,22 +1943,10 @@ def save_hero_view(path, hero_coords_json="[]", width_cm=100, height_cm=80,
         doc = setup_doc()
         msp = doc.modelspace()
 
-    # Find where the FRONT VIEW sits in the DXF — look for MTEXT "FRONT VIEW"
-    front_x, front_y, front_w, front_h = 50.0, 30.0, width_cm * sc, height_cm * sc
-    for e in msp:
-        if e.dxftype() == 'MTEXT' and 'FRONT VIEW' in e.plain_text():
-            front_x = e.dxf.insert[0]
-            front_y = e.dxf.insert[1] - front_h - 10
-            front_w = width_cm * sc
-            front_h = height_cm * sc
-            break
+    # Dynamic scale detection from existing DXF
+    fx, floor_y, fw, fh, _, top_y = _read_front_view_bbox(msp)
 
-    # Hero view sits to the right of FRONT VIEW
-    ox = front_x + front_w + 25
-    oy = front_y
-
-    # Compute scale: map Gemini's SVG viewbox coords (400x300) to the
-    # same real-world scale as the parametric FRONT VIEW
+    # Center and scale Gemini coords to match FRONT VIEW dimensions
     xs = [p[0] for p in coords]
     ys = [p[1] for p in coords]
     if not xs or not ys:
@@ -1789,23 +1955,33 @@ def save_hero_view(path, hero_coords_json="[]", width_cm=100, height_cm=80,
     gem_w, gem_h = max(xs) - min(xs), max(ys) - min(ys)
     if gem_w < 1 or gem_h < 1:
         return
+    scale = min(fw / gem_w, fh / gem_h) * 0.85
 
-    scale = min(front_w / gem_w, front_h / gem_h) * 0.85
-
-    vertices = []
+    # 1. OVERLAY — draw hero as dashed red polyline directly on FRONT VIEW
+    overlay_pts = []
     for px, py in coords:
-        vx = ox + front_w / 2 + (px - gem_cx) * scale
+        vx = fx + fw / 2 + (px - gem_cx) * scale
+        vy = floor_y + (py - gem_cy) * scale
+        overlay_pts.append((vx, vy))
+    _add_polyline(msp, overlay_pts, True, 'HIDDEN')
+    # Color the overlay by changing layer properties (HIDDEN is dashed by convention)
+
+    # 2. Standalone HERO VIEW to the right of FRONT VIEW
+    ox = fx + fw + 25
+    oy = floor_y
+    hero_pts = []
+    for px, py in coords:
+        vx = ox + fw / 2 + (px - gem_cx) * scale
         vy = oy + (py - gem_cy) * scale
-        vertices.append((vx, vy))
+        hero_pts.append((vx, vy))
+    _add_polyline(msp, hero_pts, True, 'OBJECT')
+    _add_mtext(msp, 'HERO VIEW (photo traced)', (ox, oy + fh * 0.85 + 5), 2.5)
 
-    _add_polyline(msp, vertices, True, 'OBJECT')
-    _add_mtext(msp, 'HERO VIEW (photo traced)', (ox, oy + front_h + 5), 2.5)
-
-    # Dimension: show the scaled width/height
-    _add_dimension(msp, (ox, oy - 5), (ox + front_w * 0.85, oy - 5),
-                   (ox + front_w * 0.85 / 2, oy - 11), f'W = {width_cm:g} cm')
-    _add_dimension(msp, (ox + front_w * 0.85 + 5, oy), (ox + front_w * 0.85 + 5, oy + front_h * 0.85),
-                   (ox + front_w * 0.85 + 14, oy + front_h * 0.85 / 2), f'H = {height_cm:g} cm')
+    # Dimensions matching the parametric FRONT VIEW
+    _add_dimension(msp, (ox, oy - 5), (ox + fw * 0.85, oy - 5),
+                   (ox + fw * 0.85 / 2, oy - 11), f'W = {width_cm:g} cm')
+    _add_dimension(msp, (ox + fw * 0.85 + 5, oy), (ox + fw * 0.85 + 5, oy + fh * 0.85),
+                   (ox + fw * 0.85 + 14, oy + fh * 0.85 / 2), f'H = {height_cm:g} cm')
 
     return _save(doc, path)
 

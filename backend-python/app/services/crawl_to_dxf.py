@@ -828,16 +828,19 @@ async def crawl_and_digitize(
                 if _gemini_result.get("svg"):
                     result["skeleton_svg"] = _gemini_result["svg"]
                     result["skeleton_source"] = "gemini"
-                    # Pass hero DXF coords + known dimensions for scale alignment
-                    _hero_coords = _gemini_result.get("dxf_coords", "[]")
-                    if _hero_coords and _hero_coords != "[]" and _dxf_fullpath and os.path.exists(_dxf_fullpath):
+                    # Add HERO VIEW to the DXF (Gemini-traced outline, scale-aligned)
+                    if _dxf_fullpath and os.path.exists(_dxf_fullpath):
                         try:
                             from app.backend.dxf_exporter import save_hero_view
-                            _hero_w = real_width_cm or 100
-                            _hero_h = real_h or 80
-                            _hero_sc = 0.35 if furniture_type in ("sofa","sofa") else 0.7
-                            save_hero_view(_dxf_fullpath, hero_coords_json=_hero_coords,
-                                           width_cm=_hero_w, height_cm=_hero_h, sc=_hero_sc)
+                            _hero_w = real_width_cm or page_dims.get("width_cm", 100) if page_dims else 100
+                            _hero_h = real_h or page_dims.get("overall_height_cm", 80) if page_dims else 80
+                            _hero_coords = _gemini_result.get("dxf_coords", "[]")
+                            _hero_svg = _gemini_result.get("svg", "")
+                            save_hero_view(_dxf_fullpath,
+                                hero_coords_json=_hero_coords,
+                                svg_silhouette=_hero_svg,
+                                width_cm=_hero_w,
+                                height_cm=_hero_h)
                             result["hero_view_added"] = True
                         except Exception as _hero_e:
                             logger.warning(f"[CrawlToDXF] Hero view failed: {_hero_e}")
