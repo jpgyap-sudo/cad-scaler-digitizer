@@ -613,21 +613,17 @@ def _compare_resolved_dims(page_dims: dict, resolved: dict) -> tuple[list, float
 
 def verify_with_gemini(product_image: Any, dxf_raster: Any,
                         furniture_type: str, page_dimensions: dict) -> dict:
-    """Verify DXF via Gemini 2.5 Flash. Delegates to app.agents.dxf_verifier_agent."""
+    """Verify DXF via Gemini 2.5 Flash (synchronous wrapper)."""
     try:
         from app.agents import verify_dxf_with_gemini as _agent_verify
         import asyncio
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        if loop and loop.is_running():
-            return _agent_verify(product_image, dxf_raster, furniture_type, page_dimensions)
-        else:
-            return asyncio.run(_agent_verify(product_image, dxf_raster, furniture_type, page_dimensions))
+        return asyncio.run(_agent_verify(
+            product_image, dxf_raster, furniture_type, page_dimensions,
+        ))
     except Exception as e:
+        logger.warning(f"[ComparisonAgent] Gemini verification failed: {e}")
         return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
-                "issues": [f"Verification agent error: {e}"], "performed": False}
+                "issues": [f"Verification error: {e}"], "performed": False}
 
 
 # ---------------------------------------------------------------------------
@@ -845,21 +841,38 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
         )
         cur = conn.cursor()
 
+        # Ensure cloud verification columns exist (idempotent migration)
+        for _col_sql in [
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_verified BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_shape_match REAL DEFAULT 0.0",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_component_score REAL DEFAULT 0.0",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_proportion_score REAL DEFAULT 0.0",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_issues TEXT[] DEFAULT '{}'",
+        ]:
+            try: cur.execute(_col_sql)
+            except Exception: pass  # ignore if column already exists
+
         cur.execute("""
             INSERT INTO comparison_results
                 (job_id, product_id, overall_score,
                  shape_class_score, proportion_score, entity_match_score, view_score,
-                 dimension_deviation_pct,
+                 dimension_deviation_pct, cloud_verified,
+                 cloud_shape_match, cloud_component_score, cloud_proportion_score, cloud_issues,
                  errors_json, dimension_comparisons_json,
                  image_width, image_height, dxf_width_mm, dxf_height_mm)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (job_id) DO UPDATE SET
                 overall_score = EXCLUDED.overall_score,
                 shape_class_score = EXCLUDED.shape_class_score,
                 proportion_score = EXCLUDED.proportion_score,
                 entity_match_score = EXCLUDED.entity_match_score,
                 view_score = EXCLUDED.view_score,
-                dimension_deviation_pct = EXCLUDED.dimension_deviation_pct
+                dimension_deviation_pct = EXCLUDED.dimension_deviation_pct,
+                cloud_verified = EXCLUDED.cloud_verified,
+                cloud_shape_match = EXCLUDED.cloud_shape_match,
+                cloud_component_score = EXCLUDED.cloud_component_score,
+                cloud_proportion_score = EXCLUDED.cloud_proportion_score,
+                cloud_issues = EXCLUDED.cloud_issues
         """, (
             result.job_id,
             result.product_id,
@@ -869,6 +882,11 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
             result.entity_match_score,
             result.view_score,
             result.dimension_deviation_pct,
+            result.cloud_verified,
+            result.cloud_shape_match,
+            result.cloud_component_score,
+            result.cloud_proportion_score,
+            result.cloud_issues,
             json.dumps(result.errors[:50], cls=NumpyEncoder),
             json.dumps(result.dimension_comparisons, cls=NumpyEncoder),
             result.image_width,
