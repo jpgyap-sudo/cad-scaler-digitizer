@@ -23,6 +23,7 @@ The output is a dict with:
 
 import os
 import json
+import asyncio
 import base64
 import logging
 from typing import Any, Optional
@@ -248,23 +249,26 @@ Return ONLY the JSON object, no markdown, no explanation."""
         }
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-        _max_retries = int(os.environ.get("GEMINI_RETRIES", "3"))
+        _max_retries = int(os.environ.get("GEMINI_RETRIES", "5"))
+        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-1.5-flash")
         resp = None
+        _model_used = GEMINI_MODEL
         for attempt in range(_max_retries):
             try:
+                _active_model = _fallback_model if attempt >= 3 else _model_used
+                _active_url = f"https://generativelanguage.googleapis.com/v1beta/models/{_active_model}:generateContent"
                 async with httpx.AsyncClient(timeout=_timeout) as client:
-                    resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+                    resp = await client.post(_active_url, params={"key": GEMINI_API_KEY}, json=payload)
                 if resp.status_code == 200:
                     break
                 if resp.status_code not in (429, 500, 502, 503):
-                    break  # non-retryable error
+                    break
+                _delay = min(2 ** attempt, 8)
                 if attempt < _max_retries - 1:
-                    import asyncio as _aio
-                    await _aio.sleep(2 ** attempt)
+                    await asyncio.sleep(_delay)
             except Exception:
                 if attempt < _max_retries - 1:
-                    import asyncio as _aio
-                    await _aio.sleep(2 ** attempt)
+                    await asyncio.sleep(min(2 ** attempt, 8))
                 else:
                     raise
         if resp is None or resp.status_code != 200:
@@ -442,11 +446,29 @@ async def verify_dxf_with_gemini(
         }
 
         _t = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-        async with httpx.AsyncClient(timeout=_t) as client:
-            resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
-
-        if resp.status_code != 200:
-            logger.error(f"[DXFVerifier] Gemini HTTP {resp.status_code}: {resp.text[:200]}")
+        _m_r = int(os.environ.get("GEMINI_RETRIES", "5"))
+        _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-1.5-flash")
+        resp = None
+        for _att in range(_m_r):
+            model = _fallback_m if _att >= 3 else GEMINI_MODEL
+            u = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+            try:
+                async with httpx.AsyncClient(timeout=_t) as client:
+                    resp = await client.post(u, params={"key": GEMINI_API_KEY}, json=payload)
+                if resp.status_code == 200:
+                    break
+                if resp.status_code not in (429, 500, 502, 503):
+                    break
+                if _att < _m_r - 1:
+                    await asyncio.sleep(min(2 ** _att, 8))
+            except Exception:
+                if _att < _m_r - 1:
+                    await asyncio.sleep(min(2 ** _att, 8))
+                else:
+                    raise
+        if resp is None or resp.status_code != 200:
+            code = resp.status_code if resp else "no_response"
+            logger.error(f"[DXFVerifier] Gemini HTTP {code}")
             return {
                 "shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
                 "issues": [f"Gemini HTTP {resp.status_code}"], "explanation": "",
