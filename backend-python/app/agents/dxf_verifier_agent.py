@@ -210,35 +210,48 @@ async def generate_silhouette_svg(
     try:
         b64 = base64.b64encode(image_data).decode()
 
-        prompt = f"""You are a product outline tracer. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outermost silhouette.
+        prompt = f"""You are a multi-view CAD extractor. Given a photo of a {furniture_type or "furniture product"}, extract ALL visible geometric information and organize it into THREE orthographic views: FRONT, SIDE, and TOP.
 
-Return ONLY valid JSON (no markdown) with two fields:
-1. "svg": SVG markup of the traced outline.
-2. "dxf_polylines": an array of arrays, each containing [x,y] vertex coordinates forming one closed polyline for each visible component.
+PRINCIPLE: From a single 3/4 perspective or front-facing photo, you can:
+  - DIRECTLY OBSERVE the front view (the visible face)
+  - PARTIALLY ESTIMATE the side view from edge profiles visible in perspective
+  - PARTIALLY ESTIMATE the top view from the top surface contour visible in the photo
+  - Tag each component with {{"view": "front"|"side"|"top", "confidence": "observed"|"estimated"}}
 
-RULES for the SVG:
-- 400x300 viewBox, white background
-- <path> in dark gray stroke="#1f2937" stroke-width="2" fill="none"
-- Use M, C, Q, L, Z commands for smooth tracing
-- Product centered, ~80% of viewport
-- Multiple visible components = multiple <path>s
-
-RULES for dxf_polylines:
-- Coordinates in the same 400x300 coordinate space as the SVG
-- Each component is a separate array of [x,y] vertices
-- First and last vertex of each array should be nearly identical (closed shape)
-- Approximate curves as short segments (not actual bezier curves)
-- Include ALL visible parts: tabletop, legs, backrest, armrests, etc.
-- Scale so the product fills roughly 80% of the [-200,200] range on each axis,
-  centered at (0,0) for the DXF view
-
-Example response format:
+Return ONLY valid JSON (no markdown) with this structure:
 {{
-  "svg": "<svg viewBox='0 0 400 300'...>...</svg>",
-  "dxf_polylines": [[[-150,80],[-120,60],...,[-150,80]], [[-80,-40],[-60,-60],...,[-80,-40]]]
+  "svg": "<svg>...</svg>",
+  "components": [{{"name": string, "view": string, "confidence": string, "polyline": [x1,y1, ...]}}, ...],
+  "estimated_proportions": {{"width_px": number, "depth_px": number, "height_px": number}}
 }}
 
-Return ONLY the JSON object, no markdown, no explanation."""
+SVG RULES:
+- viewBox="0 0 900 300", white background — LAYOUT: left panel (0-400) = front, middle panel (450-600) = side, right panel (650-900) = estimated top
+- Each component is its OWN <path> with data-name, data-view, data-confidence attributes
+- OBSERVED components: stroke="#1f2937" stroke-width="2" fill="none"
+- ESTIMATED components: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
+- Use M,C,Q,L,Z for smooth tracing; center and scale to fill ~80% of each panel
+
+COMPONENT NAMES: tabletop, left_leg, right_leg, backrest, seat, armrest, base, pedestal, door, drawer, headboard, footboard — whatever fits the product
+
+POLYLINE RULES:
+- Each polyline: flat [x1,y1, x2,y2, ...] in the 900x300 SVG coordinate space
+- Curves sampled every ~5px as short straight segments
+- Closed: first and last point identical; minimum 4 points
+
+estimated_proportions: your best guess of the product's width_px, depth_px, height_px in pixel units (for scale reference)
+
+Example:
+{{
+  "svg": "<svg viewBox='0 0 900 300' xmlns='http://www.w3.org/2000/svg'><rect width='900' height='300' fill='white'/><path data-name='tabletop' data-view='front' data-confidence='observed' d='...'/><path data-name='tabletop' data-view='top' data-confidence='estimated' d='...'/></svg>",
+  "components": [
+    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 340,100, 340,140, 60,140, 60,100]}},
+    {{"name": "top_surface", "view": "top", "confidence": "estimated", "polyline": [660,120, 860,120, 860,160, 660,160, 660,120]}}
+  ],
+  "estimated_proportions": {{"width_px": 280, "depth_px": 80, "height_px": 160}}
+}}
+
+Return ONLY this JSON. No markdown, no explanation."""
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
         payload = {
@@ -289,15 +302,23 @@ Return ONLY the JSON object, no markdown, no explanation."""
 
         import json as json_mod
         
-        # Try JSON parsing (new format: {"svg": "...", "dxf_polylines": [...]})
+        # Parse JSON response (multi-view format: {svg, components[{name, view, confidence, polyline}]})
         svg = ""
-        dxf_polylines = []
+        views: dict[str, list] = {"front": [], "side": [], "top": []}
+        estimated_proportions = {}
         try:
             parsed = json_mod.loads(cleaned)
             svg = parsed.get("svg", "") or ""
-            dxf_polylines = parsed.get("dxf_polylines", []) or []
+            components = parsed.get("components", []) or []
+            estimated_proportions = parsed.get("estimated_proportions", {})
+            for comp in components:
+                view = comp.get("view", "front")
+                poly = comp.get("polyline", [])
+                if isinstance(poly, list) and len(poly) > 2:
+                    if view in views:
+                        views[view].extend(poly)
+                        views[view].append(poly[0])  # close
         except Exception:
-            # Fallback: treat entire response as raw SVG (old format)
             svg = cleaned
 
         # SVG fallback wrapper
@@ -306,14 +327,13 @@ Return ONLY the JSON object, no markdown, no explanation."""
   <rect width="400" height="300" fill="#ffffff"/>
   <g stroke="#1f2937" stroke-width="2" fill="none">{svg}</g></svg>"""
 
-        # Flatten multiple polylines into one coord array for DXF
+        # Build dxf_coords: merge all components into one flat array for hero view
+        # (separate front/side/top could be used later for multi-view DXF generation)
         dxf_flat = []
-        if dxf_polylines:
-            for poly in dxf_polylines:
-                if isinstance(poly, list) and len(poly) > 1:
-                    dxf_flat.extend(poly)
-                    dxf_flat.append(poly[0])
-        elif svg:
+        for view_data in views.values():
+            dxf_flat.extend(view_data)
+
+        if not dxf_flat and svg:
             # Fallback: extract polyline from SVG path data
             import re
             paths = re.findall(r'd="([^"]+)"', svg, re.I)
@@ -367,7 +387,7 @@ Return ONLY the JSON object, no markdown, no explanation."""
         dxf_coords = json_mod.dumps(dxf_flat)
 
         _SILHOUETTE_CACHE[md5] = (svg, dxf_coords)
-        return {"svg": svg, "dxf_coords": dxf_coords, "cached": False, "error": None}
+        return {"svg": svg, "dxf_coords": dxf_coords, "views": views, "estimated_proportions": estimated_proportions, "cached": False, "error": None}
 
     except Exception as e:
         logger.error(f"[DXFVerifier] Silhouette SVG failed: {e}")
