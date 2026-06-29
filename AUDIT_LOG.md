@@ -261,6 +261,49 @@ parameter) — confirmed present on all of `build_round_pedestal_model`,
 specific to `visibility` (added later, inconsistently), not a general
 pattern across every kwarg these functions accept.
 
+### 12. Correction to an earlier-session finding: crawler-worker DOES notify python-worker — the real gap is one step downstream, and it's severe (outputs written to a directory that auto-deletes itself)
+**Date:** 2026-06-29
+**Status:** OPEN — and this correction matters, don't re-investigate the
+already-disproven half of it
+**Impact:** HIGH — explains why `ProductReference`/`ReferenceAsset` stay
+empty despite real crawl activity; not a missing connection, a missing
+implementation
+**Correction:** an earlier finding this session said crawler-worker never
+pushes a `crawl_result` job back to the queue. That was checked only in
+`crawler-worker/worker.js`, which is correct in isolation — but the actual
+push happens inside `crawler-worker/crawlers/genericProductCrawler.js`
+(lines ~401-415: `lPush("cad-processing", JSON.stringify({type:
+"crawl_result", data: {...}}))`), a different file. **The queue handoff
+from crawler-worker → python-worker is real and wired** — `queue_worker.py`
+genuinely consumes `crawl_result` jobs via `handle_crawl_result_job` →
+`process_crawled_assets` (`app/services/crawl_processor.py`).
+**The actual gap, one layer further in:** `crawl_processor.py`'s module
+docstring claims 5 steps including "5. Saves metadata to Postgres."
+Read the full implementation of `_process_cad_file()` — there is **no
+Postgres write anywhere in the file** (grepped: zero `INSERT`/`cursor`/
+`psycopg2`/ORM calls). Worse: the downloaded CAD file, the parsed
+`geometry.json`, and the generated `preview.svg` are all written inside
+`with tempfile.TemporaryDirectory() as tmp:` — which Python deletes the
+instant the `with` block exits, i.e. before the function even returns.
+The only thing that survives is the Qdrant embedding vector
+(`index_geometry()` call) — the actual files and parsed geometry are
+computed and then physically destroyed, not just unread. `_process_image()`
+is even thinner: downloads nothing, parses nothing, just returns
+`{"status": "completed"}` with a comment "For now, just mark as
+completed. Future: generate thumbnails, OCR, etc."
+**This fully explains** the empty `ProductReference`/`ReferenceAsset`
+tables noted earlier in this audit — it was never a wiring gap between
+services, it's that the metadata-persistence step described in the
+docstring was never actually written.
+**Fix:** add the actual Postgres write (create/update `ProductReference`
++ `ReferenceAsset` rows via Prisma or direct SQL, matching what
+`backend-node/src/services/productReferenceService.ts` already does for
+the manually-triggered `/api/product-references/:id/process-dxf` path —
+that endpoint's logic is the template to reuse here) and persist the
+geometry JSON / SVG preview somewhere durable (Spaces, alongside the
+already-uploaded raw asset — not the temp dir) before the `with` block
+exits.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
