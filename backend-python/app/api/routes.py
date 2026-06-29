@@ -2494,6 +2494,169 @@ async def digitize_unified(file: UploadFile = File(...),
         return JSONResponse({"error": f"Unified failed: {e}", "trace": traceback.format_exc()}, status_code=500)
 
 
+# ===== FURNITURE DRAFT — Single Unified Endpoint =====
+
+@router.post("/digitize/furniture-draft")
+async def furniture_draft(
+    file: UploadFile = File(...),
+    furniture_type: str = Form(None),
+    real_width_cm: str = Form(None),
+    real_height_cm: str = Form(None),
+    real_depth_cm: str = Form(None),
+    lock_json: str = Form("{}"),
+):
+    """THE one unified endpoint — replaces /digitize, /hybrid, /smart, /unified.
+
+    Workflow:
+      1. Accept image + optional dimensions/locks
+      2. Run unified pipeline (OpenCV + OCR + Gemini/GPT-4o)
+      3. Compute component_schema with per-component confidence
+      4. Grammar Engine generates DrawingModel
+      5. SelfCritic auto-correction loop
+      6. Return: component_schema, views, confidence_review, SVG, DXF
+
+    Key features:
+      - Component locking: lock component to skip regen
+      - Confidence review: per-component score with warnings
+      - Linked views: one model → top/front/side
+    """
+    job_id = str(uuid.uuid4())
+    ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+    safe = f"{job_id}_{uuid.uuid4().hex[:8]}"
+    img_path = UPLOAD / f"{safe}{ext}"
+    with img_path.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    try:
+        # Parse user dimensions
+        user_dims = {}
+        rw = _parse_float(real_width_cm)
+        rh = _parse_float(real_height_cm)
+        rd = _parse_float(real_depth_cm)
+        if rw: user_dims['width_cm'] = rw
+        if rh: user_dims['overall_height_cm'] = rh
+        if rd: user_dims['depth_cm'] = rd
+
+        # Parse locked components
+        try:
+            locked = json.loads(lock_json) if lock_json else {}
+        except json.JSONDecodeError:
+            locked = {}
+
+        # Run the unified furniture draft pipeline
+        from app.backend.workflow import run_furniture_draft
+        result = run_furniture_draft(
+            image_path=str(img_path),
+            furniture_type_override=furniture_type,
+            user_dimensions=user_dims if user_dims else None,
+            locked_components=locked if locked else None,
+            run_self_critic=True,
+        )
+
+        try: os.remove(str(img_path))
+        except: pass
+
+        return JSONResponse(result.to_dict())
+
+    except Exception as e:
+        try: os.remove(str(img_path))
+        except: pass
+        return JSONResponse({"error": f"Furniture draft failed: {e}", "trace": traceback.format_exc()}, status_code=500)
+
+
+@router.post("/drawing/lock")
+async def drawing_lock(
+    job_id: str = Form(...),
+    component_id: str = Form(...),
+    locked: bool = Form(True),
+):
+    """Lock or unlock a component to prevent regeneration."""
+    from app.backend.workflow import lock_component, unlock_component
+    if locked:
+        lock_component(job_id, component_id)
+    else:
+        unlock_component(job_id, component_id)
+    return JSONResponse({"job_id": job_id, "component_id": component_id, "locked": locked})
+
+
+@router.post("/drawing/adjust")
+async def drawing_adjust(
+    job_id: str = Form(...),
+    furniture_type: str = Form(...),
+    params_json: str = Form("{}"),
+    lock_json: str = Form("{}"),
+):
+    """Regenerate a drawing with adjusted dimensions for specified components.
+
+    Args:
+        job_id: Session identifier
+        furniture_type: e.g. "dining_table_rectangular_4_leg"
+        params_json: JSON with dimension overrides {width_cm: 180, ...}
+        lock_json: Locked component IDs {comp_id: true, ...}
+
+    Returns:
+        Updated FurnitureDraftResult with new components, views, SVG
+    """
+    try:
+        params = json.loads(params_json)
+        locked = json.loads(lock_json) if lock_json else {}
+    except json.JSONDecodeError as e:
+        return JSONResponse({"error": f"Invalid JSON: {e}"}, status_code=400)
+
+    try:
+        from app.backend.grammar import FurnitureGrammar
+        grammar = FurnitureGrammar()
+        model = grammar.generate(furniture_type, params)
+
+        from app.backend.cfg import CanonicalFurnitureGraph
+        cfg = CanonicalFurnitureGraph.from_drawing_model_only(model)
+
+        # Rebuild result
+        from app.backend.workflow.furniture_draft import (
+            FurnitureDraftResult, ConfidenceReview,
+            _build_component_schema, _build_view_models,
+        )
+        components = _build_component_schema(cfg, model)
+        for comp in components:
+            if comp.id in locked:
+                comp.locked = locked[comp.id]
+
+        views = _build_view_models(model)
+
+        confs = [c.confidence for c in components if not c.locked]
+        avg = sum(confs) / len(confs) if confs else 0.0
+
+        result = FurnitureDraftResult(
+            job_id=job_id,
+            furniture_type=furniture_type,
+            furniture_family=grammar.get_family_for_type(furniture_type).name
+                          if grammar.get_family_for_type(furniture_type) else "",
+            components=components,
+            views=views,
+            confidence_review=ConfidenceReview(
+                average_confidence=avg,
+                needs_review=[c.name for c in components if c.confidence < 0.60],
+                auto_generated=avg >= 0.50,
+            ),
+        )
+
+        # Generate SVG
+        try:
+            from app.backend.svg_exporter import render_svg
+            svg_name = f"{job_id}_adjusted.svg"
+            svg_path = OUT / svg_name
+            svg_content = render_svg(model)
+            svg_path.write_text(svg_content, encoding='utf-8')
+            result.svg_preview = f"/api/preview/svg/{svg_name}"
+        except Exception as e:
+            result.errors.append(f"SVG failed: {e}")
+
+        return JSONResponse(result.to_dict())
+
+    except Exception as e:
+        return JSONResponse({"error": f"Adjust failed: {e}"}, status_code=500)
+
+
 # ===== CORRECTION ENDPOINTS =====
 
 @router.post("/corrections/submit")
