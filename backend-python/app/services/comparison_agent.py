@@ -746,14 +746,16 @@ def compare_digitization(
     # Convert numpy types to Python native for JSON serialization
     import numpy as np
     result.overall_score = float(overall) if isinstance(overall, np.floating) else overall
-    result.edge_overlap_score = float(result.edge_overlap_score) if isinstance(result.edge_overlap_score, np.floating) else result.edge_overlap_score
+    result.shape_class_score = float(result.shape_class_score) if isinstance(result.shape_class_score, np.floating) else result.shape_class_score
+    result.proportion_score = float(result.proportion_score) if isinstance(result.proportion_score, np.floating) else result.proportion_score
     result.entity_match_score = float(result.entity_match_score) if isinstance(result.entity_match_score, np.floating) else result.entity_match_score
+    result.view_score = float(result.view_score) if isinstance(result.view_score, np.floating) else result.view_score
     result.dimension_deviation_pct = float(result.dimension_deviation_pct) if isinstance(result.dimension_deviation_pct, np.floating) else result.dimension_deviation_pct
 
     logger.info(
         f"[ComparisonAgent] {product_id}: score={overall:.3f} "
-        f"(edge={result.edge_overlap_score:.3f}, ent={result.entity_match_score:.3f}, "
-        f"dim_dev={result.dimension_deviation_pct:.1f}%) "
+        f"(shape={result.shape_class_score:.3f}, dim_dev={result.dimension_deviation_pct:.1f}%, "
+        f"prop={result.proportion_score:.3f}, view={result.view_score:.3f}, ent={result.entity_match_score:.3f}) "
         f"errors={len(result.errors)}"
     )
 
