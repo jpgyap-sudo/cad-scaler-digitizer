@@ -455,7 +455,18 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
             )
             if body_match:
                 body_text = body_match.group(1)
-                body_text = re.sub(r'<[^>]+>', ' ', body_text)  # strip tags
+                # Strip <style>/<script> blocks (tag AND content) before the
+                # generic tag-stripper below - that one only removes the tag
+                # markers, leaving CSS/JS source as plain "text". A page with
+                # a CSS media query like "@media (min-width: 769px)" would
+                # otherwise match the (?:W|Width) pattern in
+                # _match_dims_in_text below (it matches the literal substring
+                # "width" anywhere, including inside "min-width") and get
+                # parsed as a 769cm product dimension - confirmed live on a
+                # real product page that hit exactly this.
+                body_text = re.sub(r'<style[^>]*>.*?</style>', ' ', body_text, flags=re.DOTALL | re.I)
+                body_text = re.sub(r'<script[^>]*>.*?</script>', ' ', body_text, flags=re.DOTALL | re.I)
+                body_text = re.sub(r'<[^>]+>', ' ', body_text)  # strip remaining tags
                 body_text = re.sub(r'&[a-z]+;', ' ', body_text)  # decode entities
                 _match_dims_in_text(body_text, result)
 
@@ -512,12 +523,40 @@ def _match_dims_in_text(text: str, result: dict) -> None:
             result["width_cm"] = round(vals[0], 1)
             result["depth_cm"] = round(vals[1], 1)
 
+    # "180x90x75cm" / "180 x 90 x 75 cm" — plain WxDxH immediately followed
+    # by a unit. Safe to match anywhere: three numbers stitched together
+    # with "x" and a trailing cm/mm is specific enough that it doesn't
+    # false-positive the way bare W/H/D/L letters do (see below). This is
+    # the same shape Shopify variant titles use (e.g. "6-seater
+    # 180x90x75cm") and it's commonly present in plain page text (a size
+    # dropdown, a spec table) even on non-Shopify storefronts that don't
+    # expose a parseable JSON API.
+    wdh_matches = re.findall(
+        r'(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*(cm|mm)\b', text, re.I
+    )
+    for m in wdh_matches:
+        w, d2, h = float(m[0]), float(m[1]), float(m[2])
+        if m[3].lower() == "mm":
+            w, d2, h = w / 10, d2 / 10, h / 10
+        if "width_cm" not in result:
+            result["width_cm"] = round(w, 1)
+            result["depth_cm"] = round(d2, 1)
+            result["overall_height_cm"] = round(h, 1)
+
     # "measures 120cm wide", "120 cm wide", "W120 x D80 x H76"
+    # NOTE: \b word boundaries are required around every alternative here.
+    # Without them, the bare single-letter forms (W/H/D/L) match that
+    # letter ANYWHERE in the text, case-insensitive, with no requirement
+    # that it be a standalone token - confirmed live: (?:H|Height) matched
+    # the "h" at the end of an email domain ("...@homeu.ph") and then
+    # captured a nearby phone number as a 9.5-billion-cm height. \s{0,3}
+    # (instead of unbounded \s*) caps how far the gap to the number can
+    # stretch, so a label can't bridge across unrelated page text either.
     labeled_patterns = [
-        (r'(?:W|Width)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "width_cm"),
-        (r'(?:H|Height)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "overall_height_cm"),
-        (r'(?:D|Depth)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "depth_cm"),
-        (r'(?:L|Length)\s*[:=]?\s*(\d+\.?\d*)\s*(?:cm|mm)?', "length_cm"),
+        (r'\b(?:W|Width)\b\s{0,3}[:=]?\s{0,3}(\d+\.?\d*)\s*(?:cm|mm)?', "width_cm"),
+        (r'\b(?:H|Height)\b\s{0,3}[:=]?\s{0,3}(\d+\.?\d*)\s*(?:cm|mm)?', "overall_height_cm"),
+        (r'\b(?:D|Depth)\b\s{0,3}[:=]?\s{0,3}(\d+\.?\d*)\s*(?:cm|mm)?', "depth_cm"),
+        (r'\b(?:L|Length)\b\s{0,3}[:=]?\s{0,3}(\d+\.?\d*)\s*(?:cm|mm)?', "length_cm"),
         (r'(\d+\.?\d*)\s*cm\s*(?:wide|width|deep|depth|high|height|tall)', "width_cm"),
     ]
     for pattern, key in labeled_patterns:
