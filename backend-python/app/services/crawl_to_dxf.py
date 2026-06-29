@@ -654,7 +654,7 @@ async def crawl_and_digitize(
     # resolved_dimensions) - this lookup always found nothing and
     # detected_dims silently stayed empty.
     detected_dims = {}
-    resolved = digitized.get("resolved_dimensions")
+    resolved = digitized.get("resolved_dimensions") or digitized.get("detected_dimensions") or {}
     if isinstance(resolved, dict):
         for k, v in resolved.items():
             if isinstance(v, (int, float)) and v > 0:
@@ -674,7 +674,7 @@ async def crawl_and_digitize(
     result["preview_svg"] = preview_svg
     result["download_url"] = download_url
     result["detected_dimensions"] = detected_dims
-    result["resolved_dimensions"] = resolved if isinstance(resolved, dict) else detected_dims
+    result["resolved_dimensions"] = detected_dims
 
     # Step 4: Validate against reference geometry if provided
     validation_score = None
