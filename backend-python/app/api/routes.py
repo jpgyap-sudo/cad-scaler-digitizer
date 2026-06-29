@@ -909,12 +909,14 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         d = _dim(['d', 'depth'], 50.0)
         try: save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'sofa':
         w = real_w or _dim(['w', 'width'], 200.0)
         h = real_h or _dim(['h', 'height'], 85.0)
         d = _dim(['d', 'depth'], 80.0)
         try: save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'coffee_table_round':
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
@@ -932,13 +934,17 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     elif f_type in ('dining_chair', 'chair'):
         w = real_w or _dim(['w', 'width', 'seat'], 45.0)
         h = real_h or _dim(['h', 'height'], 90.0)
+        d = _dim(['d', 'depth'], w * 0.8)
         try: save_dining_chair(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'wardrobe':
         w = real_w or _dim(['w', 'width'], 120.0)
         h = real_h or _dim(['h', 'height'], 200.0)
+        d = _dim(['d', 'depth'], 60.0)
         try: save_wardrobe(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'asymmetric_pedestal_table':
         l = real_w or _dim(['l', 'length', 'len', 'w', 'width'], 180.0)
         h_val = real_h or _dim(['h', 'height'], 75.0)
@@ -1012,11 +1018,13 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         h = real_h or _dim(['h', 'height'], 110.0)
         try: save_reception_counter(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'bed_headboard':
         w = real_w or _dim(['w', 'width'], 160.0)
         h = real_h or _dim(['h', 'height'], 120.0)
         try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'armchair_lounge':
         w = real_w or _dim(['w', 'width'], 70.0)
         h = real_h or _dim(['h', 'height'], 90.0)
