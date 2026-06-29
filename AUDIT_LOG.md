@@ -530,6 +530,74 @@ present on reading the full file. Both fetches do fire. But:
   (`estimate`/`suggestions`) correctly instead of assuming a `proportions`
   array that was never going to exist.
 
+### 18. Audit of commit `5dac3e3` (TOP/ISOMETRIC views + proportional legs + unit fix): the DXF-side fix is genuinely correct, but it's DXF-only — SVG preview now drifts further out of sync
+**Date:** 2026-06-29
+**Status:** PARTIALLY FIXED — DXF exporter correct, SVG preview not touched
+
+**The good news, verified correct:** `save_cabinet`/`save_sofa`/
+`save_wardrobe` in `dxf_exporter.py` now genuinely produce 4 views each
+(FRONT, TOP, SIDE, ISOMETRIC), and TOP/SIDE views include a real
+`f'D = {depth_cm:g} cm'` dimension label using the actual `depth_cm`
+parameter (not a hardcoded value) — confirmed by reading the rendered
+text directly. This correctly resolves the depth-dimensioning gap noted
+earlier in this log for these 3 types. Also confirmed `save_dining_chair`
+already independently has a SIDE view with a real depth dimension (fixed
+by something else, not this commit) and `save_bed_headboard` correctly
+remains FRONT-only (legitimate — it doesn't even accept `depth_cm`).
+
+**The gap:** this commit only touched `dxf_exporter.py` (confirmed via
+`git show 5dac3e3 --stat` — one file). Checked `drawing_builders.py` (the
+SVG preview builders, what a user sees in-browser *before* downloading)
+directly: `build_cabinet_model()`, `build_sofa_model()`,
+`build_wardrobe_model()` still each return only `['FRONT VIEW']` — no
+TOP, no SIDE, no ISOMETRIC, no depth dimension anywhere. This is the
+exact same "preview vs DXF exporter drift" shape flagged earlier in this
+log for coffee_table, now recurring for 3 more types: **the file you
+download now correctly shows depth and 4 views; the preview you looked
+at before deciding to download it still doesn't.**
+**Fix:** port the same TOP VIEW (with `D = ... cm` dimension) + ISOMETRIC
+VIEW treatment from `dxf_exporter.py`'s versions into
+`build_cabinet_model`/`build_sofa_model`/`build_wardrobe_model` in
+`drawing_builders.py`. The DXF-side code is the correct reference to
+copy from now.
+
+**Separate bug in the same commit, "unit cm fix" part — verified
+incorrect, makes the original problem worse.** The commit message claims
+"Fix dimension unit inconsistency: mm→cm in save_oval_pedestal_table,
+save_console_table, save_office_desk, save_asymmetric_pedestal_table
+title blocks." Checked the actual diff (`git show 5dac3e3 -- dxf_exporter.py`,
+hunk list via `grep "^@@"`): **`save_console_table` and
+`save_asymmetric_pedestal_table` were never touched at all** — not in the
+diff. `save_oval_pedestal_table` and `save_office_desk` each got exactly
+one line changed:
+- `save_oval_pedestal_table`: only the pedestal-diameter dimension label
+  (`Ø{...}`) changed from `*10 ... mm` to plain `... cm`. The width
+  dimension right next to it (`W = {length_cm * 10:g} mm`) and the top
+  thickness dimension (`T = {top_thick_cm * 10:g} mm`) are **unchanged,
+  still mm**.
+- `save_office_desk`: only the modesty-panel-height label (`MH = ...`)
+  changed to cm. The width label (`W = {length_cm * 10:g} mm`) right next
+  to it is unchanged, still mm.
+- Also: no title block text was touched in either function — the
+  commit's own description ("...title blocks") doesn't match the diff at
+  all; the actual changes are to in-drawing dimension labels, not title
+  blocks.
+
+**Net effect: these two drawings are now more internally inconsistent
+than before, not less.** Previously every dimension in
+`save_oval_pedestal_table` was uniformly in mm (a real inconsistency
+with the rest of the codebase's cm convention, but at least consistent
+*within* that one drawing). Now the same drawing shows e.g.
+`W = 1800mm`, `Ø80cm`, `T = 30mm` side by side — two different units on
+one sheet, which is a worse manufacturing-drawing defect than a
+codebase-wide convention mismatch.
+**Fix:** in each of the 4 named functions, convert *every* dimension
+label in the function to the same unit (cm, matching the rest of the
+codebase's convention — drop the `* 10`/`mm` entirely), not just the one
+line that happened to get edited. `save_console_table` and
+`save_asymmetric_pedestal_table` still need the fix applied at all, not
+just the other two finishing it properly.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
