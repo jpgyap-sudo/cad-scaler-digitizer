@@ -219,15 +219,15 @@ def _tesseract_ocr(image_path: str):
 
 
 def ocr_dimensions(image_path: str):
-    """Sync OCR: OpenAI Vision -> Gemini Vision -> Tesseract (in that
-    fallback order, first one that returns results wins).
+    """Sync OCR: Gemini Vision (primary) -> OpenAI Vision (fallback) ->
+    Tesseract (last resort), first one that returns results wins.
 
-    OpenAI is tried first since its prompt/tag taxonomy was tuned first,
-    but its API key has been failing auth (HTTP 401) as of 2026-06-29 -
-    Gemini is the working vision OCR path until that's resolved. Tesseract
-    is the last resort: it reads digits fine but can't tag them without an
-    inline "H=" style label right next to the number, so most fields fall
-    back to ratio estimates/defaults when only Tesseract ran.
+    Gemini is primary as of 2026-06-29 (per product decision - a working
+    OpenAI key was restored, but Gemini stays primary with OpenAI as the
+    fallback rather than reverting the order). Tesseract is the last
+    resort: it reads digits fine but can't tag them without an inline
+    "H=" style label right next to the number, so most fields fall back
+    to ratio estimates/defaults when only Tesseract ran.
 
     Auto-enhances (upscale + sharpen) the image first if it scores as too
     blurry for reliable small-text reading - misread dimension labels (e.g.
@@ -247,11 +247,11 @@ def ocr_dimensions(image_path: str):
         print(f"[OCR] Blur check/enhance failed: {e}")
 
     try:
-        ai_dims = _openai_ocr_sync(ocr_path)
-        ai_source = "OpenAI"
+        ai_dims = _gemini_ocr_sync(ocr_path)
+        ai_source = "Gemini"
         if not ai_dims:
-            ai_dims = _gemini_ocr_sync(ocr_path)
-            ai_source = "Gemini"
+            ai_dims = _openai_ocr_sync(ocr_path)
+            ai_source = "OpenAI"
 
         if ai_dims:
             for d in ai_dims:
