@@ -123,6 +123,24 @@ branches" fix, it's "delete `/adjust`'s own dispatch chain and call
 parallel implementations of the same lookup, one more complete than the
 other" shape as the SVG-preview-vs-DXF-exporter issue above.
 
+### 7. Chat sessions: yet another duplicate-implementation pair (Postgres table built and fixed, never actually used)
+**Date:** 2026-06-29
+**Status:** OPEN (not broken, just dead weight + confusing for whoever
+touches this next)
+**Impact:** LOW functionally (the file-based store works fine), but worth
+knowing before "fixing" the wrong one
+**Evidence:** `routes.py:2951` defines `_CHAT_STORE = OUT / "chat_sessions.json"`
+and every chat-session read/write in `routes.py` goes through that file —
+confirmed via grep, zero references to `brain_sync.py`'s
+`save_chat_session`/`load_chat_session` (Postgres-backed, table created
+earlier in this audit pass) anywhere in `routes.py`. Same shape as the
+`style_presets` duplication noted earlier this session: a Postgres
+implementation exists, has a real table, but the actual live feature uses
+a completely independent file-based store instead. Not urgent to unify,
+but anyone who sees the Postgres `chat_sessions` table with rows in it (or
+without) should not assume that reflects real chat activity — it doesn't,
+the JSON file does.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
