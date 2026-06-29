@@ -653,6 +653,46 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
         return []
 
 
+def _persist_drawing_history(job_id: str, f_type: str, dxf_path, svg_path=None,
+                              dimensions: dict = None, quality_score: float = None) -> dict:
+    """Upload a generated DXF (+ SVG preview, if present) to Spaces and
+    record the result in drawing_history, so past generations survive
+    container restarts and can be listed via GET /history.
+
+    Never raises - history/CDN persistence is a nice-to-have, not
+    something that should ever fail the actual digitize request.
+    Returns the preview_urls dict that was recorded (possibly empty).
+    """
+    from pathlib import Path
+    preview_urls = {}
+    try:
+        from app.backend.spaces_client import upload_file, is_configured
+        if is_configured():
+            dxf_path = Path(dxf_path)
+            dxf_url = upload_file(dxf_path, f"cad-history/{job_id}/{dxf_path.name}")
+            if dxf_url:
+                preview_urls["dxf"] = dxf_url
+            if svg_path:
+                svg_path = Path(svg_path)
+                if svg_path.exists():
+                    svg_url = upload_file(svg_path, f"cad-history/{job_id}/{svg_path.name}")
+                    if svg_url:
+                        preview_urls["svg"] = svg_url
+    except Exception as e:
+        print(f"[History] Spaces upload failed (non-fatal): {e}")
+
+    try:
+        from app.backend.brain_sync import record_drawing
+        record_drawing(job_id, f_type, Path(dxf_path).name,
+                        quality_score=quality_score,
+                        dimensions_used=dimensions or {},
+                        preview_urls=preview_urls)
+    except Exception as e:
+        print(f"[History] record_drawing failed (non-fatal): {e}")
+
+    return preview_urls
+
+
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None,
                          materials=None, real_d=None):
     print(f"[DISPATCH] Exporter: {f_type}")
@@ -1117,15 +1157,12 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                          depth_cm=extra.get('resolved_dimensions', {}).get('depth_cm'),
                          leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'),
                          materials=extra.get('materials'), profile=extra.get('profile'))
-    try:
-        # Proportion ledger recording for round_pedestal_table already
-        # happened above, right where base_dia/neck_dia/collar_dia were
-        # computed - only record_drawing (unrelated: a per-job history log,
-        # not the proportion ledger) belongs here.
-        from app.backend.brain_sync import record_drawing
-        resolved = extra.get('resolved_dimensions') or {}
-        record_drawing(dxf_path.stem, f_type, dxf_path.name, dimensions_used=resolved)
-    except Exception as e: print(f"[DISPATCH] brain_sync recording failed: {e}")
+    # NOTE: drawing_history recording (record_drawing) used to happen here,
+    # but at this point the SVG preview hasn't been generated yet (it's
+    # built by the caller, after _dispatch_furniture returns) - calling it
+    # here meant preview_urls was always empty. Recording + Spaces upload
+    # now happens once, in each calling endpoint, after both the DXF and
+    # SVG exist - see _persist_drawing_history() in this file.
 
     # Auto-index generated DXF to Qdrant for future similarity search
     try:
@@ -1463,6 +1500,10 @@ async def digitize(file: UploadFile = File(...), real_width_cm: str = Form(None)
             with open(str(svg_path), 'w', encoding='utf-8') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
+
+        _persist_drawing_history(job_id, f_type, dxf_path,
+                                  svg_path=(OUT / svg_name) if svg_name else None,
+                                  dimensions=(dispatch_extra or {}).get('resolved_dimensions'))
 
         try: os.remove(str(img_path))
         except: pass
@@ -1867,6 +1908,10 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
             with open(str(svg_path), 'w', encoding='utf-8') as f2:
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
+
+        _persist_drawing_history(job_id, ftype, dxf_path,
+                                  svg_path=(OUT / svg_name) if svg_name else None,
+                                  dimensions=(dispatch_extra or {}).get('resolved_dimensions'))
 
         # Build template_graph response block
         template_response = None
@@ -2939,6 +2984,65 @@ async def suggest_template(furniture_type: str = "", width_cm: float = 0, height
         "confidence_scores": conf_scores,
         "overall_confidence": get_overall_confidence(conf_scores),
     })
+
+
+# ===== DRAWING HISTORY =====
+
+@router.get("/history")
+async def list_drawing_history(limit: int = 30, furniture_type: str = None):
+    """List past DXF generations (most recent first), with their Spaces
+    preview URLs if persistence succeeded for that job.
+
+    Backed by drawing_history (see _persist_drawing_history()). Rows
+    persisted before that helper existed (or where Spaces wasn't
+    configured) will have empty preview_urls - the frontend should treat
+    a missing svg/dxf URL as "no preview available", not an error.
+    """
+    try:
+        import psycopg2
+        conn = psycopg2.connect(
+            host=os.environ.get("PG_HOST", "postgres"),
+            port=int(os.environ.get("PG_PORT", 5432)),
+            dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+            user=os.environ.get("PG_USER", "postgres"),
+            password=os.environ.get("PG_PASSWORD", "postgres"),
+        )
+        cur = conn.cursor()
+        if furniture_type:
+            cur.execute("""
+                SELECT session_id, furniture_type, dxf_file, quality_score,
+                       dimensions_used, preview_urls, created_at
+                FROM drawing_history
+                WHERE furniture_type = %s
+                ORDER BY created_at DESC LIMIT %s
+            """, (furniture_type, limit))
+        else:
+            cur.execute("""
+                SELECT session_id, furniture_type, dxf_file, quality_score,
+                       dimensions_used, preview_urls, created_at
+                FROM drawing_history
+                ORDER BY created_at DESC LIMIT %s
+            """, (limit,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return JSONResponse({
+            "items": [
+                {
+                    "job_id": r[0],
+                    "furniture_type": r[1],
+                    "dxf_file": r[2],
+                    "quality_score": r[3],
+                    "dimensions": r[4] or {},
+                    "preview_urls": r[5] or {},
+                    "created_at": str(r[6]),
+                }
+                for r in rows
+            ],
+            "count": len(rows),
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e), "items": [], "count": 0}, status_code=500)
 
 
 # ===== CENTRAL BRAIN ENDPOINTS =====

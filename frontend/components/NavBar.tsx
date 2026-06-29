@@ -1,7 +1,7 @@
 import React from "react";
-import { Globe, Upload, BookOpen, BarChart3, GitBranch, Ruler, Database, TrendingUp, Zap, Cpu } from "lucide-react";
+import { Globe, Upload, BookOpen, BarChart3, GitBranch, Ruler, Database, TrendingUp, Zap, Cpu, History } from "lucide-react";
 
-export type Tab = "upload" | "crawl" | "templates" | "calibration" | "analytics" | "resources" | "improvements" | "engineering" | "workflow";
+export type Tab = "upload" | "crawl" | "templates" | "calibration" | "analytics" | "resources" | "improvements" | "engineering" | "workflow" | "history";
 
 interface NavBarProps {
   activeTab: Tab;
@@ -10,6 +10,7 @@ interface NavBarProps {
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "upload", label: "Upload & Digitize", icon: <Upload size={14} /> },
+  { id: "history", label: "History", icon: <History size={14} /> },
   { id: "crawl", label: "Crawl Product URL", icon: <Globe size={14} /> },
   { id: "templates", label: "Templates (18)", icon: <BookOpen size={14} /> },
   { id: "calibration", label: "Calibration", icon: <BarChart3 size={14} /> },

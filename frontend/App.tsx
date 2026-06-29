@@ -15,6 +15,7 @@ import WorkflowGuide from './components/WorkflowGuide';
 import TemplatesPage from './components/TemplatesPage';
 import CalibrationPage from './components/CalibrationPage';
 import ResourcesPage from './components/ResourcesPage';
+import HistoryPage from './components/HistoryPage';
 import AnalyticsPage from './components/AnalyticsPage';
 import ImprovementsPage from './components/ImprovementsPage';
 import EngineeringPage from './components/EngineeringPage';
@@ -531,6 +532,10 @@ const App: React.FC = () => {
         ) : currentTab === 'resources' ? (
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
             <ResourcesPage />
+          </div>
+        ) : currentTab === 'history' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <HistoryPage />
           </div>
         ) : currentTab === 'workflow' ? (
           <div className="flex-1 overflow-y-auto">
