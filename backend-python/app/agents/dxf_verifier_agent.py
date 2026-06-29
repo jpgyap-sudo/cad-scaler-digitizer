@@ -216,7 +216,7 @@ PRINCIPLE: From a single 3/4 perspective or front-facing photo, you can:
   - DIRECTLY OBSERVE the front view (the visible face)
   - PARTIALLY ESTIMATE the side view from edge profiles visible in perspective
   - PARTIALLY ESTIMATE the top view from the top surface contour visible in the photo
-  - DERIVE the isometric view as a 3D-style projection using the product's width/depth/height proportions, matching the perspective visible in the photo
+  - CONSTRUCT the isometric view as a 3D projection where WIDTH goes right-down at 30°, DEPTH goes right-up at 30°, and HEIGHT goes straight up — the front face of the isometric must MATCH the front view in the FRONT panel
   - Tag each component with {{"view": "front"|"side"|"top"|"isometric", "confidence": "observed"|"estimated"}}
 
 Return ONLY valid JSON (no markdown) with this structure:
@@ -227,37 +227,47 @@ Return ONLY valid JSON (no markdown) with this structure:
 }}
 
 SVG LAYOUT (1200x300):
-- panels[0] x=0-280  = FRONT view (observed from photo)
-- panels[1] x=310-590 = SIDE view (estimated from edge profiles)
-- panels[2] x=620-890 = TOP view (estimated from top surface contour)
-- panels[3] x=920-1180 = ISOMETRIC view (derived from photo perspective)
-- white background, each panel has a thin #e5e7eb divider line at the x-boundaries
+- panels[0] x=0-280  (w=280 h=260) = FRONT view — observed from photo, draw at (30, 20)
+- panels[1] x=310-590 (w=280 h=260) = SIDE view — estimated from edge profiles, draw at (340, 20)
+- panels[2] x=620-890 (w=280 h=260) = TOP view — estimated from top surface, draw at (650, 20)
+- panels[3] x=920-1180 (w=280 h=260) = ISOMETRIC — draw at (950, 20), with 260px height available
+- Each panel has a thin #e5e7eb line divider at x=295, x=605, x=905
+
+ISOMETRIC CONSTRUCTION RULES (CRITICAL):
+- The front face of the isometric must MATCH the front view shape (same width/height ratio)
+- Use estimated_proportions: width_px, depth_px, height_px to scale the isometric
+- Draw the product as a box: front face (width × height), depth edges going up-right at ~30°, top face (width × depth) as parallelogram
+- For tables: show tabletop as parallelogram, legs as vertical lines at the 4 corners, front legs solid, back legs dashed
+- For sofas: show seat cushion, backrest, armrests with depth edges visible
+- The isometric should look like a 3D technical illustration: front face is a true shape, side face shows depth
+- Hidden/back edges: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3,2" — fill="none"
+- Visible front edges: stroke="#1f2937" stroke-width="2" — fill="none"
 
 SVG RULES:
 - Each component is its OWN <path> with data-name, data-view, data-confidence attributes
-- OBSERVED components: stroke="#1f2937" stroke-width="2" fill="none"
+- OBSERVED components: stroke="#1f2937" stroke-width="2" fill="none" — use M,C,Q,L,Z
 - ESTIMATED components: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
-- ISOMETRIC view: draw the product as a 3D-style projection — show both visible and partially visible edges (estimating the unseen side based on visible pattern)
-- Use M,C,Q,L,Z for smooth tracing; center and scale to fill ~80% of each panel
+- Center and scale to fill ~80% of each panel's width/height
 
-COMPONENT NAMES: tabletop, left_leg, right_leg, backrest, seat, armrest, base, pedestal, door, drawer, headboard, footboard — whatever fits the product
+COMPONENT NAMES: tabletop, left_leg, right_leg, back_left_leg, back_right_leg, seat, backrest, base — whatever fits the product
 
 POLYLINE RULES:
 - Each polyline: flat [x1,y1, x2,y2, ...] in the 1200x300 SVG coordinate space
 - Curves sampled every ~5px as short straight segments
 - Closed: first and last point identical; minimum 4 points
 
-estimated_proportions: your best guess of the product's width_px, depth_px, height_px in pixel units (for scale reference)
+estimated_proportions: your best guess of the product's width_px, depth_px, height_px in pixel units (for scale reference of the isometric)
 
 Example:
 {{
   "svg": "<svg viewBox='0 0 1200 300' xmlns='http://www.w3.org/2000/svg'>...</svg>",
   "components": [
-    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 280,100, 280,140, 60,140, 60,100]}},
-    {{"name": "tabletop", "view": "top", "confidence": "estimated", "polyline": [660,110, 820,110, 820,140, 660,140, 660,110]}},
-    {{"name": "tabletop", "view": "isometric", "confidence": "estimated", "polyline": [950,110, 1100,90, 1140,130, 990,150, 950,110]}}
+    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 280,100, 280,130, 60,130, 60,100]}},
+    {{"name": "tabletop", "view": "isometric", "confidence": "estimated", "polyline": [950,90, 1120,70, 1160,100, 990,120, 950,90]}},
+    {{"name": "left_leg_front", "view": "isometric", "confidence": "estimated", "polyline": [960,120, 970,120, 970,250, 960,250, 960,120]}},
+    {{"name": "right_leg_back", "view": "isometric", "confidence": "estimated", "polyline": [1145,82, 1155,82, 1155,212, 1145,212, 1145,82]}}
   ],
-  "estimated_proportions": {{"width_px": 280, "depth_px": 80, "height_px": 160}}
+  "estimated_proportions": {{"width_px": 220, "depth_px": 70, "height_px": 140}}
 }}
 
 Return ONLY this JSON. No markdown, no explanation."""
