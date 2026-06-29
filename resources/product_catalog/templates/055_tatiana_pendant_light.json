@@ -1,0 +1,58 @@
+{
+  "schema_version": "homeu_template_resource_v1",
+  "batch": "batch_2",
+  "sequence": 55,
+  "source": "Shopify connected store",
+  "product": {
+    "title": "Astrid Pendant Light",
+    "handle": "tatiana-pendant-light",
+    "product_type": "LIGHTING",
+    "tags": [
+      "pendantlight"
+    ],
+    "featured_image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/products/tatiana_d25cb706-33c9-4a99-a827-da28f2bddc37.jpg?v=1666688606"
+  },
+  "template": {
+    "template_id": "homeu_tatiana_pendant_light",
+    "template_family": "round_ring_pendant_light",
+    "category": "pendant_light",
+    "visual_dna": {
+      "category": "pendant_light",
+      "family": "round_ring_pendant_light",
+      "primary_shape": "unknown_from_catalog_image",
+      "support_type": "unknown_until_vision_confirmation",
+      "material_cues": [],
+      "style_cues": [
+        "contemporary",
+        "homeu_catalog"
+      ]
+    },
+    "components": [
+      "canopy_or_base",
+      "body_frame",
+      "diffuser_or_shade",
+      "light_source",
+      "cable_or_rod"
+    ],
+    "required_views": [
+      "front_elevation",
+      "side_elevation",
+      "top_view",
+      "mounting_detail"
+    ],
+    "confirmation_questions": [
+      "Is this pendant, wall, floor, or table lamp?",
+      "How many heads or diffusers?",
+      "Is the body linear, round, branch, or cluster?"
+    ],
+    "drafting_rules": {
+      "ai_role": "describe and propose only",
+      "user_role": "confirm or correct visible pattern",
+      "cad_role": "generate deterministic top/front/side/section from confirmed JSON",
+      "preview_first": true,
+      "dxf_after_approval": true
+    },
+    "geometry_status": "template_seed_only",
+    "notes": "Generated from Shopify catalog metadata. Use product image and user confirmation loop to finalize visual DNA before DXF."
+  }
+}

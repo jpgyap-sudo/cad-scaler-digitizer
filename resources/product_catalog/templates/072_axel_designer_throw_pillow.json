@@ -1,0 +1,56 @@
+{
+  "schema_version": "homeu_template_resource_v1",
+  "batch": "batch_2",
+  "sequence": 72,
+  "source": "Shopify connected store",
+  "product": {
+    "title": "Axel | Designer Throw Pillow",
+    "handle": "axel-designer-throw-pillow",
+    "product_type": "pillow",
+    "tags": [
+      "pillow"
+    ],
+    "featured_image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/z6872734299050_b4137041620f8af56f19f7c523ee0654.jpg?v=1754365651"
+  },
+  "template": {
+    "template_id": "homeu_axel_designer_throw_pillow",
+    "template_family": "square_throw_pillow",
+    "category": "pillow",
+    "visual_dna": {
+      "category": "pillow",
+      "family": "square_throw_pillow",
+      "primary_shape": "unknown_from_catalog_image",
+      "support_type": "unknown_until_vision_confirmation",
+      "material_cues": [],
+      "style_cues": [
+        "contemporary",
+        "homeu_catalog"
+      ]
+    },
+    "components": [
+      "fabric_shell",
+      "piping_or_edge",
+      "insert_fill",
+      "decorative_face"
+    ],
+    "required_views": [
+      "front",
+      "detail",
+      "material_swatch"
+    ],
+    "confirmation_questions": [
+      "Confirm product category.",
+      "Confirm visible components.",
+      "Confirm required CAD views."
+    ],
+    "drafting_rules": {
+      "ai_role": "describe and propose only",
+      "user_role": "confirm or correct visible pattern",
+      "cad_role": "generate deterministic top/front/side/section from confirmed JSON",
+      "preview_first": true,
+      "dxf_after_approval": true
+    },
+    "geometry_status": "template_seed_only",
+    "notes": "Generated from Shopify catalog metadata. Use product image and user confirmation loop to finalize visual DNA before DXF."
+  }
+}

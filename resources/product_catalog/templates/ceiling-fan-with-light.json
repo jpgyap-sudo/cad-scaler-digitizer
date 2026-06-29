@@ -1,0 +1,52 @@
+{
+  "schema_version": "homeu-template-v1",
+  "batch": 3,
+  "source": "shopify_connected_admin_search_products",
+  "shopify": {
+    "title": "Ceiling Fan with Light",
+    "handle": "ceiling-fan-with-light",
+    "product_type": "Fan",
+    "tags": [
+      "fan"
+    ]
+  },
+  "template_id": "homeu_b3_131_ceiling-fan-with-light",
+  "template_family": "ceiling_fan",
+  "visual_dna": {
+    "category": "fan",
+    "family": "ceiling_fan",
+    "shape_guess": "infer_from_image",
+    "style_tags": [],
+    "material_guess": "extract_from_description_or_user_confirmation"
+  },
+  "component_graph": {
+    "components": [
+      "motor_housing",
+      "blades",
+      "light_kit",
+      "downrod_or_mount"
+    ],
+    "relationships": [
+      "main surface/support relationship to be confirmed by vision AI",
+      "visible components drive top/front/side projection"
+    ]
+  },
+  "required_views": [
+    "front",
+    "side",
+    "bottom",
+    "mounting_detail"
+  ],
+  "confirmation_questions": [
+    "Is the selected product family correct?",
+    "Are the main shapes correct: round, oval, rectangular, curved, or irregular?",
+    "Are the supports correct: legs, pedestal, frame, plinth, suspended, or none?",
+    "Should the preview generate top/front/side/section before DXF?"
+  ],
+  "cad_rules": {
+    "ai_role": "describe and propose only",
+    "user_role": "confirm or correct template fields",
+    "code_role": "generate deterministic SVG/DXF from confirmed JSON"
+  },
+  "status": "draft_template_resource"
+}

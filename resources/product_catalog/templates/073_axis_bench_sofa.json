@@ -1,0 +1,60 @@
+{
+  "schema_version": "homeu_template_resource_v1",
+  "batch": "batch_2",
+  "sequence": 73,
+  "source": "Shopify connected store",
+  "product": {
+    "title": "Axis Bench Sofa",
+    "handle": "axis-bench-sofa",
+    "product_type": "Furniture",
+    "tags": [
+      "bench",
+      "seating"
+    ],
+    "featured_image_url": "https://cdn.shopify.com/s/files/1/0559/7377/3476/files/ChatGPTImageJan31_2026_04_30_20PM.png?v=1769848383"
+  },
+  "template": {
+    "template_id": "homeu_axis_bench_sofa",
+    "template_family": "modern_bench_sofa",
+    "category": "bench",
+    "visual_dna": {
+      "category": "bench",
+      "family": "modern_bench_sofa",
+      "primary_shape": "unknown_from_catalog_image",
+      "support_type": "unknown_until_vision_confirmation",
+      "material_cues": [],
+      "style_cues": [
+        "contemporary",
+        "homeu_catalog"
+      ]
+    },
+    "components": [
+      "seat_base",
+      "backrest",
+      "armrests",
+      "cushions",
+      "legs_or_plinth"
+    ],
+    "required_views": [
+      "top_view",
+      "front_elevation",
+      "side_elevation",
+      "section",
+      "isometric_preview"
+    ],
+    "confirmation_questions": [
+      "Confirm product category.",
+      "Confirm visible components.",
+      "Confirm required CAD views."
+    ],
+    "drafting_rules": {
+      "ai_role": "describe and propose only",
+      "user_role": "confirm or correct visible pattern",
+      "cad_role": "generate deterministic top/front/side/section from confirmed JSON",
+      "preview_first": true,
+      "dxf_after_approval": true
+    },
+    "geometry_status": "template_seed_only",
+    "notes": "Generated from Shopify catalog metadata. Use product image and user confirmation loop to finalize visual DNA before DXF."
+  }
+}
