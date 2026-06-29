@@ -414,6 +414,19 @@ look too.
 explicit allowlist of all table-family `product_type` values), matching
 how the sofa/chair branches already work more permissively.
 
+**Minor naming note, same feature:** the commit message describes the
+"Preview DXF" button as generating a "DXF→skeleton overlay." Checked the
+actual implementation (`TemplatesPage.tsx:168-177`) — it does not touch
+a real DXF at all. It calls `/templates/suggest` to get
+`solved_dimensions`, then calls `/skeleton/{type}` again with those
+resolved values, and renders the result in its own separate box
+(`dxfSvg` state, `TemplatesPage.tsx:220-223`) below the live slider
+skeleton — not overlaid on anything. Functionally it works fine (renders
+a real, reasonable SVG, doesn't crash) and is arguably useful (compares
+"what the sliders say" vs "what the suggest-resolver would pick"), just
+mislabeled — there's no actual DXF generation or overlay happening, so
+don't go looking for one if debugging this area.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
