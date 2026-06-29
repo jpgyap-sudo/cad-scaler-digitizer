@@ -1744,6 +1744,85 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         opencv_type = opencv_classifier.get('type', 'generic_2d_furniture')
         opencv_conf = opencv_classifier.get('confidence', 0.3)
 
+        # Also moved up from ~80 lines further down - the Template Graph
+        # Resolution block below references real_w/real_h before they were
+        # assigned, for the same reason as the ftype move above (confirmed
+        # live: "[Hybrid] Template resolution failed (non-fatal): cannot
+        # access local variable 'real_w'" on every call). These are plain
+        # Form params with no dependency on anything computed above, so
+        # there's no reason they were defined late other than ordering.
+        real_w = _parse_float(real_width_cm)
+        real_h = _parse_float(real_height_cm)
+        real_d = _parse_float(real_depth_cm)
+
+        # ===== Furniture Type Resolution =====
+        # Moved here (was previously ~120 lines further down, AFTER the
+        # Template Selector / 3-Stage Classifier blocks below) - those two
+        # blocks reference `ftype` on their very first line
+        # (template_evidence["category"] = ai_result.get("category", ftype)),
+        # which raised UnboundLocalError every single time when ftype was
+        # only defined later in the function. Confirmed live in
+        # cad-python-worker logs: "[Hybrid] Template selector failed
+        # (non-fatal): cannot access local variable 'ftype'" /
+        # "[Hybrid] 3-Stage classifier failed (non-fatal): cannot access
+        # local variable 'template_evidence'" - both silently swallowed by
+        # their own except blocks on every call, meaning select_template()
+        # and classify_product() (which does real oval/shape detection) had
+        # never actually executed in production.
+        raw_ai_type = (ai_result.get('furniture_type', '') or '').strip()
+        KNOWN_TYPES = {'round_pedestal_table', 'rectangular_table', 'cabinet', 'sofa',
+                       'coffee_table', 'dining_chair', 'chair', 'wardrobe',
+                       'reception_counter', 'bed_headboard', 'oval_pedestal_table',
+                       'console_table', 'office_desk', 'side_table', 'lounge_chair',
+                       'nightstand', 'bed', 'asymmetric_pedestal_table', 'sideboard',
+                       'tv_console',
+                       # New 25-template types
+                       'armchair_lounge', 'bar_stool', 'bench_chaise',
+                       'ottoman_pouf', 'rug_rectangular', 'stone_slab_rectangular',
+                       'wall_panel_fluted'}
+        if furniture_type: ftype = normalize_furniture_type(furniture_type)
+        elif raw_ai_type:
+            ftype = normalize_furniture_type(raw_ai_type)
+            if ftype not in KNOWN_TYPES:
+                opencv_ftype = normalize_furniture_type(opencv_type)
+                if opencv_ftype in KNOWN_TYPES: ftype = opencv_ftype
+        else: ftype = normalize_furniture_type(opencv_type)
+
+        # Deterministic pedestal-shape override: the AI classifier picks a
+        # furniture TYPE from a category label (e.g. a "COFFEE TABLE" title
+        # block), which can disagree call-to-call with the actual STRUCTURE
+        # it just measured. base_dia/neck_dia/collar_dia tags only get
+        # attached when a single-pedestal column was actually described -
+        # confirmed live: the same Melina photo classified as
+        # round_pedestal_table on one call and generic coffee_table (a
+        # flat-top-on-4-legs model) on the next, purely from non-deterministic
+        # vision output, even though the pedestal geometry was detected both
+        # times. Trust the geometric evidence over the category guess when
+        # the two disagree on structure (not on round vs oval - that's
+        # decided by the aspect-ratio check just below).
+        if not furniture_type and ftype not in (
+                'round_pedestal_table', 'oval_pedestal_table', 'asymmetric_pedestal_table'):
+            _pedestal_dims = corrected_dims + [
+                d for d in (ai_result.get('dimensions', []) if isinstance(ai_result, dict) else [])
+                if isinstance(d, dict)]
+            _has_pedestal_evidence = any(
+                (d.get('tag') or '').lower().strip() in ('base_dia', 'neck_dia', 'collar_dia')
+                for d in _pedestal_dims)
+            if _has_pedestal_evidence:
+                old_ftype = ftype
+                # Oval if footprint is clearly non-square (width vs depth);
+                # default to round otherwise.
+                _l = next((d.get('value_cm') for d in _pedestal_dims
+                           if (d.get('tag') or '').lower().strip() in ('width', 'length', 'w', 'l')), None)
+                _d = next((d.get('value_cm') for d in _pedestal_dims
+                           if (d.get('tag') or '').lower().strip() in ('depth', 'd')), None)
+                if _l and _d and _d > 0 and (_l / _d) > 1.25:
+                    ftype = 'oval_pedestal_table'
+                else:
+                    ftype = 'round_pedestal_table'
+                print(f"[Hybrid] Pedestal override: classifier said '{old_ftype}', "
+                      f"but base/neck/collar_dia tags were detected -> '{ftype}'")
+
         # ===== Template Selector — pick best specific template using OCR + shapes =====
         template_selection = None
         try:
@@ -1853,60 +1932,6 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         try: os.remove(str(img_path))
         except: pass
 
-        raw_ai_type = (ai_result.get('furniture_type', '') or '').strip()
-        KNOWN_TYPES = {'round_pedestal_table', 'rectangular_table', 'cabinet', 'sofa',
-                       'coffee_table', 'dining_chair', 'chair', 'wardrobe',
-                       'reception_counter', 'bed_headboard', 'oval_pedestal_table',
-                       'console_table', 'office_desk', 'side_table', 'lounge_chair',
-                       'nightstand', 'bed', 'asymmetric_pedestal_table', 'sideboard',
-                       'tv_console',
-                       # New 25-template types
-                       'armchair_lounge', 'bar_stool', 'bench_chaise',
-                       'ottoman_pouf', 'rug_rectangular', 'stone_slab_rectangular',
-                       'wall_panel_fluted'}
-        if furniture_type: ftype = normalize_furniture_type(furniture_type)
-        elif raw_ai_type:
-            ftype = normalize_furniture_type(raw_ai_type)
-            if ftype not in KNOWN_TYPES:
-                opencv_ftype = normalize_furniture_type(opencv_type)
-                if opencv_ftype in KNOWN_TYPES: ftype = opencv_ftype
-        else: ftype = normalize_furniture_type(opencv_type)
-
-        # Deterministic pedestal-shape override: the AI classifier picks a
-        # furniture TYPE from a category label (e.g. a "COFFEE TABLE" title
-        # block), which can disagree call-to-call with the actual STRUCTURE
-        # it just measured. base_dia/neck_dia/collar_dia tags only get
-        # attached when a single-pedestal column was actually described -
-        # confirmed live: the same Melina photo classified as
-        # round_pedestal_table on one call and generic coffee_table (a
-        # flat-top-on-4-legs model) on the next, purely from non-deterministic
-        # vision output, even though the pedestal geometry was detected both
-        # times. Trust the geometric evidence over the category guess when
-        # the two disagree on structure (not on round vs oval - that's
-        # decided by the aspect-ratio check just below).
-        if not furniture_type and ftype not in (
-                'round_pedestal_table', 'oval_pedestal_table', 'asymmetric_pedestal_table'):
-            _pedestal_dims = corrected_dims + [
-                d for d in (ai_result.get('dimensions', []) if isinstance(ai_result, dict) else [])
-                if isinstance(d, dict)]
-            _has_pedestal_evidence = any(
-                (d.get('tag') or '').lower().strip() in ('base_dia', 'neck_dia', 'collar_dia')
-                for d in _pedestal_dims)
-            if _has_pedestal_evidence:
-                old_ftype = ftype
-                # Oval if footprint is clearly non-square (width vs depth);
-                # default to round otherwise.
-                _l = next((d.get('value_cm') for d in _pedestal_dims
-                           if (d.get('tag') or '').lower().strip() in ('width', 'length', 'w', 'l')), None)
-                _d = next((d.get('value_cm') for d in _pedestal_dims
-                           if (d.get('tag') or '').lower().strip() in ('depth', 'd')), None)
-                if _l and _d and _d > 0 and (_l / _d) > 1.25:
-                    ftype = 'oval_pedestal_table'
-                else:
-                    ftype = 'round_pedestal_table'
-                print(f"[Hybrid] Pedestal override: classifier said '{old_ftype}', "
-                      f"but base/neck/collar_dia tags were detected -> '{ftype}'")
-
         # ===== Template Graph Resolution =====
         template_graph_result = None
         # Assemble merged dimensions from OCR + AI before using them
@@ -1977,19 +2002,19 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         known_dims = {}
         for d in merged_dims:
-            tag = d.get('tag', '').lower()
+            tag = d.get('tag', '').lower().strip()
             val = float(d.get('value_cm', 0))
             if val > 0:
+                # Same bare-substring bug fixed elsewhere in this function -
+                # 'width' contains "h", so the old `'h' in tag` check here
+                # would tag a width measurement as overall_height_cm first.
                 if tag in ('top_dia', 'dia', 'diameter'): known_dims['top_diameter_cm'] = val
-                elif any(k in tag for k in ['h', 'height']): known_dims['overall_height_cm'] = val
-                elif any(k in tag for k in ['w', 'width']): known_dims['top_width_cm'] = val
+                elif _tag_is(tag, 'h', 'height'): known_dims['overall_height_cm'] = val
+                elif _tag_is(tag, 'w', 'width'): known_dims['top_width_cm'] = val
         segmentation = segment_furniture(ftype, ocr_lines, ai_result, known_dims)
 
         dxf_name = f'{job_id}_hybrid.dxf'
         dxf_path = OUT / dxf_name
-        real_w = _parse_float(real_width_cm)
-        real_h = _parse_float(real_height_cm)
-        real_d = _parse_float(real_depth_cm)
         visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
         raw_materials = ai_result.get('materials') if isinstance(ai_result, dict) else None
         materials = {k: (v.get('description', '') if isinstance(v, dict) else str(v))
