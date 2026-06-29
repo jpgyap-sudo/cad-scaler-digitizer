@@ -214,6 +214,48 @@ field read anywhere in `App.tsx` or any component. Same shape as findings
 #9/CFG above: real computation in the critical path, silently discarded
 on arrival.
 
+### 11. Visibility-toggle crash: 3 of the 6 types `/adjust` "supports" will throw an uncaught TypeError if a user hides/shows any component
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** HIGH for affected types — round_pedestal_table is the
+default/most-used furniture type
+**Evidence:** `/adjust` (`routes.py:2224`) unconditionally does
+`save_kwargs['visibility'] = visibility_overrides` (line ~2379) for
+whichever furniture type, then calls `save_fn(str(dxf_path), **save_kwargs)`
+(wrapped in try/except — fails silently if visibility isn't accepted) and
+`model = build_fn(**save_kwargs)` (**not wrapped in any try/except**).
+Checked every `build_*_model()` signature in `drawing_builders.py` for
+the 6 types `/adjust` actually has a `save_kwargs` branch for:
+
+| Type | `build_*_model` accepts `visibility`? |
+|---|---|
+| `round_pedestal_table` | **No** — confirmed signature has no `visibility` param |
+| `oval_pedestal_table` | **No** |
+| `asymmetric_pedestal_table` | **No** |
+| `rectangular_table` | Yes |
+| `console_table` | Yes |
+| `office_desk` | Yes |
+
+For the 3 "No" types, `save_fn(...)` succeeds first (the DXF *exporter*
+versions — `save_round_pedestal_table` confirmed to accept `visibility` —
+do support it), so the downloadable DXF file gets correctly updated on
+disk, but the immediately-following `build_fn(**save_kwargs)` call raises
+an uncaught `TypeError: build_round_pedestal_model() got an unexpected
+keyword argument 'visibility'`. This propagates to the outer
+`except Exception as e: return JSONResponse({"error": f"Adjust failed:
+{e}"}, status_code=500)` — so the user gets a 500 (compounded by finding
+#6 above: `SliderPanel.tsx` doesn't surface `data.error` either way, so
+even this clear backend error never reaches the user visually). Net
+effect for round_pedestal_table specifically: toggle a component's
+visibility off, the DXF file silently updates correctly, the SVG preview
+the user is actually looking at does not, and no error is shown anywhere.
+**Fix:** add `visibility` parameter + handling to `build_round_pedestal_model`,
+`build_oval_pedestal_model`, `build_asymmetric_pedestal_model` (mirroring
+the `_component_visible()` pattern already present in
+`build_rectangular_table_model`/`build_cabinet_model`/`build_sofa_model`),
+or wrap `build_fn(**save_kwargs)` in try/except as a stopgap (doesn't fix
+the missing visibility support, just stops the 500).
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
