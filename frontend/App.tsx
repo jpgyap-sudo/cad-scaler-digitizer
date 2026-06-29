@@ -872,12 +872,6 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     )}
-                        <div className="flex gap-2">
-                          <a href={getPdfUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-red-600 text-white text-xs py-2 rounded-lg hover:bg-red-700 font-medium">View PDF</a>
-                          <a href={getPreviewUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-blue-600 text-white text-xs py-2 rounded-lg hover:bg-blue-700 font-medium">Full Preview</a>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
