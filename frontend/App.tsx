@@ -849,6 +849,16 @@ const App: React.FC = () => {
                         </details>
                       )}
                     </div>
+                    {(cadEngineResult as any)?.skeleton_svg && (
+                      <div className="mt-3">
+                        <details>
+                          <summary className="text-[10px] text-slate-400 cursor-pointer hover:text-slate-600 font-medium">
+                            Product silhouette ({(cadEngineResult as any).skeleton_source === 'gemini' ? 'Gemini-traced' : 'geometric'})
+                          </summary>
+                          <div className="mt-2 border border-gray-200 rounded overflow-hidden bg-white" dangerouslySetInnerHTML={{ __html: (cadEngineResult as any).skeleton_svg }} />
+                        </details>
+                      </div>
+                    )}
                     {cadEngineResult.dxf_file && (
                       <div className="mt-3 space-y-2">
                         {cadEngineResult.preview_svg ? (
@@ -856,6 +866,12 @@ const App: React.FC = () => {
                         ) : (
                           <img src={getPreviewUrl(cadEngineResult.dxf_file)} alt="DXF Preview" className="w-full rounded-lg border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         )}
+                        <div className="flex gap-2">
+                          <a href={getPdfUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-red-600 text-white text-xs py-2 rounded-lg hover:bg-red-700 font-medium">View PDF</a>
+                          <a href={getPreviewUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-blue-600 text-white text-xs py-2 rounded-lg hover:bg-blue-700 font-medium">Full Preview</a>
+                        </div>
+                      </div>
+                    )}
                         <div className="flex gap-2">
                           <a href={getPdfUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-red-600 text-white text-xs py-2 rounded-lg hover:bg-red-700 font-medium">View PDF</a>
                           <a href={getPreviewUrl(cadEngineResult.dxf_file)} target="_blank" className="flex-1 text-center bg-blue-600 text-white text-xs py-2 rounded-lg hover:bg-blue-700 font-medium">Full Preview</a>

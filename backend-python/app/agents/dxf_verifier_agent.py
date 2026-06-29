@@ -72,6 +72,92 @@ def _render_to_jpeg_b64(img: Any, quality: int = 85) -> str:
     return base64.b64encode(buf.tobytes()).decode()
 
 
+import hashlib
+
+_SILHOUETTE_CACHE: dict[str, str] = {}  # md5 of image_url → SVG string
+
+
+async def generate_silhouette_svg(
+    image_data: bytes,
+    furniture_type: str = "",
+    width_cm: float = 100,
+    height_cm: float = 80,
+) -> dict:
+    """Generate a clean SVG silhouette of the product using Gemini 2.5 Flash.
+
+    Gemini traces the product outline from the photo and returns an SVG path.
+    The result is cached by image MD5 to avoid re-calls for the same image.
+
+    Returns:
+        {"svg": "<svg>...</svg>", "cached": False, "error": None}
+    """
+    if not GEMINI_API_KEY:
+        return {"svg": "", "error": "GEMINI_API_KEY not configured"}
+
+    # Check cache
+    md5 = hashlib.md5(image_data).hexdigest()
+    cached = _SILHOUETTE_CACHE.get(md5)
+    if cached:
+        return {"svg": cached, "cached": True, "error": None}
+
+    try:
+        import base64
+        b64 = base64.b64encode(image_data).decode()
+
+        prompt = f"""You are a product outline tracer. Given a photo of a {furniture_type or "furniture product"}, trace its outermost silhouette and return ONLY valid SVG markup (no markdown, no explanation).
+
+The SVG must be:
+- 400x300 viewBox
+- White background (#ffffff)
+- A single <path> or group of <path> elements in dark gray (#1f2937) with stroke-width=2, fill=none
+- Only the OUTERMOST contour(s) of the main product (ignore background items, shadows, small accessories)
+- Use relative/absolute bezier curves (M, C, Q, L, Z) for smooth contour tracing
+- The product should be centered and scaled to fill roughly 80% of the viewport
+- If there are multiple separate components visible (e.g. 4 legs, a tabletop, a backrest), trace each as its own <path> in the same group
+
+Return ONLY the raw SVG markup. No html wrapping, no markdown."""
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+        payload = {
+            "contents": [{"parts": [
+                {"text": prompt},
+                {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
+            ]}]
+        }
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+
+        if resp.status_code != 200:
+            return {"svg": "", "error": f"Gemini HTTP {resp.status_code}"}
+
+        text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        if not text:
+            return {"svg": "", "error": "Empty Gemini response"}
+
+        # Extract SVG from response (handle markdown wrapping)
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3]
+        cleaned = cleaned.strip()
+
+        # Ensure it's valid SVG
+        if "<svg" not in cleaned.lower():
+            cleaned = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <rect width="400" height="300" fill="#ffffff"/>
+  <g transform="translate(10, 10)">{cleaned}</g>
+</svg>"""
+
+        _SILHOUETTE_CACHE[md5] = cleaned
+        return {"svg": cleaned, "cached": False, "error": None}
+
+    except Exception as e:
+        logger.error(f"[DXFVerifier] Silhouette SVG failed: {e}")
+        return {"svg": "", "error": str(e)}
+
+
 def _parse_gemini_response(response_text: str) -> dict:
     """Parse Gemini's JSON response, handling markdown wrapping."""
     cleaned = response_text.strip()

@@ -4575,6 +4575,57 @@ async def skeleton_preview(
         return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
 
 
+@router.post("/skeleton/gemini")
+async def skeleton_gemini_preview(
+    file: UploadFile = File(...),
+    furniture_type: str = Form("furniture"),
+    width_cm: float = Form(100),
+    height_cm: float = Form(80),
+):
+    """Generate a product silhouette SVG from a photo using Gemini 2.5 Flash.
+    
+    Gemini traces the product outline and returns a clean SVG silhouette.
+    This replaces the hardcoded geometric skeleton with an actual outline
+    traced from the product photo.
+    """
+    try:
+        ext = os.path.splitext(file.filename or 'img.png')[1] or '.png'
+        img_data = await file.read()
+        if not img_data:
+            raise ValueError("Empty file upload")
+
+        from app.agents.dxf_verifier_agent import generate_silhouette_svg
+        result = await generate_silhouette_svg(
+            image_data=img_data,
+            furniture_type=furniture_type,
+            width_cm=width_cm,
+            height_cm=height_cm,
+        )
+
+        if result.get("svg") and not result.get("error"):
+            return Response(content=result["svg"], media_type="image/svg+xml",
+                            headers={"X-Cached": "true" if result.get("cached") else "false"})
+
+        # Gemini failed — fall back to geometric skeleton
+        from app.backend.svg_skeleton import generate_skeleton
+        dims = {"width_cm": width_cm, "height_cm": height_cm}
+        svg = generate_skeleton(furniture_type, dims)
+        return Response(content=svg, media_type="image/svg+xml",
+                        headers={"X-Cached": "false", "X-Fallback": "true"})
+
+    except Exception as e:
+        logger.warning(f"[SkeletonGemini] Failed: {e}")
+        # Ultimate fallback: geometric skeleton
+        try:
+            from app.backend.svg_skeleton import generate_skeleton
+            dims = {"width_cm": width_cm, "height_cm": height_cm}
+            svg = generate_skeleton(furniture_type, dims)
+            return Response(content=svg, media_type="image/svg+xml",
+                            headers={"X-Fallback": "true"})
+        except Exception:
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @router.get("/products/dna/{handle}")
 async def product_dna_detail(handle: str):
     """Get enriched per-product DNA for a specific product handle."""
