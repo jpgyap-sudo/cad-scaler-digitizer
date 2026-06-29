@@ -1,0 +1,27 @@
+{
+  "furniture_type": "wardrobe",
+  "description": "Dimensions for wardrobes and bedroom armoires.",
+  "sub_types": {
+    "wardrobe": {
+      "dimensions": {
+        "width_cm": { "min": 60, "max": 320, "typical": 150 },
+        "depth_cm": { "min": 40, "max": 80, "typical": 60 },
+        "height_cm": { "min": 150, "max": 260, "typical": 210 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Wardrobe height must be tall",
+      "condition": "height_cm > 150",
+      "action": "flag",
+      "message": "Wardrobe height is too short (typically greater than 150 cm)."
+    },
+    {
+      "rule": "Depth must be realistic",
+      "condition": "depth_cm >= 50 AND depth_cm <= 75",
+      "action": "flag",
+      "message": "Wardrobe depth is outside typical range (50 to 75 cm) for clothes hangers."
+    }
+  ]
+}

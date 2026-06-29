@@ -1,0 +1,149 @@
+{
+  "version": "1.0",
+  "furniture_types": {
+    "rectangular_table": {
+      "ranges": {
+        "width_cm": {"min": 60, "max": 320, "typical": 160, "mm_threshold": 3200},
+        "depth_cm": {"min": 60, "max": 120, "typical": 90, "mm_threshold": 1200},
+        "length_cm": {"min": 60, "max": 320, "typical": 180, "mm_threshold": 3200},
+        "overall_height_cm": {"min": 35, "max": 80, "typical": 75, "mm_threshold": 800},
+        "leg_thickness_cm": {"min": 2, "max": 12, "typical": 6, "mm_threshold": 120},
+        "top_thick_cm": {"min": 1.5, "max": 8, "typical": 3, "mm_threshold": 80}
+      },
+      "rules": [
+        {"id": "rect_height_dining", "check": "overall_height_cm between 72 and 78 for dining", "severity": "warn"},
+        {"id": "rect_width_gt_depth", "check": "length_cm >= depth_cm", "auto_fix": "swap", "severity": "error"},
+        {"id": "rect_leg_proportion", "check": "leg_thickness_cm < width_cm * 0.15", "severity": "warn"}
+      ]
+    },
+    "round_pedestal_table": {
+      "ranges": {
+        "top_dia_cm": {"min": 50, "max": 160, "typical": 90, "mm_threshold": 1600},
+        "height_cm": {"min": 50, "max": 80, "typical": 73, "mm_threshold": 800},
+        "base_dia_cm": {"min": 25, "max": 80, "typical": 44, "mm_threshold": 800},
+        "neck_dia_cm": {"min": 10, "max": 50, "typical": 25, "mm_threshold": 500},
+        "collar_dia_cm": {"min": 20, "max": 80, "typical": 48, "mm_threshold": 800},
+        "top_thick_cm": {"min": 1.5, "max": 8, "typical": 3.5, "mm_threshold": 80}
+      },
+      "rules": [
+        {"id": "pedestal_base_lt_top", "check": "base_dia_cm <= top_dia_cm", "auto_fix": "cap_at_top", "severity": "error"},
+        {"id": "neck_lt_base", "check": "neck_dia_cm <= base_dia_cm", "severity": "warn"},
+        {"id": "collar_lt_top", "check": "collar_dia_cm <= top_dia_cm", "auto_fix": "cap_at_top", "severity": "error"}
+      ]
+    },
+    "oval_pedestal_table": {
+      "ranges": {
+        "length_cm": {"min": 100, "max": 280, "typical": 180, "mm_threshold": 2800},
+        "depth_cm": {"min": 70, "max": 150, "typical": 100, "mm_threshold": 1500},
+        "height_cm": {"min": 68, "max": 80, "typical": 75, "mm_threshold": 800},
+        "pedestal_dia_cm": {"min": 20, "max": 60, "typical": 40, "mm_threshold": 600}
+      },
+      "rules": [
+        {"id": "oval_length_gt_depth", "check": "length_cm > depth_cm", "auto_fix": "swap", "severity": "error"},
+        {"id": "pedestal_lt_depth", "check": "pedestal_dia_cm < depth_cm", "severity": "error"}
+      ]
+    },
+    "asymmetric_pedestal_table": {
+      "ranges": {
+        "length_cm": {"min": 100, "max": 280, "typical": 180, "mm_threshold": 2800},
+        "depth_cm": {"min": 70, "max": 120, "typical": 90, "mm_threshold": 1200},
+        "height_cm": {"min": 68, "max": 80, "typical": 75, "mm_threshold": 800},
+        "large_ped_dia_cm": {"min": 20, "max": 60, "typical": 40, "mm_threshold": 600},
+        "small_ped_dia_cm": {"min": 10, "max": 40, "typical": 22, "mm_threshold": 400}
+      },
+      "rules": [
+        {"id": "large_gt_small_ped", "check": "large_ped_dia_cm >= small_ped_dia_cm", "severity": "error"}
+      ]
+    },
+    "cabinet": {
+      "ranges": {
+        "width_cm": {"min": 30, "max": 280, "typical": 90, "mm_threshold": 2800},
+        "depth_cm": {"min": 25, "max": 80, "typical": 48, "mm_threshold": 800},
+        "height_cm": {"min": 50, "max": 260, "typical": 180, "mm_threshold": 2600}
+      },
+      "rules": []
+    },
+    "sofa": {
+      "ranges": {
+        "width_cm": {"min": 100, "max": 380, "typical": 220, "mm_threshold": 3800},
+        "depth_cm": {"min": 65, "max": 120, "typical": 88, "mm_threshold": 1200},
+        "height_cm": {"min": 70, "max": 110, "typical": 85, "mm_threshold": 1100}
+      },
+      "rules": [
+        {"id": "sofa_depth_gt_height", "check": "depth_cm < height_cm", "severity": "warn"}
+      ]
+    },
+    "coffee_table": {
+      "ranges": {
+        "width_cm": {"min": 40, "max": 180, "typical": 110, "mm_threshold": 1800},
+        "depth_cm": {"min": 35, "max": 110, "typical": 65, "mm_threshold": 1100},
+        "height_cm": {"min": 30, "max": 55, "typical": 42, "mm_threshold": 550}
+      },
+      "rules": [
+        {"id": "coffee_low", "check": "height_cm < 55", "severity": "warn"}
+      ]
+    },
+    "dining_chair": {
+      "ranges": {
+        "width_cm": {"min": 35, "max": 65, "typical": 45, "mm_threshold": 650},
+        "height_cm": {"min": 75, "max": 110, "typical": 90, "mm_threshold": 1100},
+        "seat_height_cm": {"min": 40, "max": 52, "typical": 45, "mm_threshold": 520}
+      },
+      "rules": []
+    },
+    "wardrobe": {
+      "ranges": {
+        "width_cm": {"min": 60, "max": 320, "typical": 150, "mm_threshold": 3200},
+        "depth_cm": {"min": 40, "max": 80, "typical": 60, "mm_threshold": 800},
+        "height_cm": {"min": 150, "max": 260, "typical": 210, "mm_threshold": 2600}
+      },
+      "rules": [
+        {"id": "wardrobe_tall", "check": "height_cm > 150", "severity": "warn"}
+      ]
+    },
+    "reception_counter": {
+      "ranges": {
+        "width_cm": {"min": 80, "max": 400, "typical": 180, "mm_threshold": 4000},
+        "height_cm": {"min": 90, "max": 130, "typical": 110, "mm_threshold": 1300}
+      },
+      "rules": []
+    },
+    "bed_headboard": {
+      "ranges": {
+        "width_cm": {"min": 80, "max": 220, "typical": 160, "mm_threshold": 2200},
+        "height_cm": {"min": 40, "max": 120, "typical": 65, "mm_threshold": 1200},
+        "depth_cm": {"min": 2, "max": 20, "typical": 6, "mm_threshold": 200}
+      },
+      "rules": []
+    },
+    "bed": {
+      "ranges": {
+        "width_cm": {"min": 90, "max": 220, "typical": 160, "mm_threshold": 2200},
+        "length_cm": {"min": 190, "max": 240, "typical": 210, "mm_threshold": 2400},
+        "height_cm": {"min": 30, "max": 80, "typical": 45, "mm_threshold": 800}
+      },
+      "rules": [
+        {"id": "bed_length_gt_width", "check": "length_cm > width_cm", "severity": "warn"}
+      ]
+    },
+    "console_table": {
+      "ranges": {
+        "length_cm": {"min": 60, "max": 220, "typical": 120, "mm_threshold": 2200},
+        "depth_cm": {"min": 20, "max": 55, "typical": 40, "mm_threshold": 550},
+        "height_cm": {"min": 70, "max": 100, "typical": 80, "mm_threshold": 1000}
+      },
+      "rules": [
+        {"id": "console_narrow", "check": "depth_cm < 55", "severity": "info"}
+      ]
+    },
+    "office_desk": {
+      "ranges": {
+        "length_cm": {"min": 80, "max": 220, "typical": 140, "mm_threshold": 2200},
+        "depth_cm": {"min": 45, "max": 90, "typical": 60, "mm_threshold": 900},
+        "height_cm": {"min": 68, "max": 80, "typical": 75, "mm_threshold": 800},
+        "modesty_panel_h_cm": {"min": 8, "max": 30, "typical": 15, "mm_threshold": 300}
+      },
+      "rules": []
+    }
+  }
+}

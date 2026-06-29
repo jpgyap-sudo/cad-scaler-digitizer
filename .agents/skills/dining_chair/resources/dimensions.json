@@ -1,0 +1,34 @@
+{
+  "furniture_type": "dining_chair",
+  "description": "Dimensions for dining chairs and bar stools.",
+  "sub_types": {
+    "dining_chair": {
+      "dimensions": {
+        "width_cm": { "min": 35, "max": 65, "typical": 45 },
+        "height_cm": { "min": 75, "max": 110, "typical": 90 },
+        "seat_height_cm": { "min": 40, "max": 52, "typical": 45 }
+      }
+    },
+    "bar_stool": {
+      "dimensions": {
+        "width_cm": { "min": 35, "max": 55, "typical": 40 },
+        "height_cm": { "min": 85, "max": 120, "typical": 100 },
+        "seat_height_cm": { "min": 65, "max": 80, "typical": 75 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Seat height < Overall height",
+      "condition": "seat_height_cm < height_cm",
+      "action": "flag",
+      "message": "Seat height cannot exceed overall chair height."
+    },
+    {
+      "rule": "Seat height > 35 cm",
+      "condition": "seat_height_cm > 35",
+      "action": "flag",
+      "message": "Seat height is too low for dining use."
+    }
+  ]
+}

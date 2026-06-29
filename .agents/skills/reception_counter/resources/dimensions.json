@@ -1,0 +1,20 @@
+{
+  "furniture_type": "reception_counter",
+  "description": "Dimensions for reception counters and service desks.",
+  "sub_types": {
+    "reception_counter": {
+      "dimensions": {
+        "width_cm": { "min": 80, "max": 400, "typical": 180 },
+        "height_cm": { "min": 90, "max": 130, "typical": 110 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Width > Height",
+      "condition": "width_cm > height_cm",
+      "action": "flag",
+      "message": "Reception counter width is typically greater than height."
+    }
+  ]
+}

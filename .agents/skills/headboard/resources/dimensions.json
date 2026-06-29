@@ -1,0 +1,27 @@
+{
+  "furniture_type": "bed_headboard",
+  "description": "Dimensions for bed headboards.",
+  "sub_types": {
+    "headboard": {
+      "dimensions": {
+        "width_cm": { "min": 80, "max": 220, "typical": 160 },
+        "height_cm": { "min": 40, "max": 120, "typical": 65 },
+        "depth_cm": { "min": 2, "max": 20, "typical": 6 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Width > Height",
+      "condition": "width_cm > height_cm",
+      "action": "flag",
+      "message": "Headboard width is typically greater than height."
+    },
+    {
+      "rule": "Thickness < 25 cm",
+      "condition": "depth_cm < 25",
+      "action": "flag",
+      "message": "Headboard thickness exceeds realistic bounds."
+    }
+  ]
+}

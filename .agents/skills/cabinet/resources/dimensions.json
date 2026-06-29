@@ -1,0 +1,132 @@
+{
+  "furniture_type": "cabinet",
+  "sub_types": {
+    "sideboard": {
+      "description": "Low wide storage unit, typically for dining rooms or living rooms",
+      "dimensions": {
+        "width_cm": {
+          "min": 120,
+          "max": 240,
+          "typical": 160,
+          "unit": "cm",
+          "description": "Full external width; sideboards are characteristically wider than they are tall"
+        },
+        "depth_cm": {
+          "min": 40,
+          "max": 55,
+          "typical": 45,
+          "unit": "cm",
+          "description": "Front-to-back external depth"
+        },
+        "height_cm": {
+          "min": 60,
+          "max": 90,
+          "typical": 75,
+          "unit": "cm",
+          "description": "Floor to top surface; includes plinth if present"
+        }
+      }
+    },
+    "display_cabinet": {
+      "description": "Tall cabinet with glazed upper section for displaying objects",
+      "dimensions": {
+        "width_cm": {
+          "min": 60,
+          "max": 120,
+          "typical": 90,
+          "unit": "cm",
+          "description": "Full external width; typically narrower than sideboards"
+        },
+        "depth_cm": {
+          "min": 35,
+          "max": 50,
+          "typical": 42,
+          "unit": "cm",
+          "description": "Front-to-back external depth; shallower than storage cabinets"
+        },
+        "height_cm": {
+          "min": 160,
+          "max": 220,
+          "typical": 190,
+          "unit": "cm",
+          "description": "Floor to top; tall format is the defining characteristic"
+        }
+      }
+    },
+    "storage_cabinet": {
+      "description": "General-purpose enclosed storage unit with 1-2 doors",
+      "dimensions": {
+        "width_cm": {
+          "min": 40,
+          "max": 100,
+          "typical": 70,
+          "unit": "cm",
+          "description": "Full external width; compact to mid-size"
+        },
+        "depth_cm": {
+          "min": 35,
+          "max": 55,
+          "typical": 45,
+          "unit": "cm",
+          "description": "Front-to-back external depth; deeper than display cabinets"
+        },
+        "height_cm": {
+          "min": 100,
+          "max": 200,
+          "typical": 150,
+          "unit": "cm",
+          "description": "Floor to top; mid-height format"
+        }
+      }
+    }
+  },
+  "shared_parameters": {
+    "plinth_height_cm": {
+      "min": 6,
+      "max": 15,
+      "typical": 10,
+      "unit": "cm",
+      "description": "Height of the recessed toe-kick plinth base; included within height_cm"
+    },
+    "door_count": {
+      "min": 0,
+      "max": 6,
+      "typical": 2,
+      "unit": "count",
+      "description": "Number of door leaves on the front face; 0 = open shelving"
+    },
+    "shelf_count": {
+      "min": 0,
+      "max": 8,
+      "typical": 3,
+      "unit": "count",
+      "description": "Number of internal horizontal shelves"
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "height_cm must not exceed 250 cm",
+      "condition": "height_cm <= 250",
+      "action": "flag",
+      "message": "Cabinet height exceeds realistic maximum of 250 cm — check if dimensions were swapped"
+    },
+    {
+      "rule": "width_cm must be greater than depth_cm",
+      "condition": "width_cm > depth_cm",
+      "action": "warn",
+      "message": "Cabinet depth exceeds width — verify orientation; cabinets are normally wider than they are deep"
+    },
+    {
+      "rule": "sideboard height must be less than width",
+      "condition": "sub_type == 'sideboard' -> height_cm < width_cm",
+      "action": "flag",
+      "message": "Sideboard height is greater than width — sideboards are always wider than tall; dimensions may be swapped"
+    },
+    {
+      "rule": "display cabinet height must be greater than 1.5x width",
+      "condition": "sub_type == 'display_cabinet' -> height_cm > 1.5 * width_cm",
+      "action": "warn",
+      "message": "Display cabinet does not appear tall enough relative to width — verify sub-type classification"
+    }
+  ]
+}

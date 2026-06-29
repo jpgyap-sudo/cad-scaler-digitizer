@@ -1,0 +1,19 @@
+{
+  "thresholds": {
+    "accept": 0.85,
+    "warn": 0.65,
+    "reject": 0.50
+  },
+  "weights": {
+    "shape_match": 0.40,
+    "component_score": 0.30,
+    "proportion_score": 0.20,
+    "view_completeness": 0.10
+  },
+  "per_type_overrides": {
+    "round_pedestal_table": { "shape_match": 0.50 },
+    "asymmetric_pedestal_table": { "shape_match": 0.50 },
+    "sofa": { "component_score": 0.35 }
+  },
+  "max_correction_delta_pct": 40
+}

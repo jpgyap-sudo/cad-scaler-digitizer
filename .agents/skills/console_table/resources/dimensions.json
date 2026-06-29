@@ -1,0 +1,27 @@
+{
+  "furniture_type": "console_table",
+  "description": "Parametric dimensions for console tables (narrow hallway tables).",
+  "sub_types": {
+    "console_table": {
+      "dimensions": {
+        "length_cm": { "min": 60, "max": 220, "typical": 120 },
+        "depth_cm": { "min": 20, "max": 55, "typical": 40 },
+        "height_cm": { "min": 70, "max": 100, "typical": 80 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Depth must be narrow",
+      "condition": "depth_cm < 55",
+      "action": "flag",
+      "message": "Console table depth should be narrow (less than 55 cm)."
+    },
+    {
+      "rule": "Length must be greater than depth",
+      "condition": "length_cm > depth_cm * 1.8",
+      "action": "flag",
+      "message": "Console tables are typically long and narrow."
+    }
+  ]
+}

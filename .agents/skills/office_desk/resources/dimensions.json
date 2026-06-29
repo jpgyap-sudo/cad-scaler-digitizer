@@ -1,0 +1,84 @@
+﻿{
+  "furniture_type": "office_desk",
+  "description": "Standard office desk with modesty panel and four corner legs",
+  "dimensions": {
+    "length_cm": {
+      "min": 100,
+      "max": 200,
+      "typical": 140,
+      "unit": "cm",
+      "description": "Overall width of the desk surface (left to right)"
+    },
+    "depth_cm": {
+      "min": 50,
+      "max": 80,
+      "typical": 60,
+      "unit": "cm",
+      "description": "Front-to-back dimension of the desk surface"
+    },
+    "height_cm": {
+      "min": 72,
+      "max": 78,
+      "typical": 75,
+      "unit": "cm",
+      "description": "Floor to top of desktop surface (standard ergonomic desk height)"
+    },
+    "top_thick_cm": {
+      "min": 2,
+      "max": 4,
+      "typical": 2.5,
+      "unit": "cm",
+      "description": "Thickness of the desktop panel"
+    },
+    "leg_thick_cm": {
+      "min": 3,
+      "max": 8,
+      "typical": 4,
+      "unit": "cm",
+      "description": "Square cross-section size of each leg"
+    },
+    "modesty_panel_h_cm": {
+      "min": 10,
+      "max": 25,
+      "typical": 15,
+      "unit": "cm",
+      "description": "Height of the vertical privacy/structure panel at the front face, below the desktop"
+    },
+    "leg_inset_cm": {
+      "min": 1,
+      "max": 5,
+      "typical": 2,
+      "unit": "cm",
+      "description": "Distance legs are set inward from the outer edges of the desk"
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "height must be within ergonomic office range",
+      "condition": "height_cm >= 72 && height_cm <= 78",
+      "action": "warn if outside range: standard ergonomic desk height is 72-78 cm"
+    },
+    {
+      "rule": "modesty panel must leave kick-space gap above floor",
+      "condition": "modesty_panel_h_cm <= (height_cm - top_thick_cm) * 0.45",
+      "action": "flag: modesty_panel_h_cm is too tall; panel would eliminate kick space — cap at 40% of clear leg height"
+    },
+    {
+      "rule": "depth must be sufficient for a seated user",
+      "condition": "depth_cm >= 50",
+      "action": "warn if depth_cm < 50: very shallow desk — may be a console_table instead"
+    },
+    {
+      "rule": "length must exceed depth by a reasonable ratio",
+      "condition": "length_cm / depth_cm >= 1.5",
+      "action": "flag if ratio < 1.5: unusually square desk footprint — verify furniture type is correct"
+    }
+  ],
+  "notes": [
+    "Modesty panel top edge is flush with the underside of the desktop.",
+    "Legs are inset from all four outer edges by leg_inset_cm.",
+    "Cable management holes (dia ~5 cm) may appear in the desktop top view as small circles.",
+    "If overall_height_cm is extracted by vision, map to height_cm.",
+    "If leg_thickness_cm is extracted by vision, map to leg_thick_cm."
+  ]
+}

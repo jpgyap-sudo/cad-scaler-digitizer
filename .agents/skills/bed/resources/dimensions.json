@@ -1,0 +1,41 @@
+{
+  "furniture_type": "bed",
+  "description": "Dimensions for single, queen, and king bed frames.",
+  "sub_types": {
+    "king": {
+      "dimensions": {
+        "width_cm": { "min": 190, "max": 220, "typical": 200 },
+        "length_cm": { "min": 200, "max": 240, "typical": 220 },
+        "height_cm": { "min": 30, "max": 60, "typical": 45 }
+      }
+    },
+    "queen": {
+      "dimensions": {
+        "width_cm": { "min": 150, "max": 180, "typical": 165 },
+        "length_cm": { "min": 200, "max": 240, "typical": 220 },
+        "height_cm": { "min": 30, "max": 60, "typical": 45 }
+      }
+    },
+    "single": {
+      "dimensions": {
+        "width_cm": { "min": 90, "max": 120, "typical": 100 },
+        "length_cm": { "min": 190, "max": 220, "typical": 210 },
+        "height_cm": { "min": 30, "max": 60, "typical": 45 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Length must be greater than width",
+      "condition": "length_cm > width_cm",
+      "action": "flag",
+      "message": "Bed length is typically greater than width."
+    },
+    {
+      "rule": "Bed frame height should be low",
+      "condition": "height_cm < 70",
+      "action": "flag",
+      "message": "Bed frame height is unusually high."
+    }
+  ]
+}

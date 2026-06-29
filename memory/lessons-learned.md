@@ -5014,3 +5014,1181 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix(#11,#6,#9): visibility crash, slider error surfacing, brain proportions UI
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1dc78f948070a6f4d485cc7efeae062707e38f2f
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 1dc78f948070a6f4d485cc7efeae062707e38f2f
+**Files:** 
+
+**Summary:**
+Commit: fix(#11,#6,#9): visibility crash, slider error surfacing, brain proportions UI
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix(#11,#6,#9): visibility crash, slider error surfacing, brain proportions UI*
+
+#### Lesson Learned
+
+Commit: fix(#11,#6,#9): visibility crash, slider error surfacing, brain proportions UI
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: re-audit fix commit 1dc78f9 - #11 and #9 are half-fixes, #6 genuinely correct
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit b1c072f90e5727c9c1ca7737522047e7869d389d
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** b1c072f90e5727c9c1ca7737522047e7869d389d
+**Files:** 
+
+**Summary:**
+Commit: docs: re-audit fix commit 1dc78f9 - #11 and #9 are half-fixes, #6 genuinely correct
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: re-audit fix commit 1dc78f9 - #11 and #9 are half-fixes, #6 genuinely correct*
+
+#### Lesson Learned
+
+Commit: docs: re-audit fix commit 1dc78f9 - #11 and #9 are half-fixes, #6 genuinely correct
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: audit commit 5dac3e3 - views fix is correct but DXF-only (drift vs SVG preview); unit fix is incomplete and makes 
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 9c9b728a5abf91d637071c214350a8510530fbce
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 9c9b728a5abf91d637071c214350a8510530fbce
+**Files:** 
+
+**Summary:**
+Commit: docs: audit commit 5dac3e3 - views fix is correct but DXF-only (drift vs SVG preview); unit fix is incomplete and makes inconsistency worse
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: audit commit 5dac3e3 - views fix is correct but DXF-only (drift vs SVG preview); unit fix is incomplete and makes inconsistency worse*
+
+#### Lesson Learned
+
+Commit: docs: audit commit 5dac3e3 - views fix is correct but DXF-only (drift vs SVG preview); unit fix is incomplete and makes inconsistency worse
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs: bed dispatch fix (47ce545) swaps one wrong mapping for another - title block now actively mislabels the drawing
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bb24db7fc561160268792d88feafbf0d2742d910
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** bb24db7fc561160268792d88feafbf0d2742d910
+**Files:** 
+
+**Summary:**
+Commit: docs: bed dispatch fix (47ce545) swaps one wrong mapping for another - title block now actively mislabels the drawing
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs: bed dispatch fix (47ce545) swaps one wrong mapping for another - title block now actively mislabels the drawing*
+
+#### Lesson Learned
+
+Commit: docs: bed dispatch fix (47ce545) swaps one wrong mapping for another - title block now actively mislabels the drawing
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: scoring benchmark root cause — dimension comparison uses wrong units (scaled DXF vs real mm)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f00fcc1ee5998d36374d1e3dd42708ee973fa7d8
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** f00fcc1ee5998d36374d1e3dd42708ee973fa7d8
+**Files:** 
+
+**Summary:**
+Commit: fix: scoring benchmark root cause — dimension comparison uses wrong units (scaled DXF vs real mm)
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: scoring benchmark root cause — dimension comparison uses wrong units (scaled DXF vs real mm)*
+
+#### Lesson Learned
+
+Commit: fix: scoring benchmark root cause — dimension comparison uses wrong units (scaled DXF vs real mm)
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: refine width/depth swap — only swap when width < 50% of height to avoid interfering with correct W×L×H extractions
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 1574e3e39965c7499b6b1af5bfa7ffa409bb4719
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 1574e3e39965c7499b6b1af5bfa7ffa409bb4719
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: refine width/depth swap — only swap when width < 50% of height to avoid interfering with correct W×L×H extractions
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: refine width/depth swap — only swap when width < 50% of height to avoid interfering with correct W×L×H extractions*
+
+#### Lesson Learned
+
+Commit: fix: refine width/depth swap — only swap when width < 50% of height to avoid interfering with correct W×L×H extractions
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: surface resolved_dimensions in crawl_to_dxf response, relax swap threshold, use OUT path
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 8e930198f213d813493b022577c3798b0018ff31
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 8e930198f213d813493b022577c3798b0018ff31
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: surface resolved_dimensions in crawl_to_dxf response, relax swap threshold, use OUT path
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: surface resolved_dimensions in crawl_to_dxf response, relax swap threshold, use OUT path*
+
+#### Lesson Learned
+
+Commit: fix: surface resolved_dimensions in crawl_to_dxf response, relax swap threshold, use OUT path
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: ON CONFLICT DO UPDATE so re-runs overwrite stale scores instead of keeping old 0.00
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 66e668a9dff7af2fdeada26eff091360c031e73d
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 66e668a9dff7af2fdeada26eff091360c031e73d
+**Files:** backend-python/app/services/comparison_agent.py
+
+**Summary:**
+Commit: fix: ON CONFLICT DO UPDATE so re-runs overwrite stale scores instead of keeping old 0.00
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: ON CONFLICT DO UPDATE so re-runs overwrite stale scores instead of keeping old 0.00*
+
+#### Lesson Learned
+
+Commit: fix: ON CONFLICT DO UPDATE so re-runs overwrite stale scores instead of keeping old 0.00
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: handle null resolved_dimensions from digitizer — fallback to empty dict
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c2838bddfdb7762517166c23bda03bb4b665709f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** c2838bddfdb7762517166c23bda03bb4b665709f
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: handle null resolved_dimensions from digitizer — fallback to empty dict
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: handle null resolved_dimensions from digitizer — fallback to empty dict*
+
+#### Lesson Learned
+
+Commit: fix: handle null resolved_dimensions from digitizer — fallback to empty dict
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] refactor: score from structured signals (shape class, dimensions, proportions, views) not pixel comparison
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 49d8c09f63a261dcc653bdcfc4638203ee103489
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** 49d8c09f63a261dcc653bdcfc4638203ee103489
+**Files:** 
+
+**Summary:**
+Commit: refactor: score from structured signals (shape class, dimensions, proportions, views) not pixel comparison
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: refactor: score from structured signals (shape class, dimensions, proportions, views) not pixel comparison*
+
+#### Lesson Learned
+
+Commit: refactor: score from structured signals (shape class, dimensions, proportions, views) not pixel comparison
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: wrap each scoring sub-call in try/except so DB/proportion failures don't skip entire comparison
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 6073baa2e2efc3aecb0e5458e1702d50eb550e48
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 6073baa2e2efc3aecb0e5458e1702d50eb550e48
+**Files:** backend-python/app/services/comparison_agent.py
+
+**Summary:**
+Commit: fix: wrap each scoring sub-call in try/except so DB/proportion failures don't skip entire comparison
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: wrap each scoring sub-call in try/except so DB/proportion failures don't skip entire comparison*
+
+#### Lesson Learned
+
+Commit: fix: wrap each scoring sub-call in try/except so DB/proportion failures don't skip entire comparison
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: init deviations/comparisons lists in legacy compare_dimensions path, fix empty resolved_dimensions check
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d15d2b3884e66a7cff53490ad170dbc5d2712e7f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d15d2b3884e66a7cff53490ad170dbc5d2712e7f
+**Files:** backend-python/app/services/comparison_agent.py
+
+**Summary:**
+Commit: fix: init deviations/comparisons lists in legacy compare_dimensions path, fix empty resolved_dimensions check
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: init deviations/comparisons lists in legacy compare_dimensions path, fix empty resolved_dimensions check*
+
+#### Lesson Learned
+
+Commit: fix: init deviations/comparisons lists in legacy compare_dimensions path, fix empty resolved_dimensions check
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: remove remaining edge_overlap_score references (renamed to shape_class_score)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 94575a139e616bc6cc0a64eb6d9f0e4384b789a2
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 94575a139e616bc6cc0a64eb6d9f0e4384b789a2
+**Files:** backend-python/app/services/comparison_agent.py
+
+**Summary:**
+Commit: fix: remove remaining edge_overlap_score references (renamed to shape_class_score)
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: remove remaining edge_overlap_score references (renamed to shape_class_score)*
+
+#### Lesson Learned
+
+Commit: fix: remove remaining edge_overlap_score references (renamed to shape_class_score)
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: pass furniture_type from crawl_to_dxf to digitizer so user-provided category overrides AI classification
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f8f5f1eb1b5e9b652d7fa1d0c037bb4e72014e1e
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** f8f5f1eb1b5e9b652d7fa1d0c037bb4e72014e1e
+**Files:** 
+
+**Summary:**
+Commit: fix: pass furniture_type from crawl_to_dxf to digitizer so user-provided category overrides AI classification
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: pass furniture_type from crawl_to_dxf to digitizer so user-provided category overrides AI classification*
+
+#### Lesson Learned
+
+Commit: fix: pass furniture_type from crawl_to_dxf to digitizer so user-provided category overrides AI classification
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add resolved_dimensions to remaining dispatch branches
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit b1ef5044f0e587edcd71af380a0000d4d83b4903
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** b1ef5044f0e587edcd71af380a0000d4d83b4903
+**Files:** backend-python/app/api/routes.py
+
+**Summary:**
+Commit: fix: add resolved_dimensions to remaining dispatch branches
+Files: backend-python/app/api/routes.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add resolved_dimensions to remaining dispatch branches*
+
+#### Lesson Learned
+
+Commit: fix: add resolved_dimensions to remaining dispatch branches
+Files: backend-python/app/api/routes.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add cloud persistence (5 columns) to comparison_results, fix async await bug in verify_with_gemini wrapper
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d8b36a3735f6548bc5d141c83223c74b2d02cc90
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d8b36a3735f6548bc5d141c83223c74b2d02cc90
+**Files:** backend-python/app/services/comparison_agent.py
+
+**Summary:**
+Commit: fix: add cloud persistence (5 columns) to comparison_results, fix async await bug in verify_with_gemini wrapper
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add cloud persistence (5 columns) to comparison_results, fix async await bug in verify_with_gemini wrapper*
+
+#### Lesson Learned
+
+Commit: fix: add cloud persistence (5 columns) to comparison_results, fix async await bug in verify_with_gemini wrapper
+Files: backend-python/app/services/comparison_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: variable name mismatch in Gemini silhouette — image_data should be img_bytes
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c7a85259ba4cf643307325b20d0aadfd4a9ea35f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** c7a85259ba4cf643307325b20d0aadfd4a9ea35f
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: variable name mismatch in Gemini silhouette — image_data should be img_bytes
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: variable name mismatch in Gemini silhouette — image_data should be img_bytes*
+
+#### Lesson Learned
+
+Commit: fix: variable name mismatch in Gemini silhouette — image_data should be img_bytes
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add JSON parse fallback in generate_silhouette_svg — try new JSON format, fallback to raw SVG
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 5e2618bf6fe6bb0d44d552cac3e214acfef92c49
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 5e2618bf6fe6bb0d44d552cac3e214acfef92c49
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: add JSON parse fallback in generate_silhouette_svg — try new JSON format, fallback to raw SVG
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add JSON parse fallback in generate_silhouette_svg — try new JSON format, fallback to raw SVG*
+
+#### Lesson Learned
+
+Commit: fix: add JSON parse fallback in generate_silhouette_svg — try new JSON format, fallback to raw SVG
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add SVG path→polyline fallback for hero view coords when Gemini returns raw SVG instead of JSON
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7f197a37897cb64a0c1a35cda92ca8de033403f3
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7f197a37897cb64a0c1a35cda92ca8de033403f3
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: add SVG path→polyline fallback for hero view coords when Gemini returns raw SVG instead of JSON
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add SVG path→polyline fallback for hero view coords when Gemini returns raw SVG instead of JSON*
+
+#### Lesson Learned
+
+Commit: fix: add SVG path→polyline fallback for hero view coords when Gemini returns raw SVG instead of JSON
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: increase Gemini timeout to 60s (configurable via GEMINI_TIMEOUT env var)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 0fafa615ec9942d873c703a8de9d33dba398ae25
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 0fafa615ec9942d873c703a8de9d33dba398ae25
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: increase Gemini timeout to 60s (configurable via GEMINI_TIMEOUT env var)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: increase Gemini timeout to 60s (configurable via GEMINI_TIMEOUT env var)*
+
+#### Lesson Learned
+
+Commit: fix: increase Gemini timeout to 60s (configurable via GEMINI_TIMEOUT env var)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: correct indentation on Gemini timeout line (was 12 spaces, should be 8)
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit b551154a20b39b31c99d06f25e647da52d68a8c0
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** b551154a20b39b31c99d06f25e647da52d68a8c0
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: correct indentation on Gemini timeout line (was 12 spaces, should be 8)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: correct indentation on Gemini timeout line (was 12 spaces, should be 8)*
+
+#### Lesson Learned
+
+Commit: fix: correct indentation on Gemini timeout line (was 12 spaces, should be 8)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: variable scope bug in _read_front_view_bbox — y was referenced in comprehension filter before being defined
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 902cc7b92bd12acf044b0b99cd1634ac05873881
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 902cc7b92bd12acf044b0b99cd1634ac05873881
+**Files:** backend-python/app/backend/dxf_exporter.py
+
+**Summary:**
+Commit: fix: variable scope bug in _read_front_view_bbox — y was referenced in comprehension filter before being defined
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: variable scope bug in _read_front_view_bbox — y was referenced in comprehension filter before being defined*
+
+#### Lesson Learned
+
+Commit: fix: variable scope bug in _read_front_view_bbox — y was referenced in comprehension filter before being defined
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add retry logic for Gemini 503/429 rate limits — up to 3 retries with exponential backoff
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit fce2f8492fea7fe29e10f679026b58afee2e0a36
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** fce2f8492fea7fe29e10f679026b58afee2e0a36
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: add retry logic for Gemini 503/429 rate limits — up to 3 retries with exponential backoff
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add retry logic for Gemini 503/429 rate limits — up to 3 retries with exponential backoff*
+
+#### Lesson Learned
+
+Commit: fix: add retry logic for Gemini 503/429 rate limits — up to 3 retries with exponential backoff
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: increase Gemini retries to 5, add fallback model (gemini-1.5-flash) when 2.5 Flash is rate-limited, cap backoff at 
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 051d5a541d1d38ec14f9ba051d2346be71c28b52
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 051d5a541d1d38ec14f9ba051d2346be71c28b52
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: increase Gemini retries to 5, add fallback model (gemini-1.5-flash) when 2.5 Flash is rate-limited, cap backoff at 8s
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: increase Gemini retries to 5, add fallback model (gemini-1.5-flash) when 2.5 Flash is rate-limited, cap backoff at 8s*
+
+#### Lesson Learned
+
+Commit: fix: increase Gemini retries to 5, add fallback model (gemini-1.5-flash) when 2.5 Flash is rate-limited, cap backoff at 8s
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] docs(gap-log): log today's classification fixes and remaining weaknesses
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit c7d5ae3a5322bcc7e1425a18d114541348d8d783
+
+**Project:** cad-scaler-digitizer
+**Author:** unknown
+**Commit:** c7d5ae3a5322bcc7e1425a18d114541348d8d783
+**Files:** 
+
+**Summary:**
+Commit: docs(gap-log): log today's classification fixes and remaining weaknesses
+Files: 
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: docs(gap-log): log today's classification fixes and remaining weaknesses*
+
+#### Lesson Learned
+
+Commit: docs(gap-log): log today's classification fixes and remaining weaknesses
+Files: 
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: make compare_digitization async so verify_with_gemini can properly await instead of using asyncio.run from running 
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bd7f8a59162db32bf43d38dda420599493a71be1
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** bd7f8a59162db32bf43d38dda420599493a71be1
+**Files:** backend-python/app/api/routes.py,backend-python/app/services/comparison_agent.py,backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: make compare_digitization async so verify_with_gemini can properly await instead of using asyncio.run from running loop
+Files: backend-python/app/api/routes.py,backend-python/app/services/comparison_agent.py,backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: make compare_digitization async so verify_with_gemini can properly await instead of using asyncio.run from running loop*
+
+#### Lesson Learned
+
+Commit: fix: make compare_digitization async so verify_with_gemini can properly await instead of using asyncio.run from running loop
+Files: backend-python/app/api/routes.py,backend-python/app/services/comparison_agent.py,backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: move DNA enrichment outside Gemini SVG gating + add img_bytes size check + handle extraction runs always
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d6cdefb7cdc5a31bb1131258e65f90f00a5ecfb9
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d6cdefb7cdc5a31bb1131258e65f90f00a5ecfb9
+**Files:** backend-python/app/services/crawl_to_dxf.py
+
+**Summary:**
+Commit: fix: move DNA enrichment outside Gemini SVG gating + add img_bytes size check + handle extraction runs always
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: move DNA enrichment outside Gemini SVG gating + add img_bytes size check + handle extraction runs always*
+
+#### Lesson Learned
+
+Commit: fix: move DNA enrichment outside Gemini SVG gating + add img_bytes size check + handle extraction runs always
+Files: backend-python/app/services/crawl_to_dxf.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix(workflow): 3 audit fixes in furniture-draft pipeline
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 3cb0f12377279ce646036a6445c1d10315d061d3
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 3cb0f12377279ce646036a6445c1d10315d061d3
+**Files:** backend-python/app/backend/workflow/furniture_draft.py
+
+**Summary:**
+Commit: fix(workflow): 3 audit fixes in furniture-draft pipeline
+Files: backend-python/app/backend/workflow/furniture_draft.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix(workflow): 3 audit fixes in furniture-draft pipeline*
+
+#### Lesson Learned
+
+Commit: fix(workflow): 3 audit fixes in furniture-draft pipeline
+Files: backend-python/app/backend/workflow/furniture_draft.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: per-function import for ADJUST dispatch — one missing build_* doesn't kill the entire table, 13 missing types now m
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit efa37a5bab0fe5d2a28719412619c96fa0c44843
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** efa37a5bab0fe5d2a28719412619c96fa0c44843
+**Files:** backend-python/app/api/routes.py
+
+**Summary:**
+Commit: fix: per-function import for ADJUST dispatch — one missing build_* doesn't kill the entire table, 13 missing types now mapped to nearest builder
+Files: backend-python/app/api/routes.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: per-function import for ADJUST dispatch — one missing build_* doesn't kill the entire table, 13 missing types now mapped to nearest builder*
+
+#### Lesson Learned
+
+Commit: fix: per-function import for ADJUST dispatch — one missing build_* doesn't kill the entire table, 13 missing types now mapped to nearest builder
+Files: backend-python/app/api/routes.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: remove duplicated JSX block causing frontend build failure
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 853c68488eddbb117c4d9e0800b68786c79e74e0
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 853c68488eddbb117c4d9e0800b68786c79e74e0
+**Files:** frontend/App.tsx
+
+**Summary:**
+Commit: fix: remove duplicated JSX block causing frontend build failure
+Files: frontend/App.tsx
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: remove duplicated JSX block causing frontend build failure*
+
+#### Lesson Learned
+
+Commit: fix: remove duplicated JSX block causing frontend build failure
+Files: frontend/App.tsx
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: convert flat x,y array to [[x,y],...] pairs for DXF hero view coords
+
+Date: 2026-06-29
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit a74727ca12ffc2e788463369bdca2ec82b1a0542
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** a74727ca12ffc2e788463369bdca2ec82b1a0542
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: convert flat x,y array to [[x,y],...] pairs for DXF hero view coords
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: convert flat x,y array to [[x,y],...] pairs for DXF hero view coords*
+
+#### Lesson Learned
+
+Commit: fix: convert flat x,y array to [[x,y],...] pairs for DXF hero view coords
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---

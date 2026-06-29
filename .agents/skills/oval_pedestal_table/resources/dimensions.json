@@ -1,0 +1,78 @@
+{
+  "furniture_type": "oval_pedestal_table",
+  "builder_function": "build_oval_pedestal_model",
+  "dimensions": {
+    "length_cm": {
+      "min": 120,
+      "max": 260,
+      "typical": 180,
+      "unit": "cm",
+      "description": "Major axis of elliptical top (longest horizontal span, front view width)"
+    },
+    "depth_cm": {
+      "min": 80,
+      "max": 130,
+      "typical": 100,
+      "unit": "cm",
+      "description": "Minor axis of elliptical top (shortest horizontal span, side view width)"
+    },
+    "height_cm": {
+      "min": 72,
+      "max": 78,
+      "typical": 75,
+      "unit": "cm",
+      "description": "Overall table height from floor to top surface"
+    },
+    "top_thick_cm": {
+      "min": 2,
+      "max": 5,
+      "typical": 3,
+      "unit": "cm",
+      "description": "Thickness of the tabletop slab (stone/marble tops typically 3-4 cm)"
+    },
+    "pedestal_dia_cm": {
+      "min": 25,
+      "max": 55,
+      "typical": 40,
+      "unit": "cm",
+      "description": "Diameter of the single central pedestal column"
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "length_cm must be greater than depth_cm (oval, not round)",
+      "condition": "length_cm > depth_cm",
+      "action": "flag",
+      "message": "If length_cm equals depth_cm the table is round, not oval. Use round_pedestal_table skill instead. If length_cm < depth_cm the axes are swapped — swap them."
+    },
+    {
+      "rule": "Aspect ratio must exceed 1.2:1 to justify oval classification",
+      "condition": "length_cm / depth_cm >= 1.2",
+      "action": "flag",
+      "message": "If length:depth ratio is less than 1.2, classify as round_pedestal_table rather than oval_pedestal_table."
+    },
+    {
+      "rule": "pedestal_dia_cm must be smaller than depth_cm",
+      "condition": "pedestal_dia_cm < depth_cm",
+      "action": "error",
+      "message": "A pedestal wider than the short axis of the table would protrude beyond the tabletop edge. Reduce pedestal_dia_cm or increase depth_cm."
+    },
+    {
+      "rule": "height_cm must be greater than top_thick_cm",
+      "condition": "height_cm > top_thick_cm",
+      "action": "error",
+      "message": "Table height must be taller than the tabletop thickness alone; the pedestal column needs room below the top."
+    },
+    {
+      "rule": "pedestal_dia_cm must be smaller than length_cm",
+      "condition": "pedestal_dia_cm < length_cm",
+      "action": "error",
+      "message": "Pedestal diameter cannot exceed the table's major axis length. Reduce pedestal_dia_cm."
+    }
+  ],
+  "classification_notes": {
+    "vs_round_pedestal_table": "Use oval when length:depth > 1.2. Use round when length == depth (or ratio < 1.2).",
+    "vs_rectangular_table": "Oval has curved edges in top view. Rectangle has sharp 90-degree corners.",
+    "vs_asymmetric_pedestal_table": "Oval has ONE central pedestal. Asymmetric has TWO offset pedestals of different sizes."
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "furniture_type": "asymmetric_pedestal_table",
+  "description": "Parametric dimensions for double offset pedestal dining tables.",
+  "sub_types": {
+    "asymmetric_pedestal_table": {
+      "description": "Standard double pedestal dining table",
+      "dimensions": {
+        "length_cm": {
+          "min": 120,
+          "max": 280,
+          "typical": 180,
+          "unit": "cm"
+        },
+        "depth_cm": {
+          "min": 70,
+          "max": 120,
+          "typical": 90,
+          "unit": "cm"
+        },
+        "height_cm": {
+          "min": 72,
+          "max": 78,
+          "typical": 75,
+          "unit": "cm"
+        },
+        "large_ped_dia_cm": {
+          "min": 25,
+          "max": 50,
+          "typical": 40,
+          "unit": "cm"
+        },
+        "small_ped_dia_cm": {
+          "min": 15,
+          "max": 30,
+          "typical": 22,
+          "unit": "cm"
+        },
+        "left_ped_x_cm": {
+          "min": 20,
+          "max": 50,
+          "typical": 30,
+          "unit": "cm"
+        },
+        "right_ped_x_cm": {
+          "min": -50,
+          "max": -20,
+          "typical": -25,
+          "unit": "cm"
+        }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "large_ped_dia_cm > small_ped_dia_cm",
+      "condition": "large_ped_dia_cm > small_ped_dia_cm",
+      "action": "flag",
+      "message": "Large pedestal diameter should be greater than small pedestal diameter."
+    },
+    {
+      "rule": "Pedestals must not overlap",
+      "condition": "(left_ped_x_cm - large_ped_dia_cm / 2) > (right_ped_x_cm + small_ped_dia_cm / 2)",
+      "action": "flag",
+      "message": "Left and right pedestals overlap in X-axis. Check offsets."
+    },
+    {
+      "rule": "Pedestals must fit within depth",
+      "condition": "large_ped_dia_cm < depth_cm AND small_ped_dia_cm < depth_cm",
+      "action": "flag",
+      "message": "Pedestal diameters cannot exceed table depth."
+    }
+  ]
+}

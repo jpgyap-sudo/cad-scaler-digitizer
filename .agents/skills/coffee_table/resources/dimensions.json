@@ -1,0 +1,27 @@
+{
+  "furniture_type": "coffee_table",
+  "description": "Parametric dimensions for coffee tables.",
+  "sub_types": {
+    "coffee_table": {
+      "dimensions": {
+        "width_cm": { "min": 80, "max": 160, "typical": 120 },
+        "depth_cm": { "min": 50, "max": 90, "typical": 70 },
+        "height_cm": { "min": 35, "max": 52, "typical": 42 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Width must be greater than or equal to depth",
+      "condition": "width_cm >= depth_cm",
+      "action": "swap",
+      "message": "Coffee table width should be greater than or equal to depth."
+    },
+    {
+      "rule": "Height must be low",
+      "condition": "height_cm <= 55",
+      "action": "flag",
+      "message": "Coffee table height is too tall. If height > 60cm, this might be a console or side table."
+    }
+  ]
+}

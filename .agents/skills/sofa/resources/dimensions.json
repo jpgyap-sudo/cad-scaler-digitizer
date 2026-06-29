@@ -1,0 +1,35 @@
+{
+  "furniture_type": "sofa",
+  "description": "Dimensions for sofas, sectionals, and loveseats.",
+  "sub_types": {
+    "two_seater": {
+      "dimensions": {
+        "width_cm": { "min": 140, "max": 170, "typical": 155 },
+        "depth_cm": { "min": 70, "max": 110, "typical": 88 },
+        "height_cm": { "min": 70, "max": 110, "typical": 85 }
+      }
+    },
+    "three_seater": {
+      "dimensions": {
+        "width_cm": { "min": 180, "max": 230, "typical": 210 },
+        "depth_cm": { "min": 70, "max": 110, "typical": 88 },
+        "height_cm": { "min": 70, "max": 110, "typical": 85 }
+      }
+    },
+    "sectional": {
+      "dimensions": {
+        "width_cm": { "min": 240, "max": 380, "typical": 280 },
+        "depth_cm": { "min": 140, "max": 220, "typical": 180 },
+        "height_cm": { "min": 70, "max": 110, "typical": 85 }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Sofa depth vs height check",
+      "condition": "depth_cm < height_cm * 1.5",
+      "action": "flag",
+      "message": "Sofa depth exceeds height excessively."
+    }
+  ]
+}

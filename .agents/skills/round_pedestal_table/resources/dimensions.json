@@ -1,0 +1,93 @@
+{
+  "furniture_type": "round_pedestal_table",
+  "description": "Parametric dimensions for round pedestal tables with circular tops and central pedestal base.",
+  "sub_types": {
+    "dining_table": {
+      "description": "Standard circular dining table",
+      "dimensions": {
+        "top_dia_cm": {
+          "min": 80,
+          "max": 140,
+          "typical": 110,
+          "unit": "cm",
+          "description": "Diameter of the circular top surface."
+        },
+        "height_cm": {
+          "min": 72,
+          "max": 78,
+          "typical": 75,
+          "unit": "cm",
+          "description": "Floor to top surface height."
+        },
+        "base_dia_cm": {
+          "min": 40,
+          "max": 70,
+          "typical": 50,
+          "unit": "cm",
+          "description": "Diameter of the pedestal footprint."
+        },
+        "neck_dia_cm": {
+          "min": 10,
+          "max": 35,
+          "typical": 20,
+          "unit": "cm",
+          "description": "Narrowest column diameter."
+        },
+        "collar_dia_cm": {
+          "min": 35,
+          "max": 60,
+          "typical": 45,
+          "unit": "cm",
+          "description": "Top connection collar diameter."
+        }
+      }
+    },
+    "bar_table": {
+      "description": "High circular bar table",
+      "dimensions": {
+        "top_dia_cm": {
+          "min": 60,
+          "max": 90,
+          "typical": 70,
+          "unit": "cm"
+        },
+        "height_cm": {
+          "min": 95,
+          "max": 110,
+          "typical": 105,
+          "unit": "cm"
+        },
+        "base_dia_cm": {
+          "min": 35,
+          "max": 55,
+          "typical": 45,
+          "unit": "cm"
+        }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Collar diameter < Top diameter",
+      "condition": "collar_dia_cm < top_dia_cm",
+      "action": "cap_at_top",
+      "message": "Collar diameter cannot exceed top diameter."
+    },
+    {
+      "rule": "Base diameter >= Neck diameter",
+      "condition": "base_dia_cm >= neck_dia_cm",
+      "action": "flag",
+      "message": "Base diameter should be larger than neck diameter for stability."
+    },
+    {
+      "rule": "Collar diameter >= Neck diameter",
+      "condition": "collar_dia_cm >= neck_dia_cm",
+      "action": "flag"
+    },
+    {
+      "rule": "Base diameter < Top diameter",
+      "condition": "base_dia_cm < top_dia_cm",
+      "action": "cap_at_top"
+    }
+  ]
+}

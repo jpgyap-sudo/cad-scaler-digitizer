@@ -1983,8 +1983,6 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         except Exception as e:
             print(f"[Hybrid] Phase3Pipeline failed (non-fatal): {e}")
 
-        try: os.remove(str(img_path))
-        except: pass
 
         # ===== Template Graph Resolution =====
         template_graph_result = None
@@ -2067,6 +2065,48 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 elif _tag_is(tag, 'w', 'width'): known_dims['top_width_cm'] = val
         segmentation = segment_furniture(ftype, ocr_lines, ai_result, known_dims)
 
+        # ===== Dimension Sanity Checker =====
+        try:
+            from app.backend.dimension_sanity import check_and_correct_dimensions
+            # Build input dictionary
+            dims_dict = {}
+            for d in merged_dims:
+                tag = d.get('tag', '').lower().strip()
+                val = d.get('value_cm')
+                if val is not None:
+                    if tag in ('top_dia', 'dia', 'diameter'):
+                        dims_dict['top_dia_cm'] = float(val)
+                    elif tag in ('h', 'height', 'overall_height', 'total_height'):
+                        dims_dict['overall_height_cm'] = float(val)
+                        dims_dict['height_cm'] = float(val)
+                    elif tag in ('w', 'width', 'length', 'overall_width'):
+                        dims_dict['width_cm'] = float(val)
+                        dims_dict['length_cm'] = float(val)
+                    elif tag in ('d', 'depth', 'overall_depth'):
+                        dims_dict['depth_cm'] = float(val)
+                    else:
+                        dims_dict[tag] = float(val)
+            
+            corrected_dict, sanity_flags = check_and_correct_dimensions(ftype, dims_dict)
+            if sanity_flags:
+                print(f"[DimensionSanity] Warnings/Corrections: {sanity_flags}")
+            
+            # Map corrected values back to merged_dims
+            for d in merged_dims:
+                tag = d.get('tag', '').lower().strip()
+                if tag in ('top_dia', 'dia', 'diameter') and 'top_dia_cm' in corrected_dict:
+                    d['value_cm'] = corrected_dict['top_dia_cm']
+                elif tag in ('h', 'height', 'overall_height', 'total_height'):
+                    d['value_cm'] = corrected_dict.get('overall_height_cm') or corrected_dict.get('height_cm') or d['value_cm']
+                elif tag in ('w', 'width', 'length', 'overall_width'):
+                    d['value_cm'] = corrected_dict.get('width_cm') or corrected_dict.get('length_cm') or d['value_cm']
+                elif tag in ('d', 'depth', 'overall_depth') and 'depth_cm' in corrected_dict:
+                    d['value_cm'] = corrected_dict['depth_cm']
+                elif tag in corrected_dict:
+                    d['value_cm'] = corrected_dict[tag]
+        except Exception as se:
+            print(f"[DimensionSanity] Failed: {se}")
+
         dxf_name = f'{job_id}_hybrid.dxf'
         dxf_path = OUT / dxf_name
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate,
@@ -2092,9 +2132,70 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 f2.write(drawing_to_svg(model))
         except Exception: svg_name = None
 
+        # ===== NEW: SVG Quality Verifier & Self-Critic Active Feedback Loop =====
+        svg_quality_result = None
+        if svg_name and Path(str(svg_path)).exists() and Path(str(img_path)).exists():
+            try:
+                from app.agents import verify_svg_quality
+                svg_quality_result = await verify_svg_quality(
+                    product_image_path=str(img_path),
+                    svg_path=str(svg_path),
+                    furniture_type=ftype,
+                    dimensions=resolved
+                )
+                print(f"[Hybrid][QualityVerifier] Completed. overall_quality={svg_quality_result.get('overall_quality')}")
+                
+                # Active feedback loop:
+                quality_score = svg_quality_result.get('overall_quality', 1.0)
+                corrections = svg_quality_result.get('corrections')
+                if quality_score < 0.65 and corrections and isinstance(corrections, dict):
+                    print(f"[Hybrid][SelfCritic] Quality {quality_score:.2f} < 0.65. Triggering visual repair pass...")
+                    repaired_dims = dict(resolved)
+                    has_changes = False
+                    for param, item in corrections.items():
+                        sug = item.get('suggested')
+                        if sug is not None:
+                            try:
+                                repaired_dims[param] = float(sug)
+                                print(f"[Hybrid][SelfCritic] Correcting {param}: {resolved.get(param)} -> {sug}")
+                                has_changes = True
+                            except (TypeError, ValueError):
+                                pass
+                    
+                    if has_changes:
+                        # Re-run DXF and SVG generation with corrected dimensions
+                        _new_dispatch = _dispatch_furniture(
+                            ftype, dxf_path, 
+                            [{"tag": k, "value_cm": v} for k, v in repaired_dims.items()],
+                            real_w, real_h, visual_base_estimate, materials, real_d
+                        )
+                        resolved = _new_dispatch.get('resolved_dimensions') or resolved
+                        
+                        # Re-render SVG with new resolved dimensions
+                        model = _build_svg_model(ftype, resolved, real_w, real_h, _new_dispatch, detected)
+                        with open(str(svg_path), 'w', encoding='utf-8') as f2:
+                            f2.write(drawing_to_svg(model))
+                        
+                        # Re-run quality verifier to get final score
+                        svg_quality_result = await verify_svg_quality(
+                            product_image_path=str(img_path),
+                            svg_path=str(svg_path),
+                            furniture_type=ftype,
+                            dimensions=resolved
+                        )
+                        print(f"[Hybrid][SelfCritic] Repair pass finished. New overall_quality={svg_quality_result.get('overall_quality')}")
+            except Exception as qe:
+                print(f"[Hybrid][QualityVerifier] Failed: {qe}")
+        
+        # Defer image cleanup to the end of processing
+        try: os.remove(str(img_path))
+        except: pass
+        # ===== End SVG Quality Verifier =====
+
         _persist_drawing_history(job_id, ftype, dxf_path,
                                   svg_path=(OUT / svg_name) if svg_name else None,
-                                  dimensions=(dispatch_extra or {}).get('resolved_dimensions'))
+                                  dimensions=resolved,
+                                  quality_score=svg_quality_result.get('overall_quality') if svg_quality_result else None)
 
         # Build template_graph response block
         template_response = None
@@ -2388,8 +2489,6 @@ async def digitize_unified(file: UploadFile = File(...),
             ai_vision_result=ai_result,
         )
 
-        try: os.remove(str(img_path))
-        except: pass
 
         # Determine furniture type for downstream phases
         _ftype = unified.product_type.value if unified.product_type else "generic"
@@ -2455,6 +2554,23 @@ async def digitize_unified(file: UploadFile = File(...),
         preview_svg = None
         if unified.template_graph and unified.template_graph.get("template", {}).get("id"):
             try:
+                # ===== Dimension Sanity Checker =====
+                try:
+                    from app.backend.dimension_sanity import check_and_correct_dimensions
+                    dims_dict = {}
+                    for k, v in unified.dimensions.items():
+                        dims_dict[k] = float(v.value)
+                    
+                    corrected_dict, sanity_flags = check_and_correct_dimensions(_ftype, dims_dict)
+                    if sanity_flags:
+                        print(f"[Unified][DimensionSanity] Warnings/Corrections: {sanity_flags}")
+                    
+                    for k, v in unified.dimensions.items():
+                        if k in corrected_dict:
+                            v.value = corrected_dict[k]
+                except Exception as se:
+                    print(f"[Unified][DimensionSanity] Failed: {se}")
+
                 dxf_name = f"{job_id}_unified.dxf"
                 dxf_path = OUT / dxf_name
                 dispatch_extra = _dispatch_furniture(_ftype, dxf_path,
@@ -2472,10 +2588,69 @@ async def digitize_unified(file: UploadFile = File(...),
                     with open(str(svg_path), 'w', encoding='utf-8') as f2:
                         f2.write(drawing_to_svg(model))
                     preview_svg = f"/api/preview/svg/{dxf_name}"
+                    
+                    # ===== NEW: SVG Quality Verifier & Self-Critic Active Feedback Loop =====
+                    svg_quality_result = None
+                    if Path(str(svg_path)).exists() and Path(str(img_path)).exists():
+                        try:
+                            from app.agents import verify_svg_quality
+                            svg_quality_result = await verify_svg_quality(
+                                product_image_path=str(img_path),
+                                svg_path=str(svg_path),
+                                furniture_type=_ftype,
+                                dimensions=resolved
+                            )
+                            print(f"[Unified][QualityVerifier] Completed. overall_quality={svg_quality_result.get('overall_quality')}")
+                            
+                            # Active feedback loop:
+                            quality_score = svg_quality_result.get('overall_quality', 1.0)
+                            corrections = svg_quality_result.get('corrections')
+                            if quality_score < 0.65 and corrections and isinstance(corrections, dict):
+                                print(f"[Unified][SelfCritic] Quality {quality_score:.2f} < 0.65. Triggering visual repair pass...")
+                                repaired_dims = dict(resolved)
+                                has_changes = False
+                                for param, item in corrections.items():
+                                    sug = item.get('suggested')
+                                    if sug is not None:
+                                        try:
+                                            repaired_dims[param] = float(sug)
+                                            print(f"[Unified][SelfCritic] Correcting {param}: {resolved.get(param)} -> {sug}")
+                                            has_changes = True
+                                        except (TypeError, ValueError):
+                                            pass
+                                
+                                if has_changes:
+                                    # Re-run DXF and SVG generation with corrected dimensions
+                                    dispatch_extra = _dispatch_furniture(
+                                        _ftype, dxf_path, 
+                                        [{"tag": k, "value_cm": v} for k, v in repaired_dims.items()],
+                                        None, None
+                                    )
+                                    resolved = dispatch_extra.get('resolved_dimensions') or resolved
+                                    
+                                    # Re-render SVG with new resolved dimensions
+                                    model = _build_svg_model(_ftype, resolved, None, None, dispatch_extra)
+                                    with open(str(svg_path), 'w', encoding='utf-8') as f2:
+                                        f2.write(drawing_to_svg(model))
+                                    
+                                    # Re-run quality verifier to get final score
+                                    svg_quality_result = await verify_svg_quality(
+                                        product_image_path=str(img_path),
+                                        svg_path=str(svg_path),
+                                        furniture_type=_ftype,
+                                        dimensions=resolved
+                                    )
+                                    print(f"[Unified][SelfCritic] Repair pass finished. New overall_quality={svg_quality_result.get('overall_quality')}")
+                        except Exception as qe:
+                            print(f"[Unified][QualityVerifier] Failed: {qe}")
                 except Exception as e:
                     print(f"[Unified] SVG failed: {e}")
             except Exception as e:
                 print(f"[Unified] DXF/SVG generation failed: {e}")
+
+        # Defer image cleanup to the end of processing
+        try: os.remove(str(img_path))
+        except: pass
 
         response = unified.to_api_dict()
         response["job_id"] = job_id
@@ -2485,6 +2660,7 @@ async def digitize_unified(file: UploadFile = File(...),
         response["dxf_file"] = dxf_name
         response["download"] = download_path
         response["preview_svg"] = preview_svg
+        response["svg_quality_assessment"] = svg_quality_result
         response["ai_enabled"] = OPENAI_API_KEY is not None and len(OPENAI_API_KEY) > 0
         return JSONResponse(response)
 

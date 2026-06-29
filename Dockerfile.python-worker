@@ -22,6 +22,10 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     ca-certificates \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
@@ -37,6 +41,9 @@ COPY backend-python/ /app/
 
 # Copy shared resources (templates, product catalog, component library)
 COPY resources/ /app/resources/
+
+# Copy custom agent skills/rules (for dimension standards validation)
+COPY .agents/ /app/.agents/
 RUN chmod +x /app/worker_entrypoint.sh
 
 # ============================================================

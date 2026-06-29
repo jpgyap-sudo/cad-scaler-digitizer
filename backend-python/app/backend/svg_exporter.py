@@ -282,8 +282,11 @@ def render_svg(model: DrawingModel, width: Optional[int] = None, height: Optiona
     # then shifted right by shift_x so the leftmost content sits `margin` from the edge.
     svg_parts.append(f'<g transform="translate({shift_x:.1f},0)">')
     for view in model.views:
-        svg_parts.append(f'<!-- {view.name} -->')
-        svg_parts.append(_render_view_flipped(view, PH))
+        clean_name = view.name.lower().replace("view", "").strip().replace(" ", "-")
+        svg_parts.append(f'  <g class="cad-view" data-view="{clean_name}">')
+        svg_parts.append(f'    <!-- {view.name} -->')
+        svg_parts.append(f'    {_render_view_flipped(view, PH)}')
+        svg_parts.append(f'  </g>')
     svg_parts.append('</g>')
 
     # === TITLE BLOCK (Bottom-Right, safely within VW/VH) ===

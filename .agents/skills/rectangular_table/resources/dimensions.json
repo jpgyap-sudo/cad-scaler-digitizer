@@ -1,0 +1,174 @@
+{
+  "furniture_type": "rectangular_table",
+  "description": "Parametric dimensions for rectangular tables including dining, meeting, and side tables. Does NOT cover coffee tables (use coffee_table skill instead).",
+  "sub_types": {
+    "dining_table": {
+      "description": "Standard dining or kitchen table used with chairs at seated height",
+      "dimensions": {
+        "width_cm": {
+          "min": 120,
+          "max": 300,
+          "typical": 160,
+          "unit": "cm",
+          "description": "Long horizontal dimension (X-axis). Always >= depth_cm. Common sizes: 120, 140, 160, 180, 200, 240 cm."
+        },
+        "depth_cm": {
+          "min": 75,
+          "max": 100,
+          "typical": 90,
+          "unit": "cm",
+          "description": "Short horizontal dimension (Y-axis). Standard dining comfort requires minimum 75 cm. Typical range 80-95 cm."
+        },
+        "height_cm": {
+          "min": 72,
+          "max": 78,
+          "typical": 75,
+          "unit": "cm",
+          "description": "Floor to top surface. Standard dining height 74-76 cm. Ergonomic range 72-78 cm for use with standard chairs."
+        },
+        "leg_thickness_cm": {
+          "min": 4,
+          "max": 8,
+          "typical": 6,
+          "unit": "cm",
+          "description": "Square or round leg cross-section. Slender contemporary legs 4-5 cm. Traditional/farmhouse legs 7-8 cm. Hairpin rod legs 1-2 cm (override cap)."
+        },
+        "top_thickness_cm": {
+          "min": 2,
+          "max": 5,
+          "typical": 3,
+          "unit": "cm",
+          "description": "Tabletop slab thickness. Marble/stone: 3-4 cm. Timber: 3-4 cm. Sintered stone: 1.2-2 cm. Glass: 1-1.5 cm."
+        }
+      }
+    },
+    "meeting_conference_table": {
+      "description": "Large rectangular table for office or boardroom use",
+      "dimensions": {
+        "width_cm": {
+          "min": 180,
+          "max": 500,
+          "typical": 240,
+          "unit": "cm",
+          "description": "Long dimension of conference table. Common: 180, 200, 240, 300, 360, 400 cm."
+        },
+        "depth_cm": {
+          "min": 80,
+          "max": 120,
+          "typical": 100,
+          "unit": "cm",
+          "description": "Short dimension. Conference tables are typically wider (deeper) than dining tables to accommodate laptops and documents."
+        },
+        "height_cm": {
+          "min": 72,
+          "max": 76,
+          "typical": 74,
+          "unit": "cm",
+          "description": "Standard office desk/table height. ADA compliant range 71.1-86.4 cm."
+        },
+        "leg_thickness_cm": {
+          "min": 5,
+          "max": 10,
+          "typical": 7,
+          "unit": "cm",
+          "description": "Larger section legs or trestle/beam structures for long tables."
+        },
+        "top_thickness_cm": {
+          "min": 2.5,
+          "max": 6,
+          "typical": 4,
+          "unit": "cm",
+          "description": "Conference tables often have thicker tops for rigidity over long spans."
+        }
+      }
+    },
+    "coffee_table": {
+      "description": "Low rectangular table for living rooms. NOTE: route to build_coffee_table_model() not build_rectangular_table_model()",
+      "dimensions": {
+        "width_cm": {
+          "min": 80,
+          "max": 160,
+          "typical": 120,
+          "unit": "cm",
+          "description": "Long dimension of coffee table top."
+        },
+        "depth_cm": {
+          "min": 50,
+          "max": 90,
+          "typical": 70,
+          "unit": "cm",
+          "description": "Short dimension of coffee table top. Typically 60-70% of sofa depth."
+        },
+        "height_cm": {
+          "min": 35,
+          "max": 50,
+          "typical": 42,
+          "unit": "cm",
+          "description": "Low table height. Should be approximately equal to sofa seat height (40-45 cm) for comfortable reach."
+        },
+        "leg_thickness_cm": {
+          "min": 2,
+          "max": 5,
+          "typical": 3,
+          "unit": "cm",
+          "description": "Coffee tables have slender legs. Very thin metal legs: 1-2 cm. Standard: 3-4 cm."
+        }
+      }
+    }
+  },
+  "sanity_checks": [
+    {
+      "rule": "Width must be greater than or equal to depth",
+      "condition": "width_cm >= depth_cm",
+      "action": "swap_values",
+      "message": "If width_cm < depth_cm, swap the two values — longer side is always width."
+    },
+    {
+      "rule": "Dining table height must be in ergonomic range",
+      "condition": "height_cm >= 72 AND height_cm <= 78",
+      "applies_to": "dining_table",
+      "action": "flag",
+      "message": "Dining table height outside 72-78 cm range. Verify measurement. Standard is 74-76 cm."
+    },
+    {
+      "rule": "Coffee table height must be low",
+      "condition": "height_cm >= 35 AND height_cm <= 52",
+      "applies_to": "coffee_table",
+      "action": "flag",
+      "message": "Coffee table height outside 35-52 cm range. If height > 60 cm this is likely a side/console table."
+    },
+    {
+      "rule": "Leg thickness must not exceed 10 cm",
+      "condition": "leg_thickness_cm <= 10",
+      "action": "cap_and_warn",
+      "message": "Leg thickness > 10 cm is unrealistic for a table leg. Value may represent apron depth instead. Cap at 10 cm."
+    },
+    {
+      "rule": "Leg height must be positive after subtracting top thickness",
+      "condition": "(height_cm - top_thickness_cm) >= 20",
+      "action": "flag",
+      "message": "height_cm - top_thickness_cm < 20 cm leaves almost no room for legs. Check height extraction."
+    },
+    {
+      "rule": "Width must not exceed plausible single-piece top span",
+      "condition": "width_cm <= 500",
+      "action": "flag",
+      "message": "Width > 500 cm is outside any realistic single-table scenario. Check unit (mm vs cm confusion?)."
+    },
+    {
+      "rule": "Depth must be within realistic range",
+      "condition": "depth_cm >= 40 AND depth_cm <= 130",
+      "action": "flag",
+      "message": "Depth outside 40-130 cm range is unusual. Verify measurement source."
+    }
+  ],
+  "routing": {
+    "builder": "build_rectangular_table_model",
+    "avoid_for": [
+      "coffee_table (height < 55 cm) -> use build_coffee_table_model()",
+      "round top -> use build_round_pedestal_model()",
+      "oval top -> use build_oval_pedestal_model()",
+      "very narrow console (depth < 45 cm) -> use build_console_table_model()"
+    ]
+  }
+}
