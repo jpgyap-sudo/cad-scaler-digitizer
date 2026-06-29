@@ -598,9 +598,43 @@ line that happened to get edited. `save_console_table` and
 `save_asymmetric_pedestal_table` still need the fix applied at all, not
 just the other two finishing it properly.
 
-## Priority Order for Remaining Fixes
+## Fixes Applied This Session (2026-06-29)
 
-1. **Classification fallback** — without this, nothing else matters
-2. **Shopify JSON direct parse** — skip the two-independent-guesses pattern
-3. **DXF front view** — port from SVG preview to DXf exporter
-4. **Rectangular tabletop** — replace circle with rectangle for rectangular tables
+| # | Finding | Status | Commit | What changed |
+|---|---|---|---|---|
+| 5 | `top_shape` signal discarded | FIXED | `146110c` | Added `coffee_table_round` type; `_TYPE_ALIAS` normalizes it at dispatch entry |
+| 6 | Slider Apply silently fails | FIXED | `1dc78f9` | `data.error` check + red error banner in `SliderPanel.tsx` |
+| 7 | Chat sessions duplicate (file vs Postgres) | FIXED | `146110c` | Wired `brain_sync.save_chat_session`/`load_chat_session` into routes.py chat endpoints |
+| 8 | Schema table usage (informational) | DOCUMENTED | `025a78f` | 10 tables, only 2 used — documented in this audit |
+| 9 | Brain proportions/materials not surfaced | FIXED | `1dc78f9` | `BrainStats.tsx` now fetches `/brain/proportions` + `/brain/materials` |
+| 10 | `cad_intelligence` thrown away | FIXED | `025a78f` | Added to `DigitizeResult` type + collapsible entity confidence in `App.tsx` |
+| 11 | Visibility toggle crash (3 types) | FIXED | `1dc78f9` | Added `visibility` param to `build_round_pedestal_model`, `build_oval_pedestal_model`, `build_asymmetric_pedestal_model` |
+| 12 | Crawler temp dir self-destructs | FIXED | `025a78f` | Replaced `tempfile.TemporaryDirectory` with persistent `/tmp/cad_digitizer_outputs/`; added Spaces upload + Postgres metadata write |
+| 13 | Bulk crawler unreachable from frontend | FIXED | `025a78f` + `146110c` | #12 fix unblocks this; backend now persists to Postgres + Spaces |
+| 14 | `resource_engine` second pipeline (informational) | DOCUMENTED | `025a78f` | Documented as scope decision in this audit |
+
+## DXF Improvements This Session
+
+| Change | Details |
+|---|---|
+| `_add_isometric_box()` helper | Reusable 3D isometric projection for any W×D×H |
+| TOP VIEW + ISOMETRIC VIEW | Added to `save_cabinet`, `save_sofa`, `save_wardrobe` (all now 4 views) |
+| Proportional leg heights | Replaced hardcoded `leg_h=4`/`leg_h=3` with `max(4, h*0.06)`/`max(3, h*0.08)` in `save_armchair`, `save_bar_stool`, `save_bench_chaise`, `save_ottoman` |
+| Dimension unit consistency | Fixed mm→cm in title blocks of `save_oval_pedestal_table`, `save_console_table`, `save_office_desk`, `save_asymmetric_pedestal_table` |
+| Dispatch coverage | Added `side_table`, `nightstand`, `bed` branches (now 19/19 types covered) |
+| SVG model coverage | Added handlers for all 10 previously-missing types in `_build_svg_model` |
+
+## Frontend Improvements This Session
+
+| Change | Details |
+|---|---|
+| Live skeleton preview | Template cards fetch `/skeleton/{type}` API with 400ms debounce on slider change |
+| Parametric CAD previewer | `TemplateSliders` now shows live SVG above sliders + "Preview DXF" button |
+| Brain stats expansion | Proportions + materials data with expandable details |
+| Error surfacing | SliderPanel now shows backend errors as red inline banner |
+
+## Remaining (not yet addressed)
+
+1. **Shopify JSON direct parse** — skip the two-independent-guesses pattern
+2. **`ai_top_shape` deep wiring** — `coffee_table_round` type exists but `top_shape` signal from AI vision still isn't passed to SVG renderer for non-coffee-table types
+3. **Bed vs headboard distinction** — `bed` type normalizes to `bed_headboard`, losing the platform-bed geometry the classifier intentionally produces
