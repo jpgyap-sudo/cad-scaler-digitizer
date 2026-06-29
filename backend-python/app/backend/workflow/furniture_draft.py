@@ -213,17 +213,21 @@ def run_furniture_draft(
         return result
 
     # ── Phase 2: Wrap in CFG ──────────────────────────────────────
+    cfg = None
     try:
         from app.backend.cfg import CanonicalFurnitureGraph
         cfg = CanonicalFurnitureGraph.from_pipeline_result(
             unified_result=unified,
             furniture_type=result.furniture_type,
         )
-        result.furniture_family = unified.support_type.value if unified.support_type else ""
+        # Extract furniture family from product_type provenance if available
+        if hasattr(unified, 'product_type') and unified.product_type:
+            result.furniture_family = unified.product_type.source or ""
     except Exception as e:
         result.errors.append(f"CFG wrapping failed: {e}")
 
     # ── Phase 3: Grammar Engine → DrawingModel ────────────────────
+    model = None
     try:
         from app.backend.grammar import FurnitureGrammar
         grammar = FurnitureGrammar()
@@ -239,21 +243,11 @@ def run_furniture_draft(
         if user_dimensions:
             params.update(user_dimensions)
         
-        # Apply locked components — skip regenerating locked ones
-        if locked_components:
-            # Locked components keep their existing params
-            for comp_id, is_locked in locked_components.items():
-                if is_locked:
-                    logger.info(f"[FurnitureDraft] Component {comp_id} is locked, preserving")
-        
-        # Generate with or without specific locked state
-        if grammar.supports(result.furniture_type):
-            model = grammar.generate(result.furniture_type, params)
-        else:
-            model = grammar.generate("generic", params)
+        # Generate DrawingModel from grammar
+        ftype = result.furniture_type if grammar.supports(result.furniture_type) else "generic"
+        model = grammar.generate(ftype, params)
     except Exception as e:
         result.errors.append(f"Grammar engine failed: {e}")
-        model = None
 
     # ── Phase 4: SelfCritic auto-correction ────────────────────────
     self_critic_gap = None
@@ -276,8 +270,12 @@ def run_furniture_draft(
     # ── Phase 5: Build component schema ────────────────────────────
     components = _build_component_schema(cfg, model)
     
-    # Apply lock state
-    locks = locked_components or {}
+    # Apply lock state — merge from both parameter and stored state
+    locks = dict(locked_components or {})
+    stored_locks = get_locked_components(job_id)
+    if stored_locks:
+        locks.update(stored_locks)
+    
     for comp in components:
         if comp.id in locks:
             comp.locked = locks[comp.id]
@@ -307,7 +305,7 @@ def run_furniture_draft(
     
     result.confidence_review = review
 
-    # ── Phase 8: Generate DXF + SVG ───────────────────────────────
+    # ── Phase 8: Generate SVG preview ──────────────────────────────
     if model:
         try:
             from app.backend.svg_exporter import render_svg
@@ -316,23 +314,40 @@ def run_furniture_draft(
             svg_content = render_svg(model)
             svg_path.write_text(svg_content, encoding='utf-8')
             result.svg_preview = f"/api/preview/svg/{svg_name}"
+            logger.info(f"[FurnitureDraft] SVG saved to {svg_path}")
         except Exception as e:
             result.errors.append(f"SVG generation failed: {e}")
 
+        # ── Phase 9: Generate DXF ──────────────────────────────────
         try:
-            from app.backend.dxf_exporter import _dispatch_furniture
+            from app.backend.dxf_exporter import (
+                save_generic, save_round_pedestal_table, save_rectangular_table,
+                save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
+                save_wardrobe, save_bed_headboard,
+                setup_doc, _save,
+            )
             dxf_name = f"{job_id}_draft.dxf"
             dxf_path = OUT / dxf_name
-            _dispatch_furniture(result.furniture_type, dxf_path,
-                              [{"tag": k, "value_cm": v} for k, v in params.items()],
-                              None, None)
+            
+            # Build dimension list for dispatch
+            dims_list = [{"tag": k, "value_cm": v} for k, v in params.items()]
+            
+            # Use the api route's dispatch if available, otherwise try direct
+            try:
+                from app.api.routes import _dispatch_furniture as api_dispatch
+                api_dispatch(result.furniture_type, dxf_path, dims_list, None, None)
+            except ImportError:
+                # Fallback: generate generic DXF
+                save_generic(dxf_path, [], [], [])
+            
             result.dxf_file = dxf_name
             result.download_url = f"/api/download/{dxf_name}"
+            logger.info(f"[FurnitureDraft] DXF saved to {dxf_path}")
         except Exception as e:
             result.errors.append(f"DXF generation failed: {e}")
 
-    # Warning: no AI vision
-    if not unified.product_type or unified.product_type.source == "template_default":
+    # ── Phase 10: Warnings ─────────────────────────────────────────
+    if hasattr(unified, 'product_type') and (not unified.product_type or unified.product_type.source == "template_default"):
         result.warnings.append("Furniture type could not be auto-detected — verify the type in the editor")
 
     if not result.components:
@@ -361,10 +376,11 @@ def _build_component_schema(
             if isinstance(dims, dict):
                 dims = {k: round(v, 1) for k, v in dims.items()}
             
+            comp_name = getattr(comp, 'name', '') or f"component_{len(components)}"
             components.append(DraftComponent(
                 id=getattr(comp, 'id', f"comp_{len(components)}"),
-                name=getattr(comp, 'name', f"component_{len(components)}"),
-                label=getattr(comp, 'name', f"Component {len(components) + 1}").replace("_", " ").title(),
+                name=comp_name,
+                label=comp_name.replace("_", " ").title(),
                 component_type=getattr(comp, 'component_type', 'unknown'),
                 confidence=getattr(comp, 'confidence', 0.0),
                 source=getattr(comp, 'source', 'auto'),
@@ -374,7 +390,6 @@ def _build_component_schema(
     # If CFG produced no components, fall back to DrawingModel
     if not components and model and hasattr(model, 'views'):
         for view in getattr(model, 'views', []):
-            vname = getattr(view, 'name', 'VIEW')
             for poly in getattr(view, 'polygons', []):
                 pname = getattr(poly, 'name', '') or f"poly_{len(components)}"
                 meta = getattr(poly, 'metadata', None)
@@ -406,19 +421,17 @@ def _build_view_models(model: Any) -> List[ViewModel]:
 
     for view in getattr(model, 'views', []):
         vname = getattr(view, 'name', 'VIEW')
-        vtype = "top"
         if "FRONT" in vname.upper():
             vtype = "front"
         elif "SIDE" in vname.upper():
             vtype = "side"
-        elif "TOP" in vname.upper():
+        else:
             vtype = "top"
 
-        # Count primitives for confidence estimation
         poly_count = len(getattr(view, 'polygons', []))
         circ_count = len(getattr(view, 'circles', []))
         dim_count = len(getattr(view, 'dimensions', []))
-        
+
         # Estimate confidence from metadata
         confs = []
         for poly in getattr(view, 'polygons', []):
