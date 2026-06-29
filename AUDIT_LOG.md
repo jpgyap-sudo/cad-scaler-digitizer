@@ -304,6 +304,28 @@ geometry JSON / SVG preview somewhere durable (Spaces, alongside the
 already-uploaded raw asset — not the temp dir) before the `with` block
 exits.
 
+### 13. Whole-pipeline summary: the bulk crawler-worker system (finding #12) is also unreachable from the frontend entirely
+**Date:** 2026-06-29
+**Status:** OPEN — ties #12 together with a reachability gap on top
+**Impact:** clarifies scope — this is not a half-broken user-facing
+feature, it's an entirely separate, currently API-only subsystem
+**Evidence:** grepped all of `frontend/` for `/api/crawl` (the bulk
+crawler-worker trigger endpoint, `backend-node/src/routes/crawl.ts`) —
+zero matches. The "Crawl Product URL" tab in the actual UI
+(`CrawlInput.tsx`) only ever calls `/crawl-to-dxf` on python-worker (a
+separate, much simpler httpx-based single-request crawl, already covered
+extensively elsewhere in this log under the Melina/Tangerie testing).
+**Combined picture:** the bulk pipeline (Playwright stealth crawling,
+robots.txt compliance check, S3/Spaces upload, dead-letter retry queue,
+Qdrant indexing, the queue handoff to python-worker) is real,
+substantial, partially well-built engineering — and currently runs only
+if someone calls `POST /api/crawl` directly with a valid `x-api-key`.
+Even when it does run, finding #12 means the most valuable output
+(parsed geometry + preview, catalog metadata) never persists anywhere
+durable. Before investing in wiring this into the UI, fix #12 first —
+there's no point exposing a "browse what we've crawled" feature when the
+crawl step throws away everything except a vector embedding.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
