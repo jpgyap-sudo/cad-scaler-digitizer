@@ -62,6 +62,7 @@ class ComparisonResult:
     overall_score: float       # 0.0 - 1.0 weighted average of all checks
     edge_overlap_score: float  # 0.0 - 1.0 — how well DXF edges match image edges
     entity_match_score: float  # 0.0 - 1.0 — entity count/type match
+    shape_score: float         # 0.0 - 1.0 — silhouette IoU between DXF and product image
     dimension_deviation_pct: float  # average dimension deviation %
 
     # Detailed errors
@@ -84,6 +85,7 @@ class ComparisonResult:
             "overall_score": round(self.overall_score, 3),
             "edge_overlap_score": round(self.edge_overlap_score, 3),
             "entity_match_score": round(self.entity_match_score, 3),
+            "shape_score": round(self.shape_score, 3),
             "dimension_deviation_pct": round(self.dimension_deviation_pct, 1),
             "errors": self.errors[:50],  # top 50 errors
             "dimension_comparisons": self.dimension_comparisons,
@@ -262,6 +264,40 @@ def compare_images(original_img: Any, dxf_raster: Any) -> tuple[float, list, int
     dxf_edge_count = int(np.sum(edges_dxf > 0))
 
     return overlap_score, error_regions, orig_edge_count, dxf_edge_count
+
+
+def compare_silhouettes(original_img: Any, dxf_raster: Any) -> float:
+    """Compare overall shape of the product using silhouette IoU.
+    
+    Extracts foreground silhouette from both the product image and the
+    DXF raster, then computes Intersection-over-Union. This measures how
+    closely the DXF outline matches the product's actual shape,
+    independent of fine edge detail or background noise.
+    """
+    import cv2
+    import numpy as np
+
+    h, w = original_img.shape[:2]
+    dxf_resized = cv2.resize(dxf_raster, (w, h))
+    gray_orig = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
+    gray_dxf = cv2.cvtColor(dxf_resized, cv2.COLOR_BGR2GRAY)
+
+    # Product image foreground via OTSU
+    _, fg_orig = cv2.threshold(gray_orig, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    fg_orig = cv2.bitwise_not(fg_orig)
+    kernel = np.ones((5, 5), np.uint8)
+    fg_orig = cv2.morphologyEx(fg_orig, cv2.MORPH_CLOSE, kernel)
+    fg_orig = cv2.morphologyEx(fg_orig, cv2.MORPH_OPEN, kernel)
+
+    # DXF silhouette: non-white pixels = drawn geometry
+    dxf_inv = cv2.bitwise_not(gray_dxf)
+    _, fg_dxf = cv2.threshold(dxf_inv, 30, 255, cv2.THRESH_BINARY)
+    fg_dxf = cv2.morphologyEx(fg_dxf, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    fg_dxf = cv2.dilate(fg_dxf, kernel, iterations=2)
+
+    i = np.sum(cv2.bitwise_and(fg_orig, fg_dxf) > 0)
+    u = np.sum(cv2.bitwise_or(fg_orig, fg_dxf) > 0)
+    return min(1.0, i / max(u, 1))
 
 
 def compare_entities(
@@ -527,6 +563,7 @@ def compare_digitization(
         overall_score=0.0,
         edge_overlap_score=0.0,
         entity_match_score=0.0,
+        shape_score=0.0,
         dimension_deviation_pct=0.0,
         created_at=datetime.utcnow().isoformat(),
     )
@@ -574,6 +611,12 @@ def compare_digitization(
                 source="edge_mismatch",
             )))
 
+    # Silhouette shape comparison (IoU of foreground masks)
+    try:
+        result.shape_score = compare_silhouettes(original_img, dxf_raster)
+    except Exception:
+        result.shape_score = 0.0
+
     # Entity count comparison
     ent_score, ent_errors, ent_counts = compare_entities(dxf_path, detected_entities)
     result.entity_match_score = ent_score
@@ -599,41 +642,40 @@ def compare_digitization(
                     source="dimension",
                 )))
 
-    # Compute overall weighted score with smart weighting
-    # When page dimensions exist, they ARE ground truth — use them primarily.
-    # Canny edge overlap is unreliable for e-commerce photos (0-1%).
-    # Entity match is secondary when we already know the product size.
+    # Compute overall weighted score
+    # Shape similarity (silhouette IoU) and dimension accuracy are the two
+    # primary signals. Edge overlap is secondary (unreliable for e-commerce
+    # backgrounds). Entity match is a tiebreaker.
     has_page_dims = bool(page_dimensions and (page_dimensions.get("width_cm") or page_dimensions.get("overall_height_cm")))
     has_dxf_edge = dxf_raster is not None
 
     if has_page_dims:
-        # Page dimensions ARE ground truth — they come from the product page data.
-        # The digitizer used them as real_width_cm reference, so the DXF SHOULD match.
-        # Score = page_data_confidence * entity_completeness.
-        # If page dims exist AND entity match > 0.5, the product was correctly identified.
-        # BUG FIX: removed max(0.99, ...) floor that masked real deviation.
-        # Previously dim_score = max(0.99, dim_reliability) meant 10% deviation → still 0.99.
-        # Now dim_score = dim_reliability directly: 10% deviation → 0.90.
-        has_entity_match = result.entity_match_score > 0.5
         dim_reliability = max(0.5, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
-        dim_score = dim_reliability  # no floor — let real deviation show
-        edge_weight = 0.05
-        entity_weight = 0.15
-        dim_weight = 0.80
+        dim_score = dim_reliability
+        shape_score = result.shape_score
+        shape_weight = 0.40
+        dim_weight = 0.40
+        entity_weight = 0.10
+        edge_weight = 0.10
     elif has_dxf_edge:
         dim_score = max(0.0, 1.0 - min(result.dimension_deviation_pct, 100) / 100)
-        edge_weight = 0.4
-        entity_weight = 0.4
-        dim_weight = 0.2
+        shape_score = result.shape_score
+        shape_weight = 0.40
+        dim_weight = 0.20
+        entity_weight = 0.20
+        edge_weight = 0.20
     else:
         dim_score = 0.0
-        edge_weight = 0.0
-        entity_weight = 0.6
-        dim_weight = 0.4
+        shape_score = result.shape_score
+        shape_weight = 0.40
+        dim_weight = 0.20
+        entity_weight = 0.20
+        edge_weight = 0.20
 
     overall = (
         result.edge_overlap_score * edge_weight
         + result.entity_match_score * entity_weight
+        + shape_score * shape_weight
         + dim_score * dim_weight
     )
 
@@ -680,14 +722,15 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
         cur.execute("""
             INSERT INTO comparison_results
                 (job_id, product_id, overall_score, edge_overlap_score,
-                 entity_match_score, dimension_deviation_pct,
+                 entity_match_score, shape_score, dimension_deviation_pct,
                  errors_json, dimension_comparisons_json,
                  image_width, image_height, dxf_width_mm, dxf_height_mm)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (job_id) DO UPDATE SET
                 overall_score = EXCLUDED.overall_score,
                 edge_overlap_score = EXCLUDED.edge_overlap_score,
                 entity_match_score = EXCLUDED.entity_match_score,
+                shape_score = EXCLUDED.shape_score,
                 dimension_deviation_pct = EXCLUDED.dimension_deviation_pct
         """, (
             result.job_id,
@@ -695,6 +738,7 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
             result.overall_score,
             result.edge_overlap_score,
             result.entity_match_score,
+            result.shape_score,
             result.dimension_deviation_pct,
             json.dumps(result.errors[:50], cls=NumpyEncoder),
             json.dumps(result.dimension_comparisons, cls=NumpyEncoder),

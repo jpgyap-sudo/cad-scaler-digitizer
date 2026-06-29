@@ -81,6 +81,7 @@ async def main():
             "avg_deviation_pct": overall,
             "validation_score": comp.get("overall_score"),
             "edge_overlap": comp.get("edge_overlap_score"),
+            "shape_score": comp.get("shape_score"),
             "has_dimensions": bool(dims.get("width_cm")),
         })
         

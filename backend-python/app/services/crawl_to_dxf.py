@@ -748,6 +748,7 @@ async def crawl_and_digitize(
                         "overall_score": _comp_result.overall_score,
                         "edge_overlap_score": _comp_result.edge_overlap_score,
                         "entity_match_score": _comp_result.entity_match_score,
+                        "shape_score": _comp_result.shape_score,
                         "dimension_deviation_pct": _comp_result.dimension_deviation_pct,
                         "error_count": len(_comp_result.errors),
                     }
