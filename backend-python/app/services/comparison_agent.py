@@ -684,7 +684,11 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
                  errors_json, dimension_comparisons_json,
                  image_width, image_height, dxf_width_mm, dxf_height_mm)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (job_id) DO NOTHING
+            ON CONFLICT (job_id) DO UPDATE SET
+                overall_score = EXCLUDED.overall_score,
+                edge_overlap_score = EXCLUDED.edge_overlap_score,
+                entity_match_score = EXCLUDED.entity_match_score,
+                dimension_deviation_pct = EXCLUDED.dimension_deviation_pct
         """, (
             result.job_id,
             result.product_id,
