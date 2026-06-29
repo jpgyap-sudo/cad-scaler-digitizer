@@ -127,6 +127,7 @@ services:
       - SPACES_SECRET=${SPACES_SECRET:-}
       - SPACES_CDN_BASE=${SPACES_CDN_BASE:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     volumes:
       - cad_temp:/tmp/cad_digitizer_outputs
       - cad_uploads:/tmp/cad_digitizer_uploads
