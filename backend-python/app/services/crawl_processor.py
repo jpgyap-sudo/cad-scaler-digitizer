@@ -59,17 +59,11 @@ def _spaces_upload(local_path: Path, remote_key: str) -> Optional[str]:
 def _persist_metadata(product_id: str, asset_id: str, url: str,
                        geo_url: str, svg_url: str, entity_count: int,
                        bbox: Any, embedding_result: Any) -> None:
-    """Save crawl result metadata to Postgres."""
+    """Save crawl result metadata to Postgres (Prisma-compatible schema)."""
     try:
         from app.backend.brain_sync import _execute
-        # Insert/update ProductReference
-        ref_sql = """
-            INSERT INTO product_references (id, product_id, manufacturer, category, metadata, updated_at)
-            VALUES (%s, %s, %s, %s, %s, NOW())
-            ON CONFLICT (id) DO UPDATE SET
-                metadata = EXCLUDED.metadata,
-                updated_at = NOW()
-        """
+        import uuid as uuid_lib
+
         ref_id = f"crawl-{product_id}"
         ref_meta = json.dumps({
             "source_url": url, "asset_id": asset_id,
@@ -77,30 +71,36 @@ def _persist_metadata(product_id: str, asset_id: str, url: str,
             "embedding": embedding_result,
             "geometry_url": geo_url, "preview_svg_url": svg_url,
         })
-        _execute(ref_sql, (ref_id, product_id, "crawler", "dxf", ref_meta),
+        # ProductReference: PascalCase table, quoted identifers
+        ref_sql = '''
+            INSERT INTO "ProductReference" (id, manufacturer, "productName", slug, category, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+            ON CONFLICT (id) DO UPDATE SET
+                metadata = EXCLUDED.metadata,
+                "updatedAt" = NOW()
+        '''
+        slug = product_id.replace(" ", "-").lower()[:60]
+        _execute(ref_sql, (ref_id, "crawler", f"crawled-{product_id}", slug, "dxf", ref_meta),
                  commit=True)
 
-        # Insert ReferenceAsset
-        asset_sql = """
-            INSERT INTO reference_assets (id, product_reference_id, asset_type, url, metadata, created_at)
-            VALUES (%s, %s, %s, %s, %s, NOW())
-            ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url
-        """
-        _execute(asset_sql, (asset_id, ref_id, "DXF", url,
-                 json.dumps({"processed": True, "entity_count": entity_count})),
-                 commit=True)
+        # ReferenceAsset: PascalCase with relation FK
+        def _insert_asset(aid: str, asset_type: str, cdn_url: str, fname: str, meta: dict) -> None:
+            asset_sql = '''
+                INSERT INTO "ReferenceAsset" (id, "productReferenceId", "assetType", "fileName", "spaceKey", "cdnUrl", "processedStatus", metadata)
+                VALUES (%s, %s, %s::"AssetType", %s, %s, %s, %s::"ProcessingStatus", %s::jsonb)
+                ON CONFLICT (id) DO UPDATE SET "cdnUrl" = EXCLUDED."cdnUrl", "processedStatus" = 'DONE'::"ProcessingStatus"
+            '''
+            _execute(asset_sql, (aid, ref_id, asset_type, fname, f"cad-reference-library/{aid}", cdn_url, 'DONE', json.dumps(meta)),
+                     commit=True)
 
+        _insert_asset(asset_id, 'DXF', url, f"{asset_id}.dxf",
+                      {"source_url": url, "entity_count": entity_count, "processed": True})
         if geo_url:
-            geo_asset_id = f"{asset_id}-geo"
-            _execute(asset_sql, (geo_asset_id, ref_id, "GEOMETRY_JSON", geo_url,
-                     json.dumps({"type": "parsed_geometry"})),
-                     commit=True)
-
+            _insert_asset(f"{asset_id}-geo", 'GEOMETRY_JSON', geo_url, f"{asset_id}.json",
+                          {"type": "parsed_geometry", "entity_count": entity_count})
         if svg_url:
-            svg_asset_id = f"{asset_id}-preview"
-            _execute(asset_sql, (svg_asset_id, ref_id, "PREVIEW_SVG", svg_url,
-                     json.dumps({"type": "preview"})),
-                     commit=True)
+            _insert_asset(f"{asset_id}-preview", 'SVG', svg_url, f"{asset_id}.svg",
+                          {"type": "preview"})
 
         logger.info(f"[CrawlProcessor] Metadata persisted for {product_id}")
     except Exception as e:

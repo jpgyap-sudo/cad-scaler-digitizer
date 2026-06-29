@@ -865,8 +865,9 @@ def save_sofa(path, width_cm=200, depth_cm=80, height_cm=85, seat_height_cm=45,
 
 def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation_result=None,
                       materials: Optional[Dict[str, str]] = None,
-                      visibility: Optional[Dict[str, bool]] = None):
-    """Coffee table — top view circle + front elevation + side depth view."""
+                      visibility: Optional[Dict[str, bool]] = None,
+                      top_shape: str = 'circle'):
+    """Coffee table — top view circle/rectangle + front elevation + side depth view."""
     mats = materials or {}
     def _component_visible(name):
         if visibility is not None and name in visibility:
@@ -875,23 +876,36 @@ def save_coffee_table(path, width_cm=100, depth_cm=60, height_cm=45, _validation
     doc = setup_doc()
     msp = doc.modelspace()
     sc = 0.7
-    top_r = min(width_cm, depth_cm) / 2 * sc
     top_thick_cm = 3.0
     leg_thick_cm = 4.0
     
     # === TOP VIEW ===
     cx_t, cy_t = 60, 150
-    try:
-        msp.add_circle((cx_t, cy_t), top_r, dxfattribs={'layer': 'OBJECT'})
-    except Exception:
-        num_segments = 64
-        pts = [(cx_t + top_r * math.cos(2 * math.pi * i / num_segments),
-                cy_t + top_r * math.sin(2 * math.pi * i / num_segments)) for i in range(num_segments)]
-        _add_polyline(msp, pts, closed=True, layer='OBJECT')
-    _add_centerline(msp, (cx_t - top_r - 5, cy_t), (cx_t + top_r + 5, cy_t))
-    _add_centerline(msp, (cx_t, cy_t - top_r - 5), (cx_t, cy_t + top_r + 5))
-    _add_diameter_dim(msp, (cx_t, cy_t), top_r, f'%%c{min(width_cm, depth_cm):g} cm')
-    _add_mtext(msp, 'TOP VIEW', (cx_t - 12, cy_t + top_r + 10), 2.5)
+    if top_shape == 'circle':
+        top_r = min(width_cm, depth_cm) / 2 * sc
+        try:
+            msp.add_circle((cx_t, cy_t), top_r, dxfattribs={'layer': 'OBJECT'})
+        except Exception:
+            num_segments = 64
+            pts = [(cx_t + top_r * math.cos(2 * math.pi * i / num_segments),
+                    cy_t + top_r * math.sin(2 * math.pi * i / num_segments)) for i in range(num_segments)]
+            _add_polyline(msp, pts, closed=True, layer='OBJECT')
+        _add_centerline(msp, (cx_t - top_r - 5, cy_t), (cx_t + top_r + 5, cy_t))
+        _add_centerline(msp, (cx_t, cy_t - top_r - 5), (cx_t, cy_t + top_r + 5))
+        _add_diameter_dim(msp, (cx_t, cy_t), top_r, f'%%c{min(width_cm, depth_cm):g} cm')
+        _add_mtext(msp, 'TOP VIEW', (cx_t - 12, cy_t + top_r + 10), 2.5)
+    else:
+        rw = width_cm * sc * 0.5
+        rd = depth_cm * sc * 0.5
+        _add_polyline(msp, [(cx_t - rw, cy_t - rd), (cx_t + rw, cy_t - rd),
+                            (cx_t + rw, cy_t + rd), (cx_t - rw, cy_t + rd)], True, 'OBJECT')
+        _add_centerline(msp, (cx_t - rw - 5, cy_t), (cx_t + rw + 5, cy_t))
+        _add_centerline(msp, (cx_t, cy_t - rd - 5), (cx_t, cy_t + rd + 5))
+        _add_dimension(msp, (cx_t - rw, cy_t + rd + 6), (cx_t + rw, cy_t + rd + 6),
+                       (cx_t, cy_t + rd + 12), f'W = {width_cm:g} cm')
+        _add_dimension(msp, (cx_t + rw + 6, cy_t - rd), (cx_t + rw + 6, cy_t + rd),
+                       (cx_t + rw + 14, cy_t), f'D = {depth_cm:g} cm')
+        _add_mtext(msp, 'TOP VIEW', (cx_t - 15, cy_t + rd + 22), 3)
 
     # === FRONT VIEW ===
     fv_w = width_cm * sc * 0.5  # side view shows depth

@@ -84,40 +84,39 @@ def build_round_pedestal_model(
     top_view = View(name="TOP VIEW")
     tv_cx, tv_cy = tv_cx_planned, top_y - r_top * 0.5
     tv_r = tv_r_planned
-    top_view.circles.append(CircleComponent(center=Point(tv_cx, tv_cy), radius=tv_r, layer="OBJECT"))
-    for i in range(8):
-        angle = 2 * math.pi * i / 8
-        x1 = tv_cx + tv_r * 0.15 * math.cos(angle)
-        y1 = tv_cy + tv_r * 0.15 * math.sin(angle)
-        x2 = tv_cx + tv_r * math.cos(angle)
-        y2 = tv_cy + tv_r * math.sin(angle)
-        top_view.lines.append(LineComponent(start=Point(x1, y1), end=Point(x2, y2), layer="HATCH"))
-    ext = max(4.0, tv_r * 0.12)
-    top_view.lines.append(LineComponent(start=Point(tv_cx - tv_r - ext, tv_cy), end=Point(tv_cx + tv_r + ext, tv_cy), layer="CENTER"))
-    top_view.lines.append(LineComponent(start=Point(tv_cx, tv_cy - tv_r - ext), end=Point(tv_cx, tv_cy + tv_r + ext), layer="CENTER"))
-    top_view.dimensions.append(DimensionComponent(p1=Point(tv_cx - tv_r, tv_cy + tv_r + ext), p2=Point(tv_cx + tv_r, tv_cy + tv_r + ext), label=f"\u00d8{top_dia_cm:g}", layer="DIMENSION"))
-    top_view.texts.append(TextComponent(content="TOP VIEW", position=Point(tv_cx - 12, tv_cy - tv_r - ext - 3), height=2.5, layer="MTEXT"))
+    if _component_visible("tabletop"):
+        top_view.circles.append(CircleComponent(center=Point(tv_cx, tv_cy), radius=tv_r, layer="OBJECT"))
+        for i in range(8):
+            angle = 2 * math.pi * i / 8
+            x1 = tv_cx + tv_r * 0.15 * math.cos(angle)
+            y1 = tv_cy + tv_r * 0.15 * math.sin(angle)
+            x2 = tv_cx + tv_r * math.cos(angle)
+            y2 = tv_cy + tv_r * math.sin(angle)
+            top_view.lines.append(LineComponent(start=Point(x1, y1), end=Point(x2, y2), layer="HATCH"))
+        ext = max(4.0, tv_r * 0.12)
+        top_view.lines.append(LineComponent(start=Point(tv_cx - tv_r - ext, tv_cy), end=Point(tv_cx + tv_r + ext, tv_cy), layer="CENTER"))
+        top_view.lines.append(LineComponent(start=Point(tv_cx, tv_cy - tv_r - ext), end=Point(tv_cx, tv_cy + tv_r + ext), layer="CENTER"))
+        top_view.dimensions.append(DimensionComponent(p1=Point(tv_cx - tv_r, tv_cy + tv_r + ext), p2=Point(tv_cx + tv_r, tv_cy + tv_r + ext), label=f"\u00d8{top_dia_cm:g}", layer="DIMENSION"))
+        top_view.texts.append(TextComponent(content="TOP VIEW", position=Point(tv_cx - 12, tv_cy - tv_r - ext - 3), height=2.5, layer="MTEXT"))
 
     # FRONT VIEW
     front_view = View(name="FRONT VIEW")
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], layer="OBJECT", name="tabletop"))
-    front_view.hatches.append(HatchComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], pattern="ANSI31", scale=0.8, angle_deg=45, layer="HATCH"))
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_collar, col_top), Point(fx + r_collar, col_top), Point(fx + r_collar, col_bot), Point(fx - r_collar, col_bot)], layer="OBJECT", name="collar_plate"))
+    if _component_visible("tabletop"):
+        front_view.polygons.append(PolygonComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], layer="OBJECT", name="tabletop"))
+        front_view.hatches.append(HatchComponent(points=[Point(fx - r_top, top_y), Point(fx + r_top, top_y), Point(fx + r_top, tab_bot), Point(fx - r_top, tab_bot)], pattern="ANSI31", scale=0.8, angle_deg=45, layer="HATCH"))
+    if _component_visible("collar_plate"):
+        front_view.polygons.append(PolygonComponent(points=[Point(fx - r_collar, col_top), Point(fx + r_collar, col_top), Point(fx + r_collar, col_bot), Point(fx - r_collar, col_bot)], layer="OBJECT", name="collar_plate"))
     neck_h_px = collar_h * 0.3
     neck_top_y = col_bot
     neck_bot_y = col_bot - neck_h_px
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_top_y), Point(fx + r_neck, neck_top_y), Point(fx + r_neck, neck_bot_y), Point(fx - r_neck, neck_bot_y)], layer="OBJECT", name="neck_ring"))
-    # The body's TOP edge only tapers down to the neck's width for a genuine
-    # tapered/flared profile (a smooth cone). For 'cylinder' (the common
-    # case - a narrow neck/collar ring sitting on top of a SEPARATE, wider,
-    # perfectly straight column with a sharp STEP between them, not a
-    # gradual widening) the body is a straight rectangle at its own width
-    # the whole way down. Forcing every profile through the same tapering
-    # trapezoid is what made a stepped pedestal render as a smooth cone.
+    if _component_visible("neck_ring"):
+        front_view.polygons.append(PolygonComponent(points=[Point(fx - r_neck, neck_top_y), Point(fx + r_neck, neck_top_y), Point(fx + r_neck, neck_bot_y), Point(fx - r_neck, neck_bot_y)], layer="OBJECT", name="neck_ring"))
     body_top_r = r_neck if profile in ("tapered", "flared") else r_base
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], layer="OBJECT", name="pedestal_body"))
-    front_view.hatches.append(HatchComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
-    front_view.polygons.append(PolygonComponent(points=[Point(fx - r_base, ped_bot), Point(fx + r_base, ped_bot), Point(fx + r_base, base_bot), Point(fx - r_base, base_bot)], layer="OBJECT", name="base_plate"))
+    if _component_visible("pedestal_body"):
+        front_view.polygons.append(PolygonComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], layer="OBJECT", name="pedestal_body"))
+        front_view.hatches.append(HatchComponent(points=[Point(fx - body_top_r, neck_bot_y), Point(fx + body_top_r, neck_bot_y), Point(fx + r_base, ped_bot), Point(fx - r_base, ped_bot)], pattern="ANSI37", scale=0.5, angle_deg=45, layer="HATCH"))
+    if _component_visible("base_plate"):
+        front_view.polygons.append(PolygonComponent(points=[Point(fx - r_base, ped_bot), Point(fx + r_base, ped_bot), Point(fx + r_base, base_bot), Point(fx - r_base, base_bot)], layer="OBJECT", name="base_plate"))
     front_view.lines.append(LineComponent(start=Point(fx, base_bot - 6), end=Point(fx, top_y + 6), layer="CENTER"))
 
     dim_x_left = fx - r_top - 8
@@ -284,10 +283,8 @@ def build_sofa_model(width_cm=200, depth_cm=80, height_cm=85, client="", project
 
 def build_coffee_table_model(w=100.0, d=60.0, h=45.0,
                              materials: Optional[Dict[str, str]] = None,
-                             visibility: Optional[Dict[str, bool]] = None):
-    # NOTE: this always renders a round tabletop (TOP VIEW circle) regardless
-    # of the real shape - there is no shape signal threaded through from
-    # classification, so a square/rectangular coffee table (e.g. Melina)
+                             visibility: Optional[Dict[str, bool]] = None,
+                             top_shape: str = 'circle'):
     # still gets drawn as round. Fixing that needs real shape detection,
     # which is a separate, larger piece of work.
     mats = materials or {}

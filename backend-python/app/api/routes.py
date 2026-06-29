@@ -657,7 +657,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                          materials=None, real_d=None):
     print(f"[DISPATCH] Exporter: {f_type}")
     # Normalize subtypes to their parent type for dispatch
-    _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
+    _TYPE_ALIAS = {'side_table': 'rectangular_table',
                    'nightstand': 'cabinet', 'bed': 'rectangular_table'}
     f_type = _TYPE_ALIAS.get(f_type, f_type)
 
@@ -864,11 +864,18 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         d = _dim(['d', 'depth'], 80.0)
         try: save_sofa(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
+    elif f_type == 'coffee_table_round':
+        w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
+        h = real_h or _dim(['h', 'height'], 45.0)
+        d = real_d or _dim(['d', 'depth'], 60.0)
+        try: save_coffee_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials, top_shape='circle')
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type == 'coffee_table':
         w = real_w or _dim(['w', 'width', 'dia', 'diameter'], 100.0)
         h = real_h or _dim(['h', 'height'], 45.0)
         d = real_d or _dim(['d', 'depth'], 60.0)
-        try: save_coffee_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        try: save_coffee_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials, top_shape='rectangle')
         except Exception: save_generic(str(dxf_path), [], [], [])
         extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     elif f_type in ('dining_chair', 'chair'):
@@ -1134,7 +1141,7 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         build_generic_model,
     )
 
-    _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
+    _TYPE_ALIAS = {'side_table': 'rectangular_table',
                    'nightstand': 'cabinet', 'bed': 'rectangular_table'}
     f_type = _TYPE_ALIAS.get(f_type, f_type)
 
@@ -1154,11 +1161,16 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         d = resolved.get('depth_cm', 80)
         h = resolved.get('overall_height_cm', real_h or 85)
         return build_sofa_model(float(w), float(d), float(h))
+    if f_type == 'coffee_table_round':
+        w = resolved.get('width_cm', real_w or 100)
+        d = resolved.get('depth_cm', 60)
+        h = resolved.get('overall_height_cm', real_h or 45)
+        return build_coffee_table_model(float(w), float(d), float(h), top_shape='circle')
     if f_type == 'coffee_table':
         w = resolved.get('width_cm', real_w or 100)
         d = resolved.get('depth_cm', 60)
         h = resolved.get('overall_height_cm', real_h or 45)
-        return build_coffee_table_model(float(w), float(d), float(h))
+        return build_coffee_table_model(float(w), float(d), float(h), top_shape='rectangle')
     if f_type in ('dining_chair', 'chair'):
         w = resolved.get('width_cm', real_w or 45)
         h = resolved.get('overall_height_cm', real_h or 90)

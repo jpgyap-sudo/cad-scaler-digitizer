@@ -572,7 +572,7 @@ def generate_skeleton(
 
     if any(k in fl for k in ["sofa", "bench", "sofa_bench"]):
         inner = _build_sofa_skeleton(layout, vp, label)
-    elif any(k in fl for k in ["dining_table", "coffee_table", "pedestal_table"]):
+    elif any(k in fl for k in ["table"]):
         inner = _build_table_skeleton(layout, vp, label)
     elif any(k in fl for k in ["chair", "armchair", "lounge", "stool"]):
         inner = _build_chair_skeleton(layout, vp, label)
