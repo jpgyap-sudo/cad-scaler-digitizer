@@ -4,11 +4,12 @@
 
 ### 1. Classification reliability (blocking — everything downstream depends on it)
 **Date:** 2026-06-29
-**Status:** OPEN
-**Impact:** CRITICAL — when AI vision returns `generic_2d_furniture`, entire pipeline collapses
-**Evidence:** 8/8 consecutive calls with same image returned `generic_2d_furniture` after a previous session produced `coffee_table`
-**Root cause:** The AI vision call (OpenAI/Gemini) is non-deterministic. When it misfires, no classification fallback exists. The `_dispatch_furniture` function has no branch for `generic_2d_furniture`, so it falls through to `save_generic` with empty geometry.
-**Fix required:** Slug-based fallback when AI classification confidence is low. The URL slug and extracted dimensions together can determine furniture type more reliably than the AI vision call alone.
+**Status:** FIXED
+**Commit:** `ed3a766`
+**Impact:** CRITICAL — was causing 8/8 consecutive misfires
+**Root cause:** `normalize_furniture_type("table")` returned `generic_2d_furniture` (line 64 of furniture_classifier.py). This type has no dispatch handler, causing the entire pipeline to collapse to `save_generic` with empty geometry. Even when AI vision returned a correct classification, the user-provided `category=table` parameter was being normalized to a useless value.
+**Fix:** Changed `"table": "generic_2d_furniture"` → `"table": "rectangular_table"`. Added `"generic_2d_furniture": "rectangular_table"` as AI fallback. Now both user and AI paths reliably dispatch to `save_rectangular_table`.
+**Verification:** `table → rectangular_table`, `generic_2d_furniture → rectangular_table`, all 4 DXF views present (TOP, FRONT, SIDE, ISOMETRIC), 0 circles (correct for rectangular).
 
 ### 2. DXF front-view missing (front view fix only landed in SVG, not DXF exporter)
 **Date:** 2026-06-29
