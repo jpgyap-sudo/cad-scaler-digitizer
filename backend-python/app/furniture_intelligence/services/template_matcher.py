@@ -1,32 +1,138 @@
 from __future__ import annotations
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from app.furniture_intelligence.schemas.furniture_analysis import FurnitureAnalysis, TemplateProposal
 
-TEMPLATE_DIR = Path(__file__).resolve().parents[4] / 'resources' / 'furniture_templates'
+# Load from ALL template directories
+TEMPLATE_DIRS = [
+    Path(__file__).resolve().parents[4] / 'resources' / 'furniture_templates',
+    Path(__file__).resolve().parents[4] / 'resources' / 'product_catalog' / 'templates',
+]
 
 logger = logging.getLogger('template_matcher')
 
+# Category extraction from filenames — maps common filename patterns to categories
+FILENAME_CATEGORY_MAP = [
+    (r'(?i)center_table', 'center_table'),
+    (r'(?i)coffee_table|coffee.table', 'coffee_table'),
+    (r'(?i)console_table', 'console_table'),
+    (r'(?i)dining_table', 'dining_table'),
+    (r'(?i)dining_chair', 'dining_chair'),
+    (r'(?i)bar_stool', 'bar_stool'),
+    (r'(?i)side_table', 'side_table'),
+    (r'(?i)nightstand|bedside', 'nightstand'),
+    (r'(?i)tv_console|tv_cabinet|media_console', 'tv_console'),
+    (r'(?i)sideboard|side_board|buffet', 'sideboard'),
+    (r'(?i)armchair|arm_chair', 'armchair'),
+    (r'(?i)lounge_chair', 'lounge_chair'),
+    (r'(?i)sofa|settee|couch', 'sofa'),
+    (r'(?i)sectional', 'sectional'),
+    (r'(?i)ottoman|pouf', 'ottoman'),
+    (r'(?i)bench|chaise', 'bench'),
+    (r'(?i)office_desk|desk', 'desk'),
+    (r'(?i)bookcase|bookshelf|shelf', 'bookshelf'),
+    (r'(?i)wardrobe|armoire|closet', 'wardrobe'),
+    (r'(?i)cabinet|credenza', 'cabinet'),
+    (r'(?i)bed.*frame|bed_frame|platform.*bed', 'bed_frame'),
+    (r'(?i)headboard', 'headboard'),
+    (r'(?i)rug|runner|mat', 'rug'),
+    (r'(?i)pendant|chandelier|ceiling.*light', 'pendant_light'),
+    (r'(?i)table_lamp|table.*lamp|tablelamp', 'table_lamp'),
+    (r'(?i)floor_lamp|floor.*lamp', 'floor_lamp'),
+    (r'(?i)wall.*panel|wpc.*panel', 'wall_panel'),
+    (r'(?i)sconce|wall.*light', 'wall_sconce'),
+    (r'(?i)throw.*pillow|cushion|pillow', 'throw_pillow'),
+    (r'(?i)ceiling.*fan|ceiling_fan', 'ceiling_fan'),
+    (r'(?i)mirror', 'mirror'),
+    (r'(?i)planter|pot|vase', 'planter'),
+    (r'(?i)stone.*slab|marble.*slab|sintered.*stone', 'stone_slab'),
+    (r'(?i)oval.*pedestal|sculptural.*pedestal', 'oval_pedestal_table'),
+    (r'(?i)round.*pedestal|single.*pedestal|pedestal.*table', 'round_pedestal_table'),
+    (r'(?i)rectangular.*table|4.*leg.*table|four.*leg.*table', 'rectangular_table'),
+]
 
-def load_templates(template_dir: Path = TEMPLATE_DIR) -> List[Dict[str, Any]]:
+# Load visual DNA index for scoring enhancement
+_DNA_CACHE: Optional[Dict[str, Any]] = None
+
+def get_visual_dna() -> Dict[str, Any]:
+    global _DNA_CACHE
+    if _DNA_CACHE is None:
+        dna_path = Path(__file__).resolve().parents[4] / 'resources' / 'product_catalog' / 'visual_dna_index.json'
+        if dna_path.exists():
+            try:
+                _DNA_CACHE = json.loads(dna_path.read_text(encoding='utf-8'))
+                logger.info(f"Loaded visual DNA index: {len(_DNA_CACHE)} entries")
+            except Exception as e:
+                logger.warning(f"Failed to load visual DNA index: {e}")
+                _DNA_CACHE = {}
+        else:
+            _DNA_CACHE = {}
+    return _DNA_CACHE
+
+
+def _infer_category_from_filename(filename: str) -> Optional[str]:
+    """Extract category from template filename using regex patterns."""
+    for pattern, category in FILENAME_CATEGORY_MAP:
+        if re.search(pattern, filename):
+            return category
+    return None
+
+
+def normalize_template(t: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize a template dict — fill missing category from filename."""
+    t = dict(t)  # copy
+    # Infer category from filename if missing
+    if not t.get('category') or t.get('category') in ('NO_CAT', 'Furniture', ''):
+        fname = t.get('template_id', '') or t.get('file', '')
+        inferred = _infer_category_from_filename(fname)
+        if inferred:
+            t['category'] = inferred
+            logger.debug(f"Inferred category '{inferred}' from filename '{fname}'")
+    return t
+
+
+def load_templates() -> List[Dict[str, Any]]:
+    """Load templates from ALL template directories."""
     results = []
-    for p in sorted(template_dir.glob('*.json')):
-        if p.name.startswith('_registry'):  # B-9 FIX: skip registry
+    seen_ids = set()
+    
+    for template_dir in TEMPLATE_DIRS:
+        if not template_dir.exists():
             continue
-        try:
-            results.append(json.loads(p.read_text(encoding='utf-8')))
-        except Exception as e:
-            logger.warning(f"Malformed template JSON: {p} — {e}")  # B-8 FIX: log warning
-    # Also load pack's own templates from local templates/ dir
+        for p in sorted(template_dir.glob('*.json')):
+            if p.name.startswith('_registry'):  # skip registry
+                continue
+            try:
+                data = json.loads(p.read_text(encoding='utf-8'))
+                # Set template_id from filename if missing
+                if not data.get('template_id'):
+                    data['template_id'] = p.stem
+                data['file'] = p.stem
+                # Deduplicate by template_id
+                tid = data.get('template_id', p.stem)
+                if tid not in seen_ids:
+                    seen_ids.add(tid)
+                    results.append(normalize_template(data))
+            except Exception as e:
+                logger.warning(f"Malformed template JSON: {p} — {e}")
+    
+    # Also load pack's own templates
     local_dir = Path(__file__).resolve().parents[1] / 'templates'
     if local_dir.exists():
         for p in sorted(local_dir.glob('*.json')):
             try:
-                results.append(json.loads(p.read_text(encoding='utf-8')))
+                data = json.loads(p.read_text(encoding='utf-8'))
+                tid = data.get('template_id', p.stem)
+                if tid not in seen_ids:
+                    seen_ids.add(tid)
+                    results.append(normalize_template(data))
             except Exception:
                 pass
+    
+    logger.info(f"Loaded {len(results)} templates from {len(TEMPLATE_DIRS)} directories")
     return results
 
 
@@ -129,6 +235,20 @@ def score_template(analysis: FurnitureAnalysis, template: Dict[str, Any]) -> flo
         for kw in template.get('keywords', []):
             if kw.lower() in text:
                 score += 0.06
+    # DNA boost: match template against visual_dna_index for archetype score
+    dna = get_visual_dna()
+    tid = template.get('template_id', '')
+    if tid in dna:
+        dna_entry = dna[tid]
+        archetype = dna_entry.get('archetype_score', 0.0)
+        if archetype > 0:
+            score += min(archetype * 0.15, 0.15)  # up to 0.15 boost for confident DNA matches
+        # Component graph overlap boost
+        dna_comp = set(dna_entry.get('component_graph', []))
+        if dna_comp:
+            analysis_comp = set(c.type for c in analysis.components)
+            overlap = len(dna_comp & analysis_comp) / max(len(dna_comp), 1)
+            score += min(overlap * 0.10, 0.10)  # up to 0.10 for component overlap
     # Special-case boost for oval_sculptural_pedestal_bowl (pack's template)
     if template.get('template_id') == 'ct_oval_sculptural_pedestal_bowl':
         if analysis.top_shape == 'oval':
