@@ -465,6 +465,38 @@ class of mismatch — both are reasonable semantic mappings (a side table
 genuinely is a small rectangular table; a nightstand genuinely is a
 small cabinet), no equivalent bug found there.
 
+**Update, commit `47ce545`: the "fix" attempt for this swapped one wrong
+mapping for a different wrong mapping — the title block now actively
+mislabels the drawing.** `_TYPE_ALIAS` (both in `_dispatch_furniture` and
+`_build_svg_model`) changed `'bed': 'bed_headboard'` →
+`'bed': 'rectangular_table'`. This means the previously-described
+`elif f_type == 'bed':` branch (the one calling `save_bed_headboard`) is
+now **permanently unreachable dead code** — `_TYPE_ALIAS` rewrites `bed`
+to `rectangular_table` before the if/elif chain ever runs, confirmed by
+reading the alias dict's position (top of the function, before any
+branching). "Bed" now genuinely gets 4 views instead of 1 (an
+improvement in view count), but:
+- **The title block hardcodes `f"Rectangular Table
+  {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}"`** (`dxf_exporter.py`,
+  inside `save_rectangular_table`) — confirmed by reading the exact
+  f-string. A bed now produces a real, downloadable manufacturing
+  drawing whose own title block says "RECTANGULAR TABLE," not "BED."
+- **Default dimensions are table-tuned, not bed-tuned**: `w=120,
+  h=70, d=80` (`routes.py` rectangular_table branch) — a real bed
+  (roughly 150-200cm wide, 200cm+ long, 40-50cm platform height) would
+  render at table-scale dimensions if no real width/height/depth were
+  detected, which is plausible for a product photo without page
+  dimensions to anchor it.
+- It still draws 4 thin table legs and a flat rectangular "tabletop"
+  polygon — no headboard, no mattress/platform distinction, nothing
+  bed-shaped about the geometry itself beyond having 4 rectangular sides.
+**This is not closing finding #16 — it's the same root problem (no
+furniture type genuinely represents "a bed") wearing a different,
+still-wrong, label.** A real fix needs an actual bed-shaped builder
+(platform + optional headboard, sensible default proportions, a title
+block that says "Bed" or "Platform Bed"), not reassignment to whichever
+existing function happens to have the most views.
+
 ### 17. Re-audit of fix commit `1dc78f9` (claims to close #11/#6/#9): #11 is a half-fix — crash stopped, feature still doesn't work; #6 and #9 verified correct
 **Date:** 2026-06-29
 **Status:** #11 PARTIALLY FIXED (crash only) — #6 FIXED — #9 PARTIALLY FIXED (reachable now, response shapes still wrong)
@@ -722,4 +754,4 @@ back to a single generic type one line into dispatch.
 
 1. **Shopify JSON direct parse** — skip the two-independent-guesses pattern
 2. **`ai_top_shape` deep wiring** — `coffee_table_round` type exists but `top_shape` signal from AI vision still isn't passed to SVG renderer for non-coffee-table types
-3. **Bed vs headboard distinction** — `bed` type normalizes to `bed_headboard`, losing the platform-bed geometry the classifier intentionally produces
+3. **Bed vs headboard distinction** — outdated, see finding #16 update: `bed` now normalizes to `rectangular_table` (changed in `47ce545`), not `bed_headboard`. Still wrong either way — no builder actually represents a bed; the title block now says "Rectangular Table" for what's a bed, and default dimensions are table-scale, not bed-scale. Needs a real bed-shaped builder, not reassignment to a different existing function.
