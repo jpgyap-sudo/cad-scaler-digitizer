@@ -5,11 +5,14 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from app.furniture_intelligence.schemas.furniture_analysis import FurnitureAnalysis, TemplateProposal
+from app.backend.resource_paths import resolve_resources_dir
+
+_RESOURCES_DIR = resolve_resources_dir(Path(__file__))
 
 # Load from ALL template directories
 TEMPLATE_DIRS = [
-    Path(__file__).resolve().parents[4] / 'resources' / 'furniture_templates',
-    Path(__file__).resolve().parents[4] / 'resources' / 'product_catalog' / 'templates',
+    _RESOURCES_DIR / 'furniture_templates',
+    _RESOURCES_DIR / 'product_catalog' / 'templates',
 ]
 
 logger = logging.getLogger('template_matcher')
@@ -60,7 +63,7 @@ _DNA_CACHE: Optional[Dict[str, Any]] = None
 def get_visual_dna() -> Dict[str, Any]:
     global _DNA_CACHE
     if _DNA_CACHE is None:
-        dna_path = Path(__file__).resolve().parents[4] / 'resources' / 'product_catalog' / 'visual_dna_index.json'
+        dna_path = _RESOURCES_DIR / 'product_catalog' / 'visual_dna_index.json'
         if dna_path.exists():
             try:
                 _DNA_CACHE = json.loads(dna_path.read_text(encoding='utf-8'))

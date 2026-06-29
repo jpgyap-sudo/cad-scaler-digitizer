@@ -21,7 +21,9 @@ logger = logging.getLogger("component_assembler")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
+from app.backend.resource_paths import resolve_resources_dir
+
+CATALOG_DIR = resolve_resources_dir(Path(__file__)) / "product_catalog"
 COMPONENT_LIB_PATH = CATALOG_DIR / "component_library.json"
 DNA_PATH = CATALOG_DIR / "product_dna.json"
 

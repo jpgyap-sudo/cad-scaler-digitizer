@@ -3,11 +3,12 @@ import json
 from pathlib import Path
 from typing import Dict, Optional
 from .models import FurnitureTemplate, TemplateParameter, TemplateComponent, TemplateConstraint
+from app.backend.resource_paths import resolve_resources_dir
 
 
 class TemplateLibrary:
     def __init__(self, root: str = None):
-        default = Path(__file__).parent.parent.parent.parent.parent / "resources" / "furniture_template_graphs"
+        default = resolve_resources_dir(Path(__file__)) / "furniture_template_graphs"
         self.root = Path(root) if root else default
         self.templates: Dict[str, FurnitureTemplate] = {}
 

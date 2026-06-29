@@ -12,10 +12,11 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-# Path: backend-python/app/backend/template_selector.py
-# Resources are at: project_root/resources/furniture_templates/
-TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "resources" / "furniture_templates"
-CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
+from app.backend.resource_paths import resolve_resources_dir
+
+_RESOURCES_DIR = resolve_resources_dir(Path(__file__))
+TEMPLATE_DIR = _RESOURCES_DIR / "furniture_templates"
+CATALOG_DIR = _RESOURCES_DIR / "product_catalog"
 
 # ---------------------------------------------------------------------------
 # Legacy construction template loader

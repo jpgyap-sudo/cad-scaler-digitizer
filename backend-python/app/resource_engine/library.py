@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 
-RESOURCE_DIR = Path(__file__).parent.parent.parent.parent / "resources"
+from app.backend.resource_paths import resolve_resources_dir
+
+RESOURCE_DIR = resolve_resources_dir(Path(__file__))
 
 
 class ResourceLibrary:

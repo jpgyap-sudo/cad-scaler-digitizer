@@ -23,7 +23,9 @@ logger = logging.getLogger("product_classifier")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CATALOG_DIR = Path(__file__).resolve().parents[2] / "resources" / "product_catalog"
+from app.backend.resource_paths import resolve_resources_dir
+
+CATALOG_DIR = resolve_resources_dir(Path(__file__)) / "product_catalog"
 DNA_PATH = CATALOG_DIR / "product_dna.json"
 DNA_INDEX_PATH = CATALOG_DIR / "visual_dna_index.json"
 

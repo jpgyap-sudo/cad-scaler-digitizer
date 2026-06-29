@@ -303,7 +303,8 @@ def get_reference_ratios(furniture_type: str) -> dict[str, float]:
     try:
         import json, os
         from pathlib import Path
-        ledger_path = Path(__file__).resolve().parents[3] / 'resources' / 'calibration_ledger.json'
+        from app.backend.resource_paths import resolve_resources_dir
+        ledger_path = resolve_resources_dir(Path(__file__)) / 'calibration_ledger.json'
         if ledger_path.exists():
             ledger = json.loads(ledger_path.read_text(encoding='utf-8'))
             type_avgs = ledger.get('type_averages', {}).get(furniture_type, {})

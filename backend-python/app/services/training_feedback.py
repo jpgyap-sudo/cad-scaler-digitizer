@@ -385,7 +385,8 @@ def enrich_product_dna_from_comparison(product_id: str, comparison_result: dict)
     future classification and template matching.
     """
     try:
-        dna_path = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "product_catalog" / "product_dna.json"
+        from app.backend.resource_paths import resolve_resources_dir
+        dna_path = resolve_resources_dir(Path(__file__)) / "product_catalog" / "product_dna.json"
         if not dna_path.exists():
             logger.warning(f"Product DNA not found at {dna_path}")
             return False
