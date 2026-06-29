@@ -64,14 +64,19 @@ function getFamilyColor(family: string): string {
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [galleries, setGalleries] = useState<Record<string, {svg: string; product_name: string}>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`${ENGINE_BASE}/templates`)
-      .then(r => r.json())
-      .then(d => { setTemplates(d.templates || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch(`${ENGINE_BASE}/templates`).then(r => r.json()).catch(() => ({templates: []})),
+      fetch(`${ENGINE_BASE}/silhouette/gallery`).then(r => r.json()).catch(() => ({silhouettes: {}})),
+    ]).then(([tpl, gal]) => {
+      setTemplates(tpl.templates || []);
+      setGalleries(gal.silhouettes || {});
+      setLoading(false);
+    });
   }, []);
 
   const filtered = search
@@ -104,7 +109,7 @@ export default function TemplatesPage() {
         <div key={family} className="mb-6">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">{family.replace(/_/g, " ")}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map(t => <TemplateCard key={t.id} template={t} />)}
+            {items.map(t => <TemplateCard key={t.id} template={t} gallery={galleries[t.product_type]} />)}
           </div>
         </div>
       ))}
@@ -114,13 +119,17 @@ export default function TemplatesPage() {
   );
 }
 
-function TemplateCard({ template }: { template: Template }) {
+function TemplateCard({ template, gallery }: { template: Template; gallery?: {svg: string; product_name: string} }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className={`bg-white border rounded-lg transition-all ${open ? 'border-indigo-300 shadow-sm' : 'border-gray-200 hover:border-indigo-200'}`}>
       <button onClick={() => setOpen(!open)} className="w-full text-left p-3 flex items-center gap-3">
-        <FallbackSvg family={template.family} />
+        {gallery?.svg ? (
+          <div className="w-[90px] h-[90px] shrink-0 overflow-hidden rounded border border-gray-100" dangerouslySetInnerHTML={{ __html: gallery.svg }} />
+        ) : (
+          <FallbackSvg family={template.family} />
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-gray-800 truncate">{template.name}</p>
           <p className="text-[10px] text-gray-400 font-mono truncate mt-0.5">{template.id}</p>

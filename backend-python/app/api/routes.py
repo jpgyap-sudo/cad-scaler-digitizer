@@ -4626,6 +4626,17 @@ async def skeleton_gemini_preview(
             return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@router.get("/silhouette/gallery")
+async def silhouette_gallery():
+    """Return one Gemini-traced silhouette per furniture type for the TemplatesPage gallery."""
+    try:
+        from app.agents.silhouette_gallery import get_gallery
+        gallery = get_gallery()
+        return JSONResponse({"count": len(gallery), "silhouettes": gallery})
+    except Exception as e:
+        return JSONResponse({"error": str(e), "silhouettes": {}, "count": 0}, status_code=500)
+
+
 @router.get("/products/dna/{handle}")
 async def product_dna_detail(handle: str):
     """Get enriched per-product DNA for a specific product handle."""

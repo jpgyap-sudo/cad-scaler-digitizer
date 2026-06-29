@@ -828,6 +828,15 @@ async def crawl_and_digitize(
                 if _gemini_result.get("svg"):
                     result["skeleton_svg"] = _gemini_result["svg"]
                     result["skeleton_source"] = "gemini"
+                    # Sync to silhouette gallery
+                    try:
+                        from app.agents.silhouette_gallery import update_gallery
+                        _h = urlparse(page_url).path.strip("/").split("/")[-1] if page_url else ""
+                        update_gallery(_f_type, _gemini_result["svg"],
+                                       product_name=_h.replace("-", " ").title(),
+                                       handle=_h)
+                    except Exception:
+                        pass
                     # Add HERO VIEW to the DXF (Gemini-traced outline, scale-aligned)
                     if _dxf_fullpath and os.path.exists(_dxf_fullpath):
                         try:
