@@ -19,6 +19,8 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger("crawl_to_dxf")
 
+OUT = os.environ.get("CAD_OUTPUT_DIR", "/tmp/cad_digitizer_outputs")
+
 # --- Image scoring ---
 
 # Patterns that indicate good product hero images
@@ -461,14 +463,14 @@ async def extract_dimensions_from_page(page_url: str) -> dict:
     _match_dims_in_text("", result)  # ensures helper is called at least once
 
     # Sanity: for non-square products where width is unreasonably small
-    # (< 50% of depth/length), swap. This handles D×W×H order on console
+    # (< 60% of depth/length), swap. This handles D×W×H order on console
     # tables (e.g. "40 x 120 x 75" → width=40→wrong) without affecting
     # correctly-extracted W×L×H products (e.g. "80 x 140" → width=80→correct
     # because 80 > 140*0.5=70).
     rw = result.get("width_cm", 0)
     rh = result.get("overall_height_cm", 0)
     rd = result.get("depth_cm", 0) or result.get("length_cm", 0)
-    if rw and rd and rh and rw < rd and rw < rh * 0.5:
+    if rw and rd and rh and rw < rd and rw < rh * 0.6:
         result["width_cm"], result["depth_cm"] = rd, rw
         if result.get("length_cm") and result["length_cm"] == rd:
             result["length_cm"] = rw
@@ -672,6 +674,7 @@ async def crawl_and_digitize(
     result["preview_svg"] = preview_svg
     result["download_url"] = download_url
     result["detected_dimensions"] = detected_dims
+    result["resolved_dimensions"] = resolved if isinstance(resolved, dict) else detected_dims
 
     # Step 4: Validate against reference geometry if provided
     validation_score = None
@@ -715,7 +718,7 @@ async def crawl_and_digitize(
 
     # Step 5: Auto-run comparison agent against source image
     _dxf_name = digitized.get("dxf_file") if isinstance(digitized, dict) else result.get("dxf_file")
-    _dxf_fullpath = f"/tmp/cad_digitizer_outputs/{_dxf_name}" if _dxf_name else None
+    _dxf_fullpath = os.path.join(OUT, _dxf_name) if _dxf_name else None
     if _dxf_fullpath and os.path.exists(_dxf_fullpath):
         try:
             from app.services.comparison_agent import (
