@@ -104,12 +104,23 @@ result: drag a slider on a coffee table (or cabinet/sofa/etc.), click
 Apply, and **nothing happens with zero indication why** — no error toast,
 no console warning, no visual change. Confirmed by reading the exact
 condition; this is a one-line fix (check `data.error` and surface it)
-once someone decides what the surfaced message should say, but the
-underlying `/adjust` dispatch gap (6 types unsupported) needs the real
-fix — extending its if/elif chain to match `_dispatch_furniture`'s
-coverage, ideally by sharing one dispatch table instead of maintaining
-two independently (this is the same "two parallel implementations drift
-apart" shape as the SVG-preview-vs-DXF-exporter issue above).
+once someone decides what the surfaced message should say.
+
+**The real fix for the underlying gap is already sitting right next to
+it.** `/material/edit` (`routes.py:2419`) solves the exact same "which
+save/build function for this furniture_type" problem via
+`_get_adjust_fn(furniture_type)` → `FURNITURE_ADJUST_DISPATCH`
+(`routes.py:2184`), a shared lookup table that **already covers all 13
+furniture types** (confirmed by reading the dict literal — round_pedestal,
+rectangular, cabinet, sofa, coffee_table, dining_chair, wardrobe,
+reception_counter, bed_headboard, asymmetric/oval pedestal, console,
+office_desk). `/adjust` just never adopted it — it hand-rolls its own
+separate, 6-type-only if/elif instead of calling the same
+`_get_adjust_fn()` that's one function away. This isn't a "write 7 new
+branches" fix, it's "delete `/adjust`'s own dispatch chain and call
+`_get_adjust_fn()` like `/material/edit` already does" — same "two
+parallel implementations of the same lookup, one more complete than the
+other" shape as the SVG-preview-vs-DXF-exporter issue above.
 
 ## Priority Order for Remaining Fixes
 
