@@ -613,117 +613,21 @@ def _compare_resolved_dims(page_dims: dict, resolved: dict) -> tuple[list, float
 
 def verify_with_gemini(product_image: Any, dxf_raster: Any,
                         furniture_type: str, page_dimensions: dict) -> dict:
-    """Send both images to Gemini 2.5 Flash for semantic DXF verification.
-    
-    Gemini looks at the product photo and the DXF side-by-side and answers:
-    1. Does the DXF shape match the product? (shape_match 0-1)
-    2. Are all visible components captured? (component_score 0-1)
-    3. Are proportions correct? (proportion_score 0-1)
-    4. What specific issues exist?
-    
-    This is fundamentally different from pixel-based comparison — Gemini
-    understands both representations (photo and line drawing) and compares
-    their MEANING, not their pixels.
-    """
-    import cv2
-    import numpy as np
-    import httpx
-    import json as json_mod
-
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    model = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
-    if not api_key:
-        return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
-                "issues": ["GEMINI_API_KEY not configured"], "performed": False}
-
+    """Verify DXF via Gemini 2.5 Flash. Delegates to app.agents.dxf_verifier_agent."""
     try:
-        # Render both images to JPEG bytes
-        h, w = product_image.shape[:2]
-        dxf_resized = cv2.resize(dxf_raster, (w, h))
-
-        _, prod_buf = cv2.imencode('.jpg', product_image, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
-        _, dxf_buf = cv2.imencode('.jpg', dxf_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
-
-        prod_b64 = base64.b64encode(prod_buf.tobytes()).decode()
-        dxf_b64 = base64.b64encode(dxf_buf.tobytes()).decode()
-
-        dims_hint = ""
-        if page_dimensions:
-            w = page_dimensions.get("width_cm", 0)
-            d = page_dimensions.get("depth_cm", 0) or page_dimensions.get("length_cm", 0)
-            h = page_dimensions.get("overall_height_cm", 0)
-            if w and h:
-                dims_hint = f"Reported dimensions: {w:.0f}×{d:.0f}×{h:.0f}cm (width×depth×height)."
-
-        prompt = f"""You are a CAD quality inspector. Compare the PRODUCT PHOTO (first image) against the DXF LINE DRAWING (second image).
-
-Furniture type: {furniture_type or "unknown"}
-{dims_hint}
-
-Judge the DXF on these criteria and return ONLY valid JSON (no markdown):
-
-{{
-  "shape_match": <0.0-1.0: does the DXF outline match the product's shape? 1.0=perfect outline>,
-  "component_score": <0.0-1.0: does the DXF capture all visible components (legs, back, arms, shelves, drawers, etc.)?>,
-  "proportion_score": <0.0-1.0: are the proportions of each component correct relative to the whole?>,
-  "issues": [<list of specific discrepancies as strings, max 5>],
-  "explanation": "<brief summary of the biggest issue or 'DXF matches product correctly'>"
-}}"""
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-        payload = {
-            "contents": [{"parts": [
-                {"text": prompt},
-                {"inline_data": {"mime_type": "image/jpeg", "data": prod_b64}},
-                {"inline_data": {"mime_type": "image/jpeg", "data": dxf_b64}},
-            ]}]
-        }
-
-        async def _call():
-            async with httpx.AsyncClient(timeout=30) as c:
-                r = await c.post(url, params={"key": api_key}, json=payload)
-                return r
-
+        from app.agents import verify_dxf_with_gemini as _agent_verify
         import asyncio
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
-
         if loop and loop.is_running():
-            resp = httpx.post(url, params={"key": api_key}, json=payload, timeout=30)
+            return _agent_verify(product_image, dxf_raster, furniture_type, page_dimensions)
         else:
-            resp = asyncio.run(_call())
-
-        if resp.status_code != 200:
-            return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
-                    "issues": [f"Gemini HTTP {resp.status_code}"], "performed": False}
-
-        raw = resp.json()
-        text = raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        if not text:
-            return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
-                    "issues": ["Empty Gemini response"], "performed": False}
-
-        # Parse JSON from response (handle markdown wrapping)
-        cleaned = text.strip()
-        if cleaned.startswith("```"): cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
-        if cleaned.rstrip().endswith("```"): cleaned = cleaned.rstrip()[:-3]
-        cleaned = cleaned.strip()
-
-        result = json_mod.loads(cleaned)
-        return {
-            "shape_match": min(1.0, max(0.0, float(result.get("shape_match", 0.5)))),
-            "component_score": min(1.0, max(0.0, float(result.get("component_score", 0.5)))),
-            "proportion_score": min(1.0, max(0.0, float(result.get("proportion_score", 0.5)))),
-            "issues": result.get("issues", [])[:5],
-            "explanation": result.get("explanation", ""),
-            "performed": True,
-        }
-
+            return asyncio.run(_agent_verify(product_image, dxf_raster, furniture_type, page_dimensions))
     except Exception as e:
         return {"shape_match": 0.5, "component_score": 0.5, "proportion_score": 0.5,
-                "issues": [f"Gemini verification error: {e}"], "performed": False}
+                "issues": [f"Verification agent error: {e}"], "performed": False}
 
 
 # ---------------------------------------------------------------------------
