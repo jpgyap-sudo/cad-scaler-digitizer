@@ -1044,6 +1044,27 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         try: save_tv_console(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
         extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'side_table':
+        w = real_w or _dim(['w', 'width'], 50.0)
+        d = _dim(['d', 'depth'], w * 0.8) if real_w else 40.0
+        h = real_h or _dim(['h', 'height'], 60.0)
+        try: save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'nightstand':
+        w = real_w or _dim(['w', 'width'], 50.0)
+        d = _dim(['d', 'depth'], w * 0.8) if real_w else 40.0
+        h = real_h or _dim(['h', 'height'], 65.0)
+        try: save_cabinet(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'bed':
+        w = real_w or _dim(['w', 'width'], 180.0)
+        d = _dim(['d', 'depth'], 200.0) if not real_w else (_dim(['d', 'depth'], 200.0) or 200.0)
+        h = real_h or _dim(['h', 'height'], 100.0)
+        try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     else:
         # Fallback: if unknown type but dimensions available, try rectangular_table
         fb_w = real_w or _dim(['w', 'width'], 0)
@@ -1181,6 +1202,49 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
     if f_type == 'bed_headboard':
         w = resolved.get('width_cm', real_w or 180)
         h = resolved.get('overall_height_cm', real_h or 60)
+        return build_bed_headboard_model(float(w), float(h))
+
+    if f_type in ('armchair_lounge', 'lounge_chair'):
+        w = resolved.get('width_cm', real_w or 70)
+        d = resolved.get('depth_cm', 75)
+        h = resolved.get('overall_height_cm', real_h or 90)
+        return build_sofa_model(float(w), float(d), float(h))
+    if f_type == 'bar_stool':
+        w = resolved.get('width_cm', real_w or 40)
+        h = resolved.get('overall_height_cm', real_h or 75)
+        return build_dining_chair_model(float(w), float(h))
+    if f_type == 'bench_chaise':
+        l = resolved.get('length_cm', real_w or 140)
+        d = resolved.get('depth_cm', 55)
+        h = resolved.get('overall_height_cm', real_h or 85)
+        return build_sofa_model(float(l), float(d), float(h))
+    if f_type == 'ottoman_pouf':
+        w = resolved.get('width_cm', real_w or 55)
+        d = resolved.get('depth_cm', 55)
+        h = resolved.get('overall_height_cm', real_h or 40)
+        return build_coffee_table_model(float(w), float(d), float(h))
+    if f_type in ('rug_rectangular', 'stone_slab_rectangular'):
+        l = resolved.get('length_cm', real_w or 160)
+        w = resolved.get('width_cm', 120)
+        return build_rectangular_table_model(float(l), float(w), 2.0)
+    if f_type == 'wall_panel_fluted':
+        w = resolved.get('width_cm', real_w or 120)
+        h = resolved.get('overall_height_cm', real_h or 240)
+        return build_wardrobe_model(float(w), 2.0, float(h))
+    if f_type in ('sideboard', 'tv_console'):
+        w = resolved.get('width_cm', real_w or 140)
+        d = resolved.get('depth_cm', 45)
+        h = resolved.get('overall_height_cm', real_h or 85)
+        return build_cabinet_model(float(w), float(d), float(h))
+    if f_type in ('side_table', 'nightstand'):
+        w = resolved.get('width_cm', real_w or 50)
+        d = resolved.get('depth_cm', 40)
+        h = resolved.get('overall_height_cm', real_h or 65)
+        return build_cabinet_model(float(w), float(d), float(h))
+    if f_type == 'bed':
+        w = resolved.get('width_cm', real_w or 180)
+        d = resolved.get('depth_cm', 200)
+        h = resolved.get('overall_height_cm', real_h or 100)
         return build_bed_headboard_model(float(w), float(h))
 
     if f_type == 'round_pedestal_table':
