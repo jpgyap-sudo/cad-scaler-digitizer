@@ -715,6 +715,60 @@ branch on a shape parameter, with `coffee_table_round` (or a real
 top_shape signal) driving it through to that parameter — not collapsing
 back to a single generic type one line into dispatch.
 
+### 21. CRITICAL, infrastructure-level: the live production site has not been redeployed since before this entire audit session — every commit from `01b7558` onward (the parametric previewer, isometric views, and every fix/re-fix #5-#20 above) is sitting in git, not running anywhere
+**Date:** 2026-06-29
+**Status:** OPEN — not a code bug, a deployment gap, but it invalidates
+how to interpret several "verified live" claims above
+**Impact:** CRITICAL for interpreting this whole log correctly, and for
+the actual user-facing product (none of today's work is live)
+
+**Evidence:**
+- `docker images cad-scaler-digitizer-python-worker` shows the currently
+  running image was built **2026-06-28 21:59 UTC**.
+- Every commit audited in findings #15-#20 above (`01b7558`, `5dac3e3`,
+  `1dc78f9`, `025a78f`, `146110c`, `47ce545`, `c50b034`) is timestamped
+  `2026-06-29 1X:XX +0800` = `2026-06-29 0X:XX UTC` — **after** the image
+  was built. None of them are in the running container.
+- Confirmed directly: `docker exec cad-python-worker grep
+  "any(k in fl for k in \"table\""` (the #15 fix) → no match.
+  `grep "'bed':"` in the deployed `routes.py` (the `_TYPE_ALIAS` dict
+  underpinning #5/#16/#20) → no match at all — the alias mechanism
+  itself isn't in the running code yet.
+- **Separately confusing:** the VPS's own git checkout (`git log -1` in
+  `/opt/cad-digitizer`) currently shows `578d73b` — a commit that is an
+  *ancestor* of `01b7558`, i.e. the working tree on disk is also behind.
+  But the *running container* clearly has the `/skeleton/{type}` feature
+  (`generate_skeleton()` exists, confirmed) which only exists from
+  `01b7558` onward — meaning the image was built from some commit
+  **after** `578d73b` but **before** the `_TYPE_ALIAS` dict was added,
+  and the on-disk checkout was later moved backward to `578d73b` by
+  something else, independently of the image. The git checkout and the
+  running image do not agree on what's deployed.
+
+**Why this matters for reading this log:** my live verification curls
+for finding #15 (still showing "Tabletop" generic skeleton for
+`rectangular_table`) were re-confirmed as a **stale-deployment artifact,
+not a broken fix** — the source-level fix in `c50b034` is correct
+(verified by reading the diff: `any(k in fl for k in ["table"])`), it's
+just not running yet. The same caveat likely applies to some of the
+other source-level fixes audited above (#17/#18/#19/#20) that I verified
+by reading code rather than live-testing — they may be correct in source
+and simply not live, rather than live-and-broken. Treat "verified via
+live curl" findings in this log as describing **what's currently
+running** (the 2026-06-28 21:59 UTC image), and "verified via reading
+source" findings as describing **what's committed**, which is a
+materially different and much further-ahead state. These have been
+diverging for an entire day of commits now.
+
+**Not fixing this myself** — redeploying production, and reconciling the
+VPS's git checkout state, are exactly the kind of actions that need
+explicit user sign-off per this session's established pattern, not
+something to do silently while in audit-only mode. Flagging clearly:
+whoever picks this up should (a) decide whether to pull + rebuild the
+VPS now that 50+ commits have accumulated, and (b) figure out why the
+on-disk git checkout reset to `578d73b` independently of the running
+image, since that's a process gap that will cause confusion again.
+
 ## Fixes Applied This Session (2026-06-29)
 
 | # | Finding | Status | Commit | What changed |
