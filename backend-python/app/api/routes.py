@@ -27,7 +27,7 @@ from app.backend.reference_confidence_scorer import score_dimension_confidence, 
 from app.backend.reference_geometry_matcher import match_detected_to_reference
 from app.backend.dxf_exporter import (
     save_generic, save_round_pedestal_table, save_rectangular_table,
-    save_cabinet, save_sofa, save_coffee_table, save_dining_chair,
+    save_cabinet, save_sofa, save_sectional, save_coffee_table, save_dining_chair,
     save_wardrobe, save_reception_counter, save_bed_headboard,
     save_asymmetric_pedestal_table, save_oval_pedestal_table,
     save_console_table, save_office_desk,
@@ -1076,6 +1076,28 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
         try: save_bed_headboard(str(dxf_path), width_cm=w, height_cm=h, materials=materials)
         except Exception: save_generic(str(dxf_path), [], [], [])
         extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'sectional':
+        w = real_w or _dim(['w', 'width'], 280.0)
+        d = real_d or _dim(['d', 'depth'], 95.0)
+        h = real_h or _dim(['h', 'height'], 82.0)
+        cl = _dim(['chaise', 'chaise_length'], 160.0)
+        try: save_sectional(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, chaise_length_cm=cl, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1), 'chaise_length_cm': round(cl, 1)}
+    elif f_type == 'outdoor_dining_set':
+        w = real_w or _dim(['w', 'width'], 180.0)
+        d = real_d or _dim(['d', 'depth'], 90.0)
+        h = real_h or _dim(['h', 'height'], 74.0)
+        try: save_rectangular_table(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
+    elif f_type == 'office_chair':
+        w = real_w or _dim(['w', 'width', 'seat_width'], 50.0)
+        d = real_d or _dim(['d', 'depth', 'seat_depth'], 48.0)
+        h = real_h or _dim(['h', 'height'], 120.0)
+        try: save_dining_chair(str(dxf_path), width_cm=w, depth_cm=d, height_cm=h, materials=materials)
+        except Exception: save_generic(str(dxf_path), [], [], [])
+        extra['resolved_dimensions'] = {'width_cm': round(w, 1), 'depth_cm': round(d, 1), 'overall_height_cm': round(h, 1)}
     else:
         # Fallback: if unknown type but dimensions available, try rectangular_table
         fb_w = real_w or _dim(['w', 'width'], 0)
@@ -1266,6 +1288,21 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         d = resolved.get('depth_cm', 200)
         h = resolved.get('overall_height_cm', real_h or 100)
         return build_bed_headboard_model(float(w), float(h))
+    if f_type == 'sectional':
+        w = resolved.get('width_cm', real_w or 280)
+        d = resolved.get('depth_cm', 95)
+        h = resolved.get('overall_height_cm', real_h or 82)
+        return build_sofa_model(float(w), float(d), float(h))
+    if f_type == 'outdoor_dining_set':
+        w = resolved.get('width_cm', real_w or 180)
+        d = resolved.get('depth_cm', 90)
+        h = resolved.get('overall_height_cm', real_h or 74)
+        return build_rectangular_table_model(float(w), float(d), float(h))
+    if f_type == 'office_chair':
+        w = resolved.get('width_cm', real_w or 50)
+        d = resolved.get('depth_cm', 48)
+        h = resolved.get('overall_height_cm', real_h or 120)
+        return build_dining_chair_model(float(w), float(h))
 
     if f_type == 'round_pedestal_table':
         svg_kwargs = {k: v for k, v in (dispatch_extra or {}).items()

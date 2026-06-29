@@ -1,0 +1,22 @@
+{
+  "id": "chair.office_ergonomic.v1",
+  "name": "Ergonomic office chair / task chair",
+  "product_type": "office_chair",
+  "family": "seating",
+  "parameters": [
+    { "name": "height_mm", "default": 1200, "min_value": 1000, "max_value": 1400, "description": "Overall height" },
+    { "name": "seat_width_mm", "default": 500, "min_value": 450, "max_value": 600, "description": "Seat width" },
+    { "name": "seat_depth_mm", "default": 480, "min_value": 420, "max_value": 550, "description": "Seat depth" },
+    { "name": "seat_height_mm", "default": 480, "min_value": 420, "max_value": 550, "description": "Seat height (adjustable)" },
+    { "name": "armrest_height_mm", "default": 240, "min_value": 200, "max_value": 300, "description": "Armrest height above seat" }
+  ],
+  "components": [
+    { "id": "seat", "role": "seat", "shape": "upholstered_block", "material_role": "upholstery", "parameter_map": { "width_mm": "seat_width_mm", "depth_mm": "seat_depth_mm", "height_mm": "seat_height_mm" } },
+    { "id": "back", "role": "back", "shape": "ergonomic_back", "material_role": "upholstery", "parameter_map": { "height_mm": "height_mm" } },
+    { "id": "base", "role": "base", "shape": "caster_base_five_star", "material_role": "base", "parameter_map": {} },
+    { "id": "armrests", "role": "arms", "shape": "adjustable_armrest", "quantity": 2, "material_role": "upholstery", "parameter_map": { "height_mm": "armrest_height_mm" } }
+  ],
+  "constraints": [{ "id": "seat_lower_than_total", "description": "Seat height must be below total height", "expression": "seat_height_mm < height_mm", "severity": "error" }],
+  "required_views": ["front_elevation", "side_elevation"],
+  "drawing_notes": ["OFFICE CHAIR — SPECIFY GAS LIFT STROKE AND BASE MATERIAL."]
+}

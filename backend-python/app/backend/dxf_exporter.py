@@ -1691,6 +1691,57 @@ def save_generic(path, lines, circles, rects=None):
 # ===== NEW 7 DXF SAVE FUNCTIONS (HomeU 25-Template Upgrade) =====
 
 
+def save_sectional(path, width_cm=280, depth_cm=95, height_cm=82, chaise_length_cm=160,
+                   seat_height_cm=42, seat_count=4,
+                   materials: Optional[Dict[str, str]] = None,
+                   visibility: Optional[Dict[str, bool]] = None):
+    """L-shaped sectional sofa — front view with chaise extension + top view + side view."""
+    doc = setup_doc()
+    msp = doc.modelspace()
+    sc = 0.35
+    w = width_cm * sc; d = depth_cm * sc; h = height_cm * sc
+    ch = chaise_length_cm * sc
+    fx, fy = 60, 30; top_y = fy + h
+    mats = materials or {}
+
+    def _component_visible(name):
+        if visibility is not None and name in visibility:
+            return visibility[name]
+        return True
+
+    # === FRONT VIEW (main section) ===
+    _add_polyline(msp, [(fx, top_y), (fx + w, top_y), (fx + w, fy), (fx, fy)], True)
+    _add_polyline(msp, [(fx, top_y - 0.3*h), (fx + w, top_y - 0.3*h)], False, 'HIDDEN')
+    _add_centerline(msp, (fx + w/2, fy - 5), (fx + w/2, top_y + 5))
+    _add_dimension(msp, (fx + w + 8, fy), (fx + w + 8, top_y), (fx + w + 16, (fy+top_y)/2), f'H = {height_cm:g} cm')
+    _add_dimension(msp, (fx, fy - 10), (fx + w, fy - 10), (fx + w/2, fy - 16), f'W = {width_cm:g} cm')
+    _add_mtext(msp, 'FRONT VIEW', (fx, top_y + 8), 3)
+
+    # === TOP VIEW (L-shape) ===
+    tw = width_cm * sc; td = depth_cm * sc; tc = chaise_length_cm * sc
+    tx, ty = fx, top_y + 30
+    _add_polyline(msp, [(tx, ty), (tx + tw, ty), (tx + tw, ty + td), (tx, ty + td)], True)
+    # Chaise extension (L)
+    _add_polyline(msp, [(tx + tw - tc, ty + td), (tx + tw, ty + td), (tx + tw, ty + td + td*0.6), (tx + tw - tc, ty + td + td*0.6)], True, 'HIDDEN')
+    _add_centerline(msp, (tx + tw/2, ty - 5), (tx + tw/2, ty + td + td*0.6 + 5))
+    _add_dimension(msp, (tx, ty + td + 8), (tx + tw, ty + td + 8), (tx + tw/2, ty + td + 14), f'W = {width_cm:g} cm')
+    _add_mtext(msp, 'TOP VIEW', (tx, ty + td + td*0.6 + 14), 3)
+
+    # === SIDE VIEW ===
+    sx, sy = fx + w + 30, fy
+    _add_polyline(msp, [(sx, sy), (sx + d, sy), (sx + d, top_y), (sx, top_y)], True)
+    _add_dimension(msp, (sx, sy - 10), (sx + d, sy - 10), (sx + d/2, sy - 16), f'D = {depth_cm:g} cm')
+    _add_mtext(msp, 'SIDE VIEW', (sx, top_y + 8), 3)
+
+    generate_title_block(msp, f"Sectional Sofa {width_cm:.0f}x{depth_cm:.0f}x{height_cm:.0f}",
+                         project="Furniture Shop Drawing",
+                         material_notes=[
+                             f"SEAT — {mats.get('seat', 'Fabric upholstery')}",
+                             f"BASE — {mats.get('base', 'Engineered wood / steel frame')}",
+                         ])
+    return _save(doc, path)
+
+
 def save_armchair(path, width_cm=70, depth_cm=75, height_cm=90, seat_height_cm=45,
                    materials: Optional[Dict[str, str]] = None):
     """Armchair lounge shop drawing with seat, backrest, armrests, legs."""

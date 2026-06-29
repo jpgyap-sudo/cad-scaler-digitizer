@@ -1,0 +1,19 @@
+{
+  "id": "table.outdoor_dining.v1",
+  "name": "Outdoor dining set (table + 4-6 chairs)",
+  "product_type": "outdoor_dining_set",
+  "family": "table",
+  "parameters": [
+    { "name": "table_length_mm", "default": 1800, "min_value": 1200, "max_value": 2400, "description": "Table length" },
+    { "name": "table_width_mm", "default": 900, "min_value": 700, "max_value": 1100, "description": "Table width" },
+    { "name": "table_height_mm", "default": 740, "min_value": 700, "max_value": 800, "description": "Table height" },
+    { "name": "chair_count", "default": 6, "min_value": 4, "max_value": 8, "description": "Number of chairs" }
+  ],
+  "components": [
+    { "id": "tabletop", "role": "tabletop", "shape": "rectangular_slab", "material_role": "tabletop", "parameter_map": { "length_mm": "table_length_mm", "width_mm": "table_width_mm", "thickness_mm": "table_height_mm" } },
+    { "id": "base", "role": "base", "shape": "four_leg_or_pedestal", "material_role": "base", "parameter_map": {} }
+  ],
+  "constraints": [{ "id": "min_width", "description": "Width must support seating", "expression": "table_width_mm >= 700", "severity": "error" }],
+  "required_views": ["top", "front_elevation", "side_elevation"],
+  "drawing_notes": ["OUTDOOR DINING SET — SPECIFY WEATHER-RESISTANT MATERIALS."]
+}
