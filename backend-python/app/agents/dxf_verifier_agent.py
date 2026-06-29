@@ -210,13 +210,14 @@ async def generate_silhouette_svg(
     try:
         b64 = base64.b64encode(image_data).decode()
 
-        prompt = f"""You are a multi-view CAD extractor. Given a photo of a {furniture_type or "furniture product"}, extract ALL visible geometric information and organize it into THREE orthographic views: FRONT, SIDE, and TOP.
+        prompt = f"""You are a multi-view CAD extractor. Given a photo of a {furniture_type or "furniture product"}, extract ALL visible geometric information and organize it into FOUR views: FRONT, SIDE, TOP, and ISOMETRIC.
 
 PRINCIPLE: From a single 3/4 perspective or front-facing photo, you can:
   - DIRECTLY OBSERVE the front view (the visible face)
   - PARTIALLY ESTIMATE the side view from edge profiles visible in perspective
   - PARTIALLY ESTIMATE the top view from the top surface contour visible in the photo
-  - Tag each component with {{"view": "front"|"side"|"top", "confidence": "observed"|"estimated"}}
+  - DERIVE the isometric view as a 3D-style projection using the product's width/depth/height proportions, matching the perspective visible in the photo
+  - Tag each component with {{"view": "front"|"side"|"top"|"isometric", "confidence": "observed"|"estimated"}}
 
 Return ONLY valid JSON (no markdown) with this structure:
 {{
@@ -225,17 +226,24 @@ Return ONLY valid JSON (no markdown) with this structure:
   "estimated_proportions": {{"width_px": number, "depth_px": number, "height_px": number}}
 }}
 
+SVG LAYOUT (1200x300):
+- panels[0] x=0-280  = FRONT view (observed from photo)
+- panels[1] x=310-590 = SIDE view (estimated from edge profiles)
+- panels[2] x=620-890 = TOP view (estimated from top surface contour)
+- panels[3] x=920-1180 = ISOMETRIC view (derived from photo perspective)
+- white background, each panel has a thin #e5e7eb divider line at the x-boundaries
+
 SVG RULES:
-- viewBox="0 0 900 300", white background — LAYOUT: left panel (0-400) = front, middle panel (450-600) = side, right panel (650-900) = estimated top
 - Each component is its OWN <path> with data-name, data-view, data-confidence attributes
 - OBSERVED components: stroke="#1f2937" stroke-width="2" fill="none"
 - ESTIMATED components: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
+- ISOMETRIC view: draw the product as a 3D-style projection — show both visible and partially visible edges (estimating the unseen side based on visible pattern)
 - Use M,C,Q,L,Z for smooth tracing; center and scale to fill ~80% of each panel
 
 COMPONENT NAMES: tabletop, left_leg, right_leg, backrest, seat, armrest, base, pedestal, door, drawer, headboard, footboard — whatever fits the product
 
 POLYLINE RULES:
-- Each polyline: flat [x1,y1, x2,y2, ...] in the 900x300 SVG coordinate space
+- Each polyline: flat [x1,y1, x2,y2, ...] in the 1200x300 SVG coordinate space
 - Curves sampled every ~5px as short straight segments
 - Closed: first and last point identical; minimum 4 points
 
@@ -243,10 +251,11 @@ estimated_proportions: your best guess of the product's width_px, depth_px, heig
 
 Example:
 {{
-  "svg": "<svg viewBox='0 0 900 300' xmlns='http://www.w3.org/2000/svg'><rect width='900' height='300' fill='white'/><path data-name='tabletop' data-view='front' data-confidence='observed' d='...'/><path data-name='tabletop' data-view='top' data-confidence='estimated' d='...'/></svg>",
+  "svg": "<svg viewBox='0 0 1200 300' xmlns='http://www.w3.org/2000/svg'>...</svg>",
   "components": [
-    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 340,100, 340,140, 60,140, 60,100]}},
-    {{"name": "top_surface", "view": "top", "confidence": "estimated", "polyline": [660,120, 860,120, 860,160, 660,160, 660,120]}}
+    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 280,100, 280,140, 60,140, 60,100]}},
+    {{"name": "tabletop", "view": "top", "confidence": "estimated", "polyline": [660,110, 820,110, 820,140, 660,140, 660,110]}},
+    {{"name": "tabletop", "view": "isometric", "confidence": "estimated", "polyline": [950,110, 1100,90, 1140,130, 990,150, 950,110]}}
   ],
   "estimated_proportions": {{"width_px": 280, "depth_px": 80, "height_px": 160}}
 }}
@@ -304,7 +313,7 @@ Return ONLY this JSON. No markdown, no explanation."""
         
         # Parse JSON response (multi-view format: {svg, components[{name, view, confidence, polyline}]})
         svg = ""
-        views: dict[str, list] = {"front": [], "side": [], "top": []}
+        views: dict[str, list] = {"front": [], "side": [], "top": [], "isometric": []}
         estimated_proportions = {}
         try:
             parsed = json_mod.loads(cleaned)
