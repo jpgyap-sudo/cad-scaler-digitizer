@@ -286,10 +286,61 @@ Return ONLY the JSON object, no markdown, no explanation."""
 
         # Flatten multiple polylines into one coord array for DXF
         dxf_flat = []
-        for poly in dxf_polylines:
-            if isinstance(poly, list) and len(poly) > 1:
-                dxf_flat.extend(poly)
-                dxf_flat.append(poly[0])  # close
+        if dxf_polylines:
+            for poly in dxf_polylines:
+                if isinstance(poly, list) and len(poly) > 1:
+                    dxf_flat.extend(poly)
+                    dxf_flat.append(poly[0])
+        elif svg:
+            # Fallback: extract polyline from SVG path data
+            import re
+            paths = re.findall(r'd="([^"]+)"', svg, re.I)
+            for d in paths:
+                tokens = re.findall(r'[MmLlCcQqSsZzHhVvLl]|-?\d+(?:\.\d+)?', d)
+                pts = []
+                cx = cy = sx = sy = 0.0
+                i = 0
+                while i < len(tokens):
+                    cmd = tokens[i]; i += 1
+                    if cmd == 'M' and i+1 < len(tokens):
+                        cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2
+                        sx, sy = cx, cy; pts.append([cx, cy])
+                    elif cmd == 'L' and i+1 < len(tokens):
+                        cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2
+                        pts.append([cx, cy])
+                    elif cmd in ('Z','z') and pts and (abs(pts[-1][0]-sx)>0.5 or abs(pts[-1][1]-sy)>0.5):
+                        pts.append([sx, sy]); break
+                    elif cmd in ('C','c') and i+5 < len(tokens):
+                        if cmd == 'c':
+                            ex = cx+float(tokens[i+4]); ey = cy+float(tokens[i+5])
+                        else:
+                            ex, ey = float(tokens[i+4]), float(tokens[i+5])
+                        for s in range(1,13):
+                            t = s/12; u=1-t
+                            px = u**3*cx + 3*u**2*t*float(tokens[i]) + 3*u*t**2*float(tokens[i+2]) + t**3*ex
+                            py = u**3*cy + 3*u**2*t*float(tokens[i+1]) + 3*u*t**2*float(tokens[i+3]) + t**3*ey
+                            pts.append([px, py])
+                        cx, cy = ex, ey; i+=6
+                    elif cmd in ('Q','q') and i+3 < len(tokens):
+                        if cmd == 'q':
+                            ex = cx+float(tokens[i+2]); ey = cy+float(tokens[i+3])
+                        else:
+                            ex, ey = float(tokens[i+2]), float(tokens[i+3])
+                        for s in range(1,10):
+                            t = s/9; u=1-t
+                            px = u**2*cx + 2*u*t*float(tokens[i]) + t**2*ex
+                            py = u**2*cy + 2*u*t*float(tokens[i+1]) + t**2*ey
+                            pts.append([px, py])
+                        cx, cy = ex, ey; i+=4
+                    elif cmd in ('H','h') and i < len(tokens):
+                        cx = float(tokens[i]) if cmd=='H' else cx+float(tokens[i]); i+=1
+                        pts.append([cx, cy])
+                    elif cmd in ('V','v') and i < len(tokens):
+                        cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1
+                        pts.append([cx, cy])
+                if len(pts) > 2:
+                    dxf_flat.extend(pts)
+                    dxf_flat.append(pts[0])
 
         dxf_coords = json_mod.dumps(dxf_flat)
 
