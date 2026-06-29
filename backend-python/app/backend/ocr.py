@@ -23,6 +23,8 @@ DIM_RE = re.compile(
 )
 
 _OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+_GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
 
 # Laplacian variance below this is treated as "too blurry to read small text
 # reliably" - a sharp technical drawing/photo typically scores in the
@@ -140,6 +142,61 @@ def _openai_ocr_sync(image_path: str) -> list:
         return []
 
 
+def _gemini_ocr_sync(image_path: str) -> list:
+    """Sync wrapper for Google Gemini Vision OCR - same tag taxonomy as
+    _openai_ocr_sync, used as the primary vision OCR when GEMINI_API_KEY
+    is set (OpenAI's key has been failing auth - see [OCR] OpenAI HTTP 401
+    in logs)."""
+    if not _GEMINI_API_KEY:
+        return []
+    try:
+        import httpx
+        b64 = _image_to_base64(image_path)
+        mime = _get_mime(image_path)
+        prompt = (
+            "Extract ALL dimension labels from this furniture drawing. For each one, "
+            "use the nearby label text to pick the most specific tag: 'top_dia' "
+            "(tabletop/overall diameter), 'base_dia' (base plate / pedestal foot / glide "
+            "diameter), 'neck_dia' (neck/collar/narrowest-point diameter), 'collar_dia' "
+            "(metal collar plate diameter), 'height' (overall height), 'width', 'depth', "
+            "'thickness'. If a diameter's context is unclear, use 'dia'. Convert all "
+            "values to cm. Respond with a JSON object: "
+            "{\"dimensions\":[{\"value_cm\":number,\"tag\":\"top_dia|base_dia|neck_dia|"
+            "collar_dia|height|width|depth|thickness|dia\",\"raw\":\"original text incl. "
+            "nearby label\"}]}"
+        )
+        r = httpx.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
+            params={"key": _GEMINI_API_KEY},
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": mime, "data": b64}},
+                ]}],
+                "generationConfig": {"responseMimeType": "application/json"},
+            },
+            timeout=30,
+        )
+        if r.status_code != 200:
+            print(f"[OCR] Gemini HTTP {r.status_code}: {r.text[:200]}")
+            return []
+        content = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+        data = json.loads(content)
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            for key in ["dimensions", "values", "dims"]:
+                if key in data and isinstance(data[key], list):
+                    return data[key]
+            if data.get("value_cm"):
+                return [data]
+        return []
+    except Exception as e:
+        print(f"[OCR] Gemini error: {e}")
+        return []
+
+
 def _tesseract_ocr(image_path: str):
     """Fallback OCR via Tesseract."""
     try:
@@ -162,7 +219,15 @@ def _tesseract_ocr(image_path: str):
 
 
 def ocr_dimensions(image_path: str):
-    """Sync OCR: OpenAI Vision (primary) → Tesseract (fallback).
+    """Sync OCR: OpenAI Vision -> Gemini Vision -> Tesseract (in that
+    fallback order, first one that returns results wins).
+
+    OpenAI is tried first since its prompt/tag taxonomy was tuned first,
+    but its API key has been failing auth (HTTP 401) as of 2026-06-29 -
+    Gemini is the working vision OCR path until that's resolved. Tesseract
+    is the last resort: it reads digits fine but can't tag them without an
+    inline "H=" style label right next to the number, so most fields fall
+    back to ratio estimates/defaults when only Tesseract ran.
 
     Auto-enhances (upscale + sharpen) the image first if it scores as too
     blurry for reliable small-text reading - misread dimension labels (e.g.
@@ -183,6 +248,10 @@ def ocr_dimensions(image_path: str):
 
     try:
         ai_dims = _openai_ocr_sync(ocr_path)
+        ai_source = "OpenAI"
+        if not ai_dims:
+            ai_dims = _gemini_ocr_sync(ocr_path)
+            ai_source = "Gemini"
 
         if ai_dims:
             for d in ai_dims:
@@ -202,7 +271,7 @@ def ocr_dimensions(image_path: str):
             except Exception:
                 pass
             text_lines = list(dict.fromkeys([t for t in (dim_texts + tess_lines) if t.strip()]))
-            print(f"[OCR] OpenAI: {len(ai_dims)} dims (+{len(tess_lines)} text lines for classification)")
+            print(f"[OCR] {ai_source}: {len(ai_dims)} dims (+{len(tess_lines)} text lines for classification)")
             return text_lines, ai_dims
 
         print("[OCR] Tesseract fallback")
