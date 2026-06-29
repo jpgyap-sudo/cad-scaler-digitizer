@@ -656,6 +656,10 @@ def _compute_missing_dimensions(f_type, corrected_dims, real_w=None, real_h=None
 def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual_base_estimate=None,
                          materials=None, real_d=None):
     print(f"[DISPATCH] Exporter: {f_type}")
+    # Normalize subtypes to their parent type for dispatch
+    _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
+                   'nightstand': 'cabinet', 'bed': 'bed_headboard'}
+    f_type = _TYPE_ALIAS.get(f_type, f_type)
 
     def _dim(tags, default):
         for d in corrected_dims:
@@ -1129,6 +1133,10 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
         build_console_table_model, build_office_desk_model,
         build_generic_model,
     )
+
+    _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
+                   'nightstand': 'cabinet', 'bed': 'bed_headboard'}
+    f_type = _TYPE_ALIAS.get(f_type, f_type)
 
     if f_type == 'rectangular_table':
         w = resolved.get('width_cm', real_w or 120)
@@ -3011,12 +3019,20 @@ async def delete_preset_endpoint(name: str):
 
 CHAT_SESSIONS: dict = {}
 
-# File-based persistence for chat sessions (survives server restarts)
-_CHAT_STORE = OUT / "chat_sessions.json"
-if _CHAT_STORE.exists():
+# Load chat sessions from Postgres (via brain_sync) — fall back to file for backward compat
+def _load_chat_session(sid: str) -> dict:
     try:
-        with open(_CHAT_STORE) as f:
-            CHAT_SESSIONS.update(json.load(f))
+        from app.backend.brain_sync import load_chat_session as pg_load
+        pg = pg_load(sid)
+        if pg: return pg
+    except Exception: pass
+    return CHAT_SESSIONS.get(sid, {})
+
+def _save_chat_session(sid: str, state: dict) -> None:
+    CHAT_SESSIONS[sid] = state
+    try:
+        from app.backend.brain_sync import save_chat_session as pg_save
+        pg_save(sid, state)
     except Exception: pass
 
 @router.post("/chat")
@@ -3025,7 +3041,7 @@ async def chat_message(message: str = Form(...), session_id: str = Form(None), i
     from app.backend.chat_agent import chat_with_agent
     from app.backend.feedback_learner import learn_from_chat, get_adjustment_hints, load_preferences, apply_preferences
     sid = session_id or "default"
-    prev_state = CHAT_SESSIONS.get(sid)
+    prev_state = _load_chat_session(sid)
 
     # Seed the chat's known dimensions from the drawing's own sidecar JSON so
     # the LLM can reason about values it was never explicitly told via chat
@@ -3043,11 +3059,7 @@ async def chat_message(message: str = Form(...), session_id: str = Form(None), i
             print(f"[Chat] sidecar seed failed: {e}")
 
     result = chat_with_agent(message, prev_state)
-    CHAT_SESSIONS[sid] = result["state"]
-    try:
-        with open(_CHAT_STORE, 'w') as f:
-            json.dump(dict(CHAT_SESSIONS), f, indent=2)
-    except Exception: pass
+    _save_chat_session(sid, result["state"])
     corrections = learn_from_chat(sid, prev_state or {}, result["state"], user_id=session_id or "default")
     try:
         from app.backend.brain_sync import record_correction as brc, record_material as brm
@@ -3063,12 +3075,18 @@ async def chat_message(message: str = Form(...), session_id: str = Form(None), i
 
 @router.get("/chat/state")
 async def chat_state(session_id: str = "default"):
-    state = CHAT_SESSIONS.get(session_id, {})
+    state = _load_chat_session(session_id)
     return JSONResponse({"session_id": session_id, "state": state})
 
 @router.get("/chat/sessions")
 async def chat_sessions():
-    return JSONResponse({"sessions": list(CHAT_SESSIONS.keys()), "count": len(CHAT_SESSIONS)})
+    # Return from Postgres if available, otherwise fallback
+    try:
+        from app.backend.brain_sync import _execute
+        rows = _execute("SELECT session_id FROM chat_sessions ORDER BY updated_at DESC LIMIT 50", fetch=True) or []
+        return JSONResponse({"sessions": [r[0] for r in rows], "count": len(rows), "source": "postgres"})
+    except Exception:
+        return JSONResponse({"sessions": list(CHAT_SESSIONS.keys()), "count": len(CHAT_SESSIONS), "source": "memory"})
 
 
 # ===== ECHO DRAFTER =====

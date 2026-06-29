@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb, Maximize2 } from "lucide-react";
+import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb, Maximize2, Layers } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
