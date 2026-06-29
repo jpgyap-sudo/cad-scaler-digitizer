@@ -658,7 +658,7 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
     print(f"[DISPATCH] Exporter: {f_type}")
     # Normalize subtypes to their parent type for dispatch
     _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
-                   'nightstand': 'cabinet', 'bed': 'bed_headboard'}
+                   'nightstand': 'cabinet', 'bed': 'rectangular_table'}
     f_type = _TYPE_ALIAS.get(f_type, f_type)
 
     def _dim(tags, default):
@@ -1135,7 +1135,7 @@ def _build_svg_model(f_type, resolved, real_w, real_h, dispatch_extra, detected=
     )
 
     _TYPE_ALIAS = {'coffee_table_round': 'coffee_table', 'side_table': 'rectangular_table',
-                   'nightstand': 'cabinet', 'bed': 'bed_headboard'}
+                   'nightstand': 'cabinet', 'bed': 'rectangular_table'}
     f_type = _TYPE_ALIAS.get(f_type, f_type)
 
     if f_type == 'rectangular_table':
@@ -1798,6 +1798,13 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                      for k, v in (raw_materials or {}).items() if v}
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate,
                                               materials=materials, real_d=real_d)
+
+        # Pass ai_top_shape through dispatch_extra so _build_svg_model can use it
+        if isinstance(ai_result, dict):
+            ai_top_shape = 'circle' if 'round' in str(ai_result.get('furniture_type', '')).lower() else 'rectangle'
+            if dispatch_extra is None:
+                dispatch_extra = {}
+            dispatch_extra['top_shape'] = ai_top_shape
 
         svg_name = None
         try:
