@@ -675,13 +675,22 @@ def compare_digitization(
         result.dxf_height_mm = float(h2) if h2 else 0.0
 
     # Shape classification score: did the AI's shape type match the template used?
-    result.shape_class_score = score_shape_classification(ai_furniture_type, furniture_type)
+    try:
+        result.shape_class_score = score_shape_classification(ai_furniture_type, furniture_type)
+    except Exception:
+        result.shape_class_score = 0.5
 
     # Proportion score: do component ratios match learned norms?
-    result.proportion_score = score_proportions(furniture_type or "", resolved_dimensions, dxf_path)
+    try:
+        result.proportion_score = score_proportions(furniture_type or "", resolved_dimensions, dxf_path)
+    except Exception:
+        result.proportion_score = 0.5
 
     # View completeness score: are required views present?
-    result.view_score = score_views(dxf_path, furniture_type or "")
+    try:
+        result.view_score = score_views(dxf_path, furniture_type or "")
+    except Exception:
+        result.view_score = 0.0
 
     # Entity count comparison
     ent_score, ent_errors, ent_counts = compare_entities(dxf_path, detected_entities)
