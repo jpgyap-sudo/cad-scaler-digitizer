@@ -659,6 +659,12 @@ def _persist_drawing_history(job_id: str, f_type: str, dxf_path, svg_path=None,
     record the result in drawing_history, so past generations survive
     container restarts and can be listed via GET /history.
 
+    Stores Spaces object *keys* (not URLs) in preview_urls - the bucket
+    denies public reads at the bucket level (confirmed live, 403 even with
+    ACL=public-read on the object), so a permanent URL would never resolve.
+    GET /history turns these keys into fresh presigned URLs on each read
+    instead (see presigned_url() in spaces_client.py).
+
     Never raises - history/CDN persistence is a nice-to-have, not
     something that should ever fail the actual digitize request.
     Returns the preview_urls dict that was recorded (possibly empty).
@@ -669,15 +675,15 @@ def _persist_drawing_history(job_id: str, f_type: str, dxf_path, svg_path=None,
         from app.backend.spaces_client import upload_file, is_configured
         if is_configured():
             dxf_path = Path(dxf_path)
-            dxf_url = upload_file(dxf_path, f"cad-history/{job_id}/{dxf_path.name}")
-            if dxf_url:
-                preview_urls["dxf"] = dxf_url
+            dxf_key = upload_file(dxf_path, f"cad-history/{job_id}/{dxf_path.name}")
+            if dxf_key:
+                preview_urls["dxf_key"] = dxf_key
             if svg_path:
                 svg_path = Path(svg_path)
                 if svg_path.exists():
-                    svg_url = upload_file(svg_path, f"cad-history/{job_id}/{svg_path.name}")
-                    if svg_url:
-                        preview_urls["svg"] = svg_url
+                    svg_key = upload_file(svg_path, f"cad-history/{job_id}/{svg_path.name}")
+                    if svg_key:
+                        preview_urls["svg_key"] = svg_key
     except Exception as e:
         print(f"[History] Spaces upload failed (non-fatal): {e}")
 
@@ -3026,21 +3032,33 @@ async def list_drawing_history(limit: int = 30, furniture_type: str = None):
         rows = cur.fetchall()
         cur.close()
         conn.close()
-        return JSONResponse({
-            "items": [
-                {
-                    "job_id": r[0],
-                    "furniture_type": r[1],
-                    "dxf_file": r[2],
-                    "quality_score": r[3],
-                    "dimensions": r[4] or {},
-                    "preview_urls": r[5] or {},
-                    "created_at": str(r[6]),
-                }
-                for r in rows
-            ],
-            "count": len(rows),
-        })
+
+        from app.backend.spaces_client import presigned_url
+        items = []
+        for r in rows:
+            stored = r[5] or {}
+            preview_urls = {}
+            # New rows store Spaces object keys (dxf_key/svg_key) - turn
+            # those into fresh presigned URLs on every read, since the
+            # bucket denies public reads and a stored URL would 403.
+            if stored.get("dxf_key"):
+                url = presigned_url(stored["dxf_key"])
+                if url:
+                    preview_urls["dxf"] = url
+            if stored.get("svg_key"):
+                url = presigned_url(stored["svg_key"])
+                if url:
+                    preview_urls["svg"] = url
+            items.append({
+                "job_id": r[0],
+                "furniture_type": r[1],
+                "dxf_file": r[2],
+                "quality_score": r[3],
+                "dimensions": r[4] or {},
+                "preview_urls": preview_urls,
+                "created_at": str(r[6]),
+            })
+        return JSONResponse({"items": items, "count": len(items)})
     except Exception as e:
         return JSONResponse({"error": str(e), "items": [], "count": 0}, status_code=500)
 
