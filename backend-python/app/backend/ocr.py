@@ -26,6 +26,24 @@ _OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 _GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 _GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
 
+# Furniture-type classification cache, keyed by image md5 - same pattern as
+# dxf_verifier_agent.py's _SILHOUETTE_CACHE. Even with temperature=0,
+# vision-LLM classification can still drift call-to-call on the same image
+# (confirmed live: the same test photo classified as round_pedestal_table,
+# then coffee_table, then oval_pedestal_table across separate calls). The
+# cheapest fix for "the SAME image gives a different answer" is to simply
+# never re-ask for an image already classified - guarantees a stable answer
+# on repeat, independent of the model's own consistency.
+_CLASSIFICATION_CACHE: dict = {}
+
+
+def get_cached_classification(md5: str):
+    return _CLASSIFICATION_CACHE.get(md5)
+
+
+def set_cached_classification(md5: str, result: dict) -> None:
+    _CLASSIFICATION_CACHE[md5] = result
+
 # Laplacian variance below this is treated as "too blurry to read small text
 # reliably" - a sharp technical drawing/photo typically scores in the
 # hundreds to thousands; a soft/blurry phone photo often falls below 100.
@@ -114,6 +132,7 @@ def _openai_ocr_sync(image_path: str) -> list:
                         {"type":"image_url","image_url":{"url":f"data:{mime};base64,{b64}","detail":"high"}}]}
                 ],
                 "max_tokens": 1000,
+                "temperature": 0,
                 "response_format": {"type": "json_object"},
                 # NOTE: 'timeout' must NOT go in the JSON body — OpenAI rejects
                 # it with HTTP 400 "Unrecognized request argument supplied:
@@ -174,7 +193,7 @@ def _gemini_ocr_sync(image_path: str) -> list:
                     {"text": prompt},
                     {"inline_data": {"mime_type": mime, "data": b64}},
                 ]}],
-                "generationConfig": {"responseMimeType": "application/json"},
+                "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
             },
             timeout=30,
         )

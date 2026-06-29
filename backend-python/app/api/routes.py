@@ -136,8 +136,23 @@ VISION_SYSTEM_PROMPT = (
     "leave it blank, but mark inferred ones. Return a 'materials' object: "
     "{\"component_name\": {\"description\": \"material text\", \"inferred\": "
     "true_or_false}}. "
+    "\n\nALSO report a 'facts' object of objective, low-level structural "
+    "observations - these are used to deterministically derive the final "
+    "furniture type in code, NOT just your category label, so report what "
+    "you literally observe rather than reasoning about which category it "
+    "implies: {\"support_count\": 1|2|3|4|\"many\"|null (how many distinct "
+    "legs/columns touch the floor), \"support_type\": \"column\"|\"legs\"|"
+    "\"panel\"|null (a single central column vs. multiple discrete legs vs. "
+    "a solid side panel), \"top_shape\": \"circle\"|\"oval\"|\"rectangle\"|"
+    "\"square\"|\"irregular\"|null (the tabletop/seat outline as drawn), "
+    "\"has_arms\": true|false|null (chair/seating only), \"is_sectional\": "
+    "true|false|null (sofa only - multiple connected segments at an angle), "
+    "\"category_hint\": \"table\"|\"chair\"|\"sofa\"|\"cabinet\"|\"bed\"|"
+    "\"other\"|null (coarse category only, not the specific subtype)}. "
+    "Report null for any fact that doesn't apply or isn't visible - do not "
+    "guess to fill every field. "
     "Return JSON with furniture_type, confidence (0-1), dimensions array "
-    "[{tag, value_cm}], visual_base_estimate, materials."
+    "[{tag, value_cm}], visual_base_estimate, materials, facts."
 )
 
 
@@ -1597,10 +1612,12 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         with img_path.open("wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        import httpx, base64
+        import httpx, base64, hashlib
         with open(img_path, 'rb') as f:
-            b64 = base64.b64encode(f.read()).decode()
+            img_bytes_for_classify = f.read()
+        b64 = base64.b64encode(img_bytes_for_classify).decode()
         mime = 'image/png'
+        _img_md5 = hashlib.md5(img_bytes_for_classify).hexdigest()
 
         # Gemini is primary (product decision, 2026-06-29) - tried first.
         # OpenAI (a working key was restored the same day) is the fallback,
@@ -1611,56 +1628,67 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         # OpenCV shape heuristic for EVERY photo - this was the actual
         # root cause an oval pedestal table was classified as
         # round_pedestal_table.
-        ai_result = {"furniture_type": "", "confidence": 0, "dimensions": []}
-        try:
-            from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
-            if _GEMINI_API_KEY:
-                gemini_prompt = (
-                    VISION_SYSTEM_PROMPT +
-                    "\n\nRespond as a JSON object: {\"furniture_type\":string,"
-                    "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
-                    "\"tag\":string,\"raw\":string}]}"
-                )
-                async with httpx.AsyncClient(timeout=30) as client:
-                    gr = await client.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
-                        params={"key": _GEMINI_API_KEY},
-                        json={"contents": [{"parts": [
-                            {"text": gemini_prompt + "\n\nIdentify furniture and extract all dimensions."},
-                            {"inline_data": {"mime_type": mime, "data": b64}},
-                        ]}], "generationConfig": {"responseMimeType": "application/json"}})
-                    if gr.status_code == 200:
-                        gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
-                        ai_result = json.loads(gcontent)
-                        print(f"[Hybrid] Gemini classification: {ai_result.get('furniture_type')}")
-                    else:
-                        print(f"[Hybrid] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
-        except Exception as e:
-            print(f"[Hybrid] Gemini error: {e}")
-
-        # OpenAI fallback
+        from app.backend.ocr import get_cached_classification, set_cached_classification
+        ai_result = get_cached_classification(_img_md5)
+        if ai_result is not None:
+            print(f"[Hybrid] Classification cache hit: {ai_result.get('furniture_type')}")
+        ai_result = ai_result or {"furniture_type": "", "confidence": 0, "dimensions": []}
         if not ai_result.get("furniture_type"):
             try:
-                async with httpx.AsyncClient(timeout=60) as client:
-                    r = await client.post("https://api.openai.com/v1/chat/completions",
-                        headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
-                        json={"model": "gpt-4o", "messages": [
-                            {"role": "system", "content": VISION_SYSTEM_PROMPT},
-                            {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
-                                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
-                        ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
-                    if r.status_code == 200:
-                        raw_content = r.json()['choices'][0]['message']['content']
-                        try: ai_result = json.loads(raw_content)
-                        except (json.JSONDecodeError, ValueError):
-                            cleaned = raw_content.strip()
-                            if cleaned.startswith('```'): cleaned = cleaned.split('\n', 1)[-1] if '\n' in cleaned else cleaned[3:]
-                            if cleaned.rstrip().endswith('```'): cleaned = cleaned.rstrip()[:-3]
-                            ai_result = json.loads(cleaned.strip())
-                        print(f"[Hybrid] OpenAI classification: {ai_result.get('furniture_type')}")
-                    else:
-                        print(f"[Hybrid] OpenAI HTTP {r.status_code}: {r.text[:200]}")
-            except Exception as e: print(f"[Hybrid] OpenAI error: {e}")
+                from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
+                if _GEMINI_API_KEY:
+                    gemini_prompt = (
+                        VISION_SYSTEM_PROMPT +
+                        "\n\nRespond as a JSON object: {\"furniture_type\":string,"
+                        "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
+                        "\"tag\":string,\"raw\":string}],\"facts\":{\"support_count\":"
+                        "number_or_string_or_null,\"support_type\":string_or_null,"
+                        "\"top_shape\":string_or_null,\"has_arms\":bool_or_null,"
+                        "\"is_sectional\":bool_or_null,\"category_hint\":string_or_null}}"
+                    )
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        gr = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
+                            params={"key": _GEMINI_API_KEY},
+                            json={"contents": [{"parts": [
+                                {"text": gemini_prompt + "\n\nIdentify furniture and extract all dimensions."},
+                                {"inline_data": {"mime_type": mime, "data": b64}},
+                            ]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0}})
+                        if gr.status_code == 200:
+                            gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            ai_result = json.loads(gcontent)
+                            print(f"[Hybrid] Gemini classification: {ai_result.get('furniture_type')}")
+                        else:
+                            print(f"[Hybrid] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
+            except Exception as e:
+                print(f"[Hybrid] Gemini error: {e}")
+
+            # OpenAI fallback
+            if not ai_result.get("furniture_type"):
+                try:
+                    async with httpx.AsyncClient(timeout=60) as client:
+                        r = await client.post("https://api.openai.com/v1/chat/completions",
+                            headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
+                            json={"model": "gpt-4o", "messages": [
+                                {"role": "system", "content": VISION_SYSTEM_PROMPT},
+                                {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
+                                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}}]}
+                            ], "max_tokens": 2000, "temperature": 0, "response_format": {"type": "json_object"}})
+                        if r.status_code == 200:
+                            raw_content = r.json()['choices'][0]['message']['content']
+                            try: ai_result = json.loads(raw_content)
+                            except (json.JSONDecodeError, ValueError):
+                                cleaned = raw_content.strip()
+                                if cleaned.startswith('```'): cleaned = cleaned.split('\n', 1)[-1] if '\n' in cleaned else cleaned[3:]
+                                if cleaned.rstrip().endswith('```'): cleaned = cleaned.rstrip()[:-3]
+                                ai_result = json.loads(cleaned.strip())
+                            print(f"[Hybrid] OpenAI classification: {ai_result.get('furniture_type')}")
+                        else:
+                            print(f"[Hybrid] OpenAI HTTP {r.status_code}: {r.text[:200]}")
+                except Exception as e: print(f"[Hybrid] OpenAI error: {e}")
+
+            if isinstance(ai_result, dict) and ai_result.get("furniture_type"):
+                set_cached_classification(_img_md5, ai_result)
 
         # ===== Furniture Intelligence Confirmation Loop =====
         furniture_analysis_result = None
@@ -1802,18 +1830,30 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 if opencv_ftype in KNOWN_TYPES: ftype = opencv_ftype
         else: ftype = normalize_furniture_type(opencv_type)
 
-        # Deterministic pedestal-shape override: the AI classifier picks a
-        # furniture TYPE from a category label (e.g. a "COFFEE TABLE" title
+        # Deterministic shape override: the AI classifier picks a furniture
+        # TYPE from a holistic category label (e.g. a "COFFEE TABLE" title
         # block), which can disagree call-to-call with the actual STRUCTURE
-        # it just measured. base_dia/neck_dia/collar_dia tags only get
-        # attached when a single-pedestal column was actually described -
-        # confirmed live: the same Melina photo classified as
-        # round_pedestal_table on one call and generic coffee_table (a
-        # flat-top-on-4-legs model) on the next, purely from non-deterministic
-        # vision output, even though the pedestal geometry was detected both
-        # times. Trust the geometric evidence over the category guess when
-        # the two disagree on structure (not on round vs oval - that's
-        # decided by the aspect-ratio check just below).
+        # it just measured - confirmed live, the same Melina photo
+        # classified as round_pedestal_table on one call and generic
+        # coffee_table (a flat-top-on-4-legs model) on the next, purely
+        # from non-deterministic vision output. classify_from_facts()
+        # generalizes this: rather than trust the label, ask the model for
+        # low-level structural facts (support count/type, top shape, arms)
+        # and derive the type from those in plain code instead.
+        if not furniture_type:
+            from app.backend.shape_classifier import classify_from_facts
+            _facts = (ai_result.get('facts') if isinstance(ai_result, dict) else None) or {}
+            _fact_ftype = classify_from_facts(_facts, ftype)
+            if _fact_ftype and _fact_ftype != ftype:
+                print(f"[Hybrid] Shape-facts override: classifier said '{ftype}', "
+                      f"facts={_facts} -> '{_fact_ftype}'")
+                ftype = _fact_ftype
+
+        # Secondary signal, only when the facts above gave no opinion:
+        # base_dia/neck_dia/collar_dia OCR tags only get attached when a
+        # single-pedestal column was actually measured, which is itself
+        # strong (if narrower) evidence the table isn't a flat 4-legged
+        # type even without usable facts.
         if not furniture_type and ftype not in (
                 'round_pedestal_table', 'oval_pedestal_table', 'asymmetric_pedestal_table'):
             _pedestal_dims = corrected_dims + [
@@ -1834,7 +1874,7 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                     ftype = 'oval_pedestal_table'
                 else:
                     ftype = 'round_pedestal_table'
-                print(f"[Hybrid] Pedestal override: classifier said '{old_ftype}', "
+                print(f"[Hybrid] Pedestal-tag override: classifier said '{old_ftype}', "
                       f"but base/neck/collar_dia tags were detected -> '{ftype}'")
 
         # ===== Template Selector — pick best specific template using OCR + shapes =====
@@ -2262,60 +2302,76 @@ async def digitize_unified(file: UploadFile = File(...),
         # OpenAI is the fallback. See the matching block in digitize_hybrid()
         # for why this order: OpenAI's key was dead for a while (HTTP 401),
         # and Gemini stays primary even after a working key was restored.
-        ai_result = None
-        try:
-            from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
-            if _GEMINI_API_KEY:
-                import httpx, base64
-                with open(img_path, 'rb') as f:
-                    b64 = base64.b64encode(f.read()).decode()
-                gemini_prompt = (
-                    VISION_SYSTEM_PROMPT +
-                    "\n\nRespond as a JSON object: {\"furniture_type\":string,"
-                    "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
-                    "\"tag\":string,\"raw\":string}]}\n\nIdentify furniture and extract all dimensions."
-                )
-                async with httpx.AsyncClient(timeout=30) as client:
-                    gr = await client.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
-                        params={"key": _GEMINI_API_KEY},
-                        json={"contents": [{"parts": [
-                            {"text": gemini_prompt},
-                            {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
-                        ]}], "generationConfig": {"responseMimeType": "application/json"}})
-                    if gr.status_code == 200:
-                        gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
-                        ai_result = json.loads(gcontent)
-                        print(f"[Unified] Gemini classification: {ai_result.get('furniture_type')}")
-                    else:
-                        print(f"[Unified] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
-        except Exception as e:
-            print(f"[Unified] Gemini error: {e}")
+        import hashlib
+        with open(img_path, 'rb') as f:
+            _img_bytes_for_classify = f.read()
+        _img_md5 = hashlib.md5(_img_bytes_for_classify).hexdigest()
 
-        # OpenAI fallback
-        if not ai_result or not (isinstance(ai_result, dict) and ai_result.get('furniture_type')):
-            if OPENAI_API_KEY:
-                try:
+        from app.backend.ocr import get_cached_classification, set_cached_classification
+        ai_result = get_cached_classification(_img_md5)
+        if ai_result is not None:
+            print(f"[Unified] Classification cache hit: {ai_result.get('furniture_type')}")
+
+        if not (isinstance(ai_result, dict) and ai_result.get('furniture_type')):
+            ai_result = None
+            try:
+                from app.backend.ocr import _GEMINI_API_KEY, _GEMINI_MODEL
+                if _GEMINI_API_KEY:
                     import httpx, base64
-                    with open(img_path, 'rb') as f:
-                        b64 = base64.b64encode(f.read()).decode()
-                    async with httpx.AsyncClient(timeout=60) as client:
-                        r = await client.post("https://api.openai.com/v1/chat/completions",
-                            headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
-                            json={"model": "gpt-4o", "messages": [
-                                {"role": "system", "content": VISION_SYSTEM_PROMPT},
-                                {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
-                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}}]}
-                            ], "max_tokens": 2000, "response_format": {"type": "json_object"}})
-                        if r.status_code == 200:
-                            raw = r.json()['choices'][0]['message']['content']
-                            try: ai_result = json.loads(raw)
-                            except: pass
-                            print(f"[Unified] OpenAI classification: {(ai_result or {}).get('furniture_type')}")
+                    b64 = base64.b64encode(_img_bytes_for_classify).decode()
+                    gemini_prompt = (
+                        VISION_SYSTEM_PROMPT +
+                        "\n\nRespond as a JSON object: {\"furniture_type\":string,"
+                        "\"confidence\":number 0-1,\"dimensions\":[{\"value_cm\":number,"
+                        "\"tag\":string,\"raw\":string}],\"facts\":{\"support_count\":"
+                        "number_or_string_or_null,\"support_type\":string_or_null,"
+                        "\"top_shape\":string_or_null,\"has_arms\":bool_or_null,"
+                        "\"is_sectional\":bool_or_null,\"category_hint\":string_or_null}}"
+                        "\n\nIdentify furniture and extract all dimensions."
+                    )
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        gr = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent",
+                            params={"key": _GEMINI_API_KEY},
+                            json={"contents": [{"parts": [
+                                {"text": gemini_prompt},
+                                {"inline_data": {"mime_type": "image/jpeg", "data": b64}},
+                            ]}], "generationConfig": {"responseMimeType": "application/json", "temperature": 0}})
+                        if gr.status_code == 200:
+                            gcontent = gr.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            ai_result = json.loads(gcontent)
+                            print(f"[Unified] Gemini classification: {ai_result.get('furniture_type')}")
                         else:
-                            print(f"[Unified] OpenAI HTTP {r.status_code}: {r.text[:200]}")
-                except Exception as e:
-                    print(f"[Unified] AI Vision failed (non-fatal): {e}")
+                            print(f"[Unified] Gemini HTTP {gr.status_code}: {gr.text[:200]}")
+            except Exception as e:
+                print(f"[Unified] Gemini error: {e}")
+
+            # OpenAI fallback
+            if not ai_result or not (isinstance(ai_result, dict) and ai_result.get('furniture_type')):
+                if OPENAI_API_KEY:
+                    try:
+                        import httpx, base64
+                        b64 = base64.b64encode(_img_bytes_for_classify).decode()
+                        async with httpx.AsyncClient(timeout=60) as client:
+                            r = await client.post("https://api.openai.com/v1/chat/completions",
+                                headers={"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API_KEY}"},
+                                json={"model": "gpt-4o", "messages": [
+                                    {"role": "system", "content": VISION_SYSTEM_PROMPT},
+                                    {"role": "user", "content": [{"type": "text", "text": "Identify furniture and extract all dimensions."},
+                                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}}]}
+                                ], "max_tokens": 2000, "temperature": 0, "response_format": {"type": "json_object"}})
+                            if r.status_code == 200:
+                                raw = r.json()['choices'][0]['message']['content']
+                                try: ai_result = json.loads(raw)
+                                except: pass
+                                print(f"[Unified] OpenAI classification: {(ai_result or {}).get('furniture_type')}")
+                            else:
+                                print(f"[Unified] OpenAI HTTP {r.status_code}: {r.text[:200]}")
+                    except Exception as e:
+                        print(f"[Unified] AI Vision failed (non-fatal): {e}")
+
+            if isinstance(ai_result, dict) and ai_result.get("furniture_type"):
+                set_cached_classification(_img_md5, ai_result)
 
         # User-provided dimensions
         user_dims = {}
