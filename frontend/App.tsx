@@ -828,6 +828,21 @@ const App: React.FC = () => {
                       <p>🏷️ Furniture: <strong>{detectedFurniture ? getFurnitureLabel(detectedFurniture.type || '') : 'N/A'}</strong></p>
                       <p>📐 Lines: <strong>{cadEngineResult.detected?.lines ?? 0}</strong> | Circles: <strong>{cadEngineResult.detected?.circles ?? 0}</strong></p>
                       <p>💾 DXF: <strong>{cadEngineResult.dxf_file}</strong></p>
+                      {(cadEngineResult as any)?.cad_intelligence?.entities?.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="text-[10px] text-slate-400 cursor-pointer hover:text-slate-600">AI entity confidence ({(cadEngineResult as any).cad_intelligence.entities.length} items)</summary>
+                          <div className="mt-1 space-y-0.5 text-[10px] text-slate-500">
+                            {(cadEngineResult as any).cad_intelligence.entities.slice(0, 8).map((e: any, i: number) => (
+                              <div key={i} className="flex justify-between">
+                                <span>{e.type || 'entity'}</span>
+                                <span className={e.confidence > 0.7 ? 'text-emerald-600' : e.confidence > 0.4 ? 'text-amber-600' : 'text-red-500'}>
+                                  {(e.confidence * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
                     </div>
                     {cadEngineResult.dxf_file && (
                       <div className="mt-3 space-y-2">

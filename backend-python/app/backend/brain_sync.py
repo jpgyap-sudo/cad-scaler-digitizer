@@ -52,8 +52,8 @@ def _get_conn():
     return _conn
 
 
-def _execute(sql: str, params: tuple = None, fetch: bool = False) -> Any:
-    """Execute SQL, optionally returning results."""
+def _execute(sql: str, params: tuple = None, fetch: bool = False, commit: bool = False) -> Any:
+    """Execute SQL, optionally returning results or committing."""
     conn = _get_conn()
     if not conn:
         return None
@@ -63,8 +63,12 @@ def _execute(sql: str, params: tuple = None, fetch: bool = False) -> Any:
         if fetch:
             return cur.fetchall()
         cur.close()
+        if commit:
+            conn.commit()
     except Exception as e:
         print(f"[BrainSync] SQL error: {e}")
+        if commit:
+            conn.rollback()
     return None
 
 

@@ -107,6 +107,7 @@ export type DigitizeResult = {
   template_warnings?: string[];
   phase3?: Phase3Result | null;
   accuracy_pipeline?: AccuracyPipeline;
+  cad_intelligence?: { entities?: { type: string; confidence: number; bbox?: number[] }[]; component_graph?: any };
   furniture: {
     type: string;
     confidence: number;
