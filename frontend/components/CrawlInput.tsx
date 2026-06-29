@@ -36,6 +36,7 @@ export default function CrawlInput() {
   const [category, setCategory] = useState("table");
   const [result, setResult] = useState<CrawlResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [skeletonFailed, setSkeletonFailed] = useState(false);
 
   const categories = [
     "table", "sofa", "chair", "bed", "cabinet", "lighting", "rug", "furniture",
@@ -45,6 +46,7 @@ export default function CrawlInput() {
     if (!url.trim()) return;
     setLoading(true);
     setResult(null);
+    setSkeletonFailed(false);
 
     try {
       const res = await fetch(`${ENGINE_BASE}/crawl-to-dxf`, {
@@ -160,13 +162,20 @@ export default function CrawlInput() {
                     <p className="text-[10px] font-semibold text-gray-500 mb-1 flex items-center gap-1">
                       <Ruler size={10} /> Quick Skeleton Preview (before DXF)
                     </p>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 overflow-hidden" style={{ maxHeight: "120px" }}>
-                      <img
-                        src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(result.skeleton_svg)}
-                        alt="Skeleton Preview"
-                        className="w-full"
-                        style={{ objectFit: "contain", maxHeight: "110px" }}
-                      />
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 overflow-hidden" style={{ maxHeight: "120px", minHeight: skeletonFailed ? "0" : undefined }}>
+                      {skeletonFailed ? (
+                        <p className="text-[10px] text-gray-400 text-center py-3">
+                          Preview unavailable for this generation - the DXF itself is unaffected.
+                        </p>
+                      ) : (
+                        <img
+                          src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(result.skeleton_svg)}
+                          alt="Skeleton Preview"
+                          className="w-full"
+                          style={{ objectFit: "contain", maxHeight: "110px" }}
+                          onError={() => setSkeletonFailed(true)}
+                        />
+                      )}
                     </div>
                   </div>
                 )}
