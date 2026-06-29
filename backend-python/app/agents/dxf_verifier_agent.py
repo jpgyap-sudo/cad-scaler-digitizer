@@ -247,11 +247,11 @@ Return ONLY the JSON object, no markdown, no explanation."""
             ]}]
         }
 
-            _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-            async with httpx.AsyncClient(timeout=_timeout) as client:
-                resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+        _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
+        async with httpx.AsyncClient(timeout=_timeout) as client:
+            resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
 
-            if resp.status_code != 200:
+        if resp.status_code != 200:
                 return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {resp.status_code}"}
 
         text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
