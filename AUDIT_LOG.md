@@ -369,6 +369,51 @@ anywhere to go in the current product (no UI for cutting lists/QC
 checklists exists anywhere today). Flagging as a scope decision for
 the user, not a fix.
 
+### 15. New "Interactive Parametric CAD Previewer" feature (commit `01b7558`): live skeleton preview's shape-matching logic misses 3 of the most common table types
+**Date:** 2026-06-29
+**Status:** OPEN
+**Impact:** MEDIUM — feature works and is genuinely wired end-to-end
+(rare in this log!), but renders the wrong/generic skeleton shape for
+`rectangular_table`, `console_table`, `side_table`
+**What this feature is and confirms working:** `TemplatesPage.tsx` now
+debounces slider changes (400ms) and calls `GET /skeleton/{product_type}`
+live, rendering an SVG skeleton preview that updates as you drag —
+confirmed wired correctly: frontend passes `template.product_type`
+(verified via `TemplatesPage.tsx:32,173`), endpoint exists
+(`routes.py:4189`), calls `generate_skeleton()` in
+`app/backend/svg_skeleton.py`, returns real SVG. This is one of the few
+features in this whole audit that's actually fully connected
+frontend-to-backend with no missing link.
+**The bug:** `generate_skeleton()`'s archetype-matching (`svg_skeleton.py`
+~line 570) picks which skeleton builder to use via substring keyword
+matching on the *product_type string itself*:
+```python
+if any(k in fl for k in ["sofa", "bench", "sofa_bench"]): ... # sofa skeleton
+elif any(k in fl for k in ["dining_table", "coffee_table", "pedestal_table"]): ... # table skeleton
+elif any(k in fl for k in ["chair", "armchair", "lounge", "stool"]): ... # chair skeleton
+elif any(k in fl for k in ["pendant", "chandelier"]): ... # pendant skeleton
+else: ... # generic skeleton
+```
+The table branch checks for the literal compound substrings
+`"dining_table"`/`"coffee_table"`/`"pedestal_table"` — not a general
+`"table" in fl` check. Verified live against all 18 real templates:
+`coffee_table`, `round_pedestal_table`, `oval_pedestal_table`,
+`asymmetric_pedestal_table` correctly match (their names contain
+`"coffee_table"`/`"pedestal_table"`) and render proper table skeletons
+(labeled "Top" + two leg rectangles, confirmed via curl). **But
+`rectangular_table`, `console_table`, and `side_table` contain none of
+those 3 substrings** and fall to the generic branch — confirmed live,
+all three return the generic skeleton's labels ("Tabletop"/"Base Support
+Or Legs"/"Legs Or Frame", the exact same fallback shape, not an
+actual rectangular-table-shaped skeleton with legs in the right place).
+`office_desk` and `reception_counter` also don't match any branch and
+get the generic fallback — arguably more defensible for those (no
+table-specific keyword was ever intended to cover them), but worth a
+look too.
+**Fix:** change the table-branch check to `"table" in fl` (or an
+explicit allowlist of all table-family `product_type` values), matching
+how the sofa/chair branches already work more permissively.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
