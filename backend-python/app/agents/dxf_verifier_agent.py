@@ -266,10 +266,17 @@ Return ONLY the JSON object, no markdown, no explanation."""
         cleaned = cleaned.strip()
 
         import json as json_mod
-        parsed = json_mod.loads(cleaned)
-
-        svg = parsed.get("svg", "")
-        dxf_polylines = parsed.get("dxf_polylines", [])
+        
+        # Try JSON parsing (new format: {"svg": "...", "dxf_polylines": [...]})
+        svg = ""
+        dxf_polylines = []
+        try:
+            parsed = json_mod.loads(cleaned)
+            svg = parsed.get("svg", "") or ""
+            dxf_polylines = parsed.get("dxf_polylines", []) or []
+        except Exception:
+            # Fallback: treat entire response as raw SVG (old format)
+            svg = cleaned
 
         # SVG fallback wrapper
         if svg and "<svg" not in svg.lower():
