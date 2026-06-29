@@ -1754,6 +1754,16 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
         real_w = _parse_float(real_width_cm)
         real_h = _parse_float(real_height_cm)
         real_d = _parse_float(real_depth_cm)
+        # Same reasoning - only depends on ai_result, which is already
+        # available by this point, but was previously computed ~100 lines
+        # further down (after the Template Graph Resolution block that
+        # also needs it, causing a third "cannot access local variable
+        # 'materials'" UnboundLocalError once the ftype/real_w ordering
+        # bugs above were fixed and this block started actually running).
+        visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
+        raw_materials = ai_result.get('materials') if isinstance(ai_result, dict) else None
+        materials = {k: (v.get('description', '') if isinstance(v, dict) else str(v))
+                     for k, v in (raw_materials or {}).items() if v}
 
         # ===== Furniture Type Resolution =====
         # Moved here (was previously ~120 lines further down, AFTER the
@@ -2015,10 +2025,6 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
 
         dxf_name = f'{job_id}_hybrid.dxf'
         dxf_path = OUT / dxf_name
-        visual_base_estimate = ai_result.get('visual_base_estimate') if isinstance(ai_result, dict) else None
-        raw_materials = ai_result.get('materials') if isinstance(ai_result, dict) else None
-        materials = {k: (v.get('description', '') if isinstance(v, dict) else str(v))
-                     for k, v in (raw_materials or {}).items() if v}
         dispatch_extra = _dispatch_furniture(ftype, dxf_path, merged_dims, real_w, real_h, visual_base_estimate,
                                               materials=materials, real_d=real_d)
 
