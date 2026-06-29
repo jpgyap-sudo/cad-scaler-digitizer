@@ -769,6 +769,70 @@ VPS now that 50+ commits have accumulated, and (b) figure out why the
 on-disk git checkout reset to `578d73b` independently of the running
 image, since that's a process gap that will cause confusion again.
 
+### 22. New area audited: the `resources/` data directory and "Resources" frontend tab — 7 of 11 categories are empty (accidentally deleted, never restored), feeding a pipeline that runs on every digitize but whose output is discarded
+**Date:** 2026-06-29
+**Status:** OPEN — data loss + dead computation, two distinct issues
+
+**Part A — the data is genuinely gone.** `find resources -type f` → 25
+files total, almost entirely in `furniture_template_graphs/` (18) and
+`product_catalog/` (2 + a `templates/` subdir). **`construction_rules`,
+`dimension_styles`, `geometry`, `joinery`, `manufacturers`, `materials`,
+`supports`, `training` are all completely empty (0 files each).**
+Traced via `git log --diff-filter=D`: commit `ef70fd0` ("chore: commit
+all pending changes — resource deletions...") deleted all of these,
+along with the 18 `furniture_template_graphs` files. The template-graph
+files were later restored (confirmed present now, and `/py-api/templates`
+correctly returns 18 — already verified earlier in this log). **The
+other 7 categories were never restored** — this looks like an
+unintentional side effect of whatever cleanup that commit was doing, not
+a deliberate removal.
+
+**Part B — what actually reads this data, and what happens to empty
+folders.** `app/resource_engine/library.py`'s `ResourceLibrary.load()`
+globs each subdirectory for `*.json` and skips gracefully if a directory
+doesn't exist or has nothing in it — **no crash, just silently loads
+nothing** for these 7 categories. This is not orphaned code like finding
+#14's `reasoning`/`manufacturing`/`fusion` modules — `ResourceLibrary` is
+genuinely instantiated inside `_dispatch_furniture()` itself
+(`routes.py:721`, cached on the function object so it only loads once
+per process), which runs on **every single digitize call**, building a
+`scene_graph` via `build_scene_graph()` + `solve_constraints()`
+(`routes.py:722-731`, wrapped in try/except, non-fatal on failure).
+
+**Part C — but the result is discarded anyway, independent of the empty
+data.** `extra['scene_graph']` and `extra['scene_warnings']` are set but
+**never read anywhere else** — checked every place `dispatch_extra`'s
+contents get pulled into an actual response (`routes.py`, all the
+`(dispatch_extra or {}).get(...)` call sites): only
+`materials`/`profile`/`resolved_dimensions`/`component_schema`/
+`proportion_warnings` ever get extracted. `scene_graph`/`scene_warnings`
+have zero readers. So even with full resource data this pipeline's
+output would never reach a user — it's compute-then-discard on the hot
+path of the main product, the same shape as findings #5/#10/#14 above,
+just running unconditionally instead of behind a separate endpoint.
+
+**Part D — the 2 dedicated endpoints are also unreachable.** `GET
+/scene/library` and `GET /scene/generate` (`routes.py:3256`, `:3302`,
+both also using `ResourceLibrary`) have zero frontend callers — grepped
+all of `frontend/`, nothing.
+
+**Part E — the "Resources" frontend tab itself is fine, separately.**
+Re-verified `ResourcesPage.tsx` (fixed earlier this session) is stable —
+correctly calls `/api/product-references`, `/calibration/report`,
+`/templates`. This page doesn't touch `ResourceLibrary`/the empty
+directories at all; it's a different "Resources" than the one this
+finding is about. No new issue here, just confirming it didn't regress.
+
+**Fix, in priority order:** (1) decide if `construction_rules` etc. are
+worth restoring from git history (`git show ef70fd0^:resources/materials/walnut.json`
+etc. — every deleted file's content is still recoverable from the parent
+commit) or were genuinely meant to be retired; (2) if restored, decide
+whether `scene_graph`/`scene_warnings` should actually be surfaced
+somewhere (validation UI? a "DNA" detail panel?) or removed entirely
+from the hot path if nobody's ever going to read it, since right now
+it's pure wasted computation on every digitize regardless of the data
+question.
+
 ## Fixes Applied This Session (2026-06-29)
 
 | # | Finding | Status | Commit | What changed |
