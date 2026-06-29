@@ -454,6 +454,16 @@ beyond `resolved_dimensions`), or — if a dedicated bed-frame drawing
 isn't worth building yet — collapse `bed` back into `bed_headboard` in
 the classifier alias map until one exists, so the distinction isn't
 silently made and then lost.
+**Confirmed consistent across both code paths:** `_build_svg_model`'s
+`bed` branch (`routes.py:1244`) calls `build_bed_headboard_model()` too —
+same gap in the live SVG preview the user actually sees, not just the
+downloadable DXF. Whoever fixes this needs to touch both.
+
+**Side note, same commit, lower risk:** also checked `side_table →
+save_rectangular_table` and `nightstand → save_cabinet` for the same
+class of mismatch — both are reasonable semantic mappings (a side table
+genuinely is a small rectangular table; a nightstand genuinely is a
+small cabinet), no equivalent bug found there.
 
 ## Priority Order for Remaining Fixes
 
