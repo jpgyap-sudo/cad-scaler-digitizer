@@ -18,12 +18,12 @@
     "leg_type": "straight",
     "symmetry": "bilateral",
     "category_hint": "sofa",
-    "bounding_ratio": "2.35:1:0.96",
+    "bounding_ratio": "1.96:1:0.86",
     "component_graph": [],
     "materials": [],
     "archetype_score": 0.85,
-    "sample_count": 9,
-    "updated_at": "2026-06-29T17:28:25.775981"
+    "sample_count": 21,
+    "updated_at": "2026-06-29T18:31:42.349704"
   },
   "ottoman_pouf": {
     "top_shape": "rectangle",
@@ -70,12 +70,12 @@
     "leg_type": "straight",
     "symmetry": "bilateral",
     "category_hint": "dining",
-    "bounding_ratio": "0.99:1:1.89",
+    "bounding_ratio": "0.98:1:1.83",
     "component_graph": [],
     "materials": [],
     "archetype_score": 0.85,
-    "sample_count": 11,
-    "updated_at": "2026-06-29T17:28:25.849189"
+    "sample_count": 13,
+    "updated_at": "2026-06-29T18:31:41.457871"
   },
   "rectangular_table": {
     "top_shape": "rectangle",
@@ -83,12 +83,12 @@
     "leg_type": "straight",
     "symmetry": "bilateral",
     "category_hint": "rectangular",
-    "bounding_ratio": "1.71:1:0.94",
+    "bounding_ratio": "1.16:1:0.71",
     "component_graph": [],
     "materials": [],
     "archetype_score": 0.85,
-    "sample_count": 7,
-    "updated_at": "2026-06-29T17:28:25.922031"
+    "sample_count": 32,
+    "updated_at": "2026-06-29T18:31:42.410429"
   },
   "lounge_chair": {
     "top_shape": "rectangle",
@@ -96,12 +96,12 @@
     "leg_type": "straight",
     "symmetry": "bilateral",
     "category_hint": "lounge",
-    "bounding_ratio": "0.93:1:1.20",
+    "bounding_ratio": "1.03:1:1.20",
     "component_graph": [],
     "materials": [],
     "archetype_score": 0.85,
-    "sample_count": 1,
-    "updated_at": "2026-06-29T17:28:24.701938"
+    "sample_count": 2,
+    "updated_at": "2026-06-29T18:31:40.706902"
   },
   "coffee_table": {
     "top_shape": "rectangle",
@@ -109,12 +109,12 @@
     "leg_type": "straight",
     "symmetry": "bilateral",
     "category_hint": "coffee",
-    "bounding_ratio": "1.67:1:0.75",
+    "bounding_ratio": "1.41:1:0.74",
     "component_graph": [],
     "materials": [],
     "archetype_score": 0.85,
-    "sample_count": 2,
-    "updated_at": "2026-06-29T17:28:25.579439"
+    "sample_count": 6,
+    "updated_at": "2026-06-29T18:31:41.811438"
   },
   "floor_lamp": {
     "top_shape": "rectangle",
@@ -167,5 +167,31 @@
     "archetype_score": 0.85,
     "sample_count": 1,
     "updated_at": "2026-06-29T17:28:25.890600"
+  },
+  "armchair_lounge": {
+    "top_shape": "rectangle",
+    "base_type": "legs",
+    "leg_type": "straight",
+    "symmetry": "bilateral",
+    "category_hint": "armchair",
+    "bounding_ratio": "1.21:1:0.92",
+    "component_graph": [],
+    "materials": [],
+    "archetype_score": 0.85,
+    "sample_count": 1,
+    "updated_at": "2026-06-29T18:31:40.255229"
+  },
+  "bed": {
+    "top_shape": "rectangle",
+    "base_type": "legs",
+    "leg_type": "straight",
+    "symmetry": "bilateral",
+    "category_hint": "bed",
+    "bounding_ratio": "0.78:1:0.45",
+    "component_graph": [],
+    "materials": [],
+    "archetype_score": 0.85,
+    "sample_count": 2,
+    "updated_at": "2026-06-29T18:31:42.298435"
   }
 }

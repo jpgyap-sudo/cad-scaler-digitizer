@@ -1,0 +1,472 @@
+[
+  {
+    "handle": "melina-coffee-table",
+    "furniture_type": "coffee_table",
+    "family": "coffee",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 120.0,
+      "overall_height_cm": 35.0
+    }
+  },
+  {
+    "handle": "lincoln-sofa",
+    "furniture_type": "armchair_lounge",
+    "family": "armchair",
+    "dimensions": {
+      "width_cm": 105.0,
+      "depth_cm": 87.0,
+      "overall_height_cm": 80.0
+    }
+  },
+  {
+    "handle": "table-cattelan",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 140.0,
+      "depth_cm": 80.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "stratos-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 140.0,
+      "depth_cm": 80.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "yoda-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "chester-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 170.0,
+      "depth_cm": 96.0,
+      "overall_height_cm": 68.0
+    }
+  },
+  {
+    "handle": "windsor-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 183.0,
+      "depth_cm": 98.0,
+      "overall_height_cm": 69.0
+    }
+  },
+  {
+    "handle": "toscani-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 180.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "kean-tables",
+    "furniture_type": "coffee_table",
+    "family": "coffee",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 40.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "hm7901-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 110.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 71.0
+    }
+  },
+  {
+    "handle": "hm7901-sectional-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 180.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 71.0
+    }
+  },
+  {
+    "handle": "celio-lounge-chair",
+    "furniture_type": "lounge_chair",
+    "family": "lounge",
+    "dimensions": {
+      "width_cm": 85.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 90.0
+    }
+  },
+  {
+    "handle": "high-back-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 105.0,
+      "depth_cm": 92.0,
+      "overall_height_cm": 87.0
+    }
+  },
+  {
+    "handle": "wool-sectional-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 70.0
+    }
+  },
+  {
+    "handle": "carla-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 106.0,
+      "depth_cm": 92.0,
+      "overall_height_cm": 80.0
+    }
+  },
+  {
+    "handle": "connor-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 106.0,
+      "depth_cm": 88.0,
+      "overall_height_cm": 77.0
+    }
+  },
+  {
+    "handle": "pennie-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 163.0,
+      "depth_cm": 86.0,
+      "overall_height_cm": 81.0
+    }
+  },
+  {
+    "handle": "fonsie-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "gianni-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "greco-dining-chair",
+    "furniture_type": "dining_chair",
+    "family": "dining",
+    "dimensions": {
+      "width_cm": 54.0,
+      "depth_cm": 62.0,
+      "overall_height_cm": 80.0
+    }
+  },
+  {
+    "handle": "lettiere-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "buratti-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 160.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "vivaldi-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "mathias-pandora-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 160.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "onyx-round-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "moze-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "camillo-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 140.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "nera-dining-chair",
+    "furniture_type": "dining_chair",
+    "family": "dining",
+    "dimensions": {
+      "width_cm": 45.0,
+      "depth_cm": 44.0,
+      "overall_height_cm": 86.0
+    }
+  },
+  {
+    "handle": "melina-coffee-table-1",
+    "furniture_type": "coffee_table",
+    "family": "coffee",
+    "dimensions": {
+      "width_cm": 140.0,
+      "depth_cm": 80.0,
+      "overall_height_cm": 35.0
+    }
+  },
+  {
+    "handle": "oracle-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "harington-round-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "jacques-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 80.0,
+      "depth_cm": 160.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "ines-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "irene-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "valentini-round-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 120.0,
+      "depth_cm": 75.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "eliocoffee-table",
+    "furniture_type": "coffee_table",
+    "family": "coffee",
+    "dimensions": {
+      "width_cm": 50.0,
+      "depth_cm": 58.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "mazzi-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 180.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "venice-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 180.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "truman-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 160.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "kimberly-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 180.0,
+      "depth_cm": 90.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "tuxedo-modern-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 240.0,
+      "depth_cm": 100.0,
+      "overall_height_cm": 69.0
+    }
+  },
+  {
+    "handle": "elara-travertine-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 200.0,
+      "depth_cm": 100.0,
+      "overall_height_cm": 75.0
+    }
+  },
+  {
+    "handle": "armondo-modern-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 248.0,
+      "depth_cm": 113.0,
+      "overall_height_cm": 82.0
+    }
+  },
+  {
+    "handle": "venon-modern-bed",
+    "furniture_type": "bed",
+    "family": "bed",
+    "dimensions": {
+      "width_cm": 160.0,
+      "depth_cm": 226.0,
+      "overall_height_cm": 104.0
+    }
+  },
+  {
+    "handle": "evon-modern-bed",
+    "furniture_type": "bed",
+    "family": "bed",
+    "dimensions": {
+      "width_cm": 196.0,
+      "depth_cm": 230.0,
+      "overall_height_cm": 102.0
+    }
+  },
+  {
+    "handle": "ember-modern-sofa",
+    "furniture_type": "sofa",
+    "family": "sofa",
+    "dimensions": {
+      "width_cm": 237.0,
+      "depth_cm": 106.0,
+      "overall_height_cm": 82.0
+    }
+  },
+  {
+    "handle": "exven-modern-dining-table",
+    "furniture_type": "rectangular_table",
+    "family": "rectangular",
+    "dimensions": {
+      "width_cm": 90.0,
+      "depth_cm": 140.0,
+      "overall_height_cm": 75.0
+    }
+  }
+]
