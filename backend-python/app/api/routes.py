@@ -1872,6 +1872,41 @@ async def digitize_hybrid(file: UploadFile = File(...), real_width_cm: str = For
                 if opencv_ftype in KNOWN_TYPES: ftype = opencv_ftype
         else: ftype = normalize_furniture_type(opencv_type)
 
+        # Deterministic pedestal-shape override: the AI classifier picks a
+        # furniture TYPE from a category label (e.g. a "COFFEE TABLE" title
+        # block), which can disagree call-to-call with the actual STRUCTURE
+        # it just measured. base_dia/neck_dia/collar_dia tags only get
+        # attached when a single-pedestal column was actually described -
+        # confirmed live: the same Melina photo classified as
+        # round_pedestal_table on one call and generic coffee_table (a
+        # flat-top-on-4-legs model) on the next, purely from non-deterministic
+        # vision output, even though the pedestal geometry was detected both
+        # times. Trust the geometric evidence over the category guess when
+        # the two disagree on structure (not on round vs oval - that's
+        # decided by the aspect-ratio check just below).
+        if not furniture_type and ftype not in (
+                'round_pedestal_table', 'oval_pedestal_table', 'asymmetric_pedestal_table'):
+            _pedestal_dims = corrected_dims + [
+                d for d in (ai_result.get('dimensions', []) if isinstance(ai_result, dict) else [])
+                if isinstance(d, dict)]
+            _has_pedestal_evidence = any(
+                (d.get('tag') or '').lower().strip() in ('base_dia', 'neck_dia', 'collar_dia')
+                for d in _pedestal_dims)
+            if _has_pedestal_evidence:
+                old_ftype = ftype
+                # Oval if footprint is clearly non-square (width vs depth);
+                # default to round otherwise.
+                _l = next((d.get('value_cm') for d in _pedestal_dims
+                           if (d.get('tag') or '').lower().strip() in ('width', 'length', 'w', 'l')), None)
+                _d = next((d.get('value_cm') for d in _pedestal_dims
+                           if (d.get('tag') or '').lower().strip() in ('depth', 'd')), None)
+                if _l and _d and _d > 0 and (_l / _d) > 1.25:
+                    ftype = 'oval_pedestal_table'
+                else:
+                    ftype = 'round_pedestal_table'
+                print(f"[Hybrid] Pedestal override: classifier said '{old_ftype}', "
+                      f"but base/neck/collar_dia tags were detected -> '{ftype}'")
+
         # ===== Template Graph Resolution =====
         template_graph_result = None
         # Assemble merged dimensions from OCR + AI before using them
