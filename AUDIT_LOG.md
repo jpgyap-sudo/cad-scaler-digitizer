@@ -598,19 +598,104 @@ line that happened to get edited. `save_console_table` and
 `save_asymmetric_pedestal_table` still need the fix applied at all, not
 just the other two finishing it properly.
 
+### 19. CORRECTION to the "Fixes Applied" table below: #12 is still broken — `_persist_metadata()` inserts into tables that do not exist, with columns that don't match the real schema, with an invalid enum value
+**Date:** 2026-06-29
+**Status:** OPEN — the table below marks this FIXED via commit `025a78f`;
+that is incorrect, re-opening
+**Impact:** HIGH — this is the second attempt at the single highest-value
+fix candidate in this whole audit (closing the loop on crawled product
+data), and it still doesn't work, for a different reason than before
+
+**What's genuinely fixed in `025a78f`:** the self-deleting
+`tempfile.TemporaryDirectory()` is gone, replaced with a persistent
+`/tmp/cad_digitizer_outputs/` path — real progress. `_spaces_upload()`
+is correctly implemented (checked: real `boto3` S3 client, correct
+credential check, correct CDN URL construction) and should genuinely
+upload `geometry.json`/`preview.svg` to Spaces.
+
+**What's still broken — `_persist_metadata()`
+(`crawl_processor.py:59-107`):**
+1. **Wrong table names.** It does `INSERT INTO product_references (...)`
+   and `INSERT INTO reference_assets (...)` (snake_case, plural). The
+   real tables, per `backend-node/prisma/schema.prisma` (no `@@map`
+   anywhere, confirmed) and verified live via `\dt` on the actual
+   database, are `"ProductReference"` and `"ReferenceAsset"`
+   (PascalCase, singular, case-sensitive quoted identifiers). Confirmed
+   live: `\dt product_references` → "Did not find any relation."
+2. **Wrong/missing columns even if the table name were fixed.** The
+   `ProductReference` insert provides `(id, product_id, manufacturer,
+   category, metadata, updated_at)` — but the real model has no
+   `product_id` column at all (the PK is just `id`), and is missing two
+   **required, no-default** fields (`productName`, `slug`) that Prisma
+   would reject as NOT NULL violations. The `ReferenceAsset` insert
+   provides a generic `url` column — the real model has `cdnUrl` +
+   `spaceKey` instead, no plain `url` field.
+3. **Invalid enum value.** `"PREVIEW_SVG"` is used as an `AssetType` —
+   the real enum (`schema.prisma`) is `IMAGE, DWG, DXF, PDF, SPEC, SVG,
+   GEOMETRY_JSON, THUMBNAIL` — no `PREVIEW_SVG` (should likely be `SVG`).
+   `"GEOMETRY_JSON"` (used for the other asset) happens to be correct.
+4. **Silently swallowed, same pattern as everywhere else in this log.**
+   The whole function is one `try/except Exception as e:
+   logger.error(...)` — so every one of the above failures just logs to
+   a stream nobody watches and returns `None`, exactly like the original
+   bug, just with a different failure point. The crawl job itself
+   reports success either way (this function's return value isn't even
+   checked by its caller).
+
+**Net effect:** `ProductReference`/`ReferenceAsset` are still empty after
+a real crawl, for the same end-user-visible reason as before (#12/#13's
+original symptom is unchanged) — just because the new INSERT statements
+are wrong, not because the directory disappears anymore.
+**Fix:** rewrite `_persist_metadata()`'s SQL against the actual Prisma
+schema (quoted `"ProductReference"`/`"ReferenceAsset"` table names,
+`productName`/`slug` provided, `cdnUrl` instead of `url`, `SVG` instead
+of `PREVIEW_SVG`), and ideally test it against a real Postgres connection
+once before calling it done — none of these would have survived a single
+real execution attempt with errors actually surfaced.
+
+### 20. CORRECTION: #5's `coffee_table_round` "fix" (commit `146110c`) provides zero actual shape differentiation — same discard-before-renderer pattern as the original finding
+**Date:** 2026-06-29
+**Status:** OPEN — table below marks this FIXED, incorrect, re-opening
+**Impact:** MEDIUM — the round-vs-square tabletop bug this was meant to
+address is completely unresolved; only a new, inert string was added
+
+**What the commit does:** `furniture_classifier.py` can now output
+`coffee_table_round` as a classification (distinct from `coffee_table`).
+**What happens to it immediately after:** `routes.py` defines
+`_TYPE_ALIAS = {'coffee_table_round': 'coffee_table', ...}` and applies
+it at the very top of dispatch (`f_type = _TYPE_ALIAS.get(f_type, f_type)`,
+confirmed at both `routes.py:660-662` and `:1137-1139`) — **before any
+rendering code ever sees the value.** `coffee_table_round` and
+`coffee_table` are therefore 100% identical by the time
+`_dispatch_furniture`/`_build_svg_model`/`_component_schema` run, calling
+the exact same `save_coffee_table()`/`build_coffee_table_model()` either
+way. Per finding #2/#3 earlier in this log, those functions have **no
+shape parameter at all** — they draw a circle unconditionally regardless
+of input. So a coffee table correctly classified as round vs. correctly
+classified as round-but-now-labeled-`coffee_table_round` render
+**identically**, and a square one (this whole investigation started from
+Melina, a square coffee table) still renders as a circle either way.
+**This is the same "computed signal, discarded immediately before the
+renderer" shape as finding #5's original report** — the commit added a
+new instance of the pattern instead of closing it. A real fix needs
+`save_coffee_table`/`build_coffee_table_model` to actually accept and
+branch on a shape parameter, with `coffee_table_round` (or a real
+top_shape signal) driving it through to that parameter — not collapsing
+back to a single generic type one line into dispatch.
+
 ## Fixes Applied This Session (2026-06-29)
 
 | # | Finding | Status | Commit | What changed |
 |---|---|---|---|---|
-| 5 | `top_shape` signal discarded | FIXED | `146110c` | Added `coffee_table_round` type; `_TYPE_ALIAS` normalizes it at dispatch entry |
+| 5 | `top_shape` signal discarded | **NOT FIXED, see #20** | `146110c` | New `coffee_table_round` type immediately normalizes back to `coffee_table` via `_TYPE_ALIAS` before any renderer sees it — `save_coffee_table` still has no shape param, still always draws a circle |
 | 6 | Slider Apply silently fails | FIXED | `1dc78f9` | `data.error` check + red error banner in `SliderPanel.tsx` |
 | 7 | Chat sessions duplicate (file vs Postgres) | FIXED | `146110c` | Wired `brain_sync.save_chat_session`/`load_chat_session` into routes.py chat endpoints |
 | 8 | Schema table usage (informational) | DOCUMENTED | `025a78f` | 10 tables, only 2 used — documented in this audit |
 | 9 | Brain proportions/materials not surfaced | FIXED | `1dc78f9` | `BrainStats.tsx` now fetches `/brain/proportions` + `/brain/materials` |
 | 10 | `cad_intelligence` thrown away | FIXED | `025a78f` | Added to `DigitizeResult` type + collapsible entity confidence in `App.tsx` |
 | 11 | Visibility toggle crash (3 types) | FIXED | `1dc78f9` | Added `visibility` param to `build_round_pedestal_model`, `build_oval_pedestal_model`, `build_asymmetric_pedestal_model` |
-| 12 | Crawler temp dir self-destructs | FIXED | `025a78f` | Replaced `tempfile.TemporaryDirectory` with persistent `/tmp/cad_digitizer_outputs/`; added Spaces upload + Postgres metadata write |
-| 13 | Bulk crawler unreachable from frontend | FIXED | `025a78f` + `146110c` | #12 fix unblocks this; backend now persists to Postgres + Spaces |
+| 12 | Crawler temp dir self-destructs | **PARTIALLY FIXED — re-opened, see #19** | `025a78f` | Temp-dir + Spaces upload genuinely fixed; Postgres write (`_persist_metadata`) inserts into nonexistent tables with wrong columns + an invalid enum value, silently fails the same as before |
+| 13 | Bulk crawler unreachable from frontend | NOT FIXED | — | Depended entirely on #12; since #12's Postgres write still fails, there's still nothing real to browse even if a UI existed |
 | 14 | `resource_engine` second pipeline (informational) | DOCUMENTED | `025a78f` | Documented as scope decision in this audit |
 
 ## DXF Improvements This Session
