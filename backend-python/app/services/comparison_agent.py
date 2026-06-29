@@ -266,38 +266,119 @@ def compare_images(original_img: Any, dxf_raster: Any) -> tuple[float, list, int
     return overlap_score, error_regions, orig_edge_count, dxf_edge_count
 
 
-def compare_silhouettes(original_img: Any, dxf_raster: Any) -> float:
-    """Compare overall shape of the product using silhouette IoU.
+def _extract_foreground(img: Any) -> Any:
+    """Extract foreground mask from product image using GrabCut + edge refinement.
     
-    Extracts foreground silhouette from both the product image and the
-    DXF raster, then computes Intersection-over-Union. This measures how
-    closely the DXF outline matches the product's actual shape,
-    independent of fine edge detail or background noise.
+    GrabCut is initialized with a center rectangle (assumes product is centered).
+    Edge-aware refinement sharpens the boundary.
+    Returns binary mask (255 = foreground, 0 = background).
+    """
+    import cv2
+    import numpy as np
+
+    h, w = img.shape[:2]
+    mask = np.zeros((h, w), np.uint8)
+    bgd = np.zeros((1, 65), np.float64)
+    fgd = np.zeros((1, 65), np.float64)
+
+    # Initial rectangle: assume product is in center 70% of image
+    margin_x, margin_y = int(w * 0.15), int(h * 0.15)
+    rect = (margin_x, margin_y, w - 2 * margin_x, h - 2 * margin_y)
+
+    cv2.grabCut(img, mask, rect, bgd, fgd, 3, cv2.GC_INIT_WITH_RECT)
+    fg_mask = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+
+    # Edge-aware refinement: use Canny edges to clean up boundary
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    kernel = np.ones((3, 3), np.uint8)
+    edges_dilated = cv2.dilate(edges, kernel, iterations=1)
+
+    # Remove background noise below the mask
+    fg_mask = cv2.bitwise_and(fg_mask, cv2.bitwise_not(edges_dilated))
+
+    # Morphological cleanup
+    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+
+    # Fill holes (keep largest connected component)
+    contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if contours:
+        largest = max(contours, key=cv2.contourArea)
+        clean = np.zeros_like(fg_mask)
+        cv2.drawContours(clean, [largest], -1, 255, -1)
+        fg_mask = clean
+
+    return fg_mask
+
+
+def _contour_similarity(mask_a: Any, mask_b: Any) -> float:
+    """Compare shape of two binary masks using Hu moment distance.
+    
+    Hu moments are invariant to translation, scale, and rotation,
+    making this a robust shape comparison even when the product
+    perspective differs from the DXF orthographic projection.
+    Returns similarity score 0.0-1.0.
+    """
+    import cv2
+    import numpy as np
+
+    ca, _ = cv2.findContours(mask_a, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cb, _ = cv2.findContours(mask_b, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not ca or not cb:
+        return 0.0
+
+    # Largest contour from each
+    ca = max(ca, key=cv2.contourArea)
+    cb = max(cb, key=cv2.contourArea)
+
+    ha = cv2.HuMoments(cv2.moments(ca)).flatten()
+    hb = cv2.HuMoments(cv2.moments(cb)).flatten()
+
+    # Log-scale Hu moments for better numeric stability
+    ha = -np.sign(ha) * np.log10(np.abs(ha) + 1e-10)
+    hb = -np.sign(hb) * np.log10(np.abs(hb) + 1e-10)
+
+    dist = np.sum(np.abs(ha - hb))
+    # Convert distance to similarity: dist=0 => 1.0, dist increases => score decreases
+    return max(0.0, min(1.0, 1.0 - dist / 10.0))
+
+
+def compare_silhouettes(original_img: Any, dxf_raster: Any) -> float:
+    """Compare overall shape of the product using silhouette IoU + contour matching.
+    
+    Uses GrabCut (not OTSU) for better foreground extraction from e-commerce
+    photos. Combines pixel-level IoU with contour-based Hu moment similarity
+    for a robust shape score that tolerates perspective differences.
     """
     import cv2
     import numpy as np
 
     h, w = original_img.shape[:2]
     dxf_resized = cv2.resize(dxf_raster, (w, h))
-    gray_orig = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
     gray_dxf = cv2.cvtColor(dxf_resized, cv2.COLOR_BGR2GRAY)
 
-    # Product image foreground via OTSU
-    _, fg_orig = cv2.threshold(gray_orig, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    fg_orig = cv2.bitwise_not(fg_orig)
-    kernel = np.ones((5, 5), np.uint8)
-    fg_orig = cv2.morphologyEx(fg_orig, cv2.MORPH_CLOSE, kernel)
-    fg_orig = cv2.morphologyEx(fg_orig, cv2.MORPH_OPEN, kernel)
+    # Product foreground via GrabCut (much better than OTSU for e-commerce)
+    fg_orig = _extract_foreground(original_img)
 
-    # DXF silhouette: non-white pixels = drawn geometry
+    # DXF silhouette: non-white pixels = drawn geometry, dilate to fill lines
     dxf_inv = cv2.bitwise_not(gray_dxf)
     _, fg_dxf = cv2.threshold(dxf_inv, 30, 255, cv2.THRESH_BINARY)
-    fg_dxf = cv2.morphologyEx(fg_dxf, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-    fg_dxf = cv2.dilate(fg_dxf, kernel, iterations=2)
+    fg_dxf = cv2.morphologyEx(fg_dxf, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    fg_dxf = cv2.dilate(fg_dxf, np.ones((5, 5), np.uint8), iterations=3)
 
+    # Pixel-level IoU
     i = np.sum(cv2.bitwise_and(fg_orig, fg_dxf) > 0)
     u = np.sum(cv2.bitwise_or(fg_orig, fg_dxf) > 0)
-    return min(1.0, i / max(u, 1))
+    iou = i / max(u, 1)
+
+    # Contour-based shape similarity (Hu moments — invariant to perspective)
+    contour_sim = _contour_similarity(fg_orig, fg_dxf)
+
+    # Blend: IoU (60%) + contour (40%)
+    # Contour similarity provides robustness to perspective/size differences
+    # while IoU provides pixel-level alignment signal
+    return min(1.0, iou * 0.6 + contour_sim * 0.4)
 
 
 def compare_entities(
