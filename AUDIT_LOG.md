@@ -326,6 +326,49 @@ durable. Before investing in wiring this into the UI, fix #12 first —
 there's no point exposing a "browse what we've crawled" feature when the
 crawl step throws away everything except a vector embedding.
 
+### 14. Context for `app/resource_engine/{reasoning,param_pack,manufacturing,fusion}` (previously flagged as "zero callers" — here's what it actually is, for whoever decides what to do with it)
+**Date:** 2026-06-29
+**Status:** INFORMATIONAL — this is a product/scope decision, not a bug
+to patch
+**Impact:** N/A directly, but materially changes the "should we connect
+this or delete it" calculus once you see what it actually does
+**What it is:** a complete second pipeline, clearly built across multiple
+sessions (commit history references "7-phase Product DNA Architecture",
+"Phase 1/2/3/5/7", "Phase 3C-2/3/4A/4B"), intended to run *after* vision
+features are extracted and *before* (or instead of) the current simple
+template dispatch:
+- `param_pack/`: `VisionFeatures → GeometryDecomposer → DimensionEstimator
+  → CADParameterPack` (turns raw vision output into a structured
+  parameter set)
+- `reasoning/`: a genuine multi-agent system —
+  `GeometryAgent`/`DimensionAgent`/`MaterialAgent`/`JoineryAgent`/
+  `ValidationAgent`, run through an `AgentScheduler` and a
+  `ConflictResolver`, producing an `EngineeringDecision` (this is the kind
+  of "the AI debates with itself and resolves disagreements" pattern,
+  fully built, not a stub)
+- `manufacturing/`: `CADParameterPack → assembly steps, cutting list, weld
+  schedule, finish schedule, packaging plan, risk list, QC checklist →
+  ReadyForCADPackage` — i.e. actual production/manufacturing
+  documentation, not just a drawing
+- `fusion/`: merges every agent's output by explicit priority
+  ("validation corrections > specs > manufacturing > dimensions >
+  references > vision > defaults") into one `EngineeringDecisionPackage`
+  + `ParametricCADSceneGraph` + `AuditTrail`
+**Why this matters:** the currently-*live* product just maps AI vision
+output + OCR text onto one of 13 hardcoded template functions with
+manually-tuned default ratios (everything else in this audit log). This
+parallel system represents a materially more ambitious product —
+auditable multi-agent engineering decisions and real manufacturing
+output, not just a 2D drawing. It is fully unreachable today (confirmed
+earlier: zero callers from `routes.py`, `main.py`, or any frontend code).
+**This is not a "wire it up" one-liner** — connecting it properly means
+deciding where in the existing `/digitize/hybrid` flow it would plug in,
+what happens to the current template-dispatch system (replace it?
+run alongside it?), and whether the manufacturing-pipeline output has
+anywhere to go in the current product (no UI for cutting lists/QC
+checklists exists anywhere today). Flagging as a scope decision for
+the user, not a fix.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
