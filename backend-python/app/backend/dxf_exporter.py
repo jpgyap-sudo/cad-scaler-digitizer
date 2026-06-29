@@ -1782,7 +1782,10 @@ def _read_front_view_bbox(msp) -> tuple[float, float, float, float, float, float
     top_y = max(all_y)
 
     # Width from MTEXT position to rightmost polyline point in bottom area
-    rightmost = max(x for x in all_x if abs(y - floor_y) < 5 for y in [all_y[all_x.index(x)]] if abs(x - fx) < 200) if all_x else max(all_x)
+    # Filter x coordinates near the floor (bottom edge)
+    bottom_xs = [all_x[i] for i in range(len(all_x)) if i < len(all_y) and abs(all_y[i] - floor_y) < 5]
+    rightmost_xs = [x for x in bottom_xs if abs(x - fx) < 200] if bottom_xs else []
+    rightmost = max(rightmost_xs) if rightmost_xs else (max(all_x) if all_x else fx + 42)
     fw = max(1.0, rightmost - fx) if rightmost > fx else max(all_x) - min(all_x)
     fh = max(1.0, top_y - floor_y)
 
