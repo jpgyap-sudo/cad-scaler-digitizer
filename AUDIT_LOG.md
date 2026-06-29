@@ -140,6 +140,36 @@ but anyone who sees the Postgres `chat_sessions` table with rows in it (or
 without) should not assume that reflects real chat activity — it doesn't,
 the JSON file does.
 
+### 8. Clarification: of the 10 tables created from `01-init-schema.sql` earlier this audit, only 2 are actually used by any code
+**Date:** 2026-06-29
+**Status:** INFORMATIONAL — re-scopes an earlier finding, not a new bug
+**Impact:** none functionally (creating them was harmless and correct —
+`drawing_history`/`comparison_results` genuinely needed it), but corrects
+the impression that fixing the schema "activated" a broad closed-loop
+system. It activated exactly two tables' worth of feature.
+**Evidence:** grepped every `app/**/*.py` for each table name (not just
+`brain_sync.py` — the whole backend):
+
+| Table | Referenced in app code? |
+|---|---|
+| `comparison_results` | **Yes** — `comparison_agent.py`, `/compare` endpoint |
+| `drawing_history` | **Yes** — `brain_sync.py:record_drawing`, called from `routes.py` |
+| `digitizer_sessions` | No — zero references anywhere |
+| `digitizer_results` | No — zero references anywhere |
+| `feedback_learnings` | No — zero references anywhere |
+| `proportion_ledger` | No — zero references; **note this is a different table from `component_proportions`** (the one `record_proportion`/`get_proportion_estimate` actually use, from `create_ml_tables.sql`). Easy to confuse the two by name later — `proportion_ledger` sounds like it should be the live one and isn't. |
+| `validation_results` | Effectively no — only ever appears in a `DELETE ... WHERE created_at < NOW() - INTERVAL` cleanup statement (`routes.py:3919`). Nothing inserts into it, ever. The cleanup job will run forever deleting 0 rows. |
+| `training_exports` | No — zero references anywhere |
+| `product_families` | No real table query — `validate_all_product_families()` exists in `validation_service.py` but operates on data passed in (almost certainly `resources/product_catalog/_registry.json`, not this table); the name similarity is coincidental/misleading |
+| `chat_sessions` | No (from `routes.py`'s perspective) — see finding #7 above, file-based store is the real one |
+
+**Takeaway for whoever picks this up:** before building anything new on
+top of `digitizer_sessions`/`digitizer_results`/`feedback_learnings`/
+`proportion_ledger`/`validation_results`/`training_exports`/
+`product_families`, confirm whether the intent is to actually wire them
+up now, or whether they're legacy/aspirational and safe to drop. Don't
+assume they're load-bearing just because they exist in the schema.
+
 ## Priority Order for Remaining Fixes
 
 1. **Classification fallback** — without this, nothing else matters
