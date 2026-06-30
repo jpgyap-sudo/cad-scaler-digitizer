@@ -397,9 +397,10 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
             return pts
 
         # Parse all SVG path elements and group by data-view
-        # If data-view attribute not present, assign by x-position heuristic
-        path_pattern = re.compile(r'<path\s[^>]*d="([^"]+)"[^>]*data-view="([^"]+)"[^>]*/?>', re.I)
-        for d, view_name in path_pattern.findall(svg):
+        path_pattern = re.compile(r"""<path\s[^>]*d=(["'])([^"']+?)\1[^>]*data-view=(["'])([^"']+?)\3[^>]*/?>""", re.I)
+        for match in path_pattern.finditer(svg):
+            d = match.group(2)
+            view_name = match.group(4).lower()
             pts = _svg_path_to_points(d)
             if view_name in views and len(pts) > 2:
                 views[view_name].extend(pts)
