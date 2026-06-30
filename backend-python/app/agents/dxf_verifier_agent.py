@@ -247,7 +247,7 @@ Return ONLY the JSON. No markdown."""
         }
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-        _max_retries = int(os.environ.get("GEMINI_RETRIES", "5"))
+        _max_retries = int(os.environ.get("GEMINI_RETRIES", "2"))
         _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
         resp = None
         _model_used = GEMINI_MODEL

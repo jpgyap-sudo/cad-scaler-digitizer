@@ -768,56 +768,48 @@ async def crawl_and_digitize(
         except Exception as e:
             logger.warning(f"[CrawlToDXF] Hallucination check failed: {e}")
 
-    # Step 5: Auto-run comparison agent against source image
+    # Step 5: Auto-run comparison agent against source image in background
     _dxf_name = digitized.get("dxf_file") if isinstance(digitized, dict) else result.get("dxf_file")
     _dxf_fullpath = os.path.join(OUT, _dxf_name) if _dxf_name else None
     if _dxf_fullpath and os.path.exists(_dxf_fullpath):
-        try:
-            from app.services.comparison_agent import (
-                compare_digitization, log_comparison_to_db, NumpyEncoder
-            )
-            import httpx
-            _dl_headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": page_url,
-            }
-            async with httpx.AsyncClient(timeout=30) as _c:
-                _ir = await _c.get(image_url, headers=_dl_headers)
-                if _ir.status_code == 200:
-                    _image_data = _ir.content
-                    _product_id = urlparse(page_url).path.split("/")[-1] or "unknown"
-                    _ai_type = digitized.get("furniture", {}).get("type") if isinstance(digitized, dict) else None
-                    _comp_result = await compare_digitization(
-                        job_id=_product_id,
-                        product_id=_product_id,
-                        image_url=image_url,
-                        image_data=_image_data,
-                        dxf_path=_dxf_fullpath,
-                        page_dimensions=page_dims if page_dims else None,
-                        resolved_dimensions=detected_dims or None,
-                        furniture_type=furniture_type,
-                        ai_furniture_type=_ai_type,
-                    )
-                    log_comparison_to_db(_comp_result)
-                    result["comparison"] = {
-                        "overall_score": _comp_result.overall_score,
-                        "shape_class_score": _comp_result.shape_class_score,
-                        "proportion_score": _comp_result.proportion_score,
-                        "entity_match_score": _comp_result.entity_match_score,
-                        "view_score": _comp_result.view_score,
-                        "dimension_deviation_pct": _comp_result.dimension_deviation_pct,
-                        "cloud_verified": _comp_result.cloud_verified,
-                        "cloud_shape_match": _comp_result.cloud_shape_match,
-                        "cloud_issues": _comp_result.cloud_issues[:5],
-                        "error_count": len(_comp_result.errors),
-                    }
-                    logger.info(
-                        f"[CrawlToDXF] Auto-comparison: score={_comp_result.overall_score:.3f}, "
-                        f"cloud={_comp_result.cloud_verified} "
-                        f"errors={len(_comp_result.errors)}"
-                    )
-        except Exception as e:
-            logger.warning(f"[CrawlToDXF] Auto-comparison failed (non-fatal): {e}")
+        import asyncio
+        async def run_comp_bg():
+            try:
+                from app.services.comparison_agent import (
+                    compare_digitization, log_comparison_to_db
+                )
+                import httpx
+                _dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": page_url,
+                }
+                async with httpx.AsyncClient(timeout=30) as _c:
+                    _ir = await _c.get(image_url, headers=_dl_headers)
+                    if _ir.status_code == 200:
+                        _image_data = _ir.content
+                        _product_id = urlparse(page_url).path.split("/")[-1] or "unknown"
+                        _ai_type = digitized.get("furniture", {}).get("type") if isinstance(digitized, dict) else None
+                        _comp_result = await compare_digitization(
+                            job_id=_product_id,
+                            product_id=_product_id,
+                            image_url=image_url,
+                            image_data=_image_data,
+                            dxf_path=_dxf_fullpath,
+                            page_dimensions=page_dims if page_dims else None,
+                            resolved_dimensions=detected_dims or None,
+                            furniture_type=furniture_type,
+                            ai_furniture_type=_ai_type,
+                        )
+                        log_comparison_to_db(_comp_result)
+                        logger.info(
+                            f"[CrawlToDXF] Background auto-comparison: score={_comp_result.overall_score:.3f}, "
+                            f"cloud={_comp_result.cloud_verified} "
+                            f"errors={len(_comp_result.errors)}"
+                        )
+            except Exception as e:
+                logger.warning(f"[CrawlToDXF] Background auto-comparison failed: {e}")
+        
+        asyncio.create_task(run_comp_bg())
 
     # Phase 3: Generate SVG silhouette from product photo (Gemini-powered) or fallback to geometric skeleton
     try:

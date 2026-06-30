@@ -6192,3 +6192,231 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] debug: log Gemini response body on error
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7aacdf19d9d98cd4c76cbd9f1c87015d59836732
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7aacdf19d9d98cd4c76cbd9f1c87015d59836732
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: debug: log Gemini response body on error
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: debug: log Gemini response body on error*
+
+#### Lesson Learned
+
+Commit: debug: log Gemini response body on error
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: gemini-1.5-flash is invalid model name -> gemini-2.0-flash
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 8bf867c2eb895a57b8f46a3ec4ffb34b50ee5cf1
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 8bf867c2eb895a57b8f46a3ec4ffb34b50ee5cf1
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: gemini-1.5-flash is invalid model name -> gemini-2.0-flash
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: gemini-1.5-flash is invalid model name -> gemini-2.0-flash*
+
+#### Lesson Learned
+
+Commit: fix: gemini-1.5-flash is invalid model name -> gemini-2.0-flash
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] debug: log full Gemini response when empty text returned
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ad915a21d211edc0fce0979b316c026872e01e2e
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** ad915a21d211edc0fce0979b316c026872e01e2e
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: debug: log full Gemini response when empty text returned
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: debug: log full Gemini response when empty text returned*
+
+#### Lesson Learned
+
+Commit: debug: log full Gemini response when empty text returned
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: use gemini-2.5-pro as primary model — flash models 503 overloaded, pro has dedicated capacity
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit e95ff04dba038b2ee12835813a1346b816db5d0a
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** e95ff04dba038b2ee12835813a1346b816db5d0a
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: use gemini-2.5-pro as primary model — flash models 503 overloaded, pro has dedicated capacity
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: use gemini-2.5-pro as primary model — flash models 503 overloaded, pro has dedicated capacity*
+
+#### Lesson Learned
+
+Commit: fix: use gemini-2.5-pro as primary model — flash models 503 overloaded, pro has dedicated capacity
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] debug: log Gemini raw response text when JSON parsing fails
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 97eacb20be7341684315d3c34d48053f37c0558f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 97eacb20be7341684315d3c34d48053f37c0558f
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: debug: log Gemini raw response text when JSON parsing fails
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: debug: log Gemini raw response text when JSON parsing fails*
+
+#### Lesson Learned
+
+Commit: debug: log Gemini raw response text when JSON parsing fails
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] debug: log exception type in retry + outer handler
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 490f06a6b5dcc1c5d41d1a4b77fbf4a17c8f5a68
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 490f06a6b5dcc1c5d41d1a4b77fbf4a17c8f5a68
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: debug: log exception type in retry + outer handler
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: debug: log exception type in retry + outer handler*
+
+#### Lesson Learned
+
+Commit: debug: log exception type in retry + outer handler
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
