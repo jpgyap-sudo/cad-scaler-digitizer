@@ -210,67 +210,33 @@ async def generate_silhouette_svg(
     try:
         b64 = base64.b64encode(image_data).decode()
 
-        prompt = f"""You are a multi-view CAD extractor. Given a photo of a {furniture_type or "furniture product"}, extract ALL visible geometric information and organize it into FOUR views: FRONT, SIDE, TOP, and ISOMETRIC.
+        prompt = f"""You are a CAD extractor. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outline and also produce a simple isometric projection.
 
-PRINCIPLE: From a single 3/4 perspective or front-facing photo, you can:
-  - DIRECTLY OBSERVE the front view (the visible face)
-  - PARTIALLY ESTIMATE the side view from edge profiles visible in perspective
-  - PARTIALLY ESTIMATE the top view from the top surface contour visible in the photo
-  - CONSTRUCT the isometric view as a 3D projection where WIDTH goes right-down at 30°, DEPTH goes right-up at 30°, and HEIGHT goes straight up — the front face of the isometric must MATCH the front view in the FRONT panel
-  - Tag each component with {{"view": "front"|"side"|"top"|"isometric", "confidence": "observed"|"estimated"}}
-
-Return ONLY valid JSON (no markdown) with this structure:
+Return ONLY valid JSON with this structure:
 {{
   "svg": "<svg>...</svg>",
   "components": [{{"name": string, "view": string, "confidence": string, "polyline": [x1,y1, ...]}}, ...],
   "estimated_proportions": {{"width_px": number, "depth_px": number, "height_px": number}}
 }}
 
-SVG LAYOUT (1200x300):
-- panels[0] x=0-280  (w=280 h=260) = FRONT view — observed from photo, draw at (30, 20)
-- panels[1] x=310-590 (w=280 h=260) = SIDE view — estimated from edge profiles, draw at (340, 20)
-- panels[2] x=620-890 (w=280 h=260) = TOP view — estimated from top surface, draw at (650, 20)
-- panels[3] x=920-1180 (w=280 h=260) = ISOMETRIC — draw at (950, 20), with 260px height available
-- Each panel has a thin #e5e7eb line divider at x=295, x=605, x=905
+LAYOUT: 4 panels in one SVG:
+- viewBox="0 0 1200 300", white background
+- Panel 1 (x=0-280): FRONT view — trace the product exactly as seen in the photo. OBSERVED.
+- Panel 2 (x=310-590): SIDE view — estimate from visible edge profiles in the photo. ESTIMATED.
+- Panel 3 (x=620-890): TOP view — estimate from top surface visible in photo. ESTIMATED.
+- Panel 4 (x=920-1180): ISOMETRIC — draw a 3D-style box projection (front face matches front view, depth edges going up-right). ESTIMATED.
 
-ISOMETRIC CONSTRUCTION (most important rule):
-- The isometric must look like a 3D projection of the product
-- Front face of isometric = same shape as the front view panel
-- Depth edges go up-right at approximately 30 degrees
-- Top face is a parallelogram (width x depth)
-- Hidden/back edges use dashed style
-- For tables: parallelogram tabletop with 4 vertical legs
-- For chairs: seat + backrest with depth
-- For cabinets: box with depth visible
+RULES:
+- Each component is its OWN <path> with data-name, data-view, data-confidence
+- OBSERVED: stroke="#1f2937" stroke-width="2" fill="none"
+- ESTIMATED: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
+- ISOMETRIC: draw parallelogram for top, vertical lines for legs, hidden edges dashed
+- Thin divider lines at x=295, x=605, x=905
+- Center and scale to fill ~80% of each panel
 
-SVG RULES:
-- Each component is its OWN <path> with data-name, data-view, data-confidence attributes
-- OBSERVED components: stroke="#1f2937" stroke-width="2" fill="none" — use M,C,Q,L,Z
-- ESTIMATED components: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
-- Center and scale to fill ~80% of each panel's width/height
+Each component's polyline is [x1,y1, x2,y2, ...] in the 1200x300 SVG space. Closed shapes. Min 4 points.
 
-COMPONENT NAMES: tabletop, left_leg, right_leg, back_left_leg, back_right_leg, seat, backrest, base — whatever fits the product
-
-POLYLINE RULES:
-- Each polyline: flat [x1,y1, x2,y2, ...] in the 1200x300 SVG coordinate space
-- Curves sampled every ~5px as short straight segments
-- Closed: first and last point identical; minimum 4 points
-
-estimated_proportions: your best guess of the product's width_px, depth_px, height_px in pixel units (for scale reference of the isometric)
-
-Example:
-{{
-  "svg": "<svg viewBox='0 0 1200 300' xmlns='http://www.w3.org/2000/svg'>...</svg>",
-  "components": [
-    {{"name": "tabletop", "view": "front", "confidence": "observed", "polyline": [60,100, 280,100, 280,130, 60,130, 60,100]}},
-    {{"name": "tabletop", "view": "isometric", "confidence": "estimated", "polyline": [950,90, 1120,70, 1160,100, 990,120, 950,90]}},
-    {{"name": "left_leg_front", "view": "isometric", "confidence": "estimated", "polyline": [960,120, 970,120, 970,250, 960,250, 960,120]}},
-    {{"name": "right_leg_back", "view": "isometric", "confidence": "estimated", "polyline": [1145,82, 1155,82, 1155,212, 1145,212, 1145,82]}}
-  ],
-  "estimated_proportions": {{"width_px": 220, "depth_px": 70, "height_px": 140}}
-}}
-
-Return ONLY this JSON. No markdown, no explanation."""
+Return ONLY the JSON. No markdown."""
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
         payload = {
