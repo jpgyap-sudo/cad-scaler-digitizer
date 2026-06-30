@@ -54,13 +54,15 @@ HEALTH_SETTLE_S = 15  # seconds to wait before first health check
 STATE_FILE = Path(__file__).parent / ".deploy_state.json"
 REPO_ROOT  = Path(__file__).parent.parent
 
-# File-path prefix → which docker-compose services to rebuild
+# File-path prefix → which docker-compose services to rebuild.
+# Empty list [] means the change doesn't require any service rebuild.
 SERVICE_MAP: dict[str, list[str]] = {
     "frontend/":                    ["frontend"],
     "backend-python/":              ["python-worker"],
     "backend-python/resources/":    ["python-worker"],
     "resources/":                   ["python-worker"],
     "node-api/":                    ["node-api"],
+    "backend-node/":                ["node-api"],
     "crawler/":                     ["crawler-worker"],
     "mcp/":                         ["mcp-server"],
     "docker-compose.yml":           ["frontend", "node-api", "python-worker", "crawler-worker", "mcp-server"],
@@ -70,6 +72,13 @@ SERVICE_MAP: dict[str, list[str]] = {
     "Dockerfile.python-worker":     ["python-worker"],
     "Dockerfile.crawler-worker":    ["crawler-worker"],
     "Dockerfile.mcp":               ["mcp-server"],
+    # Paths that don't require any container rebuild
+    "scripts/":                     [],
+    "docs/":                        [],
+    "plans/":                       [],
+    "memory/":                      [],
+    ".gitignore":                   [],
+    "README":                       [],
 }
 
 ALL_BUILDABLE = ["frontend", "node-api", "python-worker", "crawler-worker", "mcp-server"]
@@ -152,13 +161,14 @@ def detect_services(changed_files: list[str]) -> list[str]:
         matched = False
         for prefix, svcs in SERVICE_MAP.items():
             if f.startswith(prefix) or f == prefix.rstrip("/"):
+                # svcs=[] means this path never needs a rebuild (docs, scripts, etc.)
                 affected.update(svcs)
                 matched = True
                 break
         if not matched:
-            # Unknown area — safest to rebuild everything
+            # Unknown path — safest to rebuild everything
             return ALL_BUILDABLE[:]
-    return sorted(affected) if affected else ALL_BUILDABLE[:]
+    return sorted(affected) if affected else []
 
 
 # ─── SSH ──────────────────────────────────────────────────────────────────────
@@ -393,11 +403,32 @@ def cmd_deploy(args, state: dict) -> int:
 
         print(f"\n  Changed files  : {len(changed)}")
 
-    print(f"  Services to rebuild: {', '.join(affected)}")
+    if affected:
+        print(f"  Services to rebuild: {', '.join(affected)}")
+    else:
+        print("  Services to rebuild: none (only docs/scripts changed)")
 
     if args.dry_run:
-        print(f"\n  [DRY RUN] Would rebuild: {', '.join(affected)}")
+        rebuild_msg = ', '.join(affected) if affected else "none"
+        print(f"\n  [DRY RUN] Would rebuild: {rebuild_msg}")
         print("  [DRY RUN] No changes made.\n")
+        return 0
+
+    # ── Skip if nothing to build ──────────────────────────────────────────────
+    if not affected:
+        print("\n  No services affected — just pulling on VPS to sync code.")
+        pull_out = ssh_out(f"cd {VPS_APP} && git pull origin master 2>&1")
+        for line in pull_out.splitlines()[-4:]:
+            print(f"    {line}")
+        state["last_deployed_commit"] = local_head
+        _persist(state, {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": args.agent, "commit": local_head[:12],
+            "services": [], "commit_count": len(commits),
+            "authors": list({c["author"] for c in commits}),
+            "success": True, "duration_s": round(time.time() - t_start, 1),
+        })
+        print("\n  Done (code-only sync, no containers rebuilt).\n")
         return 0
 
     # ── Pre-deploy checks ─────────────────────────────────────────────────────
@@ -424,7 +455,7 @@ def cmd_deploy(args, state: dict) -> int:
         print(f"  VPS now at: {vps_head[:12]}")
 
         # ── Selective rebuild ─────────────────────────────────────────────────
-        svc_str = " ".join(affected)
+        svc_str = " ".join(affected)  # guaranteed non-empty here (handled above)
         print(f"\n  Building: {svc_str}")
         print(f"  {'-'*58}")
         ssh(f"cd {VPS_APP} && docker compose up -d --build {svc_str} 2>&1 | tail -40",
