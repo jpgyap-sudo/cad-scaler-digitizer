@@ -6610,3 +6610,231 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: add A/a arc command handling to SVG path parser (treat as line to endpoint)
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 23bdbcacfcd6464ddcff72b1385327fd47f81dd9
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 23bdbcacfcd6464ddcff72b1385327fd47f81dd9
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: add A/a arc command handling to SVG path parser (treat as line to endpoint)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add A/a arc command handling to SVG path parser (treat as line to endpoint)*
+
+#### Lesson Learned
+
+Commit: fix: add A/a arc command handling to SVG path parser (treat as line to endpoint)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: arc midpoint sampling, Q/q quad bezier, regex fallback for XML failures, consistent Pro fallback
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d06a0cfa0d60a41324fd81223c5da0237b1b71ba
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d06a0cfa0d60a41324fd81223c5da0237b1b71ba
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: arc midpoint sampling, Q/q quad bezier, regex fallback for XML failures, consistent Pro fallback
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: arc midpoint sampling, Q/q quad bezier, regex fallback for XML failures, consistent Pro fallback*
+
+#### Lesson Learned
+
+Commit: fix: arc midpoint sampling, Q/q quad bezier, regex fallback for XML failures, consistent Pro fallback
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: guard save_hero_view against flat arrays and _read_front_view_bbox errors
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit bcb8b3b0758d16041c84937904da9d77a2196db1
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** bcb8b3b0758d16041c84937904da9d77a2196db1
+**Files:** backend-python/app/backend/dxf_exporter.py
+
+**Summary:**
+Commit: fix: guard save_hero_view against flat arrays and _read_front_view_bbox errors
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: guard save_hero_view against flat arrays and _read_front_view_bbox errors*
+
+#### Lesson Learned
+
+Commit: fix: guard save_hero_view against flat arrays and _read_front_view_bbox errors
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] debug: log XML path count + full traceback on failure
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 7dc188b3deaa5442643496e78827699dac86800c
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 7dc188b3deaa5442643496e78827699dac86800c
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: debug: log XML path count + full traceback on failure
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: debug: log XML path count + full traceback on failure*
+
+#### Lesson Learned
+
+Commit: debug: log XML path count + full traceback on failure
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: nginx DNS — ipv6=off, explicit cad-python-worker container name
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit f50d8a35fa1c7aeac2451d94f3968c4f8ebbc092
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** f50d8a35fa1c7aeac2451d94f3968c4f8ebbc092
+**Files:** nginx.conf
+
+**Summary:**
+Commit: fix: nginx DNS — ipv6=off, explicit cad-python-worker container name
+Files: nginx.conf
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: nginx DNS — ipv6=off, explicit cad-python-worker container name*
+
+#### Lesson Learned
+
+Commit: fix: nginx DNS — ipv6=off, explicit cad-python-worker container name
+Files: nginx.conf
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: use python-worker container IP directly (Tailscale DNS conflict)
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit d17dad3b1d6f27a0189cb41b3c5a49a8bde02c7f
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** d17dad3b1d6f27a0189cb41b3c5a49a8bde02c7f
+**Files:** nginx.conf
+
+**Summary:**
+Commit: fix: use python-worker container IP directly (Tailscale DNS conflict)
+Files: nginx.conf
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: use python-worker container IP directly (Tailscale DNS conflict)*
+
+#### Lesson Learned
+
+Commit: fix: use python-worker container IP directly (Tailscale DNS conflict)
+Files: nginx.conf
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
