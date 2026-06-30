@@ -364,13 +364,36 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     sx, sy = cx, cy; pts.append([cx, cy])
                 elif cmd == 'L' and i+1 < len(tokens):
                     cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2; pts.append([cx, cy])
-                elif cmd in ('Z','z') and pts and (abs(pts[-1][0]-sx)>0.5 or abs(pts[-1][1]-sy)>0.5):
-                    pts.append([sx, sy]); break
-                elif cmd in ('Z','z'): break
+                elif cmd in ('Z','z'):
+                    if pts and (abs(pts[-1][0]-sx)>0.5 or abs(pts[-1][1]-sy)>0.5):
+                        pts.append([sx, sy])
+                    break
                 elif cmd in ('H','h') and i < len(tokens):
                     cx = float(tokens[i]) if cmd=='H' else cx+float(tokens[i]); i+=1; pts.append([cx, cy])
                 elif cmd in ('V','v') and i < len(tokens):
                     cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1; pts.append([cx, cy])
+                elif cmd == 'C' and i+5 < len(tokens):
+                    cp1x, cp1y = float(tokens[i]), float(tokens[i+1])
+                    cp2x, cp2y = float(tokens[i+2]), float(tokens[i+3])
+                    ex, ey = float(tokens[i+4]), float(tokens[i+5])
+                    for s in range(1, 13):
+                        t = s/12; u = 1-t
+                        px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                        py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                        pts.append([px, py])
+                    cx, cy = ex, ey; i += 6
+                elif cmd == 'c' and i+5 < len(tokens):
+                    cp1x = cx + float(tokens[i]); cp1y = cy + float(tokens[i+1])
+                    cp2x = cx + float(tokens[i+2]); cp2y = cy + float(tokens[i+3])
+                    ex = cx + float(tokens[i+4]); ey = cy + float(tokens[i+5])
+                    for s in range(1, 13):
+                        t = s/12; u = 1-t
+                        px = u**3*cx + 3*u**2*t*cp1x + 3*u*t**2*cp2x + t**3*ex
+                        py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
+                        pts.append([px, py])
+                    cx, cy = ex, ey; i += 6
+                else:
+                    break
             return pts
 
         # Parse all SVG path elements and group by data-view
