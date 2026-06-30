@@ -5043,6 +5043,38 @@ async def silhouette_gallery():
         return JSONResponse({"error": str(e), "silhouettes": {}, "count": 0}, status_code=500)
 
 
+@router.get("/crawl/index")
+async def crawl_index():
+    """Return the crawl index from file-based persistence."""
+    try:
+        from app.services.crawl_processor import _load_crawl_index
+        index = _load_crawl_index()
+        return JSONResponse({"count": len(index), "entries": list(index.values())})
+    except Exception as e:
+        return JSONResponse({"error": str(e), "entries": [], "count": 0}, status_code=500)
+
+
+@router.get("/crawl/products")
+async def crawl_products():
+    """Return list of crawled products (simplified from crawl index)."""
+    try:
+        from app.services.crawl_processor import _load_crawl_index
+        index = _load_crawl_index()
+        products = []
+        for pid, entry in index.items():
+            products.append({
+                "id": pid,
+                "source_url": entry.get("source_url", ""),
+                "geometry_url": entry.get("geometry_url", ""),
+                "svg_url": entry.get("preview_svg_url", ""),
+                "entity_count": entry.get("entity_count", 0),
+                "timestamp": entry.get("timestamp", ""),
+            })
+        return JSONResponse({"count": len(products), "products": products})
+    except Exception as e:
+        return JSONResponse({"error": str(e), "products": [], "count": 0}, status_code=500)
+
+
 @router.get("/products/dna/{handle}")
 async def product_dna_detail(handle: str):
     """Get enriched per-product DNA for a specific product handle."""
