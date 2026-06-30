@@ -208,6 +208,21 @@ async def generate_silhouette_svg(
         return {"svg": cached_svg, "dxf_coords": cached_coords, "cached": True, "error": None}
 
     try:
+        # Resize image to max 600px on longest side to speed up Gemini processing
+        import cv2 as _cv2
+        import numpy as _np
+        _raw = _np.frombuffer(image_data, dtype=_np.uint8)
+        _img = _cv2.imdecode(_raw, _cv2.IMREAD_COLOR)
+        if _img is not None:
+            _h, _w = _img.shape[:2]
+            _max_dim = max(_h, _w)
+            if _max_dim > 600:
+                _scale = 600.0 / _max_dim
+                _new_w, _new_h = int(_w * _scale), int(_h * _scale)
+                _img = _cv2.resize(_img, (_new_w, _new_h))
+                _ret, _buf = _cv2.imencode('.jpg', _img, [int(_cv2.IMWRITE_JPEG_QUALITY), 85])
+                if _ret:
+                    image_data = _buf.tobytes()
         b64 = base64.b64encode(image_data).decode()
 
         prompt = f"""You are a CAD extractor. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outline and also produce a simple isometric projection.
@@ -246,7 +261,7 @@ Return ONLY the JSON. No markdown."""
             ]}]
         }
 
-        _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
+        _timeout = int(os.environ.get("GEMINI_TIMEOUT", "120"))
         _max_retries = int(os.environ.get("GEMINI_RETRIES", "2"))
         _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
         resp = None
