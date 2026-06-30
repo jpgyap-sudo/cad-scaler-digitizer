@@ -1,16 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Globe, Loader2, Download, FileText, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
 
+function categoryLabel(t: string): string {
+  return t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export default function CrawlToSvg() {
   const [url, setUrl] = useState("");
+  const [categories, setCategories] = useState<string[]>(["table", "sofa", "chair", "bed", "cabinet"]);
   const [category, setCategory] = useState("table");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
   const [optimized, setOptimized] = useState<string | null>(null);
+
+  // Load categories from templates endpoint
+  useEffect(() => {
+    fetch(`${ENGINE_BASE}/templates`)
+      .then(r => r.json())
+      .then(d => {
+        const types = [...new Set((d.templates || []).map((t: any) => t.product_type).filter(Boolean))];
+        if (types.length > 0) {
+          setCategories(types.sort());
+          if (!types.includes(category)) setCategory(types[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCrawl = async () => {
     if (!url.trim()) return;
@@ -84,10 +103,10 @@ export default function CrawlToSvg() {
           />
           <select
             value={category} onChange={e => setCategory(e.target.value)}
-            className="px-2 py-2 text-xs border border-gray-300 rounded-lg bg-white outline-none"
+            className="px-2 py-2 text-xs border border-gray-300 rounded-lg bg-white outline-none max-w-[150px]"
           >
-            {["table", "sofa", "chair", "bed", "cabinet", "desk", "lamp"].map(c => (
-              <option key={c} value={c}>{c}</option>
+            {categories.map(c => (
+              <option key={c} value={c}>{categoryLabel(c)}</option>
             ))}
           </select>
           <button onClick={handleCrawl} disabled={loading || !url.trim()}
