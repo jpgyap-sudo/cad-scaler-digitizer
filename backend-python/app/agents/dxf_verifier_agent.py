@@ -34,7 +34,7 @@ logger = logging.getLogger("dxf_verifier_agent")
 
 # Gemini configuration loaded from environment
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-pro")
 
 
 def _build_prompt(
@@ -282,7 +282,7 @@ Return ONLY this JSON. No markdown, no explanation."""
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
         _max_retries = int(os.environ.get("GEMINI_RETRIES", "5"))
-        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-flash-latest")
+        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
         resp = None
         _model_used = GEMINI_MODEL
         for attempt in range(_max_retries):
@@ -492,7 +492,7 @@ async def verify_dxf_with_gemini(
 
         _t = int(os.environ.get("GEMINI_TIMEOUT", "60"))
         _m_r = int(os.environ.get("GEMINI_RETRIES", "5"))
-        _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-1.5-flash")
+        _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
         resp = None
         for _att in range(_m_r):
             model = _fallback_m if _att >= 3 else GEMINI_MODEL
