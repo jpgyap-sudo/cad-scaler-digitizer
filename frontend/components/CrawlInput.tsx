@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Globe, Loader2, Download, AlertCircle, ExternalLink, Ruler, HelpCircle, Lightbulb, Maximize2, Layers } from "lucide-react";
 
 const ENGINE_BASE = import.meta.env.VITE_CAD_ENGINE_URL || "/py-api";
@@ -38,9 +38,16 @@ export default function CrawlInput() {
   const [loading, setLoading] = useState(false);
   const [skeletonFailed, setSkeletonFailed] = useState(false);
 
-  const categories = [
-    "table", "sofa", "chair", "bed", "cabinet", "lighting", "rug", "furniture",
-  ];
+  const [categories, setCategories] = useState(["table", "sofa", "chair", "bed", "cabinet"]);
+  useEffect(() => {
+    fetch(`${ENGINE_BASE}/templates`)
+      .then(r => r.json())
+      .then(d => {
+        const types = [...new Set((d.templates || []).map((t: any) => t.product_type).filter(Boolean))];
+        if (types.length > 0) { setCategories(types.sort()); }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCrawl = async () => {
     if (!url.trim()) return;
