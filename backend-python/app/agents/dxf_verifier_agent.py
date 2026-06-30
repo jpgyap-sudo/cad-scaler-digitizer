@@ -23,6 +23,7 @@ The output is a dict with:
 
 import os
 import json
+import math
 import asyncio
 import base64
 import logging
@@ -373,9 +374,16 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                 elif cmd in ('V','v') and i < len(tokens):
                     cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1; pts.append([cx, cy])
                 elif cmd in ('A','a') and i+6 < len(tokens):
+                    rx, ry = float(tokens[i]), float(tokens[i+1])
+                    xar, laf, sf = float(tokens[i+2]), float(tokens[i+3]), float(tokens[i+4])
                     end_x = float(tokens[i+5]) if cmd=='A' else cx+float(tokens[i+5])
                     end_y = float(tokens[i+6]) if cmd=='A' else cy+float(tokens[i+6])
-                    pts.append([end_x, end_y])
+                    # Sample arc at 12 points for smooth curves
+                    for s in range(1, 13):
+                        t = s / 12
+                        mid_x = cx + (end_x - cx) * t
+                        mid_y = cy + (end_y - cy) * t + ry * math.sin(t * math.pi) * 0.3
+                        pts.append([mid_x, mid_y])
                     cx, cy = end_x, end_y; i+=7
                 elif cmd == 'C' and i+5 < len(tokens):
                     cp1x, cp1y = float(tokens[i]), float(tokens[i+1])
@@ -397,17 +405,26 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                         py = u**3*cy + 3*u**2*t*cp1y + 3*u*t**2*cp2y + t**3*ey
                         pts.append([px, py])
                     cx, cy = ex, ey; i += 6
+                elif cmd in ('Q','q') and i+3 < len(tokens):
+                    cpx = float(tokens[i]) if cmd == 'Q' else cx + float(tokens[i])
+                    cpy = float(tokens[i+1]) if cmd == 'Q' else cy + float(tokens[i+1])
+                    ex = float(tokens[i+2]) if cmd == 'Q' else cx + float(tokens[i+2])
+                    ey = float(tokens[i+3]) if cmd == 'Q' else cy + float(tokens[i+3])
+                    for s in range(1, 10):
+                        t = s/9; u = 1-t
+                        pts.append([u**2*cx + 2*u*t*cpx + t**2*ex, u**2*cy + 2*u*t*cpy + t**2*ey])
+                    cx, cy = ex, ey; i += 4
                 else:
                     break
             return pts
 
-        # Parse SVG paths using standard XML library (handles entities, namespaces, all SVG)
+        # Parse SVG paths using standard XML library
+        _xml_succeeded = False
         try:
             import xml.etree.ElementTree as ET
-            import io
             root = ET.fromstring(svg)
-            ns = {'svg': 'http://www.w3.org/2000/svg'}
-            for path_elem in root.iter('{http://www.w3.org/2000/svg}path'):
+            ns = 'http://www.w3.org/2000/svg'
+            for path_elem in root.iter(f'{{{ns}}}path'):
                 if 'data-view' not in path_elem.attrib:
                     continue
                 view_name = path_elem.attrib['data-view'].lower()
@@ -419,8 +436,27 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     views[view_name].extend(pts)
                     if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
                         views[view_name].append(pts[0])
+            _xml_succeeded = True
         except Exception as _xml_err:
-            logger.warning(f"[DXFVerifier] XML SVG parsing failed: {_xml_err}")
+            logger.warning(f"[DXFVerifier] XML parser failed, trying regex: {_xml_err}")
+
+        # Regex fallback when XML parser fails (malformed SVG, unclosed tags, etc.)
+        if not _xml_succeeded:
+            try:
+                svg_clean = svg.replace('&quot;', '"').replace('&amp;', '&')
+                pat = re.compile(r'<path\s[^>]*d=(["\'])([^\1]+?)\1[^>]*data-view=(["\'])([^\3]+?)\3[^>]*/?>', re.I)
+                for match in pat.finditer(svg_clean):
+                    d = match.group(2)
+                    view_name = match.group(4).lower()
+                    if view_name not in views:
+                        continue
+                    pts = _svg_path_to_points(d)
+                    if len(pts) > 2:
+                        views[view_name].extend(pts)
+                        if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
+                            views[view_name].append(pts[0])
+            except Exception:
+                pass
 
         # Build dxf_coords: [[x1,y1],[x2,y2],...] from all views for hero view
         dxf_flat = []
@@ -510,7 +546,7 @@ async def verify_dxf_with_gemini(
 
         _t = int(os.environ.get("GEMINI_TIMEOUT", "60"))
         _m_r = int(os.environ.get("GEMINI_RETRIES", "2"))
-        _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+        _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
         resp = None
         for _att in range(_m_r):
             model = _fallback_m if _att >= 3 else GEMINI_MODEL
