@@ -1934,7 +1934,8 @@ def save_hero_view(path, hero_coords_json="[]", svg_silhouette="",
     import json, math
     coords = json.loads(hero_coords_json) if isinstance(hero_coords_json, str) else hero_coords_json
     if not coords and svg_silhouette:
-        contours = _gemini_svg_to_dxf_splines(svg_silhouette)
+        svg_clean = svg_silhouette.replace('&quot;', '"').replace('&amp;', '&')
+        contours = _gemini_svg_to_dxf_splines(svg_clean)
         coords = contours[0] if contours else []
     if not coords or len(coords) < 3:
         return
