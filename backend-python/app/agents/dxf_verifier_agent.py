@@ -309,10 +309,17 @@ Return ONLY this JSON. No markdown, no explanation."""
             logger.error(f"[DXFVerifier] Gemini HTTP {code}: {body}")
             return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {code}"}
 
-        _raw = resp.json()
+        import json as _jmod
+        try:
+            _raw = resp.json()
+        except Exception as _parse_e:
+            logger.error(f"[DXFVerifier] Failed to parse Gemini response JSON: {_parse_e}")
+            _text_body = resp.text[:1000] if hasattr(resp, 'text') else 'no body'
+            logger.error(f"[DXFVerifier] Raw response text: {_text_body}")
+            return {"svg": "", "dxf_coords": "[]", "error": f"Parse error: {_parse_e}"}
         text = _raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         if not text:
-            logger.error(f"[DXFVerifier] Empty Gemini response. Full response: {json.dumps(_raw)[:500]}")
+            logger.error(f"[DXFVerifier] Empty Gemini response. Full: {_jmod.dumps(_raw)[:500]}")
             return {"svg": "", "dxf_coords": "[]", "error": "Empty Gemini response"}
 
         # Parse JSON from response
