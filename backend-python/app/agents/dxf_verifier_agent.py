@@ -305,6 +305,8 @@ Return ONLY this JSON. No markdown, no explanation."""
                     raise
         if resp is None or resp.status_code != 200:
             code = resp.status_code if resp else "no_response"
+            body = resp.text[:500] if resp and hasattr(resp, 'text') else "N/A"
+            logger.error(f"[DXFVerifier] Gemini HTTP {code}: {body}")
             return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {code}"}
 
         text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
