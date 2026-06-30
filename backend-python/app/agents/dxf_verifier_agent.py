@@ -248,7 +248,7 @@ Return ONLY the JSON. No markdown."""
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
         _max_retries = int(os.environ.get("GEMINI_RETRIES", "5"))
-        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
         resp = None
         _model_used = GEMINI_MODEL
         for attempt in range(_max_retries):
@@ -264,7 +264,8 @@ Return ONLY the JSON. No markdown."""
                 _delay = min(2 ** attempt, 8)
                 if attempt < _max_retries - 1:
                     await asyncio.sleep(_delay)
-            except Exception:
+            except Exception as _e:
+                logger.warning(f"[DXFVerifier] Retry {attempt+1}/{_max_retries} failed: {type(_e).__name__}: {_e}")
                 if attempt < _max_retries - 1:
                     await asyncio.sleep(min(2 ** attempt, 8))
                 else:
@@ -388,8 +389,8 @@ Return ONLY the JSON. No markdown."""
         return {"svg": svg, "dxf_coords": dxf_coords, "views": views, "estimated_proportions": estimated_proportions, "cached": False, "error": None}
 
     except Exception as e:
-        logger.error(f"[DXFVerifier] Silhouette SVG failed: {e}")
-        return {"svg": "", "dxf_coords": "[]", "error": str(e)}
+        logger.error(f"[DXFVerifier] Silhouette SVG failed: {type(e).__name__}: {e}")
+        return {"svg": "", "dxf_coords": "[]", "error": f"{type(e).__name__}: {e}"}
 
 
 def _parse_gemini_response(response_text: str) -> dict:
@@ -464,7 +465,7 @@ async def verify_dxf_with_gemini(
         }
 
         _t = int(os.environ.get("GEMINI_TIMEOUT", "60"))
-        _m_r = int(os.environ.get("GEMINI_RETRIES", "5"))
+        _m_r = int(os.environ.get("GEMINI_RETRIES", "2"))
         _fallback_m = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
         resp = None
         for _att in range(_m_r):
