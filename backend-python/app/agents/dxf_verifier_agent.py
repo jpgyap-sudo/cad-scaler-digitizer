@@ -225,33 +225,35 @@ async def generate_silhouette_svg(
                     image_data = _buf.tobytes()
         b64 = base64.b64encode(image_data).decode()
 
-        prompt = f"""You are a CAD extractor. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outline and also produce a simple isometric projection.
+        prompt = f"""You are a CAD extractor. Given a photo of a {furniture_type or "furniture product"}, trace its front-facing outline and produce estimated orthographic views.
 
-Return ONLY valid JSON with this structure:
+Return ONLY valid JSON wrapped in a standard ```json``` markdown block. No other text.
+
+Schema:
 {{
-  "svg": "<svg>...</svg>",
-  "components": [{{"name": string, "view": string, "confidence": string, "polyline": [x1,y1, ...]}}, ...],
+  "svg": "<single-line SVG string with no raw newlines or unescaped quotes>",
+  "components": [
+    {{"name": string, "view": "front"|"side"|"top"|"isometric", "confidence": "observed"|"estimated"}}
+  ],
   "estimated_proportions": {{"width_px": number, "depth_px": number, "height_px": number}}
 }}
 
-LAYOUT: 4 panels in one SVG:
-- viewBox="0 0 1200 300", white background
-- Panel 1 (x=0-280): FRONT view — trace the product exactly as seen in the photo. OBSERVED.
-- Panel 2 (x=310-590): SIDE view — estimate from visible edge profiles in the photo. ESTIMATED.
-- Panel 3 (x=620-890): TOP view — estimate from top surface visible in photo. ESTIMATED.
-- Panel 4 (x=920-1180): ISOMETRIC — draw a 3D-style box projection (front face matches front view, depth edges going up-right). ESTIMATED.
+LAYOUT (4 panels, 1200x300 canvas):
+- Panel 1 x=0-280: FRONT view — trace product exactly as seen. OBSERVED.
+- Panel 2 x=310-590: SIDE view — estimate from visible edge profiles. ESTIMATED.
+- Panel 3 x=620-890: TOP view — estimate from top surfaces. ESTIMATED.
+- Panel 4 x=920-1180: ISOMETRIC — 3D box projection, front face matches panel 1, depth up-right. ESTIMATED.
 
 RULES:
-- Each component is its OWN <path> with data-name, data-view, data-confidence
-- OBSERVED: stroke="#1f2937" stroke-width="2" fill="none"
-- ESTIMATED: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
-- ISOMETRIC: draw parallelogram for top, vertical lines for legs, hidden edges dashed
-- Thin divider lines at x=295, x=605, x=905
-- Center and scale to fill ~80% of each panel
+- White background, divider lines at x=295, x=605, x=905 (stroke="#e5e7eb").
+- Each component is its own <path> with data-name, data-view, data-confidence attributes.
+- OBSERVED paths: stroke="#1f2937" stroke-width="2" fill="none"
+- ESTIMATED/ISOMETRIC paths: stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4,2" fill="none"
+- Center and scale to fill ~80% of each panel.
+- The "svg" value must be a single continuous line — no raw newlines inside the SVG string.
+- Escape any double quotes inside the SVG as &quot;.
 
-Each component's polyline is [x1,y1, x2,y2, ...] in the 1200x300 SVG space. Closed shapes. Min 4 points.
-
-Return ONLY the JSON. No markdown."""
+Return ONLY the markdown-wrapped JSON. No conversational text."""
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
         payload = {
@@ -313,25 +315,34 @@ Return ONLY the JSON. No markdown."""
         cleaned = cleaned.strip()
 
         import json as json_mod
-        
-        # Parse JSON response (multi-view format: {svg, components[{name, view, confidence, polyline}]})
+        import re
+
+        # Parse markdown-wrapped JSON
+        cleaned_orig = cleaned
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3]
+
         svg = ""
         views: dict[str, list] = {"front": [], "side": [], "top": [], "isometric": []}
         estimated_proportions = {}
+        components_meta: list[dict] = []
+
         try:
-            parsed = json_mod.loads(cleaned)
+            parsed = json_mod.loads(cleaned.strip())
             svg = parsed.get("svg", "") or ""
-            components = parsed.get("components", []) or []
+            components_meta = parsed.get("components", []) or []
             estimated_proportions = parsed.get("estimated_proportions", {})
-            for comp in components:
-                view = comp.get("view", "front")
-                poly = comp.get("polyline", [])
-                if isinstance(poly, list) and len(poly) > 2:
-                    if view in views:
-                        views[view].extend(poly)
-                        views[view].append(poly[0])  # close
         except Exception:
-            svg = cleaned
+            # Try raw text without markdown wrapping
+            try:
+                parsed = json_mod.loads(cleaned_orig.strip())
+                svg = parsed.get("svg", "") or ""
+                components_meta = parsed.get("components", []) or []
+                estimated_proportions = parsed.get("estimated_proportions", {})
+            except Exception:
+                svg = cleaned_orig
 
         # SVG fallback wrapper
         if svg and "<svg" not in svg.lower():
@@ -339,64 +350,43 @@ Return ONLY the JSON. No markdown."""
   <rect width="400" height="300" fill="#ffffff"/>
   <g stroke="#1f2937" stroke-width="2" fill="none">{svg}</g></svg>"""
 
+        # Extract coordinates from SVG paths (deterministic, server-side)
+        # instead of asking Gemini to redundantly produce them
+        def _svg_path_to_points(d: str) -> list[list[float]]:
+            tokens = re.findall(r'[MmLlCcQqSsZzHhVv]|-?\d+(?:\.\d+)?', d)
+            pts = []
+            cx = cy = sx = sy = 0.0
+            i = 0
+            while i < len(tokens):
+                cmd = tokens[i]; i += 1
+                if cmd == 'M' and i+1 < len(tokens):
+                    cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2
+                    sx, sy = cx, cy; pts.append([cx, cy])
+                elif cmd == 'L' and i+1 < len(tokens):
+                    cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2; pts.append([cx, cy])
+                elif cmd in ('Z','z') and pts and (abs(pts[-1][0]-sx)>0.5 or abs(pts[-1][1]-sy)>0.5):
+                    pts.append([sx, sy]); break
+                elif cmd in ('Z','z'): break
+                elif cmd in ('H','h') and i < len(tokens):
+                    cx = float(tokens[i]) if cmd=='H' else cx+float(tokens[i]); i+=1; pts.append([cx, cy])
+                elif cmd in ('V','v') and i < len(tokens):
+                    cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1; pts.append([cx, cy])
+            return pts
+
+        # Parse all SVG path elements and group by data-view
+        # If data-view attribute not present, assign by x-position heuristic
+        path_pattern = re.compile(r'<path\s[^>]*d="([^"]+)"[^>]*data-view="([^"]+)"[^>]*/?>', re.I)
+        for d, view_name in path_pattern.findall(svg):
+            pts = _svg_path_to_points(d)
+            if view_name in views and len(pts) > 2:
+                views[view_name].extend(pts)
+                if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
+                    views[view_name].append(pts[0])
+
         # Build dxf_coords: [[x1,y1],[x2,y2],...] from all views for hero view
         dxf_flat = []
-        for view_data in views.values():
-            # view_data is flat [x1,y1,x2,y2,...] — convert to [[x1,y1],[x2,y2],...]
-            flat_pts = list(view_data)
-            for i in range(0, len(flat_pts) - 1, 2):
-                dxf_flat.append([flat_pts[i], flat_pts[i+1]])
-
-        if not dxf_flat and svg:
-            # Fallback: extract polyline from SVG path data
-            import re
-            paths = re.findall(r'd="([^"]+)"', svg, re.I)
-            for d in paths:
-                tokens = re.findall(r'[MmLlCcQqSsZzHhVvLl]|-?\d+(?:\.\d+)?', d)
-                pts = []
-                cx = cy = sx = sy = 0.0
-                i = 0
-                while i < len(tokens):
-                    cmd = tokens[i]; i += 1
-                    if cmd == 'M' and i+1 < len(tokens):
-                        cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2
-                        sx, sy = cx, cy; pts.append([cx, cy])
-                    elif cmd == 'L' and i+1 < len(tokens):
-                        cx, cy = float(tokens[i]), float(tokens[i+1]); i+=2
-                        pts.append([cx, cy])
-                    elif cmd in ('Z','z') and pts and (abs(pts[-1][0]-sx)>0.5 or abs(pts[-1][1]-sy)>0.5):
-                        pts.append([sx, sy]); break
-                    elif cmd in ('C','c') and i+5 < len(tokens):
-                        if cmd == 'c':
-                            ex = cx+float(tokens[i+4]); ey = cy+float(tokens[i+5])
-                        else:
-                            ex, ey = float(tokens[i+4]), float(tokens[i+5])
-                        for s in range(1,13):
-                            t = s/12; u=1-t
-                            px = u**3*cx + 3*u**2*t*float(tokens[i]) + 3*u*t**2*float(tokens[i+2]) + t**3*ex
-                            py = u**3*cy + 3*u**2*t*float(tokens[i+1]) + 3*u*t**2*float(tokens[i+3]) + t**3*ey
-                            pts.append([px, py])
-                        cx, cy = ex, ey; i+=6
-                    elif cmd in ('Q','q') and i+3 < len(tokens):
-                        if cmd == 'q':
-                            ex = cx+float(tokens[i+2]); ey = cy+float(tokens[i+3])
-                        else:
-                            ex, ey = float(tokens[i+2]), float(tokens[i+3])
-                        for s in range(1,10):
-                            t = s/9; u=1-t
-                            px = u**2*cx + 2*u*t*float(tokens[i]) + t**2*ex
-                            py = u**2*cy + 2*u*t*float(tokens[i+1]) + t**2*ey
-                            pts.append([px, py])
-                        cx, cy = ex, ey; i+=4
-                    elif cmd in ('H','h') and i < len(tokens):
-                        cx = float(tokens[i]) if cmd=='H' else cx+float(tokens[i]); i+=1
-                        pts.append([cx, cy])
-                    elif cmd in ('V','v') and i < len(tokens):
-                        cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1
-                        pts.append([cx, cy])
-                if len(pts) > 2:
-                    dxf_flat.extend(pts)
-                    dxf_flat.append(pts[0])
+        for view_pts in views.values():
+            dxf_flat.extend(view_pts)
 
         dxf_coords = json_mod.dumps(dxf_flat)
 
