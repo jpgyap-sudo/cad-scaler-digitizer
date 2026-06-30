@@ -7,7 +7,7 @@ Processes assets downloaded by the crawler-worker:
   3. Generates SVG preview, persisted to /tmp/cad_digitizer_outputs/
   4. Indexes geometry in Qdrant
   5. Uploads persistent files to Spaces
-  6. Saves metadata to Postgres
+  6. Saves metadata to crawl_index.json (file-based, synced to Spaces)
 """
 
 import os
@@ -16,20 +16,20 @@ import logging
 import uuid
 from pathlib import Path
 from typing import Any, Optional
+from datetime import datetime
 
 import httpx
 
 logger = logging.getLogger("crawl_processor")
 
 OUT = Path("/tmp/cad_digitizer_outputs")
+CRAWL_INDEX_PATH = OUT / "crawl_index.json"
 
 SPACES_ENDPOINT = os.environ.get("SPACES_ENDPOINT", "https://sgp1.digitaloceanspaces.com")
 SPACES_BUCKET = os.environ.get("SPACES_BUCKET", "homeatelierspaces")
 SPACES_KEY = os.environ.get("SPACES_KEY", "")
 SPACES_SECRET = os.environ.get("SPACES_SECRET", "")
 SPACES_CDN_BASE = os.environ.get("SPACES_CDN_BASE", "")
-
-# Postgres connection via brain_sync (lazy imported)
 
 def _spaces_upload(local_path: Path, remote_key: str) -> Optional[str]:
     """Upload a file to DigitalOcean Spaces. Returns CDN URL or None."""
@@ -56,53 +56,66 @@ def _spaces_upload(local_path: Path, remote_key: str) -> Optional[str]:
         return None
 
 
+def _load_crawl_index() -> dict:
+    """Load crawl index from local JSON file. Re-downloads from Spaces if missing."""
+    if CRAWL_INDEX_PATH.exists():
+        try:
+            return json.loads(CRAWL_INDEX_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    # Try to restore from Spaces
+    if SPACES_KEY and SPACES_SECRET:
+        try:
+            import boto3
+            session = boto3.session.Session()
+            client = session.client("s3", endpoint_url=SPACES_ENDPOINT,
+                aws_access_key_id=SPACES_KEY, aws_secret_access_key=SPACES_SECRET, region_name="sgp1")
+            obj = client.get_object(Bucket=SPACES_BUCKET, Key="cad-reference-library/crawl_index.json")
+            data = json.loads(obj["Body"].read().decode())
+            CRAWL_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+            CRAWL_INDEX_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            return data
+        except Exception:
+            pass
+    return {}
+
+
+def _save_crawl_index(index: dict) -> None:
+    """Save crawl index to local JSON and sync to Spaces."""
+    try:
+        CRAWL_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CRAWL_INDEX_PATH.write_text(json.dumps(index, indent=2, default=str), encoding="utf-8")
+        if SPACES_KEY and SPACES_SECRET:
+            import boto3
+            session = boto3.session.Session()
+            client = session.client("s3", endpoint_url=SPACES_ENDPOINT,
+                aws_access_key_id=SPACES_KEY, aws_secret_access_key=SPACES_SECRET, region_name="sgp1")
+            client.upload_file(str(CRAWL_INDEX_PATH), SPACES_BUCKET, "cad-reference-library/crawl_index.json",
+                ExtraArgs={"ACL": "public-read", "ContentType": "application/json"})
+    except Exception as e:
+        logger.warning(f"[CrawlProcessor] Crawl index save failed: {e}")
+
+
 def _persist_metadata(product_id: str, asset_id: str, url: str,
                        geo_url: str, svg_url: str, entity_count: int,
                        bbox: Any, embedding_result: Any) -> None:
-    """Save crawl result metadata to Postgres (Prisma-compatible schema)."""
+    """Save crawl result metadata to crawl_index.json (file-based, synced to Spaces)."""
     try:
-        from app.backend.brain_sync import _execute
-        import uuid as uuid_lib
-
-        ref_id = f"crawl-{product_id}"
-        ref_meta = json.dumps({
-            "source_url": url, "asset_id": asset_id,
-            "entity_count": entity_count, "bbox": bbox,
+        index = _load_crawl_index()
+        entry = {
+            "product_id": product_id,
+            "asset_id": asset_id,
+            "source_url": url,
+            "geometry_url": geo_url or "",
+            "preview_svg_url": svg_url or "",
+            "entity_count": entity_count,
+            "bbox": bbox,
             "embedding": embedding_result,
-            "geometry_url": geo_url, "preview_svg_url": svg_url,
-        })
-        # ProductReference: PascalCase table, quoted identifers
-        ref_sql = '''
-            INSERT INTO "ProductReference" (id, manufacturer, "productName", slug, category, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s::jsonb)
-            ON CONFLICT (id) DO UPDATE SET
-                metadata = EXCLUDED.metadata,
-                "updatedAt" = NOW()
-        '''
-        slug = product_id.replace(" ", "-").lower()[:60]
-        _execute(ref_sql, (ref_id, "crawler", f"crawled-{product_id}", slug, "dxf", ref_meta),
-                 commit=True)
-
-        # ReferenceAsset: PascalCase with relation FK
-        def _insert_asset(aid: str, asset_type: str, cdn_url: str, fname: str, meta: dict) -> None:
-            asset_sql = '''
-                INSERT INTO "ReferenceAsset" (id, "productReferenceId", "assetType", "fileName", "spaceKey", "cdnUrl", "processedStatus", metadata)
-                VALUES (%s, %s, %s::"AssetType", %s, %s, %s, %s::"ProcessingStatus", %s::jsonb)
-                ON CONFLICT (id) DO UPDATE SET "cdnUrl" = EXCLUDED."cdnUrl", "processedStatus" = 'DONE'::"ProcessingStatus"
-            '''
-            _execute(asset_sql, (aid, ref_id, asset_type, fname, f"cad-reference-library/{aid}", cdn_url, 'DONE', json.dumps(meta)),
-                     commit=True)
-
-        _insert_asset(asset_id, 'DXF', url, f"{asset_id}.dxf",
-                      {"source_url": url, "entity_count": entity_count, "processed": True})
-        if geo_url:
-            _insert_asset(f"{asset_id}-geo", 'GEOMETRY_JSON', geo_url, f"{asset_id}.json",
-                          {"type": "parsed_geometry", "entity_count": entity_count})
-        if svg_url:
-            _insert_asset(f"{asset_id}-preview", 'SVG', svg_url, f"{asset_id}.svg",
-                          {"type": "preview"})
-
-        logger.info(f"[CrawlProcessor] Metadata persisted for {product_id}")
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        index[product_id] = entry
+        _save_crawl_index(index)
+        logger.info(f"[CrawlProcessor] Metadata persisted for {product_id} ({len(index)} total entries)")
     except Exception as e:
         logger.error(f"[CrawlProcessor] Metadata persist failed: {e}")
 
