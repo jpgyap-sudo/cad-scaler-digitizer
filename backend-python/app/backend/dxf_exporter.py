@@ -1933,6 +1933,11 @@ def save_hero_view(path, hero_coords_json="[]", svg_silhouette="",
     """
     import json, math
     coords = json.loads(hero_coords_json) if isinstance(hero_coords_json, str) else hero_coords_json
+    if not isinstance(coords, list):
+        coords = []
+    # Ensure coords are [x,y] pairs (not flat array)
+    if coords and len(coords) > 0 and isinstance(coords[0], (int, float)):
+        coords = [[coords[i], coords[i+1]] for i in range(0, len(coords)-1, 2)]
     if not coords and svg_silhouette:
         svg_clean = svg_silhouette.replace('&quot;', '"').replace('&amp;', '&')
         contours = _gemini_svg_to_dxf_splines(svg_clean)
@@ -1947,8 +1952,10 @@ def save_hero_view(path, hero_coords_json="[]", svg_silhouette="",
         doc = setup_doc()
         msp = doc.modelspace()
 
-    # Dynamic scale detection from existing DXF
-    fx, floor_y, fw, fh, _, top_y = _read_front_view_bbox(msp)
+    try:
+        fx, floor_y, fw, fh, _, top_y = _read_front_view_bbox(msp)
+    except Exception:
+        fx, floor_y, fw, fh, _, top_y = 50.0, 30.0, 42.0, 26.25, 30.0, 56.25
 
     # Center and scale Gemini coords to match FRONT VIEW dimensions
     xs = [p[0] for p in coords]
