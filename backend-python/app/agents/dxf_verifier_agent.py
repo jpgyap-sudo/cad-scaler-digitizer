@@ -396,9 +396,10 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     break
             return pts
 
-        # Parse all SVG path elements and group by data-view
+        # Decode HTML entities and parse all SVG path elements grouped by data-view
+        svg_clean = svg.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
         path_pattern = re.compile(r"""<path\s[^>]*d=(["'])([^"']+?)\1[^>]*data-view=(["'])([^"']+?)\3[^>]*/?>""", re.I)
-        for match in path_pattern.finditer(svg):
+        for match in path_pattern.finditer(svg_clean):
             d = match.group(2)
             view_name = match.group(4).lower()
             pts = _svg_path_to_points(d)
