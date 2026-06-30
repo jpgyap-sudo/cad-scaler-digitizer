@@ -372,6 +372,11 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     cx = float(tokens[i]) if cmd=='H' else cx+float(tokens[i]); i+=1; pts.append([cx, cy])
                 elif cmd in ('V','v') and i < len(tokens):
                     cy = float(tokens[i]) if cmd=='V' else cy+float(tokens[i]); i+=1; pts.append([cx, cy])
+                elif cmd in ('A','a') and i+6 < len(tokens):
+                    end_x = float(tokens[i+5]) if cmd=='A' else cx+float(tokens[i+5])
+                    end_y = float(tokens[i+6]) if cmd=='A' else cy+float(tokens[i+6])
+                    pts.append([end_x, end_y])
+                    cx, cy = end_x, end_y; i+=7
                 elif cmd == 'C' and i+5 < len(tokens):
                     cp1x, cp1y = float(tokens[i]), float(tokens[i+1])
                     cp2x, cp2y = float(tokens[i+2]), float(tokens[i+3])
