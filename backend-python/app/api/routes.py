@@ -44,6 +44,10 @@ from app.backend.cad_intelligence.dxf_exporter import export_entities_to_dxf as 
 from app.backend.cad_intelligence.unified_router import (
     run_unified_pipeline, UnifiedResult, ProvenanceValue
 )
+from app.resource_engine.library import ResourceLibrary
+from app.resource_engine.matcher import build_scene_graph
+from app.resource_engine.constraint_solver import solve_constraints
+
 
 router = APIRouter()
 
@@ -223,9 +227,17 @@ def _ratios_from_sections(visual_base_estimate: dict) -> dict:
 
 
 def _save_drawing_model(f_type, dxf_path, width_cm, height_cm, base_dia_cm=None, neck_dia_cm=None,
-                        depth_cm=None, leg_thickness_cm=None, materials=None, profile=None):
-    """Save per-furniture-type DrawingModel JSON alongside the DXF file.
-    Now supports ALL known furniture types."""
+                        depth_cm=None, leg_thickness_cm=None, materials=None, profile=None, thickness_cm=None):
+    _SAVE_ALIAS = {
+        'side_table': 'rectangular_table',
+        'nightstand': 'cabinet',
+        'bed': 'rectangular_table',
+        'outdoor_dining_set': 'rectangular_table',
+        'office_chair': 'dining_chair',
+        'sectional': 'sofa',
+        'coffee_table_round': 'coffee_table'
+    }
+    f_type = _SAVE_ALIAS.get(f_type, f_type)
     try:
         from app.backend.drawing_builders import (
             build_round_pedestal_model, build_rectangular_table_model,
@@ -1190,7 +1202,8 @@ def _dispatch_furniture(f_type, dxf_path, corrected_dims, real_w, real_h, visual
                          base_dia_cm=extra.get('base_dia_cm'), neck_dia_cm=extra.get('neck_dia_cm'),
                          depth_cm=extra.get('resolved_dimensions', {}).get('depth_cm'),
                          leg_thickness_cm=extra.get('resolved_dimensions', {}).get('leg_thickness_cm'),
-                         materials=extra.get('materials'), profile=extra.get('profile'))
+                         materials=extra.get('materials'), profile=extra.get('profile'),
+                         thickness_cm=extra.get('resolved_dimensions', {}).get('thickness_cm'))
     # NOTE: drawing_history recording (record_drawing) used to happen here,
     # but at this point the SVG preview hasn't been generated yet (it's
     # built by the caller, after _dispatch_furniture returns) - calling it
@@ -3058,74 +3071,60 @@ async def adjust_dimensions(dxf_file: str = Form(...),
         if save_fn is None or build_fn is None:
             return JSONResponse({"error": f"No adjust support for {ftype}"}, status_code=400)
         # ---- Build kwargs for save_*() and build_*_model() ----
+        save_kwargs = {}
+        
+        # Dimensions mapping
+        w = merged_dims.get('width_cm') or merged_dims.get('length_cm') or merged_dims.get('top_diameter_cm') or merged_dims.get('diameter_or_width_cm')
+        h = merged_dims.get('overall_height_cm') or merged_dims.get('height_cm')
+        d = merged_dims.get('depth_cm')
+        
+        # Populate standard dimensions if present
+        if w is not None:
+            save_kwargs['width_cm'] = w
+            save_kwargs['length_cm'] = w
+            save_kwargs['top_dia_cm'] = w
+            save_kwargs['diameter_or_width_cm'] = w
+        if h is not None:
+            save_kwargs['height_cm'] = h
+            save_kwargs['overall_height_cm'] = h
+        if d is not None:
+            save_kwargs['depth_cm'] = d
+            
+        save_kwargs['materials'] = sidecar_materials
+
+        # Type-specific attributes
         if ftype == 'round_pedestal_table':
-            save_kwargs = {
-                'top_dia_cm': merged_dims.get('top_diameter_cm', 80.0),
-                'height_cm': merged_dims.get('overall_height_cm', 70.0),
-                'base_dia_cm': merged_dims.get('base_diameter_cm', 44.0),
-                'neck_dia_cm': merged_dims.get('neck_diameter_cm', 22.4),
-                'top_thick_cm': merged_dims.get('top_thickness_cm', 4.0),
-                'collar_dia_cm': merged_dims.get('collar_diameter_cm'),
-                'materials': sidecar_materials, 'profile': 'cylinder',
-            }
-        elif ftype in ('cabinet', 'sofa', 'wardrobe', 'reception_counter', 'bed_headboard', 'coffee_table'):
-            save_kwargs = {
-                'width_cm': merged_dims.get('width_cm', 100.0),
-                'depth_cm': merged_dims.get('depth_cm', 60.0),
-                'height_cm': merged_dims.get('overall_height_cm', 180.0),
-                'materials': sidecar_materials,
-            }
-        elif ftype in ('dining_chair', 'chair'):
-            save_kwargs = {
-                'width_cm': merged_dims.get('width_cm', 45.0),
-                'height_cm': merged_dims.get('overall_height_cm', 90.0),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['base_dia_cm'] = merged_dims.get('base_diameter_cm', 44.0)
+            save_kwargs['neck_dia_cm'] = merged_dims.get('neck_diameter_cm', 22.4)
+            save_kwargs['top_thick_cm'] = merged_dims.get('top_thickness_cm', 4.0)
+            save_kwargs['collar_dia_cm'] = merged_dims.get('collar_diameter_cm')
+            save_kwargs['profile'] = 'cylinder'
         elif ftype == 'rectangular_table':
-            save_kwargs = {
-                'width_cm': merged_dims.get('width_cm', 120.0),
-                'depth_cm': merged_dims.get('depth_cm', 80.0),
-                'height_cm': merged_dims.get('overall_height_cm', 70.0),
-                'leg_thickness_cm': merged_dims.get('leg_thickness_cm', 6.0),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['leg_thickness_cm'] = merged_dims.get('leg_thickness_cm', 6.0)
         elif ftype == 'oval_pedestal_table':
-            save_kwargs = {
-                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 180.0)),
-                'depth_cm': merged_dims.get('depth_cm', 100.0),
-                'height_cm': merged_dims.get('overall_height_cm', 75.0),
-                'pedestal_dia_cm': merged_dims.get('pedestal_dia_cm', 40.0),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['pedestal_dia_cm'] = merged_dims.get('pedestal_dia_cm', 40.0)
         elif ftype == 'console_table':
-            save_kwargs = {
-                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 120.0)),
-                'depth_cm': merged_dims.get('depth_cm', 40.0),
-                'height_cm': merged_dims.get('overall_height_cm', 75.0),
-                'leg_thick_cm': merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0)),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['leg_thick_cm'] = merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0))
         elif ftype == 'office_desk':
-            save_kwargs = {
-                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 140.0)),
-                'depth_cm': merged_dims.get('depth_cm', 60.0),
-                'height_cm': merged_dims.get('overall_height_cm', 75.0),
-                'leg_thick_cm': merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0)),
-                'modesty_panel_h_cm': merged_dims.get('modesty_panel_h_cm', 15.0),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['leg_thick_cm'] = merged_dims.get('leg_thickness_cm', merged_dims.get('leg_thick_cm', 4.0))
+            save_kwargs['modesty_panel_h_cm'] = merged_dims.get('modesty_panel_h_cm', 15.0)
         elif ftype == 'asymmetric_pedestal_table':
-            save_kwargs = {
-                'length_cm': merged_dims.get('length_cm', merged_dims.get('width_cm', 180.0)),
-                'depth_cm': merged_dims.get('depth_cm', 90.0),
-                'height_cm': merged_dims.get('overall_height_cm', 75.0),
-                'large_ped_dia_cm': merged_dims.get('large_ped_dia_cm', 40.0),
-                'small_ped_dia_cm': merged_dims.get('small_ped_dia_cm', 22.0),
-                'left_ped_x_cm': merged_dims.get('left_ped_x_cm', 30.0),
-                'right_ped_x_cm': merged_dims.get('right_ped_x_cm', -25.0),
-                'overhang_cm': merged_dims.get('overhang_cm', 20.0),
-                'materials': sidecar_materials,
-            }
+            save_kwargs['large_ped_dia_cm'] = merged_dims.get('large_ped_dia_cm', 40.0)
+            save_kwargs['small_ped_dia_cm'] = merged_dims.get('small_ped_dia_cm', 22.0)
+            save_kwargs['left_ped_x_cm'] = merged_dims.get('left_ped_x_cm', 30.0)
+            save_kwargs['right_ped_x_cm'] = merged_dims.get('right_ped_x_cm', -25.0)
+            save_kwargs['overhang_cm'] = merged_dims.get('overhang_cm', 20.0)
+        elif ftype == 'sectional':
+            save_kwargs['chaise_length_cm'] = merged_dims.get('chaise_length_cm', 160.0)
+            save_kwargs['seat_height_cm'] = merged_dims.get('seat_height_cm', 42.0)
+        elif ftype in ('armchair_lounge', 'bar_stool', 'bench_chaise'):
+            save_kwargs['seat_height_cm'] = merged_dims.get('seat_height_cm', 45.0)
+        elif ftype == 'rug_rectangular':
+            save_kwargs['pile_height_mm'] = merged_dims.get('pile_height_mm', 10.0)
+        elif ftype in ('stone_slab_rectangular', 'wall_panel_fluted'):
+            save_kwargs['thickness_cm'] = merged_dims.get('thickness_cm', 2.0)
+            if ftype == 'wall_panel_fluted':
+                save_kwargs['slat_spacing_mm'] = merged_dims.get('slat_spacing_mm', 10.0)
         else:
             return JSONResponse({"error": f"Unsupported type: {ftype}"}, status_code=400)
 

@@ -6420,3 +6420,193 @@ Project: cad-scaler-digitizer
 cross-project, local-fallback
 
 ---
+
+### Lesson: [cad-scaler-digitizer] fix: resize image to 600px max before Gemini call + increase timeout to 120s
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 71f044ded1f2c85bb3f36ca550f1a08a6d31d930
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 71f044ded1f2c85bb3f36ca550f1a08a6d31d930
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: resize image to 600px max before Gemini call + increase timeout to 120s
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: resize image to 600px max before Gemini call + increase timeout to 120s*
+
+#### Lesson Learned
+
+Commit: fix: resize image to 600px max before Gemini call + increase timeout to 120s
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: add C/c cubic bezier parsing to SVG path→points extractor
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 0e102d05eca1b80b98bcbdd0133e9abd13c013de
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 0e102d05eca1b80b98bcbdd0133e9abd13c013de
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: add C/c cubic bezier parsing to SVG path→points extractor
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: add C/c cubic bezier parsing to SVG path→points extractor*
+
+#### Lesson Learned
+
+Commit: fix: add C/c cubic bezier parsing to SVG path→points extractor
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: support single-quoted SVG attributes (common when SVG is inside JSON string)
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit ccceac5ad8c5919a7a9a7d8e3ebad9da7437deb0
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** ccceac5ad8c5919a7a9a7d8e3ebad9da7437deb0
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: support single-quoted SVG attributes (common when SVG is inside JSON string)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: support single-quoted SVG attributes (common when SVG is inside JSON string)*
+
+#### Lesson Learned
+
+Commit: fix: support single-quoted SVG attributes (common when SVG is inside JSON string)
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: decode &quot; HTML entities before SVG path regex parsing
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 717e09a14ee8fdd20cdcbae437e62b8d08085367
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 717e09a14ee8fdd20cdcbae437e62b8d08085367
+**Files:** backend-python/app/agents/dxf_verifier_agent.py
+
+**Summary:**
+Commit: fix: decode &quot; HTML entities before SVG path regex parsing
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: decode &quot; HTML entities before SVG path regex parsing*
+
+#### Lesson Learned
+
+Commit: fix: decode &quot; HTML entities before SVG path regex parsing
+Files: backend-python/app/agents/dxf_verifier_agent.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
+
+### Lesson: [cad-scaler-digitizer] fix: decode &quot; entities in save_hero_view SVG fallback path
+
+Date: 2026-06-30
+Source: superroo-learn CLI (local fallback)
+Model/API used: deepseek-chat
+Confidence: high
+Related files:
+Tags:
+
+#### Task Summary
+
+## DeepSeek-Summarized Lesson from commit 99880646b1f97aa88aaef5023c69b8a36833b8bd
+
+**Project:** cad-scaler-digitizer
+**Author:** john yap
+**Commit:** 99880646b1f97aa88aaef5023c69b8a36833b8bd
+**Files:** backend-python/app/backend/dxf_exporter.py
+
+**Summary:**
+Commit: fix: decode &quot; entities in save_hero_view SVG fallback path
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+---
+*Original commit message: fix: decode &quot; entities in save_hero_view SVG fallback path*
+
+#### Lesson Learned
+
+Commit: fix: decode &quot; entities in save_hero_view SVG fallback path
+Files: backend-python/app/backend/dxf_exporter.py
+Project: cad-scaler-digitizer
+
+#### Tags
+
+cross-project, local-fallback
+
+---
