@@ -265,47 +265,67 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
         }
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "120"))
-        _max_retries = int(os.environ.get("GEMINI_RETRIES", "2"))
-        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
+        _max_retries = int(os.environ.get("GEMINI_RETRIES", "8"))
         resp = None
-        _model_used = GEMINI_MODEL
+        _active_model = GEMINI_MODEL
+        _models = [GEMINI_MODEL, GEMINI_MODEL, "gemini-2.5-pro", "gemini-2.5-pro", "gpt-4o", "gpt-4o", "gpt-4o-mini", "gpt-4o-mini"]
+        _openai_key = os.environ.get("OPENAI_API_KEY", "")
         for attempt in range(_max_retries):
             try:
-                _active_model = _fallback_model if attempt >= 3 else _model_used
-                _active_url = f"https://generativelanguage.googleapis.com/v1beta/models/{_active_model}:generateContent"
-                async with httpx.AsyncClient(timeout=_timeout) as client:
-                    resp = await client.post(_active_url, params={"key": GEMINI_API_KEY}, json=payload)
+                _active_model = _models[attempt] if attempt < len(_models) else "gemini-2.5-flash"
+                if "gpt" in _active_model:
+                    if not _openai_key:
+                        continue
+                    _active_url = "https://api.openai.com/v1/chat/completions"
+                    _gpt_payload = {
+                        "model": _active_model,
+                        "messages": [{"role": "user", "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "low"}}
+                        ]}],
+                        "max_tokens": 4096,
+                    }
+                    async with httpx.AsyncClient(timeout=_timeout) as client:
+                        resp = await client.post(_active_url, json=_gpt_payload,
+                            headers={"Authorization": f"Bearer {_openai_key}"})
+                else:
+                    _active_url = f"https://generativelanguage.googleapis.com/v1beta/models/{_active_model}:generateContent"
+                    async with httpx.AsyncClient(timeout=_timeout) as client:
+                        resp = await client.post(_active_url, params={"key": GEMINI_API_KEY}, json=payload)
                 if resp.status_code == 200:
                     break
                 if resp.status_code not in (429, 500, 502, 503):
                     break
-                _delay = min(2 ** attempt, 8)
+                _delay = min(2 ** attempt, 16)
                 if attempt < _max_retries - 1:
                     await asyncio.sleep(_delay)
             except Exception as _e:
                 logger.warning(f"[DXFVerifier] Retry {attempt+1}/{_max_retries} failed: {type(_e).__name__}: {_e}")
                 if attempt < _max_retries - 1:
-                    await asyncio.sleep(min(2 ** attempt, 8))
+                    await asyncio.sleep(min(2 ** attempt, 16))
                 else:
                     raise
         if resp is None or resp.status_code != 200:
             code = resp.status_code if resp else "no_response"
             body = resp.text[:500] if resp and hasattr(resp, 'text') else "N/A"
-            logger.error(f"[DXFVerifier] Gemini HTTP {code}: {body}")
+            logger.error(f"[DXFVerifier] {_models[min(attempt, len(_models)-1)] if attempt < len(_models) else 'unknown'} HTTP {code}: {body}")
             return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {code}"}
 
         import json as _jmod
         try:
             _raw = resp.json()
         except Exception as _parse_e:
-            logger.error(f"[DXFVerifier] Failed to parse Gemini response JSON: {_parse_e}")
             _text_body = resp.text[:1000] if hasattr(resp, 'text') else 'no body'
-            logger.error(f"[DXFVerifier] Raw response text: {_text_body}")
+            logger.error(f"[DXFVerifier] Failed to parse response JSON from {_active_model}: {_parse_e}")
             return {"svg": "", "dxf_coords": "[]", "error": f"Parse error: {_parse_e}"}
-        text = _raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        # Parse response based on which API returned it
+        if "gpt" in _active_model:
+            text = _raw.get("choices", [{}])[0].get("message", {}).get("content", "")
+        else:
+            text = _raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         if not text:
-            logger.error(f"[DXFVerifier] Empty Gemini response. Full: {_jmod.dumps(_raw)[:500]}")
-            return {"svg": "", "dxf_coords": "[]", "error": "Empty Gemini response"}
+            logger.error(f"[DXFVerifier] Empty response from {_active_model}. Full: {_jmod.dumps(_raw)[:500]}")
+            return {"svg": "", "dxf_coords": "[]", "error": "Empty response"}
 
         # Parse JSON from response
         cleaned = text.strip()
