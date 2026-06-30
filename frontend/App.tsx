@@ -27,6 +27,7 @@ import { generateDXF } from './utils/dxf';
 import { renderCadToCanvas } from './components/CadCanvas';
 import PipelineUpload, { PipelineJobResult } from './components/PipelineUpload';
 import CrawlInput from './components/CrawlInput';
+import CrawlToSvg from './components/CrawlToSvg';
 import SmartConfirmations from './components/SmartConfirmations';
 import PipelineProgress from './components/PipelineProgress';
 import DXFPreview from './components/DXFPreview';
@@ -540,6 +541,10 @@ const App: React.FC = () => {
         ) : currentTab === 'workflow' ? (
           <div className="flex-1 overflow-y-auto">
             <WorkflowGuide />
+          </div>
+        ) : currentTab === 'crawl-to-svg' ? (
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100">
+            <CrawlToSvg />
           </div>
         ) : currentTab === 'crawl' ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-slate-100 overflow-y-auto">

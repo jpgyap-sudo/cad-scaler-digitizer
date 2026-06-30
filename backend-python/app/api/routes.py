@@ -5075,6 +5075,17 @@ async def crawl_products():
         return JSONResponse({"error": str(e), "products": [], "count": 0}, status_code=500)
 
 
+@router.post("/optimize-svg")
+async def optimize_svg_endpoint(svg_text: str = Form(...)):
+    """Clean, validate, and compress an SVG string."""
+    try:
+        from app.agents.svg_optimizer import optimize_svg
+        result = optimize_svg(svg_text)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e), "svg": svg_text, "valid": False}, status_code=500)
+
+
 @router.get("/products/dna/{handle}")
 async def product_dna_detail(handle: str):
     """Get enriched per-product DNA for a specific product handle."""
