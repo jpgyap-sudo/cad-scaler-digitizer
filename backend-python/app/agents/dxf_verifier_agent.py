@@ -457,8 +457,11 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
                         views[view_name].append(pts[0])
             _xml_succeeded = True
+            total_parsed = sum(len(v) for v in views.values())
+            logger.info(f"[DXFVerifier] XML parsed: {total_parsed}pts from {len([1 for _ in range(0)])} paths, views={ {k:len(v) for k,v in views.items()} }")
         except Exception as _xml_err:
-            logger.warning(f"[DXFVerifier] XML parser failed, trying regex: {_xml_err}")
+            import traceback
+            logger.warning(f"[DXFVerifier] XML parser failed, trying regex: {_xml_err}\n{traceback.format_exc()}")
 
         # Regex fallback when XML parser fails (malformed SVG, unclosed tags, etc.)
         if not _xml_succeeded:
