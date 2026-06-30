@@ -282,7 +282,7 @@ Return ONLY this JSON. No markdown, no explanation."""
 
         _timeout = int(os.environ.get("GEMINI_TIMEOUT", "60"))
         _max_retries = int(os.environ.get("GEMINI_RETRIES", "5"))
-        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.0-flash")
+        _fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-flash-latest")
         resp = None
         _model_used = GEMINI_MODEL
         for attempt in range(_max_retries):
@@ -309,8 +309,10 @@ Return ONLY this JSON. No markdown, no explanation."""
             logger.error(f"[DXFVerifier] Gemini HTTP {code}: {body}")
             return {"svg": "", "dxf_coords": "[]", "error": f"Gemini HTTP {code}"}
 
-        text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        _raw = resp.json()
+        text = _raw.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         if not text:
+            logger.error(f"[DXFVerifier] Empty Gemini response. Full response: {json.dumps(_raw)[:500]}")
             return {"svg": "", "dxf_coords": "[]", "error": "Empty Gemini response"}
 
         # Parse JSON from response
