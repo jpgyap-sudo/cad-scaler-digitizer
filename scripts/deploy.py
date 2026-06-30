@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 deploy.py — Smart Multi-Source Deployer Agent
 ==============================================
@@ -93,9 +94,12 @@ def save_state(state: dict):
 # ─── Git ──────────────────────────────────────────────────────────────────────
 
 def _run(cmd: str, cwd=None, check=True, capture=True) -> subprocess.CompletedProcess:
+    env = os.environ.copy()
+    env.setdefault("GIT_TERMINAL_PROMPT", "0")
     return subprocess.run(
         cmd, shell=True, cwd=str(cwd or REPO_ROOT),
         capture_output=capture, text=True, check=check,
+        env=env, encoding="utf-8", errors="replace",
     )
 
 
@@ -112,17 +116,21 @@ def fetch_remote() -> str:
     return git("rev-parse origin/master")
 
 
+_SEP = "\x1f"  # ASCII unit-separator — safe inside git --pretty, invisible to Windows shell
+
+
 def commits_between(base: str, head: str = "HEAD") -> list[dict]:
     """Commits base..head (base excluded). Returns [] if base is None (first deploy)."""
+    fmt = f"%H{_SEP}%an{_SEP}%ae{_SEP}%s{_SEP}%ai"
     if not base:
-        raw = git(f"log {head} --pretty=format:%H|%an|%ae|%s|%ai --max-count=10")
+        raw = git(f"log {head} --pretty=format:{fmt} --max-count=10")
     else:
-        raw = git(f"log {base}..{head} --pretty=format:%H|%an|%ae|%s|%ai")
+        raw = git(f"log {base}..{head} --pretty=format:{fmt}")
     if not raw:
         return []
     results = []
     for line in raw.splitlines():
-        parts = line.split("|", 4)
+        parts = line.split(_SEP, 4)
         if len(parts) == 5:
             results.append({
                 "hash": parts[0], "author": parts[1],
@@ -155,15 +163,23 @@ def detect_services(changed_files: list[str]) -> list[str]:
 
 # ─── SSH ──────────────────────────────────────────────────────────────────────
 
-def _ssh_cmd(remote_cmd: str) -> str:
-    key = str(SSH_KEY).replace("\\", "/")
-    return f'ssh -i "{key}" -o StrictHostKeyChecking=no -o ConnectTimeout=15 {VPS_USER}@{VPS_HOST} \'{remote_cmd}\''
+def _ssh_args(remote_cmd: str) -> list:
+    """Build SSH arg list — NO shell=True so cmd.exe never tokenizes the remote command."""
+    return [
+        "ssh", "-i", str(SSH_KEY),
+        "-o", "StrictHostKeyChecking=no",
+        "-o", "ConnectTimeout=15",
+        "-o", "BatchMode=yes",
+        f"{VPS_USER}@{VPS_HOST}",
+        remote_cmd,
+    ]
 
 
 def ssh(remote_cmd: str, check=True, capture=True) -> subprocess.CompletedProcess:
     return subprocess.run(
-        _ssh_cmd(remote_cmd), shell=True,
+        _ssh_args(remote_cmd), shell=False,
         capture_output=capture, text=True, check=check,
+        encoding="utf-8", errors="replace",
     )
 
 
@@ -317,11 +333,11 @@ def cmd_rollback(state: dict, agent: str, dry_run: bool):
 def cmd_deploy(args, state: dict) -> int:
     t_start = time.time()
 
-    print(f"\n{'═'*62}")
+    print(f"\n{'='*62}")
     print(f"  CAD Digitizer — Deployer Agent")
     print(f"  Triggered by : {args.agent}")
     print(f"  Time         : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'═'*62}\n")
+    print(f"{'='*62}\n")
 
     # ── Sync with remote ──────────────────────────────────────────────────────
     print("  Checking remote state...")
@@ -410,7 +426,7 @@ def cmd_deploy(args, state: dict) -> int:
         # ── Selective rebuild ─────────────────────────────────────────────────
         svc_str = " ".join(affected)
         print(f"\n  Building: {svc_str}")
-        print(f"  {'─'*58}")
+        print(f"  {'-'*58}")
         ssh(f"cd {VPS_APP} && docker compose up -d --build {svc_str} 2>&1 | tail -40",
             capture=False, check=True)
 
@@ -451,12 +467,12 @@ def cmd_deploy(args, state: dict) -> int:
         state["last_deployed_commit"] = local_head
         _persist(state, record)
 
-        print(f"\n{'═'*62}")
+        print(f"\n{'='*62}")
         print(f"  DEPLOY COMPLETE")
         print(f"  Commit   : {local_head[:12]}")
         print(f"  Services : {svc_str}")
         print(f"  Duration : {duration:.0f}s")
-        print(f"{'═'*62}\n")
+        print(f"{'='*62}\n")
         return 0
 
     except Exception as e:
@@ -541,4 +557,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Ensure UTF-8 output on Windows consoles
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.exit(main())
