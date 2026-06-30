@@ -93,3 +93,90 @@ async def startup_event():
         print("[Startup] Resource Engine database initialized")
     except Exception as e:
         print(f"[Startup] Resource Engine DB init failed (non-fatal): {e}")
+
+    # Ensure auxiliary Postgres tables exist
+    try:
+        _init_postgres_tables()
+    except Exception as e:
+        print(f"[Startup] Postgres tables init failed (non-fatal): {e}")
+
+
+def _init_postgres_tables():
+    """Ensure auxiliary tables (drawing_history, assistant_task_log, comparison_results) exist in Postgres."""
+    import psycopg2
+    import os
+    conn = psycopg2.connect(
+        host=os.environ.get("PG_HOST", "postgres"),
+        port=int(os.environ.get("PG_PORT", 5432)),
+        dbname=os.environ.get("PG_DATABASE", "cad_reference_library"),
+        user=os.environ.get("PG_USER", "postgres"),
+        password=os.environ.get("PG_PASSWORD", "postgres"),
+    )
+    cur = conn.cursor()
+    
+    # 1. Create drawing_history
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS drawing_history (
+            id SERIAL PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            furniture_type TEXT,
+            dxf_file TEXT,
+            quality_score FLOAT,
+            entity_counts JSONB,
+            dimensions_used JSONB,
+            preview_urls JSONB,
+            correction_count INTEGER DEFAULT 0,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_drawings_session ON drawing_history(session_id);
+        CREATE INDEX IF NOT EXISTS idx_drawings_type ON drawing_history(furniture_type);
+    """)
+
+    # 2. Create assistant_task_log
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS assistant_task_log (
+            id              SERIAL PRIMARY KEY,
+            session_id      VARCHAR(100),
+            task_type       VARCHAR(50) NOT NULL,
+            furniture_type  VARCHAR(100),
+            input_params    JSONB,
+            output_summary  JSONB,
+            success         BOOLEAN DEFAULT TRUE,
+            error_message   TEXT,
+            duration_ms     INTEGER,
+            created_at      TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_task_log_session   ON assistant_task_log(session_id);
+        CREATE INDEX IF NOT EXISTS idx_task_log_type      ON assistant_task_log(task_type);
+        CREATE INDEX IF NOT EXISTS idx_task_log_created   ON assistant_task_log(created_at);
+        CREATE INDEX IF NOT EXISTS idx_task_log_success   ON assistant_task_log(success);
+    """)
+    
+    # 3. Create comparison_results
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS comparison_results (
+            id SERIAL PRIMARY KEY,
+            job_id TEXT UNIQUE NOT NULL,
+            product_id TEXT,
+            overall_score FLOAT NOT NULL DEFAULT 0.0,
+            edge_overlap_score FLOAT DEFAULT 0.0,
+            entity_match_score FLOAT DEFAULT 0.0,
+            dimension_deviation_pct FLOAT DEFAULT 0.0,
+            errors_json JSONB DEFAULT '[]',
+            dimension_comparisons_json JSONB DEFAULT '[]',
+            image_width INT DEFAULT 0,
+            image_height INT DEFAULT 0,
+            dxf_width_mm FLOAT DEFAULT 0.0,
+            dxf_height_mm FLOAT DEFAULT 0.0,
+            image_url TEXT,
+            dxf_url TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_comparison_results_score ON comparison_results(overall_score);
+        CREATE INDEX IF NOT EXISTS idx_comparison_results_job_id ON comparison_results(job_id);
+    """)
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("[Startup] Postgres auxiliary tables initialized successfully.")

@@ -26,7 +26,7 @@ cd /app/node-api
 # Run Prisma migrations (or push on first deploy)
 # The database might still be initializing - retry a couple times
 for i in 1 2 3; do
-  if npx prisma migrate deploy 2>/dev/null || npx prisma db push 2>/dev/null; then
+  if npx prisma migrate deploy 2>/dev/null || npx prisma db push --accept-data-loss 2>/dev/null; then
     echo "Database schema is up to date."
     break
   fi

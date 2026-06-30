@@ -838,8 +838,11 @@ def log_comparison_to_db(result: ComparisonResult) -> bool:
         )
         cur = conn.cursor()
 
-        # Ensure cloud verification columns exist (idempotent migration)
+        # Ensure columns exist (idempotent migration)
         for _col_sql in [
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS shape_class_score REAL DEFAULT 0.0",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS proportion_score REAL DEFAULT 0.0",
+            "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS view_score REAL DEFAULT 0.0",
             "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_verified BOOLEAN DEFAULT FALSE",
             "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_shape_match REAL DEFAULT 0.0",
             "ALTER TABLE comparison_results ADD COLUMN IF NOT EXISTS cloud_component_score REAL DEFAULT 0.0",

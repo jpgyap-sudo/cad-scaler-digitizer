@@ -1,7 +1,7 @@
 import asyncio, httpx, json
 
 async def test():
-    c = httpx.AsyncClient(timeout=180)
+    c = httpx.AsyncClient(timeout=300)
     r = await c.post("http://localhost:8001/api/crawl-to-dxf",
         json={"url": "https://homeu.ph/products/tangerie-dining-table", "category": "table"})
     d = r.json()

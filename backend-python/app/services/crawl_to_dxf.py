@@ -673,18 +673,29 @@ async def crawl_and_digitize(
     if real_d:
         params["real_depth_cm"] = str(real_d)
 
-    async with httpx.AsyncClient(timeout=120) as client:
-        digitize_resp = await client.post(
-            f"{API_BASE}/api/digitize/hybrid",
-            files=files,
-            data=params,
+    try:
+        from app.api.routes import digitize_hybrid
+        from fastapi import UploadFile
+        import io
+        import json
+
+        upload_file = UploadFile(filename="product.png", file=io.BytesIO(img_bytes))
+        digitize_resp_obj = await digitize_hybrid(
+            file=upload_file,
+            real_width_cm=str(real_width_cm) if real_width_cm else None,
+            real_height_cm=str(real_h) if real_h else None,
+            real_depth_cm=str(real_d) if real_d else None,
+            furniture_type=furniture_type,
         )
 
-    if digitize_resp.status_code != 200:
-        err = digitize_resp.text[:200]
-        return {**result, "status": "failed", "error": f"Digitize failed: {err}"}
+        if digitize_resp_obj.status_code != 200:
+            err = digitize_resp_obj.body.decode()[:200]
+            return {**result, "status": "failed", "error": f"Digitize failed: {err}"}
 
-    digitized = digitize_resp.json()
+        digitized = json.loads(digitize_resp_obj.body.decode())
+    except Exception as e:
+        import traceback
+        return {**result, "status": "failed", "error": f"Digitize in-process call failed: {e}", "trace": traceback.format_exc()}
     dxf_file = digitized.get("dxf_file")
     preview_svg = digitized.get("preview_svg")
     download_url = digitized.get("download")
