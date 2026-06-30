@@ -481,6 +481,33 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
             except Exception:
                 pass
 
+        # Position-based fallback: if no views populated, assign paths by x-position
+        total_points = sum(len(v) for v in views.values())
+        if total_points == 0 and svg:
+            try:
+                svg_clean = svg.replace('&quot;', '"').replace('&amp;', '&')
+                all_ds = re.findall(r'<path\s[^>]*d=(["\'])([^\1]+?)\1[^>]*/?>', svg_clean) or \
+                         re.findall(r'<path\s[^>]*d=(["\'])([^\1]+?)\1', svg_clean)
+                for match in all_ds:
+                    d = match[1] if isinstance(match, tuple) else match
+                    pts = _svg_path_to_points(d)
+                    if len(pts) < 3:
+                        continue
+                    avg_x = sum(p[0] for p in pts) / len(pts)
+                    if avg_x < 300:
+                        vn = "front"
+                    elif avg_x < 610:
+                        vn = "side"
+                    elif avg_x < 900:
+                        vn = "top"
+                    else:
+                        vn = "isometric"
+                    views[vn].extend(pts)
+                    if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
+                        views[vn].append(pts[0])
+            except Exception:
+                pass
+
         # Build dxf_coords: [[x1,y1],[x2,y2],...] from all views for hero view
         dxf_flat = []
         for view_pts in views.values():
