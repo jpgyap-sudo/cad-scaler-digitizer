@@ -34,7 +34,7 @@ logger = logging.getLogger("dxf_verifier_agent")
 
 # Gemini configuration loaded from environment
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-pro")
+GEMINI_MODEL = os.environ.get("GEMINI_OCR_MODEL", "gemini-2.5-flash")
 
 
 def _build_prompt(
@@ -396,17 +396,26 @@ Return ONLY the markdown-wrapped JSON. No conversational text."""
                     break
             return pts
 
-        # Decode HTML entities and parse all SVG path elements grouped by data-view
-        svg_clean = svg.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-        path_pattern = re.compile(r"""<path\s[^>]*d=(["'])([^"']+?)\1[^>]*data-view=(["'])([^"']+?)\3[^>]*/?>""", re.I)
-        for match in path_pattern.finditer(svg_clean):
-            d = match.group(2)
-            view_name = match.group(4).lower()
-            pts = _svg_path_to_points(d)
-            if view_name in views and len(pts) > 2:
-                views[view_name].extend(pts)
-                if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
-                    views[view_name].append(pts[0])
+        # Parse SVG paths using standard XML library (handles entities, namespaces, all SVG)
+        try:
+            import xml.etree.ElementTree as ET
+            import io
+            root = ET.fromstring(svg)
+            ns = {'svg': 'http://www.w3.org/2000/svg'}
+            for path_elem in root.iter('{http://www.w3.org/2000/svg}path'):
+                if 'data-view' not in path_elem.attrib:
+                    continue
+                view_name = path_elem.attrib['data-view'].lower()
+                d = path_elem.attrib.get('d', '')
+                if not d or view_name not in views:
+                    continue
+                pts = _svg_path_to_points(d)
+                if len(pts) > 2:
+                    views[view_name].extend(pts)
+                    if pts and (pts[-1][0] != pts[0][0] or pts[-1][1] != pts[0][1]):
+                        views[view_name].append(pts[0])
+        except Exception as _xml_err:
+            logger.warning(f"[DXFVerifier] XML SVG parsing failed: {_xml_err}")
 
         # Build dxf_coords: [[x1,y1],[x2,y2],...] from all views for hero view
         dxf_flat = []
