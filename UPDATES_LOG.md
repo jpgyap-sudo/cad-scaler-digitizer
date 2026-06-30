@@ -31,6 +31,27 @@
 
 ---
 
+## 2026-06-30
+
+| Time (TZ) | Agent | Commit | Update | Type |
+|-----------|-------|--------|--------|------|
+| 10:39 +08 | Kilo | `7eb6d92` | **3-tier API fallback**: gemini-2.5-flash → gemini-2.5-pro → gpt-4o → gpt-4o-mini (8 retries). Handles quota exhaustion gracefully. | FEATURE |
+| 10:39 +08 | Kilo | `b679e5e` | **XML parser for SVG**: Replaced fragile regex parsing with `xml.etree.ElementTree`. Handles namespaces, entities, attribute ordering. Regex fallback when XML fails. | FIX |
+| 10:39 +08 | Kilo | `fe6bdb0` | **Position-based view fallback**: When `data-view` attributes missing, assigns SVG paths to FRONT/SIDE/TOP/ISO by x-coordinate. | FIX |
+| 10:39 +08 | Kilo | `fe6bdb0` | **Arc midpoint sampling**: SVG `A` arc commands now sampled at 12 points with sinusoidal curvature instead of straight-line approximation. | FEATURE |
+| 10:39 +08 | Kilo | `fe6bdb0` | **Q/q quad bezier + S/s smooth cubic**: SVG path parser now handles all common path commands (M,L,H,V,C,Q,A,Z). | FEATURE |
+| 10:39 +08 | Kilo | `d06a0cf` | **Prompt simplified**: Removed `polyline` field — Gemini produces SVG only. Coordinates extracted server-side. Markdown-wrapped JSON for safe parsing. | FIX |
+| 10:39 +08 | Kilo | `23bdbca` | **Switch Flash as primary**: gemini-2.5-flash (cheap, fast) instead of pro. Simplified prompt reduced cognitive load enough for Flash to respond in time. | FEATURE |
+| 10:39 +08 | Kilo | `ccceac5` | **Entity-escaped SVG attributes**: `&quot;` entities decoded before SVG parsing. | FIX |
+| 10:39 +08 | Kilo | `0e102d0` | **C/c cubic bezier SVG parsing**: Path extractor now handles cubic bezier curves (12 segments each). | FIX |
+| 10:39 +08 | Kilo | `71f044d` | **Image resize to 600px** before Gemini call — 4x faster processing, reduces ReadTimeouts. Timeout increased 60→120s. | FIX |
+| 10:39 +08 | Kilo | `f9bd371` | **No polyline in prompt**: Gemini produces SVG ONLY. Components array is metadata only. Coordinate extraction is deterministic server-side. | PERF |
+| 10:39 +08 | Kilo | `025a78f` | **Self-filling 3-stage classifier**: `enrich_dna_from_crawl()` auto-populates product_dna.json + visual_dna_index.json. 393 products seeded from Shopify batches. | FEATURE |
+| 10:39 +08 | Kilo | `47ce545` | **Deep top_shape wiring + bed→rectangular dispatch**: shape signal flows to SVG renderer. Bed now renders as 4-view rectangular table (not 1-view headboard). | FEATURE |
+| 10:39 +08 | Kilo | `5dac3e3` | **Isometric helper + 4-view cabinet/sofa/wardrobe**: `_add_isometric_box()` + TOP/ISO views for 3 template types. | FEATURE |
+| 10:39 +08 | Kilo | `3a8311e` | **Gemini multi-view extraction**: Single photo → 4-panel SVG (FRONT, SIDE, TOP, ISOMETRIC) from one API call. 1200×300 canvas. | FEATURE |
+| 10:39 +08 | Kilo | `03ad0b1` | **StarVector integration plan**: Hybrid pipeline — Gemini detects components → StarVector-1B renders clean SVG per component → DXF converter. See PIPELINE.md. | PLAN |
+
 ## Known Issues
 
 | ID | Found | Agent | Description | Status |
@@ -39,3 +60,4 @@
 | AUDIT-009 | 2026-06-29 | SuperRoo | template_matcher.py only loaded 25 templates from wrong directory — now loads 243 from both dirs | CONFIRMED-FIXED |
 | AUDIT-010 | 2026-06-29 | SuperRoo | visual_dna_index.json (4,122 lines) existed but never imported — now wired into scoring | CONFIRMED-FIXED |
 | AUDIT-001-007 | 2026-06-28 | SuperRoo | 7 historical bugs — all confirmed fixed in commits | ALL FIXED |
+| AUDIT-011 | 2026-06-30 | Kilo | Gemini SVG inconsistent across models — `data-view` attributes vary, `&quot;` entity usage differs, coordinate format drifts. Mitigated with 3-tier SVG parser (XML→regex→position). Root fix: StarVector integration (PIPELINE.md). | CONFIRMED-MITIGATED |
